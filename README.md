@@ -1,3 +1,5 @@
+![Agentic Workflow banner](Docs/assets/agentic-workflow-banner.png)
+
 # Agentic Workflow
 
 Agentic Workflow, mevcut bir yazılım projesine Claude Code odaklı ve Backlog.md ile entegre çalışan modüler bir ajan destekli geliştirme katmanı kurmak için hazırlanmış bir şablon deposudur.
