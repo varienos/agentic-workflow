@@ -109,7 +109,7 @@ Backlog'daki bir görevi otonom olarak implement eder. Görev dosyasını okur, 
 
 ```
 /task-hunter 42          # Tek görev
-/task-hunter 42 43 44    # Sırayla birden fazla görev
+/task-hunter 42,43,44    # Sırayla birden fazla görev (virgülle)
 /task-hunter auth        # Keyword ile görev arama
 ```
 
@@ -126,10 +126,11 @@ Backlog'daki tüm açık görevleri 4 boyutlu skorlama ile önceliklendirir. Her
 Birden fazla görevi faz bazlı otonom olarak işler. task-master'in önceliklendirmesini kullanarak görevleri fazlara atar, her fazda sırayla veya paralel olarak implement eder, faz sonunda otomatik code review yapar. Manuel faz desteği vardır — bazı görevler insan müdahalesi gerektiğinde conductor durur ve bekler. State dosyası ile kesintiye uğradığında kaldığından devam eder.
 
 ```
-/task-conductor            # En yüksek öncelikli 5 görev
-/task-conductor all        # Tüm açık görevler
-/task-conductor 42 43 44   # Belirli görevler
-/task-conductor resume     # Kaldığı yerden devam et
+/task-conductor              # top 5 (varsayılan)
+/task-conductor all          # Tüm açık görevler
+/task-conductor 3,5,8        # Virgülle ayrılmış görev ID'leri
+/task-conductor keyword auth # Keyword ile görev arama
+/task-conductor resume       # Kaldığı yerden devam et
 ```
 
 ### /task-plan
@@ -197,6 +198,16 @@ Projede kullanılmayan kodu tespit eder ve temizlik önerir. Çağrılmayan fonk
 ```
 /deadcode
 /deadcode api/src/services/    # Belirli dizin
+```
+
+### /deep-audit
+
+Bir domain modülünü (auth, profil, ödeme, mesaj vb.) tüm katmanlarda (API + DB + Mobil + Frontend) uçtan uca denetler. Bulguları iki boyutta sınıflandırır: basit olanları doğrudan düzeltir, karmaşık olanları backlog'a kaydeder.
+
+```
+/deep-audit auth        # Auth modülünü denetle
+/deep-audit profil      # Profil modülünü denetle
+/deep-audit odeme       # Ödeme modülünü denetle
 ```
 
 ### Modüler Komutlar
