@@ -843,9 +843,13 @@ const SIMPLE_GENERATORS = {
     if (fileType !== 'js') return '';
 
     const entries = subprojects.map(sp => {
-      const spPath = getSubprojectPath(manifest, sp);
+      // Hook icinde path.relative(CODEBASE_ROOT, filePath) ile karsilastirilacak
+      // Bu yuzden Codebase-relative path kullanilmali (../Codebase/ prefix'i olmadan)
+      const spRelativePath = sp.path
+        ? sp.path.replace(/^\.\.\/Codebase\//, '').replace(/^\.\//, '')
+        : sp.name;
       const configFile = formatterConfigMap[formatter] || '.prettierrc';
-      return `  { name: '${sp.name}', path: '${spPath}', configFile: '${configFile}', formatter: '${formatter}' }`;
+      return `  { name: '${sp.name}', path: '${spRelativePath}', configFile: '${configFile}', formatter: '${formatter}' }`;
     });
 
     return entries.length > 0 ? entries.join(',\n') + ',' : '';
@@ -1351,12 +1355,51 @@ function resolveOutputPath(skeletonPath, outputDir) {
 }
 
 /**
- * Templates dizinindeki tum skeleton dosyalarini tarar.
+ * Templates dizinindeki tum template dosyalarini tarar.
+ * Skeleton dosyalari (.skeleton) ve sabit dosyalari (hooks/, rules/, commands/, agents/
+ * icindeki .js ve .md dosyalari) dahil eder.
  * Sadece aktif modullerin dosyalarini dahil eder.
  */
 function scanSkeletonFiles(manifest) {
   const files = [];
   const activeModules = getActiveModules(manifest);
+  const CONTENT_DIRS = new Set(['rules', 'hooks', 'commands', 'agents']);
+  const SKIP_DIRS = new Set(['interview', 'reference']);
+
+  function isTemplateFile(entry, fullPath) {
+    if (entry.name.includes('.skeleton.') || entry.name.endsWith('.skeleton')) return true;
+    // Sabit dosya: .js veya .md, content dizini (hooks/, rules/, commands/, agents/) icinde
+    if (entry.name.endsWith('.js') || entry.name.endsWith('.md')) {
+      const parentDir = path.basename(path.dirname(fullPath));
+      if (CONTENT_DIRS.has(parentDir) && entry.name !== 'detect.md') return true;
+    }
+    return false;
+  }
+
+  function isModuleActive(relPath) {
+    if (!relPath.startsWith('modules/')) return true; // core dosyalari her zaman dahil
+    const parts = relPath.split(path.sep);
+    if (parts.length < 3) return true;
+
+    const moduleSegments = [];
+    for (let i = 2; i < parts.length; i++) {
+      if (CONTENT_DIRS.has(parts[i]) || parts[i].includes('.skeleton.') || parts[i].endsWith('.skeleton')) break;
+      // Sabit dosya adini da dur noktasi olarak kontrol et
+      if (parts[i].endsWith('.js') || parts[i].endsWith('.md')) break;
+      moduleSegments.push(parts[i]);
+    }
+    if (moduleSegments.length > 0) {
+      const modulePath = moduleSegments.join('/');
+      if (activeModules.has(modulePath)) return true;
+      for (const active of activeModules) {
+        if (active.startsWith(modulePath + '/')) return true;
+      }
+      return false;
+    }
+    // Ust seviye modul: modules/security/commands/... → parts[1] = "security"
+    const category = parts[1];
+    return activeModules.has(category);
+  }
 
   function walk(dir) {
     if (!fs.existsSync(dir)) return;
@@ -1366,46 +1409,11 @@ function scanSkeletonFiles(manifest) {
       const fullPath = path.join(dir, entry.name);
 
       if (entry.isDirectory()) {
-        // interview/ dizinini atla (skeleton degil)
-        if (entry.name === 'interview') continue;
-        // detect.md dosyalarini atla
+        if (SKIP_DIRS.has(entry.name)) continue;
         walk(fullPath);
-      } else if (entry.name.includes('.skeleton.') || entry.name.endsWith('.skeleton')) {
-        // Modul dosyasi mi kontrol et
+      } else if (isTemplateFile(entry, fullPath)) {
         const relPath = path.relative(TEMPLATES_DIR, fullPath);
-        if (relPath.startsWith('modules/')) {
-          // modules/{kategori}/{aile?}/{varyant}/... formatinda
-          // 2-seviyeli: modules/deploy/vercel/commands/...
-          // 3-seviyeli: modules/backend/nodejs/express/rules/...
-          const parts = relPath.split(path.sep);
-          if (parts.length >= 3) {
-            const CONTENT_DIRS = new Set(['rules', 'hooks', 'commands', 'agents']);
-            const moduleSegments = [];
-            for (let i = 2; i < parts.length; i++) {
-              if (CONTENT_DIRS.has(parts[i]) || parts[i].includes('.skeleton.') || parts[i].endsWith('.skeleton')) break;
-              moduleSegments.push(parts[i]);
-            }
-            if (moduleSegments.length > 0) {
-              const modulePath = moduleSegments.join('/');
-              // Tam esleme: "nodejs/express" === aktif modul
-              let matched = activeModules.has(modulePath);
-              // Parent esleme: "nodejs" family dosyalari, "nodejs/express" aktifse dahil
-              if (!matched) {
-                for (const active of activeModules) {
-                  if (active.startsWith(modulePath + '/')) {
-                    matched = true;
-                    break;
-                  }
-                }
-              }
-              if (!matched) continue;
-            } else {
-              // Ust seviye modul: modules/security/commands/... → parts[1] = "security"
-              const category = parts[1];
-              if (!activeModules.has(category)) continue;
-            }
-          }
-        }
+        if (!isModuleActive(relPath)) continue;
         files.push(fullPath);
       }
     }

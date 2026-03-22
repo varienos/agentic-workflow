@@ -892,6 +892,38 @@ describe('SIMPLE_GENERATORS', () => {
     assert.ok(result.includes('https://api.example.com'));
     assert.ok(result.includes('/health'));
   });
+
+  it('SUBPROJECT_CONFIGS Codebase-relative path uretiyor (../Codebase prefix yok)', () => {
+    const result = SIMPLE_GENERATORS.SUBPROJECT_CONFIGS(testManifest, 'js');
+    assert.ok(result.includes("path: 'api'"), 'api Codebase-relative olmali');
+    assert.ok(result.includes("path: 'web'"), 'web Codebase-relative olmali');
+    assert.ok(!result.includes('../Codebase'), '../Codebase prefix olmamali');
+  });
+
+  it('SUBPROJECT_CONFIGS sp.path ../Codebase/ ile basliyorsa strip eder', () => {
+    const manifest = {
+      project: {
+        subprojects: [
+          { name: 'api', path: '../Codebase/apps/api' },
+        ],
+      },
+    };
+    const result = SIMPLE_GENERATORS.SUBPROJECT_CONFIGS(manifest, 'js');
+    assert.ok(result.includes("path: 'apps/api'"), '../Codebase/ prefix strip edilmeli');
+    assert.ok(!result.includes('../Codebase'), 'prefix kalmamali');
+  });
+
+  it('SUBPROJECT_CONFIGS sp.path yoksa sp.name kullanir', () => {
+    const manifest = {
+      project: {
+        subprojects: [
+          { name: 'shared' },
+        ],
+      },
+    };
+    const result = SIMPLE_GENERATORS.SUBPROJECT_CONFIGS(manifest, 'js');
+    assert.ok(result.includes("path: 'shared'"));
+  });
 });
 
 // ─────────────────────────────────────────────────────
