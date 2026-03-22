@@ -1359,6 +1359,25 @@ function scanSkeletonFiles(manifest) {
 }
 
 // ─────────────────────────────────────────────────────
+// CLI ARGUMAN AYRISTIRMA
+// ─────────────────────────────────────────────────────
+
+const VALUE_FLAGS = new Set(['--output-dir']);
+
+/**
+ * CLI argumanlarindan manifest yolunu bulur.
+ * Flag'leri ve flag degerlerini (--output-dir /tmp gibi) atlayarak
+ * ilk pozisyonel argumani dondurur.
+ */
+function findManifestArg(args) {
+  return args.find((a, i) => {
+    if (a.startsWith('--')) return false;
+    if (i > 0 && VALUE_FLAGS.has(args[i - 1])) return false;
+    return true;
+  }) || null;
+}
+
+// ─────────────────────────────────────────────────────
 // ANA FONKSIYON
 // ─────────────────────────────────────────────────────
 
@@ -1376,8 +1395,7 @@ function main() {
     flags.outputDir = path.resolve(args[outputIdx + 1]);
   }
 
-  // Manifest yolu (ilk flag olmayan arguman)
-  const manifestPath = args.find(a => !a.startsWith('--'));
+  const manifestPath = findManifestArg(args);
 
   if (!manifestPath) {
     console.error('Kullanim: node generate.js <manifest-yolu> [--output-dir <dir>] [--dry-run] [--verbose]');
@@ -1490,6 +1508,7 @@ function main() {
 module.exports = {
   extractBlockNames,
   fillBlocks,
+  findManifestArg,
   processJsonGenerateKeys,
   processSkeletonFile,
   resolveOutputPath,

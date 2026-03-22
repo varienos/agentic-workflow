@@ -13,6 +13,7 @@ const path = require('path');
 const {
   extractBlockNames,
   fillBlocks,
+  findManifestArg,
   processJsonGenerateKeys,
   scanSkeletonFiles,
   toOutputName,
@@ -943,5 +944,36 @@ describe('scanSkeletonFiles — standalone modul destegi', () => {
     assert.ok(relFiles.some(f => f.includes('monorepo')), 'monorepo dahil olmali');
     assert.ok(relFiles.some(f => f.includes('orm')), 'orm dahil olmali');
     assert.ok(relFiles.some(f => f.includes('deploy')), 'deploy dahil olmali');
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// findManifestArg — CLI ARGUMAN AYRISTIRMA TESTLERI
+// ─────────────────────────────────────────────────────
+
+describe('findManifestArg', () => {
+  it('--output-dir once, manifest sonra', () => {
+    const args = ['--output-dir', '/tmp/out', 'manifest.yaml', '--dry-run'];
+    assert.strictEqual(findManifestArg(args), 'manifest.yaml');
+  });
+
+  it('manifest once, --output-dir sonra', () => {
+    const args = ['manifest.yaml', '--output-dir', '/tmp/out'];
+    assert.strictEqual(findManifestArg(args), 'manifest.yaml');
+  });
+
+  it('sadece manifest', () => {
+    const args = ['manifest.yaml'];
+    assert.strictEqual(findManifestArg(args), 'manifest.yaml');
+  });
+
+  it('tum flag ler ve manifest', () => {
+    const args = ['--dry-run', '--output-dir', '/tmp', 'project.yaml', '--verbose'];
+    assert.strictEqual(findManifestArg(args), 'project.yaml');
+  });
+
+  it('manifest yoksa null doner', () => {
+    const args = ['--dry-run', '--output-dir', '/tmp'];
+    assert.strictEqual(findManifestArg(args), null);
   });
 });
