@@ -403,6 +403,20 @@ function getCodebasePath(manifest) {
 }
 
 /**
+ * Subproject path'ini normalize eder.
+ * sp.path zaten ../veya / ile basliyorsa oldugu gibi kullanir.
+ * Relative path (apps/api gibi) ise codebasePath ile birlestirir.
+ * sp.path yoksa codebasePath/sp.name dondurur.
+ */
+function getSubprojectPath(manifest, sp) {
+  if (sp.path) {
+    if (sp.path.startsWith('../') || sp.path.startsWith('/')) return sp.path;
+    return `${getCodebasePath(manifest)}/${sp.path}`;
+  }
+  return `${getCodebasePath(manifest)}/${sp.name}`;
+}
+
+/**
  * Manifest'te TypeScript aktif mi kontrol eder.
  * stack.typescript boolean VEYA stack.detected dizisinde "TypeScript" varsa true.
  */
@@ -426,7 +440,7 @@ function getMigrationCommands(manifest, ormType) {
     const spModules = sp.modules || {};
     const ormModules = spModules.orm || [];
     if (Array.isArray(ormModules) && ormModules.includes(ormType)) {
-      ormPath = sp.path || `${codebasePath}/${sp.name}`;
+      ormPath = getSubprojectPath(manifest, sp);
       break;
     }
   }
@@ -495,7 +509,7 @@ const SIMPLE_GENERATORS = {
     for (const sp of subprojects) {
       const ormModules = sp.modules?.orm || [];
       if (Array.isArray(ormModules) && ormModules.includes('prisma')) {
-        prismaBase = sp.path || `${codebasePath}/${sp.name}`;
+        prismaBase = getSubprojectPath(manifest, sp);
         break;
       }
     }
@@ -629,7 +643,7 @@ const SIMPLE_GENERATORS = {
     if (subprojects.length > 0) {
       const rows = subprojects.map(sp => {
         const cmd = sp.test_command || testCommands[sp.name] || 'npm test';
-        const spPath = sp.path || `../Codebase/${sp.name}`;
+        const spPath = getSubprojectPath(manifest, sp);
         const fullCmd = cmd.startsWith('cd ') ? cmd : `cd "${spPath}" && ${cmd}`;
         return `| ${sp.name} | \`${fullCmd}\` |`;
       });
@@ -669,7 +683,7 @@ const SIMPLE_GENERATORS = {
         .filter(sp => sp.build_command || sp.scripts?.build)
         .map(sp => {
           const cmd = sp.build_command || sp.scripts?.build || 'npm run build';
-          const spPath = sp.path || `${codebasePath}/${sp.name}`;
+          const spPath = getSubprojectPath(manifest, sp);
           return `| ${sp.name} | \`cd "${spPath}" && ${cmd}\` |`;
         });
 
@@ -801,9 +815,10 @@ const SIMPLE_GENERATORS = {
 
     const entries = [];
     for (const sp of subprojects) {
-      const spPath = (sp.path || sp.name).replace(/\.\.\//g, '').replace(/\//g, '\\/');
+      const resolvedPath = getSubprojectPath(manifest, sp);
+      const spPath = resolvedPath.replace(/\.\.\//g, '').replace(/\//g, '\\/');
       const cmd = sp.test_command || testCommands[sp.name] || 'npm test';
-      const fullCmd = cmd.startsWith('cd ') ? cmd : `cd "${sp.path || '../Codebase/' + sp.name}" && ${cmd}`;
+      const fullCmd = cmd.startsWith('cd ') ? cmd : `cd "${resolvedPath}" && ${cmd}`;
 
       const dirs = [...new Set(['src', ...extraDirs])];
       for (const dir of dirs) {
@@ -827,7 +842,7 @@ const SIMPLE_GENERATORS = {
     if (fileType !== 'js') return '';
 
     const entries = subprojects.map(sp => {
-      const spPath = sp.path || `../Codebase/${sp.name}`;
+      const spPath = getSubprojectPath(manifest, sp);
       const configFile = formatterConfigMap[formatter] || '.prettierrc';
       return `  { name: '${sp.name}', path: '${spPath}', configFile: '${configFile}', formatter: '${formatter}' }`;
     });
@@ -979,7 +994,7 @@ const SIMPLE_GENERATORS = {
         'LINT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.(ts|tsx|js|jsx|mjs|cjs)$" || true)',
         'if [ -n "$LINT_FILES" ]; then',
         '  echo "→ ESLint kontrolu..."',
-        '  echo "$LINT_FILES" | xargs npx eslint --quiet 2>&1 || {',
+        '  echo "$LINT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 npx eslint --quiet 2>&1 || {',
         '    echo "❌ Lint hatalari var!"',
         '    ERRORS=1',
         '  }',
@@ -991,7 +1006,7 @@ const SIMPLE_GENERATORS = {
         'LINT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.(ts|tsx|js|jsx|mjs|cjs|json)$" || true)',
         'if [ -n "$LINT_FILES" ]; then',
         '  echo "→ Biome lint kontrolu..."',
-        '  echo "$LINT_FILES" | xargs npx biome check --no-errors-on-unmatched 2>&1 || {',
+        '  echo "$LINT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 npx biome check --no-errors-on-unmatched 2>&1 || {',
         '    echo "❌ Lint hatalari var!"',
         '    ERRORS=1',
         '  }',
@@ -1003,7 +1018,7 @@ const SIMPLE_GENERATORS = {
         'LINT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.py$" || true)',
         'if [ -n "$LINT_FILES" ]; then',
         '  echo "→ Ruff lint kontrolu..."',
-        '  echo "$LINT_FILES" | xargs ruff check 2>&1 || {',
+        '  echo "$LINT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 ruff check 2>&1 || {',
         '    echo "❌ Lint hatalari var!"',
         '    ERRORS=1',
         '  }',
@@ -1029,7 +1044,7 @@ const SIMPLE_GENERATORS = {
         'FORMAT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.(ts|tsx|js|jsx|mjs|cjs|json|css|scss|md)$" || true)',
         'if [ -n "$FORMAT_FILES" ]; then',
         '  echo "→ Prettier format kontrolu..."',
-        '  echo "$FORMAT_FILES" | xargs npx prettier --check 2>&1 || {',
+        '  echo "$FORMAT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 npx prettier --check 2>&1 || {',
         '    echo "❌ Format hatalari var! npx prettier --write ile duzeltebilirsiniz."',
         '    ERRORS=1',
         '  }',
@@ -1041,7 +1056,7 @@ const SIMPLE_GENERATORS = {
         'FORMAT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.(ts|tsx|js|jsx|mjs|cjs|json)$" || true)',
         'if [ -n "$FORMAT_FILES" ]; then',
         '  echo "→ Biome format kontrolu..."',
-        '  echo "$FORMAT_FILES" | xargs npx biome format --no-errors-on-unmatched 2>&1 || {',
+        '  echo "$FORMAT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 npx biome format --no-errors-on-unmatched 2>&1 || {',
         '    echo "❌ Format hatalari var! npx biome format --write ile duzeltebilirsiniz."',
         '    ERRORS=1',
         '  }',
@@ -1053,7 +1068,7 @@ const SIMPLE_GENERATORS = {
         'FORMAT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.py$" || true)',
         'if [ -n "$FORMAT_FILES" ]; then',
         '  echo "→ Ruff format kontrolu..."',
-        '  echo "$FORMAT_FILES" | xargs ruff format --check 2>&1 || {',
+        '  echo "$FORMAT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 ruff format --check 2>&1 || {',
         '    echo "❌ Format hatalari var! ruff format ile duzeltebilirsiniz."',
         '    ERRORS=1',
         '  }',
@@ -1214,7 +1229,7 @@ const SIMPLE_GENERATORS = {
       '  # Destructive migration uyarisi',
       '  MIGRATION_FILES=$(git diff "$RANGE" --name-only -- "*/migrations/*" 2>/dev/null || true)',
       '  if [ -n "$MIGRATION_FILES" ]; then',
-      '    MIGRATION_DIFF=$(echo "$MIGRATION_FILES" | xargs git diff "$RANGE" -- 2>/dev/null || true)',
+      '    MIGRATION_DIFF=$(echo "$MIGRATION_FILES" | tr \'\\n\' \'\\0\' | xargs -0 git diff "$RANGE" -- 2>/dev/null || true)',
     );
 
     if (orm === 'prisma') {
@@ -1561,6 +1576,7 @@ module.exports = {
   getActiveModules,
   getFileExtensions,
   getCodeExtensions,
+  getSubprojectPath,
   getMigrationCommands,
   SIMPLE_GENERATORS,
   TEMPLATES_DIR,

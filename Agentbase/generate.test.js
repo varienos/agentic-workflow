@@ -23,6 +23,7 @@ const {
   getActiveModules,
   getFileExtensions,
   getCodeExtensions,
+  getSubprojectPath,
   getMigrationCommands,
   SIMPLE_GENERATORS,
   TEMPLATES_DIR,
@@ -482,6 +483,29 @@ describe('getActiveModules', () => {
     const modules = getActiveModules(manifest);
     assert.ok(modules.has('security'));
     assert.strictEqual(modules.size, 1);
+  });
+});
+
+describe('getSubprojectPath', () => {
+  it('sp.path ../ile basliyorsa oldugu gibi kullanir', () => {
+    const sp = { name: 'api', path: '../Codebase/api' };
+    assert.strictEqual(getSubprojectPath(testManifest, sp), '../Codebase/api');
+  });
+
+  it('sp.path relative ise codebasePath ile birlestirir', () => {
+    const sp = { name: 'api', path: 'apps/api' };
+    assert.strictEqual(getSubprojectPath(testManifest, sp), '../Codebase/apps/api');
+  });
+
+  it('sp.path yoksa codebasePath/sp.name dondurur', () => {
+    const sp = { name: 'api' };
+    assert.strictEqual(getSubprojectPath(testManifest, sp), '../Codebase/api');
+  });
+
+  it('manifest.project.structure varsa onu kullanir', () => {
+    const manifest = { project: { structure: '../MyProject' } };
+    const sp = { name: 'api' };
+    assert.strictEqual(getSubprojectPath(manifest, sp), '../MyProject/api');
   });
 });
 
@@ -1124,6 +1148,20 @@ describe('hasTypeScript', () => {
     const manifest = { stack: { detected: ['TypeScript', 'React'] } };
     const result = SIMPLE_GENERATORS.GIT_PRECOMMIT_COMPILE(manifest);
     assert.ok(result.includes('tsc --noEmit'), 'detected TypeScript ile tsc komutu uretilmeli');
+  });
+
+  it('GIT_PRECOMMIT_LINT xargs -0 kullaniyor (bosluklu path destegi)', () => {
+    const eslintManifest = { stack: { linter: 'eslint' } };
+    const result = SIMPLE_GENERATORS.GIT_PRECOMMIT_LINT(eslintManifest);
+    assert.ok(result.includes('xargs -0'), 'xargs -0 kullanilmali');
+    assert.ok(!result.includes('| xargs npx'), 'duz xargs olmamali');
+  });
+
+  it('GIT_PRECOMMIT_FORMAT xargs -0 kullaniyor (bosluklu path destegi)', () => {
+    const prettierManifest = { stack: { formatter: 'prettier' } };
+    const result = SIMPLE_GENERATORS.GIT_PRECOMMIT_FORMAT(prettierManifest);
+    assert.ok(result.includes('xargs -0'), 'xargs -0 kullanilmali');
+    assert.ok(!result.includes('| xargs npx'), 'duz xargs olmamali');
   });
 });
 
