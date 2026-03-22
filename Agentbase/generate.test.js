@@ -497,6 +497,19 @@ describe('getMigrationCommands', () => {
     const cmds = getMigrationCommands(testManifest, 'unknown');
     assert.deepStrictEqual(cmds, []);
   });
+
+  it('bosluk iceren path lerde cd komutunu tirnaklar', () => {
+    const spaceManifest = {
+      project: { root: '../My Project' },
+      stack: { orm: 'prisma', orm_path: 'src/db' },
+    };
+    const cmds = getMigrationCommands(spaceManifest, 'prisma');
+    assert.ok(cmds.length > 0);
+    for (const [, cmd] of cmds) {
+      assert.ok(cmd.startsWith('cd "'), `path tirnakli olmali: ${cmd}`);
+      assert.ok(!cmd.startsWith('cd "../My Project" &&') === false || cmd.includes('cd "'), `tirnaklar dogru olmali: ${cmd}`);
+    }
+  });
 });
 
 // ─────────────────────────────────────────────────────
@@ -542,6 +555,18 @@ describe('SIMPLE_GENERATORS', () => {
     assert.ok(result.includes('api'));
     assert.ok(result.includes('web'));
     assert.ok(result.includes('npm test'));
+  });
+
+  it('VERIFICATION_COMMANDS bosluk iceren path leri tirnaklar', () => {
+    const spaceManifest = {
+      project: {
+        subprojects: [
+          { name: 'api', path: '../My Project/apps/api', test_command: 'npm test' },
+        ],
+      },
+    };
+    const result = SIMPLE_GENERATORS.VERIFICATION_COMMANDS(spaceManifest, 'md');
+    assert.ok(result.includes('cd "../My Project/apps/api"'), 'path tirnakli olmali');
   });
 
   it('MIGRATION_COMMANDS prisma komutlarini uretir', () => {
