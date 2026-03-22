@@ -411,7 +411,8 @@ function getCodebasePath(manifest) {
 function getSubprojectPath(manifest, sp) {
   if (sp.path) {
     if (sp.path.startsWith('../') || sp.path.startsWith('/')) return sp.path;
-    return `${getCodebasePath(manifest)}/${sp.path}`;
+    const cleanPath = sp.path.replace(/^\.\//, '');
+    return `${getCodebasePath(manifest)}/${cleanPath}`;
   }
   return `${getCodebasePath(manifest)}/${sp.name}`;
 }

@@ -543,6 +543,16 @@ describe('getSubprojectPath', () => {
     const sp = { name: 'api' };
     assert.strictEqual(getSubprojectPath(manifest, sp), '../MyProject/api');
   });
+
+  it('sp.path / ile basliyorsa oldugu gibi kullanir', () => {
+    const sp = { name: 'api', path: '/opt/project/api' };
+    assert.strictEqual(getSubprojectPath(testManifest, sp), '/opt/project/api');
+  });
+
+  it('sp.path ./ ile basliyorsa normalize eder', () => {
+    const sp = { name: 'api', path: './apps/api' };
+    assert.strictEqual(getSubprojectPath(testManifest, sp), '../Codebase/apps/api');
+  });
 });
 
 describe('getFileExtensions', () => {
@@ -1211,6 +1221,13 @@ describe('hasTypeScript', () => {
     const result = SIMPLE_GENERATORS.GIT_PRECOMMIT_FORMAT(prettierManifest);
     assert.ok(result.includes('xargs -0'), 'xargs -0 kullanilmali');
     assert.ok(!result.includes('| xargs npx'), 'duz xargs olmamali');
+  });
+
+  it('GIT_PREPUSH_DESTRUCTIVE xargs -0 kullaniyor (bosluklu path destegi)', () => {
+    const manifest = { stack: { orm: 'prisma' } };
+    const result = SIMPLE_GENERATORS.GIT_PREPUSH_DESTRUCTIVE(manifest);
+    assert.ok(result.includes('xargs -0'), 'xargs -0 kullanilmali');
+    assert.ok(!result.includes('| xargs git'), 'duz xargs olmamali');
   });
 
   it('null manifest icin false (optional chaining)', () => {
