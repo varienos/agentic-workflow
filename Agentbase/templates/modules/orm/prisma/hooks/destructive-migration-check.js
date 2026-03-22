@@ -112,7 +112,10 @@ function scanForDestructiveChanges(sql) {
       const lines = sql.split('\n');
       const matchingLines = lines
         .map((line, idx) => ({ line: line.trim(), lineNum: idx + 1 }))
-        .filter(({ line }) => pattern.test(line));
+        .filter(({ line }) => {
+          pattern.lastIndex = 0;
+          return pattern.test(line);
+        });
 
       findings.push({
         label,

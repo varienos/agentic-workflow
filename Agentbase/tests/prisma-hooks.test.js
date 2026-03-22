@@ -149,4 +149,37 @@ describe('destructive-migration-check hook', () => {
 
     assert.equal(dropTable.count, 2);
   });
+
+  it('art arda eslesen satirlarin hepsi ornek listesinde gorunuyor', () => {
+    const hookPath = path.join(
+      __dirname,
+      '..',
+      'templates',
+      'modules',
+      'orm',
+      'prisma',
+      'hooks',
+      'destructive-migration-check.js'
+    );
+    const { scanForDestructiveChanges } = loadModuleExports(hookPath, {
+      exports: ['scanForDestructiveChanges'],
+    });
+
+    const sql = [
+      'DROP TABLE "users";',
+      'DROP TABLE "posts";',
+      'DROP TABLE "comments";',
+      'DROP TABLE "likes";',
+    ].join('\n');
+
+    const findings = scanForDestructiveChanges(sql);
+    const dropTable = findings.find(item => item.label === 'DROP TABLE');
+
+    assert.equal(dropTable.count, 4, 'count 4 olmali');
+    assert.equal(dropTable.lines.length, 4, 'tum eslesen satirlar listelenmeli');
+    assert.ok(dropTable.lines.some(l => l.line.includes('users')), 'users satiri olmali');
+    assert.ok(dropTable.lines.some(l => l.line.includes('posts')), 'posts satiri olmali');
+    assert.ok(dropTable.lines.some(l => l.line.includes('comments')), 'comments satiri olmali');
+    assert.ok(dropTable.lines.some(l => l.line.includes('likes')), 'likes satiri olmali');
+  });
 });
