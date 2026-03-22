@@ -7,6 +7,9 @@
     "generate": "node generate.js",
     "test": "node --test generate.test.js tests/*.test.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "js-yaml": "^4.1.0"
   }

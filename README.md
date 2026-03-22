@@ -68,7 +68,7 @@ Not: Bu depodaki bazı komut dosyaları örnek veya çekirdek içerik olarak yer
 
 - [Claude Code CLI](https://docs.anthropic.com/claude-code)
 - [Backlog.md CLI](https://github.com/MrLesk/Backlog.md) — `npm i -g backlog.md`
-- Node.js ve npm
+- Node.js 18+ ve npm
 - [jq](https://jqlang.github.io/jq/) — JSON işlemci, hook kuralları için gerekli (`brew install jq` veya `apt install jq`)
 - Git 2.38+ — pre-push hook'undaki `git merge-tree --write-tree` desteği için gerekli
 
