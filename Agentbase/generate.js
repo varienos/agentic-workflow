@@ -213,8 +213,8 @@ function processConditionalBlock(block, activeModules, manifest) {
       const forbiddenRules = getForbiddenRules(manifest);
       for (const rule of forbiddenRules) {
         const command = value.template.command
-          .replace('{{FORBIDDEN_PATTERN}}', rule.pattern)
-          .replace('{{FORBIDDEN_REASON}}', rule.reason);
+          .replace('{{FORBIDDEN_PATTERN}}', escapeForJqShell(rule.pattern))
+          .replace('{{FORBIDDEN_REASON}}', escapeForJqShell(rule.reason));
         entries.push({
           _hookEntry: {
             type: value.template.type,
@@ -270,6 +270,17 @@ function processConditionalBlock(block, activeModules, manifest) {
 // ─────────────────────────────────────────────────────
 // YARDIMCI FONKSIYONLAR
 // ─────────────────────────────────────────────────────
+
+/**
+ * Shell single-quote ve jq double-quote icin escape eder.
+ * Kullanim: forbidden_commands template'indeki pattern/reason degerleri.
+ */
+function escapeForJqShell(str) {
+  return str
+    .replace(/\\/g, '\\\\')    // jq: \ → \\
+    .replace(/"/g, '\\"')      // jq: " → \"
+    .replace(/'/g, "'\\''");   // shell: ' → '\''
+}
 
 /**
  * Manifest'ten aktif modul setini cikarir.
@@ -1506,6 +1517,7 @@ function main() {
 // ─────────────────────────────────────────────────────
 
 module.exports = {
+  escapeForJqShell,
   extractBlockNames,
   fillBlocks,
   findManifestArg,

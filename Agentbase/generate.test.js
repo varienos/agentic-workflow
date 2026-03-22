@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
 const path = require('path');
 
 const {
+  escapeForJqShell,
   extractBlockNames,
   fillBlocks,
   findManifestArg,
@@ -975,5 +976,62 @@ describe('findManifestArg', () => {
   it('manifest yoksa null doner', () => {
     const args = ['--dry-run', '--output-dir', '/tmp'];
     assert.strictEqual(findManifestArg(args), null);
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// escapeForJqShell — FORBIDDEN KOMUT ESCAPE TESTLERI
+// ─────────────────────────────────────────────────────
+
+describe('escapeForJqShell', () => {
+  it('apostrof iceren pattern i escape eder', () => {
+    const result = escapeForJqShell("git push 'origin'");
+    // Shell single-quote escape: ' → '\'' uygulanmis olmali
+    assert.ok(result.includes("'\\''"), 'shell single-quote escape icermeli');
+    assert.strictEqual(result, "git push '\\''origin'\\''");
+  });
+
+  it('cift tirnak iceren reason i escape eder', () => {
+    const result = escapeForJqShell('Don\'t use "eval"');
+    assert.ok(result.includes('\\"eval\\"'), 'cift tirnak jq-escaped olmali');
+  });
+
+  it('backslash iceren pattern i escape eder', () => {
+    const result = escapeForJqShell('path\\to\\file');
+    assert.ok(result.includes('\\\\'), 'backslash escaped olmali');
+  });
+
+  it('ozel karakter icermeyen string e dokunmaz', () => {
+    assert.strictEqual(escapeForJqShell('rm -rf /'), 'rm -rf /');
+  });
+
+  it('forbidden_commands template de escape uygulanir', () => {
+    const manifest = {
+      modules: { active: {} },
+      rules: {
+        forbidden: [
+          { type: 'block', pattern: "git push 'origin'", reason: "Don't push directly" },
+        ],
+      },
+    };
+    const obj = {
+      hooks: [],
+      __GENERATE__TEST__: {
+        forbidden_commands: {
+          template: {
+            type: 'command',
+            command: "jq -r 'if test(\"{{FORBIDDEN_PATTERN}}\") then {\"decision\":\"block\",\"reason\":\"{{FORBIDDEN_REASON}}\"} end'",
+            timeout: 5,
+          },
+        },
+      },
+    };
+
+    const result = processJsonGenerateKeys(obj, manifest);
+    const cmd = result.obj.hooks[0].command;
+    // Shell single-quote escape uygulanmis olmali: ' → '\''
+    assert.ok(cmd.includes("'\\''"), 'shell single-quote escape icermeli');
+    // Reason daki apostrof de escape edilmis olmali
+    assert.ok(cmd.includes("Don'\\''t"), 'reason apostrofu escape edilmeli');
   });
 });
