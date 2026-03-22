@@ -238,9 +238,12 @@ function getActiveModules(manifest) {
   if (Array.isArray(active)) {
     active.forEach(m => modules.add(m));
   } else if (typeof active === 'object') {
-    // Kategorili format: { orm: ["prisma"], backend: ["express"], ... }
-    for (const values of Object.values(active)) {
-      if (Array.isArray(values)) {
+    // Kategorili format: { orm: ["prisma"], backend: ["nodejs/express"], security: true, ... }
+    for (const [key, values] of Object.entries(active)) {
+      if (values === true) {
+        // Ust seviye modul: key kendisi modul (security, monorepo)
+        modules.add(key);
+      } else if (Array.isArray(values)) {
         values.forEach(m => modules.add(m));
       } else if (typeof values === 'string') {
         modules.add(values);
@@ -480,9 +483,11 @@ const SIMPLE_GENERATORS = {
   HEALTH_CHECK_URL(manifest) {
     const envs = manifest?.environments || [];
     const prodEnv = envs.find(e => e.name === 'production' || e.name === 'prod');
-    const url = prodEnv?.health_check || prodEnv?.url;
-    if (url) {
-      return `## Health Check\n\n\`${url}/health\``;
+    if (prodEnv?.health_check) {
+      return `## Health Check\n\n\`${prodEnv.health_check}\``;
+    }
+    if (prodEnv?.url) {
+      return `## Health Check\n\n\`${prodEnv.url}/health\``;
     }
     return `## Health Check\n\n\`<PROJE_URL>/health\``;
   },
@@ -1284,6 +1289,10 @@ function scanSkeletonFiles(manifest) {
                 }
               }
               if (!matched) continue;
+            } else {
+              // Ust seviye modul: modules/security/commands/... → parts[1] = "security"
+              const category = parts[1];
+              if (!activeModules.has(category)) continue;
             }
           }
         }

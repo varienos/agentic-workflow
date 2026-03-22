@@ -369,6 +369,14 @@ describe('getActiveModules', () => {
     const modules = getActiveModules({});
     assert.strictEqual(modules.size, 0);
   });
+
+  it('boolean true ile ust seviye modulleri parse eder', () => {
+    const manifest = { modules: { active: { security: true, monorepo: true, orm: ['prisma'] } } };
+    const modules = getActiveModules(manifest);
+    assert.ok(modules.has('security'));
+    assert.ok(modules.has('monorepo'));
+    assert.ok(modules.has('prisma'));
+  });
 });
 
 describe('getFileExtensions', () => {
@@ -660,5 +668,54 @@ describe('scanSkeletonFiles — backend leaf varyant secimi', () => {
         `${variant} skeleton dosyalari dahil olmali`
       );
     }
+  });
+
+  it('sadece prisma aktifken security ve monorepo secilMIYOR', () => {
+    const manifest = { modules: { active: { orm: ['prisma'] } } };
+    const files = scanSkeletonFiles(manifest);
+    const relFiles = files.map(f => path.relative(TEMPLATES_DIR, f));
+
+    assert.ok(
+      !relFiles.some(f => f.includes('security')),
+      'security dosyalari dahil olmamali'
+    );
+    assert.ok(
+      !relFiles.some(f => f.includes('monorepo')),
+      'monorepo dosyalari dahil olmamali'
+    );
+  });
+
+  it('security: true ile sadece security dosyalari seciliyor', () => {
+    const manifest = { modules: { active: { security: true } } };
+    const files = scanSkeletonFiles(manifest);
+    const relFiles = files.map(f => path.relative(TEMPLATES_DIR, f));
+
+    assert.ok(
+      relFiles.some(f => f.includes('security')),
+      'security skeleton dosyalari dahil olmali'
+    );
+    assert.ok(
+      !relFiles.some(f => f.includes('monorepo')),
+      'monorepo dosyalari dahil olmamali'
+    );
+    assert.ok(
+      !relFiles.some(f => f.includes('deploy')),
+      'deploy dosyalari dahil olmamali'
+    );
+  });
+
+  it('monorepo: true ile sadece monorepo dosyalari seciliyor', () => {
+    const manifest = { modules: { active: { monorepo: true } } };
+    const files = scanSkeletonFiles(manifest);
+    const relFiles = files.map(f => path.relative(TEMPLATES_DIR, f));
+
+    assert.ok(
+      relFiles.some(f => f.includes('monorepo')),
+      'monorepo skeleton dosyalari dahil olmali'
+    );
+    assert.ok(
+      !relFiles.some(f => f.includes('security')),
+      'security dosyalari dahil olmamali'
+    );
   });
 });
