@@ -128,7 +128,7 @@ Backlog'daki tüm açık görevleri 4 boyutlu skorlama ile önceliklendirir. Her
 Birden fazla görevi faz bazlı otonom olarak işler. task-master'in önceliklendirmesini kullanarak görevleri fazlara atar, her fazda sırayla veya paralel olarak implement eder, faz sonunda otomatik code review yapar. Manuel faz desteği vardır — bazı görevler insan müdahalesi gerektiğinde conductor durur ve bekler. State dosyası ile kesintiye uğradığında kaldığından devam eder.
 
 ```
-/task-conductor              # top 5 (varsayılan)
+/task-conductor top 5        # En yüksek öncelikli 5 görev
 /task-conductor all          # Tüm açık görevler
 /task-conductor 3,5,8        # Virgülle ayrılmış görev ID'leri
 /task-conductor keyword auth # Keyword ile görev arama
