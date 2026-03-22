@@ -1,16 +1,18 @@
 ![Agentic Workflow banner](Docs/assets/agentic-workflow-banner.png)
 
-Yeni veya mevcut bir yazılım projesine Claude Code odaklı ve Backlog.md ile entegre çalışan modüler bir ajan destekli geliştirme katmanı kurmak için hazırlanmış bir şablon deposudur.
+Claude Code ile yazılım geliştirmenin tüm yaşam döngüsünü yöneten bir workflow sistemidir. Görev planlamadan code review'a, bug fix'ten deploy kontrolüne kadar her adımı yapılandırılmış komutlar, ajanlar ve otomatik koruma mekanizmalarıyla yönetir.
 
-Mevcut bir projeye entegre edilebildiği gibi, sıfırdan başlayan projelerde de kullanılabilir. Bootstrap röportajda projeyi tanımlar, workflow'u kurar ve ilk görevleri oluşturur — kodlamaya hemen başlanır.
+Sıfırdan yeni bir proje başlatırken de, mevcut bir projeye entegre ederken de çalışır. `/bootstrap` komutu projenizi tanır, sizinle kısa bir röportaj yapar ve projenize özel workflow dosyalarını üretir.
 
 ## Ne Sağlar?
 
-- Hedef projeyi otomatik analiz eder; proje tipi, alt projeler, teknoloji yığını ve aktif modül adaylarını çıkarır.
-- Eksik kalan bilgileri kısa ve fazlı bir röportajla toplar.
-- Projeye özel bir manifest üretir ve bunu üretim için tek kaynak olarak kullanır.
-- İhtiyaca göre `.claude/commands`, `.claude/agents`, `.claude/hooks`, `.claude/rules` ve destek dokümanlarını oluşturur.
-- Agentbase ve Codebase ayrımıyla yapılandırma katmanını uygulama kodundan izole eder.
+- **Otonom görev yönetimi** — Backlog'dan görev al, planla, implement et, test et, commit et, kapat. Tek komutla.
+- **Otomatik code review** — 3 paralel agent ile her değişikliği inceler: kod kalitesi, sessiz hatalar, regresyon riski.
+- **Akıllı bug fix** — Root cause analizi, maks 3 hipotez, minimal fix, regresyon testi. Sonsuz derinliğe dalmaz.
+- **Deploy güvenlik ağı** — Push öncesi 7 adımlı kontrol, deploy sonrası doğrulama, rollback rehberi.
+- **Proje-spesifik kurallar** — Stack'inize göre hook'lar, framework kuralları ve koruma mekanizmaları otomatik üretilir.
+- **Canlı oturum izleme** — Birden fazla Claude Code oturumunu tek terminal ekranından takip edin.
+- **Worktree-dostu mimari** — Agentbase/Codebase ayrımı ile tek config, çok worktree, paralel geliştirme.
 
 ## Temel Yaklaşım
 
