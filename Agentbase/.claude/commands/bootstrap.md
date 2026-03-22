@@ -1868,7 +1868,7 @@ backlog task create "Ilk feature'i planla ve implement et" \
 🔒 Git Hook Kurulumu:
    Codebase'de commit/push kontrollerini aktif etmek icin:
 
-   cd ../Codebase && git config core.hooksPath ../Agentbase/git-hooks/
+   cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"
 
    Bu komut pre-commit (test, lint, guvenlik) ve pre-push (migration,
    env sync, localhost leak) kontrollerini devreye sokar.

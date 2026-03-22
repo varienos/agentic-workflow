@@ -4,7 +4,7 @@
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 #
 # Bu hook Codebase'de git commit yapildiginda calisir.
-# Kurulum: cd ../Codebase && git config core.hooksPath ../Agentbase/git-hooks/
+# Kurulum: cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"
 #
 # Bypass: TESTS_VERIFIED=1 git commit -m "..."
 #
