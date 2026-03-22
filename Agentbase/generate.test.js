@@ -931,6 +931,28 @@ describe('SIMPLE_GENERATORS', () => {
     assert.ok(!result.includes('comv2'), 'URL kirilmamali');
   });
 
+  it('TEST_FILE_MAPPING Node.js icin kaynak-test eslestirme uretir', () => {
+    const result = SIMPLE_GENERATORS.TEST_FILE_MAPPING(testManifest, 'js');
+    assert.ok(result.includes('sourcePattern'), 'sourcePattern alani olmali');
+    assert.ok(result.includes('testPath'), 'testPath alani olmali');
+    assert.ok(result.includes('services'), 'services pattern olmali');
+    assert.ok(result.includes('controllers'), 'controllers pattern olmali');
+  });
+
+  it('TEST_FILE_MAPPING Python/Django icin pattern uretir', () => {
+    const manifest = { stack: { primary: 'Python', detected: ['Django'], test_framework: 'pytest' } };
+    const result = SIMPLE_GENERATORS.TEST_FILE_MAPPING(manifest, 'js');
+    assert.ok(result.includes('views'), 'views pattern olmali');
+    assert.ok(result.includes('test_'), 'test_ prefix olmali');
+    assert.ok(result.includes('pytest'), 'framework pytest olmali');
+  });
+
+  it('TEST_FILE_TABLE markdown tablosu uretir', () => {
+    const result = SIMPLE_GENERATORS.TEST_FILE_TABLE(testManifest);
+    assert.ok(result.includes('Kaynak Pattern'), 'tablo baslik olmali');
+    assert.ok(result.includes('__tests__'), 'test dizin yolu olmali');
+  });
+
   it('SUBPROJECT_CONFIGS Codebase-relative path uretiyor (../Codebase prefix yok)', () => {
     const result = SIMPLE_GENERATORS.SUBPROJECT_CONFIGS(testManifest, 'js');
     assert.ok(result.includes("path: 'api'"), 'api Codebase-relative olmali');

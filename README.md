@@ -16,13 +16,14 @@ Mevcut bir projeye entegre edebilir veya sıfırdan yeni bir proje başlatabilir
 
 ## Temel Yaklaşım
 
-Bu repo üç ana çalışma alanı üzerine kuruludur:
+Bu repo dört ana çalışma alanı üzerine kuruludur:
 
 | Yol | Amaç |
 | --- | --- |
 | `Agentbase/` | Şablonlar, üretim mantığı, Claude komutları ve yardımcı araçlar |
 | `Codebase/` | Üzerinde çalışılacak gerçek proje kodu |
 | `Docs/agentic/` | Bootstrap tarafından üretilen manifest dosyası (`project-manifest.yaml`) |
+| `backlog/` | Görev yaşam döngüsü — Backlog.md CLI ile yönetilen task'lar |
 
 Bu ayrımın iki önemli sonucu vardır:
 
