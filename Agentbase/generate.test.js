@@ -679,6 +679,31 @@ describe('SIMPLE_GENERATORS', () => {
     assert.ok(result.includes('/pages\\/'), 'Next.js pages/ pattern i olmali');
   });
 
+  it('LAYER_TESTS nextjs (noktasiz) varyanti da app/ ve pages/ ekler', () => {
+    const manifest = {
+      project: {
+        subprojects: [{ name: 'web', path: '../Codebase/web', test_command: 'npm test' }],
+      },
+      stack: { detected: ['nextjs'] },
+    };
+    const result = SIMPLE_GENERATORS.LAYER_TESTS(manifest, 'js');
+    assert.ok(result.includes('/app\\/'), 'nextjs (noktasiz) app/ pattern i olmali');
+    assert.ok(result.includes('/pages\\/'), 'nextjs (noktasiz) pages/ pattern i olmali');
+  });
+
+  it('LAYER_TESTS Laravel icin app/, routes/, database/ ekler', () => {
+    const manifest = {
+      project: {
+        subprojects: [{ name: 'api', path: '../Codebase/api', test_command: 'php artisan test' }],
+      },
+      stack: { detected: ['Laravel'], orm: 'eloquent' },
+    };
+    const result = SIMPLE_GENERATORS.LAYER_TESTS(manifest, 'js');
+    assert.ok(result.includes('/app\\/'), 'Laravel app/ pattern i olmali');
+    assert.ok(result.includes('/routes\\/'), 'Laravel routes/ pattern i olmali');
+    assert.ok(result.includes('/database\\/'), 'Laravel/Eloquent database/ pattern i olmali');
+  });
+
   it('LAYER_TESTS cd iceren test_command da ek cd eklemez', () => {
     const cdManifest = {
       project: {
@@ -1023,6 +1048,19 @@ describe('escapeForJqShell', () => {
 
   it('ozel karakter icermeyen string e dokunmaz', () => {
     assert.strictEqual(escapeForJqShell('rm -rf /'), 'rm -rf /');
+  });
+
+  it('newline ve tab karakterlerini escape eder', () => {
+    const result = escapeForJqShell('line1\nline2\ttab');
+    assert.ok(result.includes('\\n'), 'newline escape edilmeli');
+    assert.ok(result.includes('\\t'), 'tab escape edilmeli');
+    assert.ok(!result.includes('\n'), 'ham newline olmamali');
+    assert.ok(!result.includes('\t'), 'ham tab olmamali');
+  });
+
+  it('dolar isaretini escape eder', () => {
+    const result = escapeForJqShell('echo $HOME');
+    assert.ok(result.includes('\\$HOME'), 'dolar isareti escape edilmeli');
   });
 
   it('forbidden_commands template de escape uygulanir', () => {

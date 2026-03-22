@@ -274,11 +274,16 @@ function processConditionalBlock(block, activeModules, manifest) {
 /**
  * Shell single-quote ve jq double-quote icin escape eder.
  * Kullanim: forbidden_commands template'indeki pattern/reason degerleri.
+ * Not: pattern degerleri jq test() icinde regex olarak yorumlanir —
+ * regex meta-karakterleri (.*[]() vb.) literal olarak escape edilmez.
  */
 function escapeForJqShell(str) {
   return str
     .replace(/\\/g, '\\\\')    // jq: \ → \\
     .replace(/"/g, '\\"')      // jq: " → \"
+    .replace(/\n/g, '\\n')     // jq: newline → \n
+    .replace(/\t/g, '\\t')     // jq: tab → \t
+    .replace(/\$/g, '\\$')     // shell: $ → \$ (degisken interpolasyonunu engelle)
     .replace(/'/g, "'\\''");   // shell: ' → '\''
 }
 
