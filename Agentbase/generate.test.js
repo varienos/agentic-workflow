@@ -558,6 +558,23 @@ describe('SIMPLE_GENERATORS', () => {
     assert.ok(result.includes('npm test'));
   });
 
+  it('VERIFICATION_COMMANDS cd iceren test_command da ek cd eklemez', () => {
+    const cdManifest = {
+      project: {
+        subprojects: [
+          { name: 'api', path: '../Codebase/api', test_command: 'cd backend && php spark test' },
+          { name: 'web', path: '../Codebase/web', test_command: 'npm test' },
+        ],
+      },
+    };
+    const result = SIMPLE_GENERATORS.VERIFICATION_COMMANDS(cdManifest, 'md');
+    // cd ile baslayan komut olduğu gibi kullanilmali
+    assert.ok(result.includes('cd backend && php spark test'), 'cd li komut dokunulmamali');
+    assert.ok(!result.includes('cd "../Codebase/api" && cd backend'), 'cift cd olmamali');
+    // Normal komut cd ile sarmalanmali
+    assert.ok(result.includes('cd "../Codebase/web" && npm test'), 'normal komut cd ile sarmalanmali');
+  });
+
   it('VERIFICATION_COMMANDS bosluk iceren path leri tirnaklar', () => {
     const spaceManifest = {
       project: {
@@ -610,6 +627,20 @@ describe('SIMPLE_GENERATORS', () => {
     const result = SIMPLE_GENERATORS.LAYER_TESTS(testManifest, 'js');
     assert.ok(result.includes("layer: 'api'"));
     assert.ok(result.includes("layer: 'web'"));
+  });
+
+  it('LAYER_TESTS cd iceren test_command da ek cd eklemez', () => {
+    const cdManifest = {
+      project: {
+        subprojects: [
+          { name: 'api', path: '../Codebase/api', test_command: 'cd backend && php spark test' },
+        ],
+      },
+      stack: {},
+    };
+    const result = SIMPLE_GENERATORS.LAYER_TESTS(cdManifest, 'js');
+    assert.ok(result.includes('cd backend && php spark test'), 'cd li komut dokunulmamali');
+    assert.ok(!result.includes('cd "../Codebase/api" && cd backend'), 'cift cd olmamali');
   });
 
   it('HEALTH_CHECK_URL health_check alani varsa oldugu gibi kullanir', () => {

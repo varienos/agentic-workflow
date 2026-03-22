@@ -618,7 +618,7 @@ const SIMPLE_GENERATORS = {
       '',
       '| Islem | Komut |',
       '|---|---|',
-      `| Test | \`cd "${codebasePath}" && ${testCmd}\` |`,
+      `| Test | \`${testCmd.startsWith('cd ') ? testCmd : `cd "${codebasePath}" && ${testCmd}`}\` |`,
     ].join('\n');
   },
 
