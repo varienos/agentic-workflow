@@ -13,7 +13,7 @@
  * - stdin'den gelen veriyi her zaman stdout'a yazar
  *
  * Sorumluluk ayrimi:
- * - test-reminder.js: ilk degisiklikte basit hatirlatma ("test calistirmayi unutmayin")
+ * - test-enforcer.js: dosya bazli test eslestirme, eksik test dosyasi icin systemMessage talimati
  * - auto-test-runner.js: edit birikimini takip eder, debounce ile akilli sinyal uretir
  * - Final verification (Step 5): task tamamlamadan once ZORUNLU test calistirma
  */

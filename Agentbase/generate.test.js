@@ -664,10 +664,10 @@ describe('resolveOutputPath', () => {
     assert.strictEqual(result, path.join(outputDir, '.claude', 'agents', 'code-review.md'));
   });
 
-  it('core/hooks/test-reminder.skeleton.js → .claude/hooks/test-reminder.js', () => {
-    const skeleton = path.join(TEMPLATES_DIR, 'core', 'hooks', 'test-reminder.skeleton.js');
+  it('core/hooks/test-enforcer.skeleton.js → .claude/hooks/test-enforcer.js', () => {
+    const skeleton = path.join(TEMPLATES_DIR, 'core', 'hooks', 'test-enforcer.skeleton.js');
     const result = resolveOutputPath(skeleton, outputDir);
-    assert.strictEqual(result, path.join(outputDir, '.claude', 'hooks', 'test-reminder.js'));
+    assert.strictEqual(result, path.join(outputDir, '.claude', 'hooks', 'test-enforcer.js'));
   });
 
   it('core/git-hooks/pre-commit.skeleton → git-hooks/pre-commit', () => {

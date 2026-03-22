@@ -12,7 +12,7 @@ const {
 
 const HOOKS = [
   'core/hooks/code-review-check.skeleton.js',
-  'core/hooks/test-reminder.skeleton.js',
+  'core/hooks/test-enforcer.skeleton.js',
   'modules/api-docs/openapi/hooks/openapi-sync-check.skeleton.js',
   'modules/monorepo/hooks/auto-format.skeleton.js',
   'modules/orm/prisma/hooks/prisma-db-push-guard.js',

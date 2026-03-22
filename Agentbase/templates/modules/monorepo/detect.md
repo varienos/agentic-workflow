@@ -22,4 +22,4 @@
 
 - task-hunter: Coklu dizin arama stratejisi eklenir
 - task-review: Katmanlar arasi (cross-layer) analiz eklenir
-- test-reminder: Alt proje bazinda test komutlari eklenir
+- test-enforcer: Alt proje bazinda test eslestirme ve zorlama eklenir

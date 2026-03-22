@@ -197,6 +197,37 @@ describe('session-tracker observability', () => {
     assert.equal(state.recent_events.at(-1).kind, 'write');
     assert.ok(state.files.written.some(f => f.includes('utils.js')));
   });
+
+  it('tool_input.path fallback ile Write event dogru kaydediliyor', t => {
+    const projectRoot = createTempProject(t);
+    const hookPath = materializeHook(projectRoot, 'core/hooks/session-tracker.js');
+
+    // file_path yerine path kullanan payload
+    runHook(hookPath, makeToolPayload(
+      { content: 'icerik', path: '/tmp/proje/src/helper.ts' },
+      'File written successfully'
+    ));
+
+    const state = readSessionState(projectRoot);
+    assert.equal(state.phase, 'implementing');
+    assert.ok(state.files.written.some(f => f.includes('helper.ts')), 'path ile gelen dosya written listesinde olmali');
+    assert.equal(state.tools.by_type.Write, 1, 'Write olarak siniflandirilmali, Unknown degil');
+  });
+
+  it('tool_input.path fallback ile Read event dogru kaydediliyor', t => {
+    const projectRoot = createTempProject(t);
+    const hookPath = materializeHook(projectRoot, 'core/hooks/session-tracker.js');
+
+    // file_path yerine path kullanan Read payload
+    runHook(hookPath, makeToolPayload(
+      { path: '/tmp/proje/src/config.json' },
+      'dosya icerigi...'
+    ));
+
+    const state = readSessionState(projectRoot);
+    assert.ok(state.files.read.some(f => f.includes('config.json')), 'path ile gelen dosya read listesinde olmali');
+    assert.equal(state.tools.by_type.Read, 1, 'Read olarak siniflandirilmali, Unknown degil');
+  });
 });
 
 describe('session-monitor backlog enrichment', () => {

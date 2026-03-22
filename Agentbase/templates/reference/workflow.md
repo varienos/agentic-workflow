@@ -200,7 +200,7 @@ Bu model özellikle kritik iş mantığında güçlüdür.
 
 | Hat | Ne zaman | Kim için | Davranış |
 |---|---|---|---|
-| **test-reminder hook** | Her Edit/Write | Agent | Uyarır, bloklamaz. Güvenlik taraması da aynı anda çalışır |
+| **test-enforcer hook** | Her Edit/Write | Agent | systemMessage ile test yazma/guncelleme talimati verir. Test dosyasi yoksa olusturulmasini, varsa guncellenmesini ister |
 | **Doğrulama kapısı + pre-commit** | Commit anı | Agent + İnsan | Agent: syntax → derleme → test çalıştırır, TESTS_VERIFIED=1 bayrağı koyar. İnsan: hook testleri koşar + baseline comparison |
 | **CI pipeline** | Push/PR | Herkes | Paralel job'lar, fail → merge engellenir. Son savunma hattı |
 

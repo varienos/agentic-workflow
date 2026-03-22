@@ -1318,7 +1318,7 @@ Teammate'ler skeleton dosyalarini islerken hangi GENERATE bloklarinin hangi dosy
 | regression-analyzer.skeleton.md (agent) | CODEBASE_CONTEXT, PROJECT_PATHS |
 | workflow-lifecycle.skeleton.md (rule) | COMMIT_CONVENTION, DEPLOY_TOPOLOGY, DEPLOY_STEPS, ROLLBACK_PLATFORM_STEPS, ENVIRONMENT_DIFFERENCES, TEAM_REVIEW_POLICY, HOOK_BEHAVIORS, CRITICAL_RULES |
 | code-review-check.skeleton.js (hook — JS format) | SECURITY_PATTERNS, FILE_EXTENSIONS |
-| test-reminder.skeleton.js (hook — JS format) | LAYER_TESTS, CODE_EXTENSIONS |
+| test-enforcer.skeleton.js (hook — JS format) | TEST_FILE_MAPPING, CODE_EXTENSIONS |
 | auto-test-runner.skeleton.js (hook — JS format) | LAYER_TESTS, CODE_EXTENSIONS |
 | team-trigger.skeleton.js (hook — JS format) | LAYER_TESTS |
 | backend-expert.skeleton.md (agent) | CODEBASE_CONTEXT, BACKEND_FRAMEWORK_RULES |
