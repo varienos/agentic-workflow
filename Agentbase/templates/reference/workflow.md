@@ -22,7 +22,7 @@ Bootstrap → Planner → Hunter → Review (ops.) → Quality → Push
 | **Master** | Opus | `/task-master` | Backlog'u skorlayıp öncelik sıralaması çıkarır | İsteğe bağlı |
 | **Planner** | **Opus 4.6 (max)** | `/task-plan` | Task oluşturur, derin analiz, model önerisi, kapsam bölme, review kararı | Her task |
 | **Hunter** | Sonnet 4.6 | `/task-hunter` | Task'ı uygular — kod yazar, test yazar, doğrular, commit eder | Her task |
-| **Review** | Sonnet (temiz) | `/task-review` | Paralel 2 agent: code-reviewer + silent-failure-hunter | Opsiyonel — planner karar verir |
+| **Review** | Sonnet (temiz) | `/task-review` | 3+1 agent: code-reviewer + silent-failure-hunter + regression-analyzer + kosullu devils-advocate | Opsiyonel — planner karar verir |
 | **Quality** | Sonnet (temiz) | — | Standartlara uygunluk: CONVENTIONS.md, naming, docblock, lint | Review → otomatik, tek başına da tetiklenebilir |
 | **Bug Hunter** | Sonnet 4.6 | `/bug-hunter` | Root cause bul, düzelt, test yaz, commit et | Bug bildirimi geldiğinde |
 | **Bug Review** | Sonnet (temiz) | `/bug-review` | Paralel 3 agent: kalite + sessiz hata + regresyon | Bug fix sonrası |

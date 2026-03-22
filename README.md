@@ -7,9 +7,9 @@ Mevcut bir projeye entegre ederken veya en azından başlangıç scaffold'u olan
 ## Ne Sağlar?
 
 - **Otonom görev yönetimi** — Backlog'dan görev al, planla, implement et, test et, commit et, kapat. Tek komutla.
-- **Otomatik code review** — 3 paralel agent ile her değişikliği inceler: kod kalitesi, sessiz hatalar, regresyon riski.
+- **Otomatik code review** — 3+1 agent ile her değişikliği inceler: kod kalitesi, sessiz hatalar, regresyon riski. Güvenlik değişikliklerinde koşullu Devils Advocate perspektifi.
 - **Akıllı bug fix** — Root cause analizi, maks 3 hipotez, minimal fix, regresyon testi. Sonsuz derinliğe dalmaz.
-- **Deploy güvenlik ağı** — Push öncesi 7 adımlı kontrol, deploy sonrası doğrulama, rollback rehberi. Git hook'larının etkinleştirilmesini gerektirir (bkz. Bootstrap Akışı adım 7).
+- **Deploy güvenlik ağı** — Push öncesi kontrol, deploy sonrası doğrulama, rollback rehberi. Kontrol adımları deploy platformuna göre değişir (Docker/Coolify: migration + Docker build; Vercel: TypeScript + edge-runtime). Git hook'larının etkinleştirilmesini gerektirir (bkz. Bootstrap Akışı adım 8).
 - **Proje-spesifik kurallar** — Stack'inize göre hook'lar, framework kuralları ve koruma mekanizmaları otomatik üretilir.
 - **Canlı oturum izleme** — Birden fazla Claude Code oturumunu tek terminal ekranından takip edin.
 - **Worktree-dostu mimari** — Agentbase/Codebase ayrımı ile tek config, çok worktree, paralel geliştirme.
@@ -27,7 +27,7 @@ Bu repo üç ana çalışma alanı üzerine kuruludur:
 Bu ayrımın iki önemli sonucu vardır:
 
 - Git işlemleri hedef proje tarafında, yani `Codebase/` içinde yürür.
-- Bootstrap süreci `Codebase/` dizinine yazmaz; üretimi `Agentbase/` ve `Docs/agentic/` altında yapar.
+- Bootstrap süreci `Codebase/` dizinine yazmaz; üretimi `Agentbase/`, `Docs/agentic/` ve root `backlog/` altında yapar.
 
 ### Worktree Avantajı
 
@@ -101,8 +101,9 @@ Claude Code içinde:
 3. Eksik bilgileri fazlı röportajla toplar. Proje, teknik tercih, geliştirici profili ve domain kuralları netleştirilir.
 4. `Docs/agentic/project-manifest.yaml` dosyasını üretir.
 5. Manifeste göre ilgili komutları, ajanları, hook'ları, kuralları ve yardımcı dokümanları oluşturur.
-6. Yeniden çalıştırmalarda `overwrite`, `merge` ve `incremental` senaryolarını destekler.
-7. Git hook'larını etkinleştirir: `cd Codebase && git config core.hooksPath ../Agentbase/git-hooks/` — pre-commit ve pre-push korumalarını devreye alır.
+6. Backlog'u başlatır ve başlangıç görevlerini oluşturur (`backlog/` root dizinde).
+7. Yeniden çalıştırmalarda `overwrite`, `merge` ve `incremental` senaryolarını destekler.
+8. Git hook'larını etkinleştirmeniz için gerekli komutu gösterir (otomatik çalıştırmaz): `cd Codebase && git config core.hooksPath ../Agentbase/git-hooks/`
 
 ## Komutlar
 
@@ -221,14 +222,14 @@ Bu komutlar Bootstrap'in tespit ettiği modüllere göre üretilir — her proje
 
 | Komut | Modül | Varyantlar | Ne Yapar |
 |-------|-------|------------|----------|
-| `/pre-deploy` | Deploy | Docker, Coolify, Vercel | Production push öncesi kontrol: derleme, test, migration, env sync, Docker build. PASS/FAIL/WARN raporu. |
+| `/pre-deploy` | Deploy | Docker, Coolify, Vercel | Production push öncesi kontrol. Docker/Coolify: derleme, test, migration, env sync, Docker build. Vercel: TypeScript, build, env sync, edge-runtime. PASS/FAIL/WARN raporu. |
 | `/post-deploy` | Deploy | Docker, Coolify | Deploy sonrası doğrulama: health check, smoke test, rollback rehberi. Vercel serverless yapısı nedeniyle bu varyantı desteklemez. |
 | `/idor-scan` | Security | — | API endpoint'lerinde IDOR güvenlik açığı taraması — 5 nokta kontrol matrisi. |
 | `/review-module <ad>` | Monorepo | — | Bir modülü uçtan uca denetler — 4 paralel agent, cross-layer analiz. |
 
 ## Canlı Oturum İzleme
 
-Birden fazla Claude Code oturumu paralel çalışırken terminal dashboard ile takip edin:
+Birden fazla Claude Code oturumu paralel çalışırken terminal dashboard ile takip edin. Bu özellik bootstrap tamamlandıktan ve session-tracker hook'u aktif olduktan sonra çalışır — hook materyalize edilmemişse dashboard boş görünür:
 
 ```bash
 cd Agentbase && node bin/session-monitor.js
@@ -275,7 +276,7 @@ Bu template'deki her kural bir production deneyiminden doğmuştur:
 | `prisma db push` yasağı | 7 tablo + 3 sütun production'da kayboldu |
 | 3 hipotez sınırı | Sonsuz root cause aramasının önlenmesi |
 | 4D skorlama | Tutarlı, tekrarlanabilir önceliklendirme |
-| 3-agent paralel review | Tek agent'in kaçırdığı sessiz hataların yakalanması |
+| 3+1 agent paralel review | Tek agent'in kaçırdığı sessiz hataların yakalanması, güvenlik değişikliklerinde adversarial perspektif |
 | Faz bazlı orkestrasyon | Kaotik paralel çalışma yerine kontrollü işlem |
 | Failure cascade tablosu | Aynı hatada 10+ retry döngüsünün önlenmesi |
 | Destructive migration tespiti | DROP TABLE'in production'a fark edilmeden gitmesi |
