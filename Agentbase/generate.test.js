@@ -1181,6 +1181,79 @@ describe('scanSkeletonFiles — standalone modul destegi', () => {
 });
 
 // ─────────────────────────────────────────────────────
+// scanSkeletonFiles — SABIT DOSYA DESTEGI TESTLERI
+// ─────────────────────────────────────────────────────
+
+describe('scanSkeletonFiles — sabit dosya destegi', () => {
+  it('session-tracker.js (sabit core hook) dahil ediliyor', () => {
+    const manifest = { modules: { active: {} } };
+    const files = scanSkeletonFiles(manifest);
+    const relFiles = files.map(f => path.relative(TEMPLATES_DIR, f));
+
+    assert.ok(
+      relFiles.some(f => f.includes('session-tracker.js')),
+      'session-tracker.js core hook olarak dahil olmali'
+    );
+  });
+
+  it('prisma guard hook lari prisma aktifken dahil ediliyor', () => {
+    const manifest = { modules: { active: { orm: ['prisma'] } } };
+    const files = scanSkeletonFiles(manifest);
+    const relFiles = files.map(f => path.relative(TEMPLATES_DIR, f));
+
+    assert.ok(
+      relFiles.some(f => f.includes('prisma-db-push-guard.js')),
+      'prisma-db-push-guard.js dahil olmali'
+    );
+    assert.ok(
+      relFiles.some(f => f.includes('destructive-migration-check.js')),
+      'destructive-migration-check.js dahil olmali'
+    );
+    assert.ok(
+      relFiles.some(f => f.includes('prisma-migration-check.js')),
+      'prisma-migration-check.js dahil olmali'
+    );
+  });
+
+  it('prisma guard hook lari prisma aktif degilken dahil edilMIYOR', () => {
+    const manifest = { modules: { active: { deploy: ['vercel'] } } };
+    const files = scanSkeletonFiles(manifest);
+    const relFiles = files.map(f => path.relative(TEMPLATES_DIR, f));
+
+    assert.ok(
+      !relFiles.some(f => f.includes('prisma-db-push-guard.js')),
+      'prisma hook lari dahil olmamali'
+    );
+  });
+
+  it('framework guard hook lari aktif modulle dahil ediliyor', () => {
+    const manifest = { modules: { active: { backend: ['php/laravel'] } } };
+    const files = scanSkeletonFiles(manifest);
+    const relFiles = files.map(f => path.relative(TEMPLATES_DIR, f));
+
+    assert.ok(
+      relFiles.some(f => f.includes('artisan-guard.js')),
+      'laravel aktifken artisan-guard.js dahil olmali'
+    );
+  });
+
+  it('interview ve reference dosyalari dahil edilMIYOR', () => {
+    const manifest = { modules: { active: {} } };
+    const files = scanSkeletonFiles(manifest);
+    const relFiles = files.map(f => path.relative(TEMPLATES_DIR, f));
+
+    assert.ok(
+      !relFiles.some(f => f.includes('interview/')),
+      'interview dosyalari dahil olmamali'
+    );
+    assert.ok(
+      !relFiles.some(f => f.includes('reference/')),
+      'reference dosyalari dahil olmamali'
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────
 // findManifestArg — CLI ARGUMAN AYRISTIRMA TESTLERI
 // ─────────────────────────────────────────────────────
 
