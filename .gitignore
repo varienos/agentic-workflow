@@ -58,6 +58,14 @@ Agentbase/.mcp.json
 Agentbase/.claude-ignore
 Agentbase/CLAUDE.md
 
+# Transform ciktilari (transform.js uretir — hedef CLI yapilandirmalari)
+Agentbase/.gemini/
+Agentbase/.codex/
+Agentbase/.kimi/
+Agentbase/.opencode/
+Agentbase/GEMINI.md
+Agentbase/AGENTS.md
+
 # Runtime verisi (oturum bazli)
 Agentbase/.claude/tracking/sessions/session-*.json
 Agentbase/.claude/reports/deploys/deploy-*.md

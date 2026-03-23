@@ -835,9 +835,28 @@ S4: Projenin guvenlik oncelik seviyesi nedir?
 → task-hunter Dual-Pass modifier'i etkiler (high/critical = AKTIF).
 → Guvenlik hook'lari ve pre-commit taramasi seviyesini belirler.
 
-**S5 (ek notlar):**
+**S5 (hedef CLI araclari):**
 ```
-S5: Eklemek istediginiz baska bir sey var mi?
+S5: Claude Code disinda hangi CLI araclarini kullaniyorsunuz?
+    (Agentbase bu araclara da komut/skill uretecek)
+
+    a) Gemini CLI
+    b) Codex CLI
+    c) Kimi CLI
+    d) OpenCode
+    e) Hicbiri — sadece Claude Code
+
+    Virgul ile birden fazla secebilirsiniz (ornek: a,b,c)
+    veya "e" deyin:
+>
+```
+
+→ Manifest: `targets` alanina yaz. Her zaman `claude` dahil edilir. Kullanici "e" secerse `targets: [claude]`.
+→ Ornek: a,c secilirse → `targets: [claude, gemini, kimi]`
+
+**S6 (ek notlar):**
+```
+S6: Eklemek istediginiz baska bir sey var mi?
     (Herhangi bir kural, not, tercih)
 
     Yazin veya "yok/gecis" deyin:
@@ -1213,6 +1232,18 @@ Script su isleri yapar:
 4. **Karmasik GENERATE bloklarini** `<!-- CLAUDE_FILL: BLOCK_NAME -->` marker'i ile isaretler
 5. `.skeleton` uzantisini kaldirarak cikti dosyalarini yazar
 6. Rapor ciktisi verir: kac blok dolduruldu, kac blok Claude'a birakildi
+
+**Adim A.2 — Multi-CLI Transform (transform.js):**
+
+Manifest'te `targets` alani `claude` disinda deger iceriyorsa:
+
+```bash
+cd Agentbase && node transform.js ../Docs/agentic/project-manifest.yaml --verbose
+```
+
+Sadece `claude` varsa veya `targets` alani yoksa bu adimi ATLA.
+
+Transform raporu ciktisini kullaniciya goster. Bu adim `.claude/` ciktisini diger CLI formatlarina (`.gemini/`, `.codex/`, `.kimi/`, `.opencode/`) donusturur.
 
 **Script tarafindan doldurulan basit bloklar:**
 `COMMIT_CONVENTION`, `VERIFICATION_COMMANDS`, `TEST_COMMANDS`, `COMPILE_COMMANDS`, `BUILD_COMMANDS`, `MIGRATION_COMMANDS`, `FILE_EXTENSIONS`, `CODE_EXTENSIONS`, `MEMORY_PATH`, `PRISMA_PATH`, `LARAVEL_PATHS`, `DJANGO_PATHS`, `TYPEORM_PATHS`, `SECURITY_PATTERNS`, `LAYER_TESTS`, `SUBPROJECT_CONFIGS`, `STACK_SPECIFIC_IGNORES`, `DEPLOY_LOG_PATH`, `HEALTH_CHECK_URL`, `SMOKE_TEST_ENDPOINTS`, `TASK_ROUTING_CONFIG`, `GIT_PRECOMMIT_COMPILE`, `GIT_PRECOMMIT_TEST`, `GIT_PRECOMMIT_LINT`, `GIT_PRECOMMIT_FORMAT`, `GIT_PREPUSH_LOCALHOST`, `GIT_PREPUSH_MIGRATION`, `GIT_PREPUSH_ENV`, `GIT_PREPUSH_DESTRUCTIVE`

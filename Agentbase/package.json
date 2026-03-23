@@ -5,7 +5,8 @@
   "description": "Agentic workflow skeleton isleme araclari",
   "scripts": {
     "generate": "node generate.js",
-    "test": "node --test generate.test.js tests/*.test.js"
+    "transform": "node transform.js",
+    "test": "node --test generate.test.js transform.test.js tests/*.test.js"
   },
   "engines": {
     "node": ">=18.0.0"
