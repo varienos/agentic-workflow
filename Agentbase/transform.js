@@ -342,10 +342,18 @@ const VALID_TARGETS = new Set(Object.keys(CLI_CAPABILITIES));
 function resolveTargets(manifest, targetsFlag) {
   const manifestTargets = (manifest.targets || []).filter(t => t !== 'claude');
 
-  let targets = manifestTargets;
+  let targets;
   if (targetsFlag) {
-    const requested = new Set(targetsFlag.split(',').map(t => t.trim()));
-    targets = manifestTargets.filter(t => requested.has(t));
+    const requested = targetsFlag.split(',').map(t => t.trim());
+    if (manifestTargets.length > 0) {
+      // Manifest'te targets varsa → filtrele
+      targets = manifestTargets.filter(t => new Set(requested).has(t));
+    } else {
+      // Manifest'te targets yoksa → flag dogrudan hedef listesi olur
+      targets = requested;
+    }
+  } else {
+    targets = manifestTargets;
   }
 
   return targets.filter(t => {

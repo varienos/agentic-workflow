@@ -401,4 +401,18 @@ describe('resolveTargets', () => {
     const manifest = { targets: ['claude', 'unknown-cli'] };
     assert.deepEqual(resolveTargets(manifest, null), []);
   });
+
+  it('manifest targets yoksa --targets dogrudan hedef listesi olur', () => {
+    const manifest = {};
+    assert.deepEqual(resolveTargets(manifest, 'gemini,codex'), ['gemini', 'codex']);
+  });
+
+  it('manifest targets yoksa --targets bilinmeyen CLI filtreler', () => {
+    const manifest = {};
+    assert.deepEqual(resolveTargets(manifest, 'gemini,unknown'), ['gemini']);
+  });
+
+  it('manifest targets yoksa ve --targets yoksa bos doner', () => {
+    assert.deepEqual(resolveTargets({}, null), []);
+  });
 });
