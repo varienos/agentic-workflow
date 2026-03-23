@@ -1642,8 +1642,17 @@ function main() {
     const relPath = path.relative(TEMPLATES_DIR, skeletonPath);
 
     try {
-      const { outputContent, filled, marked } = processSkeletonFile(skeletonPath, manifest);
+      let { outputContent, filled, marked } = processSkeletonFile(skeletonPath, manifest);
       const outputPath = resolveOutputPath(skeletonPath, outputDir);
+
+      // Prefix tutarliligi: dosya adina prefix eklendiyse icerideki komut referanslarini guncelle
+      const originalFilename = toOutputName(path.basename(skeletonPath));
+      const outputFilename = path.basename(outputPath);
+      if (originalFilename !== outputFilename) {
+        const originalCmd = originalFilename.replace(/\.(md|js|json)$/, '');
+        const prefixedCmd = outputFilename.replace(/\.(md|js|json)$/, '');
+        outputContent = outputContent.replaceAll(`/${originalCmd}`, `/${prefixedCmd}`);
+      }
 
       report.processed++;
       report.filledBlocks.push(...filled.map(b => `${b} (${relPath})`));

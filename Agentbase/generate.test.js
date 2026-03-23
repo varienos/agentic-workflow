@@ -1621,3 +1621,76 @@ describe('Bozuk YAML hata mesaji', () => {
     }
   });
 });
+
+// ─────────────────────────────────────────────────────
+// PREFIX TUTARLILIGI TESTLERI
+// ─────────────────────────────────────────────────────
+
+describe('Modul komut prefix tutarliligi', () => {
+  const { processSkeletonFile } = require('./generate.js');
+
+  it('docker-pre-deploy icerigi /docker-pre-deploy kullaniyor', () => {
+    const skeletonPath = path.join(TEMPLATES_DIR, 'modules', 'deploy', 'docker', 'commands', 'pre-deploy.skeleton.md');
+    const outputDir = '/tmp/test-output';
+    const outputPath = resolveOutputPath(skeletonPath, outputDir);
+    const outputFilename = path.basename(outputPath);
+
+    // Dosya adi prefix lenmis olmali
+    assert.ok(outputFilename.startsWith('docker-'), `prefix bekleniyor: ${outputFilename}`);
+
+    // Icerik islemesi
+    const { outputContent } = processSkeletonFile(skeletonPath, { project: {} });
+    const originalCmd = toOutputName(path.basename(skeletonPath)).replace(/\.md$/, '');
+    const prefixedCmd = outputFilename.replace(/\.md$/, '');
+
+    // Ana dongudeki ayni replaceAll mantigi
+    const finalContent = outputContent.replaceAll(`/${originalCmd}`, `/${prefixedCmd}`);
+
+    assert.ok(finalContent.includes(`/${prefixedCmd}`), `icerik /${prefixedCmd} icermeli`);
+    assert.ok(!finalContent.includes(`/${originalCmd}`), `icerik artik /${originalCmd} icermemeli`);
+  });
+
+  it('security-idor-scan icerigi /security-idor-scan kullaniyor', () => {
+    const skeletonPath = path.join(TEMPLATES_DIR, 'modules', 'security', 'commands', 'idor-scan.skeleton.md');
+    const outputDir = '/tmp/test-output';
+    const outputPath = resolveOutputPath(skeletonPath, outputDir);
+    const outputFilename = path.basename(outputPath);
+
+    assert.ok(outputFilename.startsWith('security-'), `prefix bekleniyor: ${outputFilename}`);
+
+    const { outputContent } = processSkeletonFile(skeletonPath, { project: {} });
+    const originalCmd = toOutputName(path.basename(skeletonPath)).replace(/\.md$/, '');
+    const prefixedCmd = outputFilename.replace(/\.md$/, '');
+    const finalContent = outputContent.replaceAll(`/${originalCmd}`, `/${prefixedCmd}`);
+
+    assert.ok(finalContent.includes(`/${prefixedCmd}`), `icerik /${prefixedCmd} icermeli`);
+    assert.ok(!finalContent.includes(`/${originalCmd}`), `icerik artik /${originalCmd} icermemeli`);
+  });
+
+  it('monorepo-review-module icerigi /monorepo-review-module kullaniyor', () => {
+    const skeletonPath = path.join(TEMPLATES_DIR, 'modules', 'monorepo', 'commands', 'review-module.skeleton.md');
+    const outputDir = '/tmp/test-output';
+    const outputPath = resolveOutputPath(skeletonPath, outputDir);
+    const outputFilename = path.basename(outputPath);
+
+    assert.ok(outputFilename.startsWith('monorepo-'), `prefix bekleniyor: ${outputFilename}`);
+
+    const { outputContent } = processSkeletonFile(skeletonPath, { project: {} });
+    const originalCmd = toOutputName(path.basename(skeletonPath)).replace(/\.md$/, '');
+    const prefixedCmd = outputFilename.replace(/\.md$/, '');
+    const finalContent = outputContent.replaceAll(`/${originalCmd}`, `/${prefixedCmd}`);
+
+    assert.ok(finalContent.includes(`/${prefixedCmd}`), `icerik /${prefixedCmd} icermeli`);
+    assert.ok(!finalContent.includes(`/${originalCmd}`), `icerik artik /${originalCmd} icermemeli`);
+  });
+
+  it('zaten prefix li dosya adi degismiyor (prisma-rules)', () => {
+    const skeletonPath = path.join(TEMPLATES_DIR, 'modules', 'orm', 'prisma', 'rules', 'prisma-rules.skeleton.md');
+    const outputDir = '/tmp/test-output';
+    const outputPath = resolveOutputPath(skeletonPath, outputDir);
+    const originalFilename = toOutputName(path.basename(skeletonPath));
+    const outputFilename = path.basename(outputPath);
+
+    assert.strictEqual(originalFilename, outputFilename, 'zaten prefix li dosya yeniden prefix lenmemeli');
+  });
+});
