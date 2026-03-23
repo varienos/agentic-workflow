@@ -145,3 +145,47 @@ modules:
     assert.ok(result.stdout.includes('django') || result.stdout.includes('Django') || result.status === 0, 'Django manifest basarili islenmeli');
   });
 });
+
+// ─────────────────────────────────────────────────────
+// PATH TRAVERSAL KORUMASI TESTLERI
+// ─────────────────────────────────────────────────────
+
+describe('path traversal korumalari', () => {
+  it('generate.js resolveOutputPath ciktilari outputDir icinde kaliyor', () => {
+    const { resolveOutputPath, TEMPLATES_DIR } = require('../generate.js');
+    const outputDir = '/tmp/test-output';
+
+    // Core dosya
+    const corePath = resolveOutputPath(path.join(TEMPLATES_DIR, 'core', 'commands', 'task-hunter.skeleton.md'), outputDir);
+    assert.ok(path.resolve(corePath).startsWith(path.resolve(outputDir)), 'core dosya outputDir icinde olmali');
+
+    // Module dosya
+    const modulePath = resolveOutputPath(path.join(TEMPLATES_DIR, 'modules', 'orm', 'prisma', 'rules', 'prisma-rules.skeleton.md'), outputDir);
+    assert.ok(path.resolve(modulePath).startsWith(path.resolve(outputDir)), 'module dosya outputDir icinde olmali');
+  });
+
+  it('writeTarget path traversal denemesini engelliyor', () => {
+    const { loadModuleExports } = require('./helpers/module-loader.js');
+    const transformPath = path.join(__dirname, '..', 'transform.js');
+
+    const { writeTarget } = loadModuleExports(transformPath, {
+      exports: ['writeTarget'],
+    });
+
+    const tmpDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'traversal-test-')));
+    const fileMap = {
+      '../../../etc/evil.txt': 'malicious content',
+      '.gemini/commands/safe.toml': 'safe content',
+    };
+
+    const errors = writeTarget(tmpDir, 'test', fileMap);
+
+    // Traversal engellenmeli
+    assert.ok(!fs.existsSync(path.join(tmpDir, '..', '..', '..', 'etc', 'evil.txt')), 'traversal dosyasi olusmamaali');
+    // Safe dosya yazilmali
+    assert.ok(fs.existsSync(path.join(tmpDir, '.gemini', 'commands', 'safe.toml')), 'safe dosya yazilmali');
+    assert.ok(errors.length > 0, 'traversal hatasi raporlanmali');
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+});
