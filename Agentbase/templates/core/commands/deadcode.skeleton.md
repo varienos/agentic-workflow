@@ -381,6 +381,12 @@ backlog task create \
 
 ## Zorunlu Kurallar
 
+### Kutsal Kurallar (Her Komutta Gecerli)
+
+1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
+2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
+3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+
 1. **Guvenli dosyalara dokunma** — Entry point, config, migration, CI/CD dosyalari ASLA silinmez.
 2. **Onaysiz temizlik YASAK** — HIGH bulgular bile kullanici onayi olmadan silinmez.
 3. **Build kirilirsa geri al** — Temizlik sonrasi build basarisizsa degisikligi geri al, guven seviyesini dusur.

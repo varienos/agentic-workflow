@@ -239,6 +239,12 @@ fix: review bulgusu — <sorun_ozeti>
 
 ## Zorunlu Kurallar
 
+### Kutsal Kurallar (Her Komutta Gecerli)
+
+1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
+2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
+3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+
 1. **3 ajan paralel calisir** — Birinin sonucunu beklemeden hepsini baslat.
 2. **1 iterasyon limiti** — Hicbir ajan ikinci kez calismaz.
 3. **Karar agacini takip et** — Her bulgu icin false positive / diff kodu / onceden var olan siralamasini uygula.

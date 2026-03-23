@@ -322,6 +322,12 @@ backlog task create "feat: Order listesi frontend sayfasi (#ana_gorev)" --priori
 
 ## Zorunlu Kurallar
 
+### Kutsal Kurallar (Her Komutta Gecerli)
+
+1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
+2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
+3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+
 1. **Once analiz et** — Codebase'i okumadan gorev olusturma. Mevcut yapiyi anla.
 2. **Spesifik AC yaz** — "Iyilestir", "Duzelt" gibi belirsiz kriterler YASAK. Olculebilir olmali.
 3. **Test kriteri zorunlu** — Her gorevde en az bir test AC'si olmali.

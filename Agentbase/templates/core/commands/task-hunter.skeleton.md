@@ -677,6 +677,12 @@ Tamamlanan task'in baglami ve backlog analizi bazinda:
 
 ## Zorunlu Kurallar
 
+### Kutsal Kurallar (Her Komutta Gecerli)
+
+1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
+2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
+3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+
 1. **Otonom calis** — Kullaniciya soru sorma, karar al ve uygula. Sadece belirsiz AC'lerde sor.
 2. **Once oku, sonra yaz** — Bir dosyayi degistirmeden once MUTLAKA oku ve mevcut pattern'i anla.
 3. **Pattern takip et** — Mevcut koddaki yapiyi, isimlendirmeyi, formati takip et. Yeni convention icat etme.

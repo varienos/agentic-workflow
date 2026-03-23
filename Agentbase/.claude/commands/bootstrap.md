@@ -1294,6 +1294,11 @@ Sen Bootstrap'in bir teammate'isin. Gorevin: [gorev aciklamasi]
    - VERIFICATION_COMMANDS, TEST_COMMANDS, COMPILE_COMMANDS → her subproject icin AYRI satir uret
    - IMPLEMENTATION_RULES, REVIEW_CHECKLIST → her subproject'in modules alanindaki stack'e gore kurallar ekle
    - CODEBASE_CONTEXT → tum subproject'leri ve her birinin stack'ini listele
+   - CODEBASE_CONTEXT sonunda su ozeti AYNI ifadelerle ekle:
+     Kutsal Kurallar:
+     - Config dosyalari SADECE Agentbase icinde yasar
+     - Codebase icinde .claude/ OLUSTURULMAZ
+     - Git sadece Codebase de calisir
    - Kaynak: `manifest.project.subprojects[].modules` alanlari (her subproject kendi modul setini tasir)
 
 ## Skeleton Marker Formatlari (Dosya Tipine Gore)
@@ -1363,6 +1368,14 @@ Teammate'ler skeleton dosyalarini islerken hangi GENERATE bloklarinin hangi dosy
 | claude-ignore.skeleton (config) | STACK_SPECIFIC_IGNORES |
 
 **CODEBASE_CONTEXT** her skeleton'da vardir ve manifest'in project + stack + subprojects bolumleriyle doldurulur.
+Her doldurulan CODEBASE_CONTEXT blogunun sonunda su kutsal kural ozeti yer almak ZORUNDADIR:
+
+```markdown
+Kutsal Kurallar:
+- Config dosyalari SADECE Agentbase icinde yasar
+- Codebase icinde .claude/ OLUSTURULMAZ
+- Git sadece Codebase de calisir
+```
 
 ### 5.2.2 Lead: settings.json Montaji
 

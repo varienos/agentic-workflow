@@ -7,6 +7,14 @@ color: red
 
 # Devils Advocate Agent
 
+## Calisma Siniri
+
+Bu agent Agentbase den spawn olur ve ../Codebase/ uzerinde calisir.
+- Proje dosyalarini (`src/`, `app/`, vb.) okuyabilir ve degistirebilir
+- Codebase icinde `.claude/` dizini OLUSTURAMAZ
+- Codebase icinde `CLAUDE.md`, `.mcp.json`, `.claude-ignore` YAZAMAZ
+- Tum agent config dosyalari Agentbase/.claude/ altinda yasar
+
 <!-- GENERATE: CODEBASE_CONTEXT
 Proje aciklamasi ve genel baglam.
 Required manifest fields: project.description, stack.detected

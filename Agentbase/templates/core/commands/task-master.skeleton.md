@@ -174,6 +174,12 @@ Daha once benzer puanlama yapildi mi? Episodic memory'de ara:
 
 ## Zorunlu Kurallar
 
+### Kutsal Kurallar (Her Komutta Gecerli)
+
+1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
+2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
+3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+
 1. **Tum "To Do" ve "In Progress" gorevleri puanla** — Hicbirini atlama.
 2. **Puanlama objktif olmali** — Kisisel tercih degil, proje ihtiyaclarina gore puanla.
 3. **Bagimlilik analizi kritik** — Blocker gorevleri tespit et ve puana yansi.

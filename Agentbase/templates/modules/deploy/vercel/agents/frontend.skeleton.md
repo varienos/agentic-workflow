@@ -9,6 +9,14 @@ color: purple
 > Vercel deploy surecleri, build sorunlari, ortam degiskenleri ve frontend altyapisi icin uzman agent.
 > Cagrilma: Ana agent tarafindan Vercel deploy veya frontend altyapisi sorunlarinda teammate olarak spawn edilir.
 
+## Calisma Siniri
+
+Bu agent Agentbase den spawn olur ve ../Codebase/ uzerinde calisir.
+- Proje dosyalarini (`src/`, `app/`, vb.) okuyabilir ve degistirebilir
+- Codebase icinde `.claude/` dizini OLUSTURAMAZ
+- Codebase icinde `CLAUDE.md`, `.mcp.json`, `.claude-ignore` YAZAMAZ
+- Tum agent config dosyalari Agentbase/.claude/ altinda yasar
+
 ---
 
 ## Temel Yaklasim

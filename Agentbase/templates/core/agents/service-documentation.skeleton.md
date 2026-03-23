@@ -7,6 +7,16 @@ color: blue
 
 # Service Documentation Agent
 
+## Calisma Siniri
+
+Bu agent Agentbase den spawn olur ve ../Codebase/ uzerinde calisir.
+- Proje dosyalarini (`src/`, `app/`, vb.) okuyabilir ve degistirebilir
+- Codebase icinde `.claude/` dizini OLUSTURAMAZ
+- Codebase icinde `CLAUDE.md`, `.mcp.json`, `.claude-ignore` YAZAMAZ
+- Tum agent config dosyalari Agentbase/.claude/ altinda yasar
+- Agentbase root altindaki dokumanlar (`PROJECT.md`, `STACK.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `DEVELOPER.md`, `README.md`) icin oneriler uret
+- Codebase icinde yeni dokuman veya config dosyasi YAZMA
+
 <!-- GENERATE: CODEBASE_CONTEXT
 Proje aciklamasi, teknoloji stack'i ve dizin yapisi.
 Required manifest fields: project.description, stack.detected, project.structure, project.subprojects
