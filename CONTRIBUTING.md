@@ -51,6 +51,21 @@ Yeni bir stack/framework modulu eklemek icin:
 4. Mevcut modulleri pattern olarak kullanin
 5. Test yazin
 
+### Dosya Isimlendirme Kurallari
+
+**`.skeleton` suffix'i:** Template dosyalari `.skeleton.md`, `.skeleton.js` veya `.skeleton.json` uzantisi kullanir. `generate.js` bu dosyalari islerken GENERATE bloklarini doldurur ve `.skeleton` uzantisini kaldirir (`task-hunter.skeleton.md` → `task-hunter.md`). Sabit dosyalar (GENERATE blogu icermeyen hook'lar gibi) `.skeleton` suffix'i olmadan saklanir ve oldugu gibi kopyalanir.
+
+**Dizin yapisi:**
+- `templates/core/` — Her projede uretilen iskeletler (commands, hooks, rules, agents, git-hooks)
+- `templates/modules/{kategori}/{varyant}/` — Modul-spesifik dosyalar (sadece aktif moduller icin uretilir)
+- `templates/reference/` — Tasarim referans dokumanlari (v1 notlari, is akisi, metotlar). Bu dosyalar generate.js tarafindan ISLENMEZ — bootstrap komutunun baglam olarak okudugu dahili referanslardir.
+- `templates/interview/` — Bootstrap roportaj sablonlari. generate.js tarafindan islenmez.
+
+### Onemli Dizin Aciklamalari
+
+- **`Codebase/`** — Uzerinde calisilan gercek proje kodunu temsil eder. Bu dizin depoda yer tutucudur; kullanici kendi projesini symlink ile baglar (`ln -s /path/to/project Codebase`). Greenfield modunda bos birakilir ve bootstrap sifirdan olusturur.
+- **`Docs/agentic/project-manifest.yaml`** — Bootstrap tarafindan uretilen manifest dosyasi. Depoda bastan YOKTUR — ilk `/bootstrap` calistirmasinda olusturulur. `generate.js` ve `transform.js` bu dosyayi girdi olarak kullanir.
+
 ### Test
 
 ```bash
