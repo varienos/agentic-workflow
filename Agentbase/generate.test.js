@@ -974,6 +974,33 @@ describe('SIMPLE_GENERATORS', () => {
     assert.ok(result.includes('/status'), 'fallback status olmali');
   });
 
+  it('API_SMOKE_SCRIPT curl bazli smoke test script uretiyor', () => {
+    const manifest = {
+      environments: [{ name: 'production', url: 'https://api.example.com' }],
+      api_endpoints: [
+        { method: 'GET', path: '/api/v1/users', auth: 'required', response: 200 },
+        { method: 'POST', path: '/api/v1/orders', auth: 'required', response: 201 },
+      ],
+    };
+    const result = SIMPLE_GENERATORS.API_SMOKE_SCRIPT(manifest);
+    assert.ok(result.includes('#!/bin/bash'), 'shebang olmali');
+    assert.ok(result.includes('curl'), 'curl komutu olmali');
+    assert.ok(result.includes('/api/v1/users'), 'users endpoint olmali');
+    assert.ok(result.includes('/api/v1/orders'), 'orders endpoint olmali');
+    assert.ok(result.includes('auth'), 'auth parametresi olmali');
+    assert.ok(result.includes('Bearer $TOKEN'), 'TOKEN kullanilmali');
+    assert.ok(result.includes('exit 1'), 'basarisizda exit 1 olmali');
+  });
+
+  it('API_SMOKE_SCRIPT api_endpoints yoksa fallback calisiyor', () => {
+    const manifest = {
+      environments: [{ name: 'production', url: 'https://api.example.com' }],
+    };
+    const result = SIMPLE_GENERATORS.API_SMOKE_SCRIPT(manifest);
+    assert.ok(result.includes('/health'), 'health olmali');
+    assert.ok(result.includes('/status'), 'fallback status olmali');
+  });
+
   it('TEST_FILE_MAPPING Node.js icin kaynak-test eslestirme uretir', () => {
     const result = SIMPLE_GENERATORS.TEST_FILE_MAPPING(testManifest, 'js');
     assert.ok(result.includes('sourcePattern'), 'sourcePattern alani olmali');

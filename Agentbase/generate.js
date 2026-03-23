@@ -893,6 +893,71 @@ const SIMPLE_GENERATORS = {
     ].join('\n');
   },
 
+  // --- API SMOKE TEST SCRIPT ---
+
+  API_SMOKE_SCRIPT(manifest) {
+    const envs = manifest?.environments || [];
+    const prodEnv = envs.find(e => e.name === 'production' || e.name === 'prod');
+    const url = prodEnv?.url || '<PROJE_URL>';
+    const healthCheck = prodEnv?.health_check;
+    const apiEndpoints = manifest?.api_endpoints || [];
+    const rawPrefix = manifest?.project?.api_prefix || '';
+    const apiPrefix = rawPrefix && !rawPrefix.startsWith('/') ? '/' + rawPrefix : rawPrefix;
+
+    const healthUrl = healthCheck || `${url}/health`;
+    const lines = [
+      '#!/bin/bash',
+      '# Smoke Test Script — Bootstrap tarafindan uretilmistir',
+      '# Kullanim: bash smoke-test.sh [TOKEN]',
+      '',
+      'ERRORS=0',
+      'TOKEN="${1:-$SMOKE_TEST_TOKEN}"',
+      '',
+      'check() {',
+      '  local method="$1" url="$2" expected="$3" auth="$4"',
+      '  local args=(-sf -o /dev/null -w "%{http_code}")',
+      '  [ "$method" != "GET" ] && args+=(-X "$method")',
+      '  [ -n "$auth" ] && args+=(-H "Authorization: Bearer $TOKEN")',
+      '  local status=$(curl "${args[@]}" "$url")',
+      '  if [ "$status" = "$expected" ]; then',
+      '    echo "✅ $method $url → $status"',
+      '  else',
+      '    echo "❌ $method $url → $status (beklenen: $expected)"',
+      '    ERRORS=$((ERRORS + 1))',
+      '  fi',
+      '}',
+      '',
+      `echo "━━━ Smoke Test: ${url} ━━━"`,
+      '',
+      `check GET "${healthUrl}" 200`,
+    ];
+
+    if (apiEndpoints.length > 0) {
+      for (const ep of apiEndpoints) {
+        const method = (ep.method || 'GET').toUpperCase();
+        const epPath = ep.path || '/';
+        const expected = ep.response || 200;
+        const auth = ep.auth === 'required' ? 'auth' : '';
+        lines.push(`check ${method} "${url}${epPath}" ${expected}${auth ? ' auth' : ''}`);
+      }
+    } else {
+      const statusUrl = `${url}${apiPrefix}/status`;
+      lines.push(`check GET "${statusUrl}" 200`);
+    }
+
+    lines.push(
+      '',
+      'echo ""',
+      'if [ "$ERRORS" -ne 0 ]; then',
+      '  echo "━━━ Smoke Test BASARISIZ ($ERRORS hata) ━━━"',
+      '  exit 1',
+      'fi',
+      'echo "━━━ Smoke Test BASARILI ━━━"',
+    );
+
+    return lines.join('\n');
+  },
+
   // --- TEST DOSYASI ESLESTIRME ---
 
   TEST_FILE_MAPPING(manifest, fileType) {
