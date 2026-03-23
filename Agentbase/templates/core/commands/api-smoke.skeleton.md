@@ -59,6 +59,20 @@ Gerekli manifest alanlari: environments, api_endpoints, project.api_prefix
 
 **NOT:** Auth gerektiren endpoint ler icin `SMOKE_TEST_TOKEN` env variable set edilmeli veya script e parametre olarak verilmeli.
 
+### 2.3 Node.js Test Dosyasi (CI Entegrasyonu)
+
+CI ortaminda calistirilabilir node:test bazli smoke test:
+
+```javascript
+/* GENERATE: API_SMOKE_NODE_TESTS
+ * Manifest ten node:test bazli smoke test dosyasi.
+ * Gerekli manifest alanlari: environments, api_endpoints, project.api_prefix
+ */
+/* END GENERATE */
+```
+
+Calistirma: `SMOKE_TEST_URL=https://api.example.com SMOKE_TEST_TOKEN=xxx node --test smoke-test.js`
+
 ---
 
 ## ADIM 3 — Sonuc Raporu

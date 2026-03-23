@@ -881,7 +881,7 @@ const SIMPLE_GENERATORS = {
       for (const ep of apiEndpoints) {
         const method = (ep.method || 'GET').toUpperCase();
         const epPath = ep.path || '/';
-        const expectedStatus = ep.response || 200;
+        const expectedStatus = parseInt(ep.response, 10) || 200;
         const auth = ep.auth === 'required' ? 'Authorization gerekli' : '—';
         rows.push(`| \`${method} ${url}${epPath}\` | ${expectedStatus} | ${auth} |`);
       }

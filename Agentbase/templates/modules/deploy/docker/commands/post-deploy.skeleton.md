@@ -72,21 +72,15 @@ Temel kullanici akislarinin calistigini dogrula.
 
 <!-- GENERATE: SMOKE_TEST_ENDPOINTS
 Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments.production_url, project.api_endpoints
+Gerekli manifest alanlari: environments, api_endpoints, project.api_prefix
 Ornek cikti:
-### Smoke Test Endpoint'leri
+## Smoke Test Endpoint'leri
 
-| Test | Method | URL | Beklenen |
-|---|---|---|---|
-| Ana sayfa | GET | `https://www.example.com` | HTTP 200 |
-| API root | GET | `https://api.example.com/api/v1` | HTTP 200 |
-| Auth health | GET | `https://api.example.com/api/v1/auth/health` | HTTP 200 |
-| Public listing | GET | `https://api.example.com/api/v1/products?limit=1` | HTTP 200 + JSON array |
-
-```bash
-# Smoke test ornegi
-curl -sf --max-time 10 "https://api.example.com/api/v1/products?limit=1" | jq 'length'
-```
+| Endpoint | Beklenen | Auth |
+|---|---|---|
+| `GET https://api.example.com/health` | 200 OK | — |
+| `GET https://api.example.com/api/v1/users` | 200 | Authorization gerekli |
+| `POST https://api.example.com/api/v1/orders` | 201 | Authorization gerekli |
 -->
 
 ---
