@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const { extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent, toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent, stripFrontmatter, parseClaudeOutput, transformForTarget, writeTarget } = require('./transform.js');
+const { extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent, toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent, stripFrontmatter, parseClaudeOutput, transformForTarget, writeTarget, resolveTargets } = require('./transform.js');
 const yaml = require('js-yaml');
 
 describe('extractDescription', () => {
@@ -374,5 +374,31 @@ describe('writeTarget', () => {
     );
 
     fs.rmSync(tmpDir, { recursive: true });
+  });
+});
+
+describe('resolveTargets', () => {
+  it('manifest targets listesinden claude haric donusturur', () => {
+    const manifest = { targets: ['claude', 'gemini', 'codex'] };
+    assert.deepEqual(resolveTargets(manifest, null), ['gemini', 'codex']);
+  });
+
+  it('--targets flag manifest listesini filtreler', () => {
+    const manifest = { targets: ['claude', 'gemini', 'codex', 'kimi'] };
+    assert.deepEqual(resolveTargets(manifest, 'gemini,kimi'), ['gemini', 'kimi']);
+  });
+
+  it('manifest disindaki target sessizce atlanir', () => {
+    const manifest = { targets: ['claude', 'gemini'] };
+    assert.deepEqual(resolveTargets(manifest, 'gemini,kimi'), ['gemini']);
+  });
+
+  it('targets tanimsizsa bos dizi doner', () => {
+    assert.deepEqual(resolveTargets({}, null), []);
+  });
+
+  it('bilinmeyen CLI uyari ile atlanir', () => {
+    const manifest = { targets: ['claude', 'unknown-cli'] };
+    assert.deepEqual(resolveTargets(manifest, null), []);
   });
 });

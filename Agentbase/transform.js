@@ -334,6 +334,119 @@ function writeTarget(outputDir, targetCli, fileMap) {
 }
 
 // ─────────────────────────────────────────────────────
+// CLI ENTRY POINT
+// ─────────────────────────────────────────────────────
+
+const VALID_TARGETS = new Set(Object.keys(CLI_CAPABILITIES));
+
+function resolveTargets(manifest, targetsFlag) {
+  const manifestTargets = (manifest.targets || []).filter(t => t !== 'claude');
+
+  let targets = manifestTargets;
+  if (targetsFlag) {
+    const requested = new Set(targetsFlag.split(',').map(t => t.trim()));
+    targets = manifestTargets.filter(t => requested.has(t));
+  }
+
+  return targets.filter(t => {
+    if (!VALID_TARGETS.has(t)) {
+      console.warn(`  Uyari: Bilinmeyen target "${t}" atlaniyor.`);
+      return false;
+    }
+    return true;
+  });
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const flags = {
+    dryRun: args.includes('--dry-run'),
+    verbose: args.includes('--verbose'),
+    targets: null,
+  };
+
+  const targetsIdx = args.indexOf('--targets');
+  if (targetsIdx !== -1 && args[targetsIdx + 1]) {
+    flags.targets = args[targetsIdx + 1];
+  }
+
+  const VALUE_FLAGS = new Set(['--targets']);
+  const manifestPath = args.find((a, i) => {
+    if (a.startsWith('--')) return false;
+    if (i > 0 && VALUE_FLAGS.has(args[i - 1])) return false;
+    return true;
+  });
+
+  if (!manifestPath) {
+    console.error('Kullanim: node transform.js <manifest-yolu> [--targets cli1,cli2] [--dry-run] [--verbose]');
+    process.exit(1);
+  }
+
+  const resolvedPath = path.resolve(manifestPath);
+  if (!fs.existsSync(resolvedPath)) {
+    console.error(`Hata: Manifest bulunamadi: ${resolvedPath}`);
+    process.exit(1);
+  }
+
+  const manifest = yaml.load(fs.readFileSync(resolvedPath, 'utf8'));
+  const targets = resolveTargets(manifest, flags.targets);
+
+  if (targets.length === 0) {
+    console.log('Transform hedefi yok — sadece Claude aktif.');
+    return;
+  }
+
+  const claudeDir = path.join(AGENTBASE_DIR, '.claude');
+  const source = parseClaudeOutput(claudeDir);
+
+  const report = { targets: [], totalFiles: 0, errors: [] };
+
+  for (const target of targets) {
+    try {
+      const fileMap = transformForTarget(source, target);
+      const fileCount = Object.keys(fileMap).length;
+
+      if (!flags.dryRun) {
+        writeTarget(AGENTBASE_DIR, target, fileMap);
+      }
+
+      report.targets.push({ name: target, files: fileCount });
+      report.totalFiles += fileCount;
+
+      if (flags.verbose) {
+        console.log(`\n  ${target}: ${fileCount} dosya`);
+        for (const key of Object.keys(fileMap)) {
+          console.log(`    ${key}`);
+        }
+      }
+    } catch (err) {
+      report.errors.push(`${target}: ${err.message}`);
+    }
+  }
+
+  console.log('');
+  console.log('\u2501'.repeat(55));
+  console.log('  Transform Raporu');
+  console.log('\u2501'.repeat(55));
+  for (const t of report.targets) {
+    console.log(`  ${t.name}: ${t.files} dosya`);
+  }
+  console.log(`  Toplam: ${report.totalFiles} dosya`);
+  if (report.errors.length > 0) {
+    console.log(`  Hata: ${report.errors.length}`);
+    report.errors.forEach(e => console.log(`    ${e}`));
+  }
+  if (flags.dryRun) {
+    console.log('  Mod: DRY RUN (dosya yazilmadi)');
+  }
+  console.log('\u2501'.repeat(55));
+}
+
+if (require.main === module) {
+  main();
+}
+
+// ─────────────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────────────
 
@@ -352,6 +465,7 @@ module.exports = {
   parseClaudeOutput,
   transformForTarget,
   writeTarget,
+  resolveTargets,
   escapeRegex,
   CLI_CAPABILITIES,
   AGENTBASE_DIR,
