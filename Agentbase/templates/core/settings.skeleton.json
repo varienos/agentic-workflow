@@ -21,6 +21,12 @@
             "type": "command",
             "command": "jq -r 'if (.tool_input.file_path // \"\" | test(\"backlog/tasks/|backlog/completed/\")) then {\"decision\":\"block\",\"reason\":\"Backlog dosyalari elle duzenlenemez. backlog task edit kullanin.\"} else empty end'",
             "timeout": 5
+          },
+          {
+            "__doc__": "Codebase config korumasi — Codebase icine .claude/, CLAUDE.md, .mcp.json yazmayi engeller",
+            "type": "command",
+            "command": "node .claude/hooks/codebase-guard.js",
+            "timeout": 5
           }
         ],
         "__GENERATE__PRETOOLUSE_EDITWRITE_HOOKS__": {
