@@ -1001,6 +1001,24 @@ describe('SIMPLE_GENERATORS', () => {
     assert.ok(result.includes('/status'), 'fallback status olmali');
   });
 
+  it('API_SMOKE_NODE_TESTS node:test bazli smoke test uretiyor', () => {
+    const manifest = {
+      environments: [{ name: 'production', url: 'https://api.example.com' }],
+      api_endpoints: [
+        { method: 'GET', path: '/api/v1/users', auth: 'required', response: 200 },
+        { method: 'POST', path: '/api/v1/orders', auth: 'required', response: 201 },
+      ],
+    };
+    const result = SIMPLE_GENERATORS.API_SMOKE_NODE_TESTS(manifest);
+    assert.ok(result.includes("require('node:test')"), 'node:test import olmali');
+    assert.ok(result.includes("require('node:assert/strict')"), 'assert import olmali');
+    assert.ok(result.includes('/api/v1/users'), 'users endpoint olmali');
+    assert.ok(result.includes('/api/v1/orders'), 'orders endpoint olmali');
+    assert.ok(result.includes('201'), 'POST expected status olmali');
+    assert.ok(result.includes('true'), 'auth parametresi olmali');
+    assert.ok(result.includes('Bearer'), 'Bearer token olmali');
+  });
+
   it('TEST_FILE_MAPPING Node.js icin kaynak-test eslestirme uretir', () => {
     const result = SIMPLE_GENERATORS.TEST_FILE_MAPPING(testManifest, 'js');
     assert.ok(result.includes('sourcePattern'), 'sourcePattern alani olmali');

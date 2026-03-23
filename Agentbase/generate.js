@@ -498,7 +498,14 @@ const SIMPLE_GENERATORS = {
 
   MEMORY_PATH(manifest) {
     const memoryPath = manifest?.paths?.memory || '.claude/memory';
-    return `## Memory Yolu\n\n\`${memoryPath}\``;
+    return [
+      '## Memory Yolu',
+      '',
+      `**Hafiza dizini:** \`${memoryPath}\``,
+      '',
+      '- Agentbase .claude/memory/ dizini esas alinir',
+      '- Codebase icine hafiza dosyasi yazilmaz',
+    ].join('\n');
   },
 
   PRISMA_PATH(manifest) {
@@ -954,6 +961,56 @@ const SIMPLE_GENERATORS = {
       'fi',
       'echo "━━━ Smoke Test BASARILI ━━━"',
     );
+
+    return lines.join('\n');
+  },
+
+  API_SMOKE_NODE_TESTS(manifest) {
+    const envs = manifest?.environments || [];
+    const prodEnv = envs.find(e => e.name === 'production' || e.name === 'prod');
+    const url = prodEnv?.url || '<PROJE_URL>';
+    const healthCheck = prodEnv?.health_check;
+    const apiEndpoints = manifest?.api_endpoints || [];
+    const rawPrefix = manifest?.project?.api_prefix || '';
+    const apiPrefix = rawPrefix && !rawPrefix.startsWith('/') ? '/' + rawPrefix : rawPrefix;
+
+    const healthUrl = healthCheck || `${url}/health`;
+    const lines = [
+      "'use strict';",
+      "const { describe, it } = require('node:test');",
+      "const assert = require('node:assert/strict');",
+      '',
+      `const BASE_URL = process.env.SMOKE_TEST_URL || '${url}';`,
+      "const TOKEN = process.env.SMOKE_TEST_TOKEN || '';",
+      '',
+      "async function check(method, path, expectedStatus, auth) {",
+      "  const headers = {};",
+      "  if (auth && TOKEN) headers['Authorization'] = `Bearer ${TOKEN}`;", // eslint-disable-line no-template-curly-in-string
+      "  const res = await fetch(`${BASE_URL}${path}`, { method, headers });", // eslint-disable-line no-template-curly-in-string
+      "  assert.strictEqual(res.status, expectedStatus, `${method} ${path} → ${res.status} (beklenen: ${expectedStatus})`);", // eslint-disable-line no-template-curly-in-string
+      '}',
+      '',
+      "describe('API Smoke Tests', () => {",
+    ];
+
+    // Health check
+    const healthPath = healthUrl.replace(url, '');
+    lines.push(`  it('GET ${healthPath} → 200', () => check('GET', '${healthPath}', 200));`);
+
+    if (apiEndpoints.length > 0) {
+      for (const ep of apiEndpoints) {
+        const method = (ep.method || 'GET').toUpperCase();
+        const epPath = ep.path || '/';
+        const expected = ep.response || 200;
+        const auth = ep.auth === 'required';
+        lines.push(`  it('${method} ${epPath} → ${expected}', () => check('${method}', '${epPath}', ${expected}${auth ? ', true' : ''}));`);
+      }
+    } else {
+      const statusPath = `${apiPrefix}/status`;
+      lines.push(`  it('GET ${statusPath} → 200', () => check('GET', '${statusPath}', 200));`);
+    }
+
+    lines.push('});');
 
     return lines.join('\n');
   },
