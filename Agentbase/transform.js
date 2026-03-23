@@ -148,7 +148,7 @@ function extractDescription(content) {
 // ─────────────────────────────────────────────────────
 
 function adaptInvokeSyntax(content, targetCli) {
-  const cap = CLI_CAPABILITIES[targetCli];
+  const cap = effectiveCapabilities[targetCli];
   if (!cap) return content;
 
   const prefix = cap.invoke.prefix;
@@ -194,6 +194,11 @@ let SKIP_PATHS = ['.claude/hooks/', '.claude/tracking/', '.claude/reports/'];
 /**
  * Varsayılan PATH_MAPS ile manifest'ten gelen özel path eşlemelerini birleştirir.
  * Manifest tanımı aynı CLI için varsayılan eşlemeleri ezer.
+ *
+ * NOT: path_maps sadece metin-ici referanslari donusturur. Gercek cikti
+ * dosya konumlari CLI_CAPABILITIES teki dir alanlari tarafindan belirlenir.
+ * Output dizinini degistirmek icin external CLI config kullanin.
+ *
  * @param {Object|undefined} manifestPathMaps - manifest.path_maps alanı
  * @returns {Object} Birleştirilmiş path map
  */
@@ -232,13 +237,25 @@ function adaptPathReferences(content, targetCli, pathMaps = PATH_MAPS) {
   }
 
   // Skill-based CLI'lar: {skills_dir}/{name}.md → {skills_dir}/{name}/SKILL.md
-  const cap = CLI_CAPABILITIES[targetCli];
+  const cap = effectiveCapabilities[targetCli];
   if (cap?.skills?.dir) {
     const skillsDir = cap.skills.dir;
     result = result.replace(
       new RegExp(`${escapeRegex(skillsDir)}/([\\w-]+)\\.md`, 'g'),
       `${skillsDir}/$1/SKILL.md`
     );
+    // Custom path_maps ile donusturulmus dizinler icin de normalize et
+    const customMaps = pathMaps[targetCli];
+    if (customMaps) {
+      for (const to of Object.values(customMaps)) {
+        if (to !== skillsDir && to.includes('skills')) {
+          result = result.replace(
+            new RegExp(`${escapeRegex(to)}([\\w-]+)\\.md`, 'g'),
+            `${to}$1/SKILL.md`
+          );
+        }
+      }
+    }
   }
 
   // Rule referanslari: .claude/rules/ ayri dosya olarak uretilmiyor —
@@ -445,7 +462,7 @@ function formatAgent(name, desc, adapted, cap, targetCli) {
 // ─────────────────────────────────────────────────────
 
 function transformForTarget(source, targetCli, pathMaps = PATH_MAPS) {
-  const cap = CLI_CAPABILITIES[targetCli];
+  const cap = effectiveCapabilities[targetCli];
   if (!cap) return {};
 
   const fileMap = {};
@@ -506,9 +523,11 @@ function writeTarget(outputDir, targetCli, fileMap) {
 // CLI ENTRY POINT
 // ─────────────────────────────────────────────────────
 
-const VALID_TARGETS = new Set(Object.keys(CLI_CAPABILITIES));
+// Effective capabilities — loadExternalCapabilities ile genisletilir
+let effectiveCapabilities = { ...CLI_CAPABILITIES };
 
 function resolveTargets(manifest, targetsFlag) {
+  const validSet = new Set(Object.keys(effectiveCapabilities));
   const manifestTargets = (manifest.targets || []).filter(t => t !== 'claude');
 
   let targets;
@@ -527,8 +546,8 @@ function resolveTargets(manifest, targetsFlag) {
 
   const invalid = [];
   const validTargets = targets.filter(t => {
-    if (!VALID_TARGETS.has(t)) {
-      invalid.push({ name: t, reason: `bilinmeyen CLI — gecerli degerler: ${[...VALID_TARGETS].join(', ')}` });
+    if (!validSet.has(t)) {
+      invalid.push({ name: t, reason: `bilinmeyen CLI — gecerli degerler: ${[...validSet].join(', ')}` });
       return false;
     }
     return true;
@@ -580,6 +599,12 @@ function main() {
   if (!manifest || typeof manifest !== 'object') {
     console.error('Hata: Manifest bos veya gecersiz — YAML objesi bekleniyor.');
     process.exit(1);
+  }
+
+  // External CLI capability config yukle (varsa)
+  if (manifest?.transform?.cli_config) {
+    const configPath = path.resolve(path.dirname(resolvedPath), manifest.transform.cli_config);
+    effectiveCapabilities = loadExternalCapabilities(configPath);
   }
 
   const { targets, invalid } = resolveTargets(manifest, flags.targets);
