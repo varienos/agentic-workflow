@@ -62,11 +62,29 @@ function extractDescription(content) {
 }
 
 // ─────────────────────────────────────────────────────
+// INVOKE SYNTAX DONUSUMU
+// ─────────────────────────────────────────────────────
+
+function adaptInvokeSyntax(content, targetCli) {
+  const cap = CLI_CAPABILITIES[targetCli];
+  if (!cap) return content;
+
+  const prefix = cap.invoke.prefix;
+  if (prefix === '/') return content; // Gemini — degismez
+
+  // Backtick icindeki /komut-adi pattern'ini yakala
+  return content.replace(/`\/([\w-]+)([^`]*)`/g, (match, cmd, rest) => {
+    return `\`${prefix}${cmd}${rest}\``;
+  });
+}
+
+// ─────────────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────────────
 
 module.exports = {
   extractDescription,
+  adaptInvokeSyntax,
   CLI_CAPABILITIES,
   AGENTBASE_DIR,
 };
