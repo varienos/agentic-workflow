@@ -104,6 +104,8 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 ### Dokümantasyon
 
+- CHANGELOG v1.0.0 release (TASK-155) (`2dfbbcf`)
+- CHANGELOG otomatik güncellendi [skip ci] (`c364e18`)
 - CHANGELOG otomatik güncellendi [skip ci] (`238876a`)
 - CHANGELOG otomatik güncellendi [skip ci] (`638020a`)
 - CHANGELOG otomatik güncellendi [skip ci] (`0b45815`)
