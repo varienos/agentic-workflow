@@ -3,7 +3,13 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [Yayınlanmamış] - 2026-03-23
+## [1.0.2] - 2026-03-23
+
+### Eklenen
+
+- release.js GitHub Release olusturma destegi (`9d13b92`)
+
+## [1.0.1] - 2026-03-23
 
 ### Düzeltilen
 
@@ -18,18 +24,6 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 ### Dokümantasyon
 
 - CHANGELOG otomatik güncellendi [skip ci] (`b32f7cd`)
-
-## [1.0.1] - 2026-03-23
-
-### Düzeltilen
-
-- **session:** addToFileList kok dizin yolu (/) bos string eklemiyor (`be8bf91`)
-- **deep-audit:** session modulu — ensureDir atomik, saveState 0o600, backlog_sync.path, lazy regex, shortenPath tutarliligi, skeleton icon duzeltmesi + 12 yeni test (`c68c821`)
-- bootstrap ve generator enforcement driftini kapat (`cdf1258`)
-
-### Yeniden Düzenlenen
-
-- isTestCommand shared-patterns.js, backlog_sync.missing strateji, MAX_TEAMMATES siniri (`5ae4f3a`)
 
 ## [1.0.0] - 2026-03-23
 
