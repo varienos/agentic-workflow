@@ -168,27 +168,32 @@ const PATH_MAPS = {
   gemini: {
     '.claude/commands/': '.gemini/commands/',
     '.claude/agents/': '.gemini/agents/',
+    '.claude/rules/': '.gemini/rules/',
     'CLAUDE.md': 'GEMINI.md',
   },
   codex: {
     '.claude/commands/': '.codex/skills/',
     '.claude/agents/': '.codex/skills/',
+    '.claude/rules/': '.codex/rules/',
     'CLAUDE.md': 'AGENTS.md',
   },
   kimi: {
     '.claude/commands/': '.kimi/skills/',
     '.claude/agents/': '.kimi/agents/',
-    'CLAUDE.md': 'default-prompt.md',
+    '.claude/rules/': '.kimi/rules/',
+    'CLAUDE.md': '.kimi/agents/default-prompt.md',
   },
   opencode: {
     '.claude/commands/': '.opencode/skills/',
     '.claude/agents/': '.opencode/agents/',
-    'CLAUDE.md': 'AGENTS.md',
+    '.claude/rules/': '.opencode/rules/',
+    'CLAUDE.md': '.opencode/AGENTS.md',
   },
 };
 
 // Manifest transform.skip_paths ile override edilebilir
-let SKIP_PATHS = ['.claude/hooks/', '.claude/tracking/', '.claude/reports/', '.claude/rules/'];
+// .claude/rules/ SKIP_PATHS'ten cikarildi — rule referanslari PATH_MAPS ile donusturuluyor
+let SKIP_PATHS = ['.claude/hooks/', '.claude/tracking/', '.claude/reports/'];
 
 /**
  * Varsayılan PATH_MAPS ile manifest'ten gelen özel path eşlemelerini birleştirir.
@@ -426,13 +431,13 @@ function transformForTarget(source, targetCli, pathMaps = PATH_MAPS) {
 
   for (const cmd of source.commands) {
     const adapted = adaptContent(cmd.content, targetCli, undefined, pathMaps);
-    const desc = extractDescription(cmd.content);
+    const desc = extractDescription(adapted);
     Object.assign(fileMap, formatCommand(cmd.name, desc, adapted, cap));
   }
 
   for (const agent of source.agents) {
     const adapted = adaptContent(agent.content, targetCli, undefined, pathMaps);
-    const desc = extractDescription(agent.content);
+    const desc = extractDescription(adapted);
     Object.assign(fileMap, formatAgent(agent.name, desc, adapted, cap, targetCli));
   }
 
