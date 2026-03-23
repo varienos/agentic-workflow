@@ -126,6 +126,8 @@ Daha once benzer puanlama yapildi mi? Episodic memory'de ara:
 
 > **KURAL:** Kullanici daha once bir gorevi "MANUAL" olarak onceliklendirdiyse, o gorevi hesaplamanin disinda birak ve raporun sonunda ayrica listele.
 
+> **NASIL TETIKLENIR:** Kullanici onceki bir oturumda "X gorevini MANUAL olarak onceliklendir" veya "X gorevini puanlamadan hep en uste koy" gibi bir yonerge vermis ve bu hafizaya kaydedilmis olmalidir. Otomatik bir tespit mekanizmasi yoktur — yalnizca hafizadaki kullanici yonergeleri MANUAL fazini tetikler.
+
 ---
 
 ## Step 5 — Rapor Olustur

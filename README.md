@@ -159,7 +159,7 @@ Backlog'daki bir görevi otonom olarak implement eder. Görev dosyasını okur, 
 
 ### /task-master
 
-Backlog'daki tüm açık görevleri 4 boyutlu skorlama ile önceliklendirir. Her görev için Impact (etki), Risk (risk), Dependency (bağımlılık) ve Complexity (karmaşıklık — ters orantılı) skorları hesaplanır. Sonuç olarak faz bazlı bir çalışma planı çıkarır: Faz 1 kritik görevler, Faz 2 önemli görevler, Faz 3 planlanmış görevler, MANUEL fazda insan müdahalesi gereken görevler.
+Backlog'daki tüm açık görevleri 4 boyutlu skorlama ile önceliklendirir. Her görev için Impact (etki), Risk (risk), Dependency (bağımlılık) ve Complexity (karmaşıklık — ters orantılı) skorları hesaplanır. Sonuç olarak faz bazlı bir çalışma planı çıkarır: Faz 1 kritik görevler, Faz 2 önemli görevler, Faz 3 planlanmış görevler, MANUEL fazda kullanıcının daha önce manuel olarak önceliklendirdiği görevler (puanlama dışı tutulur, raporun sonunda ayrıca listelenir). MANUEL fazı tetiklemek için: geçmiş bir oturumda "X görevini MANUEL olarak önceliklendir" şeklinde bir yönerge verilmiş ve agent hafızasına kaydedilmiş olmalıdır.
 
 ```
 /task-master
@@ -167,7 +167,7 @@ Backlog'daki tüm açık görevleri 4 boyutlu skorlama ile önceliklendirir. Her
 
 ### /task-conductor
 
-Birden fazla görevi faz bazlı otonom olarak işler. Görevleri kendi puanlama sistemiyle önceliklendirir ve fazlara atar, her fazda sırayla veya paralel olarak implement eder, faz sonunda özet ve bütünlük kontrolü yapar. Manuel faz desteği vardır — bazı görevler insan müdahalesi gerektiğinde conductor durur ve bekler. State dosyası ile kesintiye uğradığında kaldığından devam eder.
+Birden fazla görevi faz bazlı otonom olarak işler. Görevleri kendi puanlama sistemiyle önceliklendirir ve fazlara atar, her fazda sırayla veya paralel olarak implement eder, faz sonunda özet ve bütünlük kontrolü yapar. State dosyası ile kesintiye uğradığında kaldığından devam eder. Bir fazda art arda 3 hata oluşursa durur ve kullanıcıyı bildirir.
 
 ```
 /task-conductor top 5        # En yüksek öncelikli 5 görev
