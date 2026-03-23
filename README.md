@@ -346,14 +346,14 @@ cd Agentbase && node bin/session-monitor.js                                 # Ot
 cd Agentbase && node generate.js ../Docs/agentic/project-manifest.yaml --dry-run  # Kuru çalıştırma
 ```
 
-## Katki
+## Katkı
 
-Katki yapmak istiyorsaniz [CONTRIBUTING.md](CONTRIBUTING.md) dosyasini okuyun.
+Katkı yapmak istiyorsanız [CONTRIBUTING.md](CONTRIBUTING.md) dosyasını okuyun.
 
-## Guvenlik
+## Güvenlik
 
-Guvenlik acigi bildirimi icin [SECURITY.md](SECURITY.md) dosyasini okuyun. Public issue **acmayin** — hello@varien.software adresine bildirin.
+Güvenlik açığı bildirimi için [SECURITY.md](SECURITY.md) dosyasını okuyun. Public issue **açmayın** — hello@varien.software adresine bildirin.
 
 ## Lisans
 
-Bu proje [MIT](LICENSE) lisansi ile sunulmaktadir. Copyright (c) 2026 Varien Software.
+Bu proje [MIT](LICENSE) lisansı ile sunulmaktadır. Copyright (c) 2026 Varien Software.
