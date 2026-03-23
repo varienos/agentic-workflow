@@ -131,7 +131,7 @@ Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçim
 5. Manifeste göre ilgili komutları, ajanları, hook'ları, kuralları ve yardımcı dokümanları oluşturur.
 6. Backlog'u başlatır ve başlangıç görevlerini oluşturur (`backlog/` root dizinde).
 7. Yeniden çalıştırmalarda `overwrite`, `merge` ve `incremental` senaryolarını destekler.
-8. Git hook'larını etkinleştirmeniz için gerekli komutu gösterir (otomatik çalıştırmaz): `cd Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
+8. Git hook'larını etkinleştirmeniz için gerekli komutu gösterir (otomatik çalıştırmaz): `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
 
 ## Komutlar
 
