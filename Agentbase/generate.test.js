@@ -1549,3 +1549,57 @@ describe('settings.skeleton.json kosul adlari', () => {
     );
   });
 });
+
+// ─────────────────────────────────────────────────────
+// BOZUK YAML HATA MESAJI TESTI (ENTEGRASYON)
+// ─────────────────────────────────────────────────────
+
+describe('Bozuk YAML hata mesaji', () => {
+  const { execFileSync } = require('node:child_process');
+  const fs = require('node:fs');
+  const os = require('node:os');
+
+  it('bozuk YAML de kullanici dostu hata mesaji veriyor (stack trace yok)', () => {
+    const tmpFile = path.join(os.tmpdir(), `broken-manifest-${Date.now()}.yaml`);
+    fs.writeFileSync(tmpFile, 'modules:\n  active:\n    orm: prisma\n  invalid\n');
+
+    try {
+      let stderr = '';
+      try {
+        execFileSync(process.execPath, [path.join(__dirname, 'generate.js'), tmpFile], {
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+      } catch (execErr) {
+        stderr = execErr.stderr || '';
+      }
+      assert.ok(stderr.includes('Manifest YAML parse hatasi'), 'kullanici dostu hata mesaji olmali');
+      assert.ok(stderr.includes('satir'), 'satir bilgisi olmali');
+      assert.ok(stderr.includes('kolon'), 'kolon bilgisi olmali');
+      assert.ok(!stderr.includes('at yaml.load'), 'stack trace olmamali');
+      assert.ok(!stderr.includes('at Object.'), 'stack trace olmamali');
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+
+  it('gecerli ama bos YAML de anlasilir hata mesaji veriyor', () => {
+    const tmpFile = path.join(os.tmpdir(), `empty-manifest-${Date.now()}.yaml`);
+    fs.writeFileSync(tmpFile, '');
+
+    try {
+      let stderr = '';
+      try {
+        execFileSync(process.execPath, [path.join(__dirname, 'generate.js'), tmpFile], {
+          encoding: 'utf8',
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+      } catch (execErr) {
+        stderr = execErr.stderr || '';
+      }
+      assert.ok(stderr.includes('bos veya gecersiz'), 'bos manifest icin anlasilir hata mesaji olmali');
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+});
