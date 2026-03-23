@@ -112,7 +112,9 @@ Ardindan /bootstrap komutunu tekrar calistirin.
      - `.claude/agents/`
      - `.claude/hooks/`
      - `.claude/rules/`
-     - Agentbase root'unda bootstrap'in urettigi dosyalar (`CLAUDE.md`, `.mcp.json`, `.claude-ignore`, `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`)
+     - generate.js ciktilari: `.claude/settings.json`, `.claude/CLAUDE.md`, `.claude-ignore`, `git-hooks/`
+     - Bootstrap-direct dosyalar (Claude dogrudan yazar, generate.js uretmez): `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`
+     - NOT: Root `CLAUDE.md` generate.js tarafindan URETILMEZ — `.claude/CLAUDE.md` uretilir. `.mcp.json` icin template yoktur, gerekirse Claude dogrudan olusturur.
   5. Her yonetilen dosya icin manifestteki checksum ile mevcut dosyayi karsilastir:
      - eslesiyorsa → Bootstrap-yonetimli ve temiz
      - eslesmiyorsa → kullanici customization'i olarak isaretle
@@ -1156,15 +1158,14 @@ Lead (sen)
   │         bilgilendirme amaclidir, korunmalidir.
   │
   ├──► Teammate 4: config-generator (Agent tool)
-  │    Gorev: CLAUDE.md, .mcp.json, .claude-ignore dosyalarini uret
-  │    Girdi: manifest + templates/core/CLAUDE.md.skeleton
-  │                     + templates/core/claude-ignore.skeleton
-  │    Cikti: ./CLAUDE.md (root)
-  │           .claude/CLAUDE.md (inner)
-  │           .mcp.json
+  │    Gorev: generate.js ile .claude/ config dosyalarini uret
+  │    Girdi: manifest + templates/core/ (CLAUDE.md.skeleton, settings.skeleton.json, claude-ignore.skeleton)
+  │    Cikti: .claude/CLAUDE.md
+  │           .claude/settings.json
   │           .claude-ignore
   │    NOT: CLAUDE.md.skeleton'daki GENERATE bloklarini manifest'ten doldur.
   │         Backlog CLI rehberi SABIT kalir, proje bilgileri GENERATE bloklarina girer.
+  │         .mcp.json icin template yoktur — gerekirse Claude dogrudan olusturur.
   │
   └──► Teammate 5: root-generator (Agent tool)
        Gorev: Root dokumantasyon dosyalarini uret
@@ -1806,19 +1807,18 @@ Atlanan (template bulunamadi):
 Bash ile kontrol et: `ls ../backlog/config.yml 2>/dev/null`
 
 - **Mevcutsa** → Atlat, mevcut backlog'u koru.
-- **Mevcut degilse** → Once `cd .. && backlog init && cd Agentbase` dene. Eger interaktif mod gerektirirse (prompt bekler ve tamamlanmazsa), fallback olarak elle olustur:
+- **Mevcut degilse** → Non-interactive init komutu calistir:
 
 ```bash
-mkdir -p ../backlog/tasks ../backlog/completed ../backlog/drafts ../backlog/decisions ../backlog/docs
-cat > ../backlog/config.yml << EOF
-project_name: [manifest.project.name]
-version: 1
-milestones: []
-definition_of_done:
-  - Tum testler geciyor
-  - Kod review yapildi
-  - Dokumantasyon guncellendi
-EOF
+cd .. && backlog init "[manifest.project.name]" --defaults && cd Agentbase
+```
+
+Bu komut `backlog/` dizinini tasks/, completed/, archive/, milestones/ alt dizinleriyle ve config.yml ile olusturur. Eger Backlog CLI kurulu degilse veya init basarisiz olursa, DURMA — kullaniciya bildir:
+
+```
+Backlog CLI bulunamadi veya init basarisiz oldu.
+Kurulum: npm i -g backlog.md
+Sonra bootstrap'i tekrar calistirin.
 ```
 
 ### 6.2 Baslangic Gorevleri
