@@ -24,7 +24,7 @@ Mevcut bir projeye entegre edebilir veya sıfırdan yeni bir proje başlatabilir
 - **Çoklu CLI desteği** — Claude Code çıktıları `transform.js` ile Gemini CLI, Codex CLI, Kimi CLI ve OpenCode formatlarına dönüştürülebilir.
 - **Dokümantasyon senkronizasyonu** — Kod değişikliği sonrası PROJECT.md, ARCHITECTURE.md gibi dokümanların güncellenmesini öneren service-documentation agent'ı.
 - **Eklenti öneri sistemi** — Bootstrap tamamlandığında projenize uygun üçüncü parti skill ve plugin'leri öneren dahili registry taraması.
-- **Otomatik CHANGELOG** — Her push'ta GitHub Action ile CHANGELOG.md otomatik güncellenir. Conventional Commits formatı parse edilir.
+- **Otomatik CHANGELOG** — GitHub Action, sadece `main` branch'ine yapılan push'larda `CHANGELOG.md` dosyasını otomatik günceller. Conventional Commits formatı parse edilir.
 
 ## Temel Yaklaşım
 
@@ -325,7 +325,7 @@ Aşağıdaki stack'ler bootstrap tarafından algılanır ve manifest'e yazılır
 - **Backend:** Flask
 - **ORM:** Sequelize, Drizzle
 
-Go, Rust, Java/Kotlin greenfield modunda seçilebilir ancak otomatik tespit listesinde yer almaz — bootstrap bu stack'leri ancak kullanıcı açıkça belirtirse tanır. Yukarıda listelenmeyen stack'ler için manifest elle yapılandırılmalıdır. Generic destek, framework-spesifik koruma sağlamaz; yalnızca çekirdek workflow komutları ve genel güvenlik kontrolleri üretilir.
+Go, Rust ve Java/Kotlin mevcut proje analizinde de otomatik tespit edilir (`go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle`, `build.gradle.kts`). Greenfield modunda ise bu stack'ler röportajda açıkça seçilir. Her iki durumda da bu aileler generic kapsamda kalır: framework-spesifik hook/rule/agent üretimi yapılmaz; yalnızca çekirdek workflow komutları ve genel güvenlik kontrolleri üretilir. Yukarıda listelenmeyen stack'ler için manifestin elle zenginleştirilmesi gerekebilir.
 
 ## Çoklu CLI Dönüştürme
 

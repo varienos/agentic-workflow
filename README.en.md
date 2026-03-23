@@ -15,14 +15,14 @@ You can integrate it into an existing project or start a brand new one from scra
 - **Autonomous task management** — Pick a task from backlog, plan, implement, test, commit, close. Single command.
 - **Automatic code review** — 3+1 agents review every change: code quality, silent failures, regression risk. Conditional Devils Advocate perspective for security changes.
 - **Smart bug fix** — Root cause analysis, max 3 hypotheses, minimal fix, regression test. Doesn't dive into endless depth.
-- **Deploy safety net** — Pre-push checks, post-deploy verification, rollback guide. Control steps vary by deploy platform (Docker/Coolify: migration + Docker build; Vercel: TypeScript + edge-runtime). Requires git hook activation (see Bootstrap Flow step 8).
+- **Deploy safety net** — Pre-push checks, post-deploy verification, rollback guide. Control steps vary by deploy platform (Docker/Coolify: migration + Docker build; Vercel: TypeScript + edge-runtime). Requires git hook activation (see Bootstrap Flow step 9).
 - **Project-specific rules** — Hooks, framework rules, and protection mechanisms are auto-generated based on your stack.
 - **Live session monitoring** — Track multiple Claude Code sessions from a single terminal screen.
 - **Worktree-friendly architecture** — Agentbase/Codebase separation enables single config, multiple worktrees, parallel development.
 - **Multi-CLI support** — Claude Code outputs can be transformed to Gemini CLI, Codex CLI, Kimi CLI, and OpenCode formats via `transform.js`.
 - **Documentation sync** — Service-documentation agent suggests updating PROJECT.md, ARCHITECTURE.md after code changes.
 - **Extension recommendations** — Built-in registry scan suggests relevant third-party skills and plugins after bootstrap completes.
-- **Automatic CHANGELOG** — GitHub Action auto-updates CHANGELOG.md on every push. Conventional Commits format is parsed.
+- **Automatic CHANGELOG** — GitHub Action auto-updates `CHANGELOG.md` only on pushes to the `main` branch. Conventional Commits are parsed.
 
 ## Core Approach
 
@@ -136,8 +136,9 @@ The `/bootstrap` command works through these high-level steps:
 4. Generates the `Docs/agentic/project-manifest.yaml` file.
 5. Creates the relevant commands, agents, hooks, rules, and supporting documentation based on the manifest.
 6. Initializes the backlog and creates starter tasks (`backlog/` in root directory).
-7. Supports `overwrite`, `merge`, and `incremental` scenarios for re-runs.
-8. Shows the command needed to activate git hooks (does not run it automatically): `cd Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
+7. If target CLI tools were selected during the interview (Gemini/Codex/Kimi/OpenCode), transforms the `.claude/` output into those formats via `transform.js`.
+8. Supports `overwrite`, `merge`, and `incremental` scenarios for re-runs.
+9. Shows the command needed to activate git hooks (does not run it automatically): `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
 
 ## Commands
 
@@ -192,7 +193,7 @@ Reviews recent changes with 3+1 agents. Code Reviewer evaluates overall code qua
 
 ### /auto-review
 
-Diff-based, loop-compatible, and idempotent review. Examines changes since the last commit with hash checking — never reviews the same diff twice. Fixes MINOR findings directly and commits, opens backlog tasks for MAJOR findings. Compatible with the `/loop` skill for periodic execution. Does not re-review its own fix commits in subsequent runs.
+Diff-based, loop-compatible, and idempotent review. Examines changes since the last commit with hash checking — never reviews the same diff twice. Fixes MINOR findings directly and commits, opens backlog tasks for MAJOR findings. Compatible with an external `/loop` skill or plugin for periodic execution, for example the [superpowers](https://github.com/obra/superpowers) extension — it is not bundled with this repo. Does not re-review its own fix commits in subsequent runs.
 
 ```
 /auto-review
@@ -296,12 +297,26 @@ cd Agentbase && node bin/session-monitor.js
 
 The template system is modular and only generates content for detected families:
 
+### First-class Support
+
+For these stacks, Bootstrap generates framework-specific hooks, rules, and protection mechanisms:
+
 - **ORM:** Prisma, Eloquent, Django ORM, TypeORM
 - **Deploy:** Docker, Coolify, Vercel
 - **Backend:** Express, Fastify, NestJS, Laravel, CodeIgniter 4, Django, FastAPI
 - **Frontend:** Next.js, React SPA, plain HTML/CSS/JS
 - **Mobile:** Expo, React Native, Flutter
 - **Additional:** Monorepo, security scanning, CI/CD, monitoring, API documentation
+
+### Generic Bootstrap Support
+
+The following stacks are detected and written to the manifest, but no framework-specific hook/rule/agent templates are generated for them. Bootstrap only produces the core commands (`task-hunter`, `task-review`, etc.) plus general protections such as secret scanning and lockfile protection:
+
+- **Frontend:** Vue, Svelte
+- **Backend:** Flask
+- **ORM:** Sequelize, Drizzle
+
+Go, Rust, and Java/Kotlin are also auto-detected during existing-project analysis through files such as `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle`, and `build.gradle.kts`. In greenfield mode, those stacks are chosen explicitly during the interview instead. In both cases they remain in the generic tier: no framework-specific hooks, rules, or agents are generated for them. Stacks not listed above may require manual manifest enrichment.
 
 ## Multi-CLI Transform
 
