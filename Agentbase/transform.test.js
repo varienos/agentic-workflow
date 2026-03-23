@@ -4,7 +4,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { extractDescription, adaptInvokeSyntax, adaptPathReferences } = require('./transform.js');
+const { extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent } = require('./transform.js');
 
 describe('extractDescription', () => {
   it('baslik — aciklama formatindan cikarir', () => {
@@ -90,5 +90,62 @@ describe('adaptPathReferences', () => {
     const input = '`CLAUDE.md` dosyasi ana context';
     const result = adaptPathReferences(input, 'gemini');
     assert.ok(result.includes('GEMINI.md'));
+  });
+});
+
+describe('stripClaudeOnlySections', () => {
+  it('hooks bolumunu cikarir', () => {
+    const input = '## Bolum 1\n\nIcerik\n\n### Otomatik Test Sinyalleri (Hook Tabanli)\n\nHook detaylari...\n\n**Kurallar:**\n- Hook kurali\n\n## Bolum 2\n\nDiger icerik';
+    const result = stripClaudeOnlySections(input);
+    assert.ok(!result.includes('Hook Tabanli'));
+    assert.ok(result.includes('Bolum 1'));
+    assert.ok(result.includes('Bolum 2'));
+  });
+
+  it('settings.json referanslarini cikarir', () => {
+    const input = '**Source of truth:** `settings.json` + `.claude/hooks/auto-test-runner.js`\n\nDiger satir';
+    const result = stripClaudeOnlySections(input);
+    assert.ok(!result.includes('settings.json'));
+    assert.ok(result.includes('Diger satir'));
+  });
+
+  it('hook-disi bolumlere dokunmaz', () => {
+    const input = '## Konvansiyonlar\n\nCommit formati...\n\n## Proje Tanimi\n\nTanim...';
+    assert.equal(stripClaudeOnlySections(input), input);
+  });
+});
+
+describe('inlineRules', () => {
+  it('rules dosyalarini context sonuna ekler', () => {
+    const context = '# Context\n\nIcerik';
+    const rules = [
+      { name: 'workflow', content: '# Workflow Kurallari\n\nKural 1' },
+      { name: 'memory', content: '# Memory Protokolu\n\nKural 2' },
+    ];
+    const result = inlineRules(context, rules);
+    assert.ok(result.includes('Workflow Kurallari'));
+    assert.ok(result.includes('Memory Protokolu'));
+    assert.ok(result.indexOf('Context') < result.indexOf('Workflow'));
+  });
+
+  it('bos rules dizisi ile context degismez', () => {
+    const context = '# Context';
+    assert.equal(inlineRules(context, []), context);
+  });
+});
+
+describe('adaptContent', () => {
+  it('strip, path, invoke sirasini uygular', () => {
+    const input = '`.claude/commands/task-master.md` icin `/task-master` kullanin.\n\n**Source of truth:** `settings.json`';
+    const result = adaptContent(input, 'codex');
+    assert.ok(!result.includes('settings.json'));
+    assert.ok(result.includes('.codex/skills/'));
+    assert.ok(result.includes('$task-master'));
+  });
+
+  it('rules parametresi gecildiginde inline merge yapar', () => {
+    const rules = [{ name: 'rule1', content: '# Kural 1\n\nIcerik' }];
+    const result = adaptContent('# Context', 'gemini', rules);
+    assert.ok(result.includes('Kural 1'));
   });
 });

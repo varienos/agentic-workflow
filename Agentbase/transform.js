@@ -130,6 +130,48 @@ function escapeRegex(str) {
 }
 
 // ─────────────────────────────────────────────────────
+// CLAUDE-ONLY BOLUM TEMIZLEME
+// ─────────────────────────────────────────────────────
+
+const CLAUDE_ONLY_PATTERNS = [
+  /### Otomatik Test Sinyalleri \(Hook Tabanli\)[\s\S]*?(?=\n## |\n---|\n$)/g,
+  /^.*settings\.json.*$/gm,
+  /^\*\*Source of truth:\*\*.*\.claude\/hooks\/.*$/gm,
+];
+
+function stripClaudeOnlySections(content) {
+  let result = content;
+  for (const pattern of CLAUDE_ONLY_PATTERNS) {
+    result = result.replace(pattern, '');
+  }
+  return result.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+// ─────────────────────────────────────────────────────
+// RULES INLINE MERGE
+// ─────────────────────────────────────────────────────
+
+function inlineRules(content, rules) {
+  if (!rules || rules.length === 0) return content;
+  const rulesSection = rules.map(r => `\n---\n\n${r.content}`).join('\n');
+  return content + '\n' + rulesSection;
+}
+
+// ─────────────────────────────────────────────────────
+// ADAPT CONTENT WRAPPER
+// ─────────────────────────────────────────────────────
+
+function adaptContent(content, targetCli, rules) {
+  let result = stripClaudeOnlySections(content);
+  if (rules && rules.length > 0) {
+    result = inlineRules(result, rules);
+  }
+  result = adaptPathReferences(result, targetCli);
+  result = adaptInvokeSyntax(result, targetCli);
+  return result;
+}
+
+// ─────────────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────────────
 
@@ -137,6 +179,9 @@ module.exports = {
   extractDescription,
   adaptInvokeSyntax,
   adaptPathReferences,
+  stripClaudeOnlySections,
+  inlineRules,
+  adaptContent,
   escapeRegex,
   CLI_CAPABILITIES,
   AGENTBASE_DIR,
