@@ -168,11 +168,10 @@ function processJsonGenerateKeys(obj, manifest) {
         result[key] = walk(value);
       }
 
-      // _pendingHooks'u hooks array'ine merge et
-      if (result._pendingHooks && result.hooks && Array.isArray(result.hooks)) {
+      // _pendingHooks'u hooks array'ine merge et (yoksa olustur)
+      if (result._pendingHooks) {
+        if (!Array.isArray(result.hooks)) result.hooks = [];
         result.hooks.push(...result._pendingHooks);
-        delete result._pendingHooks;
-      } else if (result._pendingHooks) {
         delete result._pendingHooks;
       }
 

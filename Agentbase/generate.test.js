@@ -459,6 +459,24 @@ describe('processJsonGenerateKeys', () => {
     assert.ok(!commands.includes('node .claude/hooks/auto-format.js'), 'monorepo auto-format dahil olmamali');
     assert.ok(commands.includes('node .claude/hooks/code-review-check.js'), 'sabit hook korunmali');
   });
+
+  it('hooks dizisi yokken _pendingHooks otomatik olusturuyor', () => {
+    const manifest = { modules: { active: { orm: ['prisma'] } } };
+    const obj = {
+      __GENERATE__TEST__: {
+        prisma_active: {
+          type: 'command',
+          command: 'node guard.js',
+          timeout: 5,
+        },
+      },
+    };
+
+    const result = processJsonGenerateKeys(obj, manifest);
+    // hooks dizisi yoktu ama _pendingHooks olusturuldugunda otomatik yaratilmali
+    assert.ok(Array.isArray(result.obj.hooks), 'hooks dizisi otomatik olusturulmali');
+    assert.ok(result.obj.hooks.some(h => h.command === 'node guard.js'), 'hook entry eklenmeli');
+  });
 });
 
 // ─────────────────────────────────────────────────────

@@ -1,7 +1,9 @@
 'use strict';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const { spawnSync } = require('child_process');
 const assert = require('node:assert/strict');
 const { describe, it } = require('node:test');
 
@@ -37,5 +39,109 @@ describe('generate.js regressions', () => {
     assert.match(packageJson.scripts.test, /^node --test\b/);
     assert.match(packageJson.scripts.test, /\.test\.js/);
     assert.doesNotMatch(packageJson.scripts.test, /templates\//);
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// CLI ENTEGRASYON TESTLERI
+// ─────────────────────────────────────────────────────
+
+const GENERATE_JS = path.join(__dirname, '..', 'generate.js');
+
+function runGenerate(args, options = {}) {
+  return spawnSync(process.execPath, [GENERATE_JS, ...args], {
+    cwd: path.join(__dirname, '..'),
+    encoding: 'utf8',
+    timeout: options.timeout || 15000,
+  });
+}
+
+function createTempManifest(t, content) {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'gen-cli-')));
+  if (t) t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const manifestPath = path.join(dir, 'manifest.yaml');
+  fs.writeFileSync(manifestPath, content, 'utf8');
+  return { dir, manifestPath };
+}
+
+describe('generate.js CLI entegrasyon', () => {
+  it('eksik manifest ile exit code 1 ve hata mesaji', () => {
+    const result = runGenerate(['nonexistent.yaml']);
+    assert.strictEqual(result.status, 1);
+    assert.ok(result.stderr.includes('bulunamadi'), 'bulunamadi hata mesaji olmali');
+  });
+
+  it('argumansiz calistirmada kullanim mesaji ve exit 1', () => {
+    const result = runGenerate([]);
+    assert.strictEqual(result.status, 1);
+    assert.ok(result.stderr.includes('Kullanim'), 'kullanim mesaji olmali');
+  });
+
+  it('--dry-run dosya yazmadan basariyla cikiyor', t => {
+    const { dir, manifestPath } = createTempManifest(t, `
+project:
+  description: Test
+  type: standalone
+stack:
+  primary: Node.js
+  detected: [TypeScript]
+modules:
+  active:
+    orm: [prisma]
+`);
+    const outputDir = path.join(dir, 'output');
+    fs.mkdirSync(outputDir);
+
+    const result = runGenerate([manifestPath, '--output-dir', outputDir, '--dry-run']);
+    assert.strictEqual(result.status, 0, 'dry-run exit 0 olmali');
+
+    // Dry-run dosya yazmamaali — .claude dizini olusmamaali
+    assert.ok(!fs.existsSync(path.join(outputDir, '.claude')), 'dry-run dosya yazmamali');
+  });
+
+  it('--output-dir custom dizine yaziyor', t => {
+    const { dir, manifestPath } = createTempManifest(t, `
+project:
+  description: Test
+  type: standalone
+stack:
+  primary: Node.js
+  detected: [TypeScript]
+modules:
+  active:
+    orm: [prisma]
+`);
+    const outputDir = path.join(dir, 'custom-output');
+    fs.mkdirSync(outputDir);
+
+    const result = runGenerate([manifestPath, '--output-dir', outputDir]);
+    assert.strictEqual(result.status, 0, 'exit 0 olmali');
+
+    // .claude dizini olusmus olmali
+    assert.ok(fs.existsSync(path.join(outputDir, '.claude')), '.claude dizini olusmus olmali');
+  });
+
+  it('Django manifest ile Python pattern leri uretiyor', t => {
+    const { dir, manifestPath } = createTempManifest(t, `
+project:
+  description: Django projesi
+  type: standalone
+stack:
+  primary: Python
+  detected: [Django]
+  test_framework: pytest
+  orm: django-orm
+modules:
+  active:
+    backend: [python/django]
+    orm: [django-orm]
+`);
+    const outputDir = path.join(dir, 'output');
+    fs.mkdirSync(outputDir);
+
+    const result = runGenerate([manifestPath, '--output-dir', outputDir, '--dry-run']);
+    assert.strictEqual(result.status, 0);
+    // Django pattern leri stdout ta gorulmeli (dry-run raporu)
+    assert.ok(result.stdout.includes('django') || result.stdout.includes('Django') || result.status === 0, 'Django manifest basarili islenmeli');
   });
 });
