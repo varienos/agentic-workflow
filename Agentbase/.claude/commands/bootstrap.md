@@ -544,7 +544,44 @@ Sonucu goster:
      lint:  [komut]
 ```
 
-### 2.6 Analiz Ozeti
+### 2.6 API Endpoint Kesfetme
+
+Backend API tespit edildiyse, route/controller dosyalarini tarayarak endpoint haritasi cikar.
+
+**Oncelik sirasi:**
+1. OpenAPI spec varsa (`openapi.yaml`, `openapi.json`, `swagger.json`, `swagger.yaml`) → spec ten oku, codebase taramasi ATLA
+2. Spec yoksa → framework-spesifik pattern ler ile tara:
+
+| Framework | Aranacak Pattern | Dosya Konumu |
+|---|---|---|
+| Express | `app.get/post/put/delete(`, `router.get/post/put/delete(` | `routes/`, `src/routes/`, `app.js`, `server.js` |
+| NestJS | `@Get(`, `@Post(`, `@Put(`, `@Delete(` dekoratorleri | `*.controller.ts` |
+| Laravel | `Route::get/post/put/delete(` | `routes/api.php`, `routes/web.php` |
+| CodeIgniter 4 | `$routes->get/post/put/delete(` | `app/Config/Routes.php` |
+| FastAPI | `@app.get/post/put/delete(` | `*.py` |
+
+Her bulunan endpoint icin:
+```yaml
+api_endpoints:
+  - method: GET
+    path: /api/v1/users
+    auth: required   # Authorization middleware/guard varsa
+    response: 200
+```
+
+**Auth tespiti:** Route tanimi icinde `auth`, `authenticate`, `guard`, `middleware` kelimeleri geciyorsa `auth: required`.
+
+Sonucu goster:
+```
+🔍 API Endpoint Kesfetme:
+   Kaynak: [OpenAPI spec / Express routes / NestJS controllers / ...]
+   Bulunan: [X] endpoint
+   Auth gerektiren: [Y] endpoint
+```
+
+Endpoint bulunamazsa atla — smoke test fallback (health + status) kullanilir.
+
+### 2.7 Analiz Ozeti
 
 Tum sonuclari bir ozet halinde goster:
 
