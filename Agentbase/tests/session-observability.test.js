@@ -228,6 +228,34 @@ describe('session-tracker observability', () => {
     assert.ok(state.files.read.some(f => f.includes('config.json')), 'path ile gelen dosya read listesinde olmali');
     assert.equal(state.tools.by_type.Read, 1, 'Read olarak siniflandirilmali, Unknown degil');
   });
+
+  it('basarili Read cagrisinda error string i yanlis pozitif uretmiyor', t => {
+    const projectRoot = createTempProject(t);
+    const hookPath = materializeHook(projectRoot, 'core/hooks/session-tracker.js');
+
+    // JSON icerigi "error" kelimesi iceren basarili Read
+    runHook(hookPath, makeToolPayload(
+      { file_path: '/tmp/proje/src/errors.json' },
+      '{"error": "not_found", "ENOENT": true, "message": "File EACCES denied"}'
+    ));
+
+    const state = readSessionState(projectRoot);
+    assert.equal(state.errors.count, 0, 'basarili Read de error count artmamali');
+    assert.equal(state.tools.by_type.Read, 1);
+  });
+
+  it('Bash exit_code=0 iken stdout da error string i olsa bile hata sayilmiyor', t => {
+    const projectRoot = createTempProject(t);
+    const hookPath = materializeHook(projectRoot, 'core/hooks/session-tracker.js');
+
+    runHook(hookPath, makeToolPayload(
+      { command: 'cat error-handler.js' },
+      { exit_code: 0, stdout: 'function handleError(err) { if (err.code === "ENOENT") {} }' }
+    ));
+
+    const state = readSessionState(projectRoot);
+    assert.equal(state.errors.count, 0, 'exit_code=0 iken error count artmamali');
+  });
 });
 
 describe('session-monitor backlog enrichment', () => {

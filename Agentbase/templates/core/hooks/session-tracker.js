@@ -263,15 +263,13 @@ function updateFocus(state, updates) {
 function hasToolError(result) {
   if (!result) return false;
   const exitCode = result?.exit_code;
-  if (exitCode !== undefined && exitCode !== 0) return true;
+  // exit_code varsa sadece onu kullan — Bash tool'u icin kesin gosterge
+  if (exitCode !== undefined) return exitCode !== 0;
 
+  // exit_code yoksa (Read/Edit/Write) — sadece sonuc stringinin BASINDA hata pattern'i ara
+  // Dosya icerigi "error" kelimesi icerdiginde yanlis pozitif uretmemek icin
   const resultStr = typeof result === 'string' ? result : JSON.stringify(result);
-  return (
-    /^(Error|SyntaxError|TypeError|ReferenceError|ENOENT|EACCES):/.test(resultStr) ||
-    resultStr.includes('"error":') ||
-    resultStr.includes('ENOENT') ||
-    resultStr.includes('EACCES')
-  );
+  return /^(Error|SyntaxError|TypeError|ReferenceError|ENOENT|EACCES):/.test(resultStr);
 }
 
 function isTestCommand(command) {
