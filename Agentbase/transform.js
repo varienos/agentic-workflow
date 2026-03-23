@@ -553,6 +553,11 @@ function main() {
     return;
   }
 
+  // Manifest transform config ile global sabitleri override et
+  if (Array.isArray(manifest?.transform?.skip_paths)) {
+    SKIP_PATHS = manifest.transform.skip_paths;
+  }
+
   const claudeDir = path.join(AGENTBASE_DIR, '.claude');
   const source = parseClaudeOutput(claudeDir);
   const effectivePathMaps = mergePathMaps(manifest.path_maps);
