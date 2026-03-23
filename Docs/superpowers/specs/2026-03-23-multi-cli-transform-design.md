@@ -1,7 +1,7 @@
 # Multi-CLI Transform Pipeline — Tasarim Dokumani
 
 **Tarih:** 2026-03-23
-**Durum:** Onaylandi
+**Durum:** Onaylandi (rev.1 — spec review bulgulari duzeltildi)
 **Kapsam:** Agentbase skeleton ciktilarinin Gemini CLI, Codex CLI, Kimi CLI ve OpenCode CLI icin donusturulmesi
 
 ---
@@ -38,7 +38,7 @@ Pipeline Akisi:
                                 ----> Agentbase/.kimi/
                                 ----> Agentbase/.opencode/
                                 ----> Agentbase/GEMINI.md
-                                ----> Agentbase/AGENTS.md
+                                ----> Agentbase/AGENTS.md  (Codex context)
 ```
 
 ### Calistirma
@@ -63,11 +63,15 @@ Bootstrap komutu generate.js cagrisindan sonra otomatik olarak transform.js'yi d
 
 ## 4. Dosya Donusum Haritasi
 
-### 4.1 Commands -> Skills/Commands
+### 4.1 Commands -> Commands/Skills
+
+Claude commands → Gemini'de **command** (TOML, kullanici `/` ile tetikler), diger CLI'larda **skill** (SKILL.md, otomatik veya explicit tetiklenir).
 
 | Kaynak (Claude) | Gemini | Codex | Kimi | OpenCode |
 |---|---|---|---|---|
 | `.claude/commands/X.md` | `.gemini/commands/X.toml` | `.codex/skills/X/SKILL.md` | `.kimi/skills/X/SKILL.md` | `.opencode/skills/X/SKILL.md` |
+
+> **Not:** Gemini'de commands (TOML) ve skills (SKILL.md) farkli mekanizmalar. Commands kullanici tarafindan `/` ile tetiklenir, skills lazy-load ile otomatik aktive olur. Claude command'lari Gemini **commands**'a donusur — skills dizinine yazilmaz.
 
 ### 4.2 Agents
 
@@ -76,28 +80,34 @@ Bootstrap komutu generate.js cagrisindan sonra otomatik olarak transform.js'yi d
 | `.claude/agents/X.md` | `.gemini/agents/X.md` | `.codex/skills/X/SKILL.md` | `.kimi/agents/X.yaml` + `X-prompt.md` | `.opencode/agents/X.md` |
 
 - Codex'te agent tanimi yok — agent'lar da skill'e donusur
-- Kimi'de agent = YAML + ayri prompt dosyasi
+- Kimi'de agent = YAML + ayri prompt dosyasi (system_prompt_path referansi)
 
 ### 4.3 Rules
 
 | Kaynak (Claude) | Gemini | Codex | Kimi | OpenCode |
 |---|---|---|---|---|
-| `.claude/rules/*.md` | Context'e inline | AGENTS.md'ye inline | Agent prompt'a inline | AGENTS.md'ye inline |
+| `.claude/rules/*.md` | GEMINI.md'ye inline | AGENTS.md'ye inline | Sadece `default-prompt.md`'ye inline | .opencode/AGENTS.md'ye inline |
 
 Rules dosyalari sadece Claude'da ayri dosya. Diger CLI'larda context dosyasina inline merge edilir.
 
-### 4.4 Hooks & Settings
+> **Kimi ozel durumu:** Rules sadece `default-prompt.md`'ye (default agent) merge edilir. Diger agent prompt dosyalari (code-review-prompt.md vb.) kendi icerikleriyle kalir — rules tekrarlanmaz.
 
-| Kaynak (Claude) | Diger CLI'lar |
-|---|---|
-| `.claude/hooks/*.js` | **Atlanir** |
-| `.claude/settings.json` | **Atlanir** |
+### 4.4 Atlanan Dosyalar
+
+| Kaynak (Claude) | Diger CLI'lar | Gerekce |
+|---|---|---|
+| `.claude/hooks/*.js` | **Atlanir** | Claude-ozel mekanizma |
+| `.claude/settings.json` | **Atlanir** | Claude-ozel yapilandirma |
+| `.claude/reports/` | **Atlanir** | Claude runtime verisi (deploy raporlari) |
+| `.claude/tracking/sessions/` | **Atlanir** | Claude runtime verisi (oturum takibi) |
 
 ### 4.5 Context Dosyasi
 
 | Kaynak (Claude) | Gemini | Codex | Kimi | OpenCode |
 |---|---|---|---|---|
 | `.claude/CLAUDE.md` | `GEMINI.md` (root) | `AGENTS.md` (root) | `.kimi/agents/default.yaml` + `default-prompt.md` | `.opencode/AGENTS.md` |
+
+> **Not:** generate.js `CLAUDE.md.skeleton`'i `.claude/CLAUDE.md` yoluna yazar (bkz. generate.js:1452 `resolveOutputPath`). transform.js bu dosyayi `.claude/CLAUDE.md`'den okur.
 
 ## 5. Icerik Adaptasyonu
 
@@ -116,7 +126,8 @@ Rules dosyalari sadece Claude'da ayri dosya. Diger CLI'larda context dosyasina i
 | `.claude/agents/` | `.gemini/agents/` | `.codex/skills/` | `.kimi/agents/` | `.opencode/agents/` |
 | `.claude/rules/` | *(inline)* | *(inline)* | *(inline)* | *(inline)* |
 | `.claude/hooks/` | *(atlanir)* | *(atlanir)* | *(atlanir)* | *(atlanir)* |
-| `.claude/tracking/` | `.gemini/tracking/` | `.codex/tracking/` | `.kimi/tracking/` | `.opencode/tracking/` |
+| `.claude/tracking/` | *(atlanir)* | *(atlanir)* | *(atlanir)* | *(atlanir)* |
+| `.claude/reports/` | *(atlanir)* | *(atlanir)* | *(atlanir)* | *(atlanir)* |
 
 ### 5.3 CLI-Ozel Bolum Filtreleme
 
@@ -155,13 +166,15 @@ targets:
 - `targets` tanimsizsa → sadece `claude` (geriye uyumlu)
 - `targets: [claude]` → transform.js calismaz
 
+**`--targets` CLI flag onceligi:** CLI flag manifest'teki `targets` listesini FILTRELER. Manifest'te olmayan bir target `--targets` ile belirtilemez. Ornek: manifest `[claude, gemini, codex]` ise `--targets kimi` sessizce atlanir ve uyari yazdirilir.
+
 ### 6.2 CLI Kabiliyet Haritasi
 
 ```javascript
 const CLI_CAPABILITIES = {
   gemini: {
     commands: { format: 'toml', dir: '.gemini/commands' },
-    skills:  { format: 'skill.md', dir: '.gemini/skills' },
+    skills:  null,  // Claude commands → Gemini commands (TOML), skills kullanilmaz
     agents:  { format: 'md', dir: '.gemini/agents' },
     rules:   { strategy: 'inline-context' },
     context: { file: 'GEMINI.md', location: 'root' },
@@ -179,8 +192,8 @@ const CLI_CAPABILITIES = {
     commands: null,
     skills:  { format: 'skill.md', dir: '.kimi/skills' },
     agents:  { format: 'yaml', dir: '.kimi/agents' },
-    rules:   { strategy: 'inline-agent-prompt' },
-    context: { file: null, strategy: 'agent-yaml-prompt' },
+    rules:   { strategy: 'inline-agent-prompt' },  // sadece default agent'a merge
+    context: { file: null, strategy: 'agent-yaml-prompt' },  // file ve strategy karsilikli ozel
     invoke:  { prefix: '/skill:', separator: ' ' },
   },
   opencode: {
@@ -193,6 +206,8 @@ const CLI_CAPABILITIES = {
   },
 };
 ```
+
+> **Not:** `context.file` ve `context.strategy` karsilikli ozeldir. Bir CLI icin sadece biri tanimlanir. Kod `else if` ile kontrol eder.
 
 ## 7. Cikti Dizin Yapisi
 
@@ -221,11 +236,9 @@ Agentbase/
 |   |   +-- task-master.toml
 |   |   +-- task-conductor.toml
 |   |   +-- ...
-|   +-- skills/
 |   +-- agents/
 |   |   +-- code-review.md
 |   |   +-- ...
-|   +-- tracking/
 |
 +-- .codex/                           # transform.js uretir
 |   +-- skills/
@@ -272,16 +285,143 @@ Agentbase/
 +-- templates/                        # mevcut — degismez
 ```
 
-## 8. transform.js Ic Yapisi
+## 8. Cikti Format Ornekleri
 
-### 8.1 Modul Yapisi
+### 8.0.1 Gemini TOML Command Ornegi
+
+Kaynak: `.claude/commands/task-master.md`
+
+Cikti: `.gemini/commands/task-master.toml`
+
+```toml
+description = "Backlog'daki gorevleri 4 boyutlu puanlama ile degerlendirir ve oncelik sirasi olusturur"
+
+prompt = """
+# Task Master — Backlog Oncelik Siralayici
+
+> Backlog'daki tum gorevleri 4 boyutlu puanlama ile degerlendirir ve oncelik sirasi olusturur.
+> Kullanim: `/task-master`
+
+---
+
+## Step 1 — Gorevleri Topla
+...
+(tum icerik — yol ve cagirma referanslari Gemini formatina adapte edilmis)
+"""
+```
+
+> **TOML serializasyon notu:** TOML ciktisi string template ile uretilir (kutuphane gerektirmez). Cok satirli stringler `"""` triple-quote ile sarilir. Icerik icindeki `"""` dizileri `\"\"\"` olarak escape edilir. Bu yeterli cunku skeleton icerikleri TOML meta-karakter icermez.
+
+### 8.0.2 SKILL.md Ornegi (Codex/Kimi/OpenCode)
+
+Kaynak: `.claude/commands/task-master.md`
+
+Cikti: `.codex/skills/task-master/SKILL.md`
+
+```markdown
+---
+name: task-master
+description: "Backlog'daki gorevleri 4 boyutlu puanlama ile degerlendirir ve oncelik sirasi olusturur"
+---
+
+# Task Master — Backlog Oncelik Siralayici
+
+> Backlog'daki tum gorevleri 4 boyutlu puanlama ile degerlendirir ve oncelik sirasi olusturur.
+> Kullanim: `$task-master`
+
+---
+
+## Step 1 — Gorevleri Topla
+...
+(tum icerik — yol ve cagirma referanslari Codex formatina adapte edilmis)
+```
+
+**SKILL.md frontmatter alanlari (tum CLI'lar icin ayni):**
+
+| Alan | Zorunlu | Aciklama |
+|---|---|---|
+| `name` | Evet | Skill adi, kucuk harf + tire (task-master) |
+| `description` | Evet | Tek satirlik aciklama — CLI'in skill'i ne zaman tetikleyecegini belirler |
+
+> **Not:** `name` ve `description` tum CLI'larin (Codex, Kimi, OpenCode) ortaklasa destekledigi minimum frontmatter. Ek alanlar (version, tags, license vb.) CLI'a ozeldir ve bu asamada eklenmez — ihtiyac olursa genisletilebilir.
+
+### 8.0.3 Kimi Agent YAML Ornegi
+
+Kaynak: `.claude/agents/code-review.md`
+
+Cikti: `.kimi/agents/code-review.yaml` + `.kimi/agents/code-review-prompt.md`
+
+**code-review.yaml:**
+```yaml
+version: 1
+agent:
+  extend: default
+  name: code-review
+  system_prompt_path: ./code-review-prompt.md
+```
+
+**code-review-prompt.md:**
+```markdown
+(Claude agent iceriginin tamami — yol ve cagirma referanslari Kimi formatina adapte edilmis)
+```
+
+**Kimi agent YAML alanlari:**
+
+| Alan | Zorunlu | Aciklama |
+|---|---|---|
+| `version` | Evet | Her zaman `1` |
+| `agent.extend` | Hayir | `default` ile miras alinir (tool listesi vb.) |
+| `agent.name` | Evet | Agent adi |
+| `agent.system_prompt_path` | Evet | Prompt dosyasinin goreceli yolu: `./${name}-prompt.md` |
+
+### 8.0.4 OpenCode Agent Ornegi
+
+Kaynak: `.claude/agents/code-review.md`
+
+Cikti: `.opencode/agents/code-review.md`
+
+```markdown
+---
+description: "Kod degisikliklerini kalite, guvenlik ve proje standartlarina gore inceler"
+mode: subagent
+---
+
+(Claude agent iceriginin tamami — yol ve cagirma referanslari OpenCode formatina adapte edilmis)
+```
+
+**OpenCode agent frontmatter alanlari:**
+
+| Alan | Zorunlu | Aciklama |
+|---|---|---|
+| `description` | Evet | Agent amaci |
+| `mode` | Evet | `subagent` (alt agent olarak calisir) |
+
+---
+
+## 9. transform.js Ic Yapisi
+
+### 9.0 Bagimliliklar
+
+- **js-yaml** — mevcut (manifest okuma, SKILL.md frontmatter uretimi)
+- **TOML** — yeni kutuphane GEREKMEZ. TOML ciktisi string template ile uretilir (bkz. 8.0.1)
+
+### 9.1 Modul Yapisi
 
 ```
 transform.js
 |
 +-- parseClaudeOutput(claudeDir)
 |     .claude/ dizinini okur, dosya tiplerini siniflandirir
+|     hooks/, settings.json, reports/, tracking/ atlanir
 |     return { commands[], agents[], rules[], context }
+|
++-- adaptContent(content, targetCli)
+|     Bes adimdaki donusumu siraliyla uygulayan wrapper fonksiyon:
+|     1. stripClaudeOnlySections(content)
+|     2. inlineRules(content, rules[])       — sadece context icin
+|     3. adaptPathReferences(content, targetCli)
+|     4. adaptInvokeSyntax(content, targetCli)
+|     5. return adapte edilmis content
 |
 +-- ContentAdapter
 |   +-- adaptInvokeSyntax(content, targetCli)
@@ -307,7 +447,7 @@ transform.js
       Manifest oku -> .claude/ parse et -> her target icin donustur -> yaz -> rapor
 ```
 
-### 8.2 Ana Akis
+### 9.2 Ana Akis
 
 ```javascript
 function main() {
@@ -322,11 +462,14 @@ function main() {
     const cap = CLI_CAPABILITIES[target];
     const fileMap = {};
 
-    // Commands -> skills/commands
+    // Commands -> commands (Gemini) veya skills (diger CLI'lar)
     for (const cmd of source.commands) {
       const adapted = adaptContent(cmd.content, target);
-      if (cap.commands) fileMap[commandPath(cap, cmd.name)] = formatCommand(cap, cmd.name, adapted);
-      if (cap.skills)  fileMap[skillPath(cap, cmd.name)]   = formatSkill(cap, cmd.name, adapted);
+      if (cap.commands) {
+        fileMap[commandPath(cap, cmd.name)] = formatCommand(cap, cmd.name, adapted);
+      } else if (cap.skills) {
+        fileMap[skillPath(cap, cmd.name)] = formatSkill(cap, cmd.name, adapted);
+      }
     }
 
     // Agents
@@ -344,11 +487,10 @@ function main() {
       }
     }
 
-    // Context (rules inline merge)
+    // Context (rules inline merge) — file ve strategy karsilikli ozel
     if (cap.context.file) {
       fileMap[contextPath(cap)] = buildContext(source.context, source.rules, target);
-    }
-    if (cap.context.strategy === 'agent-yaml-prompt') {
+    } else if (cap.context.strategy === 'agent-yaml-prompt') {
       const { yaml, prompt } = buildKimiDefault(source.context, source.rules);
       fileMap['.kimi/agents/default.yaml'] = yaml;
       fileMap['.kimi/agents/default-prompt.md'] = prompt;
@@ -361,7 +503,7 @@ function main() {
 }
 ```
 
-### 8.3 Description Cikarma
+### 9.3 Description Cikarma
 
 ```javascript
 function extractDescription(content) {
@@ -377,16 +519,16 @@ function extractDescription(content) {
 }
 ```
 
-### 8.4 Hata Yonetimi
+### 9.4 Hata Yonetimi
 
 - `.claude/` dizini yoksa → hata: "Once generate.js calistirin"
 - Manifest'te tanimsiz target → uyari ve atla
 - Donusum basarisiz olan dosya → logla, digerlerine devam et
 - Rapor ciktisi generate.js ile ayni formatta
 
-## 9. Test Stratejisi
+## 10. Test Stratejisi
 
-### 9.1 Birim Testleri
+### 10.1 Birim Testleri
 
 **ContentAdapter:**
 - adaptInvokeSyntax: her CLI icin dogru donusum
@@ -405,7 +547,7 @@ function extractDescription(content) {
 - Blockquote'tan cikarir (fallback)
 - Dosya adindan uretir (son fallback)
 
-### 9.2 Entegrasyon Testleri
+### 10.2 Entegrasyon Testleri
 
 - Ornek manifest + .claude/ ciktisi -> tum target dizinleri olusur
 - Her target dizininde beklenen dosya sayisi dogru
@@ -417,15 +559,15 @@ function extractDescription(content) {
 - --targets filtresi sadece belirtilen CLI'lari uretir
 - --dry-run hicbir dosya yazmaz
 
-### 9.3 Snapshot Testi
+### 10.3 Snapshot Testi
 
 Referans manifest ile tum CLI ciktilarinin snapshot'i tutulur. Degisiklik oldugunda diff ile kontrol edilir.
 
-### 9.4 Test Altyapisi
+### 10.4 Test Altyapisi
 
 Mevcut generate.test.js ile ayni altyapi — yeni bagimlIlik eklenmez.
 
-## 10. Kaynak Arastirma Referanslari
+## 11. Kaynak Arastirma Referanslari
 
 CLI dokumantasyonlari (tasarim sirasinda arastirilan):
 
