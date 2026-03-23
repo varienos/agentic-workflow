@@ -30,6 +30,21 @@ describe('extractDescription', () => {
     const content = '# Bug Hunter - Otonom Bug Avcisi\n\nIcerik...';
     assert.equal(extractDescription(content), 'Otonom Bug Avcisi');
   });
+
+  it('kolon (:) ayracini destekler', () => {
+    const content = '# Pre Deploy: Production Push Kontrolu\n\nIcerik...';
+    assert.equal(extractDescription(content), 'Production Push Kontrolu');
+  });
+
+  it('parantezli aciklamayi destekler', () => {
+    const content = '# Session Monitor (Oturum Izleme Araci)\n';
+    assert.equal(extractDescription(content), 'Oturum Izleme Araci');
+  });
+
+  it('kolon ayracindan once bosluk olsa da calisiyor', () => {
+    const content = '# Auto Review : Loop Uyumlu Diff Review\n\nIcerik';
+    assert.equal(extractDescription(content), 'Loop Uyumlu Diff Review');
+  });
 });
 
 describe('adaptInvokeSyntax', () => {
@@ -537,5 +552,154 @@ describe('mergePathMaps', () => {
     const merged = mergePathMaps(customMaps);
     const result = adaptPathReferences('Bkz: `CLAUDE.md` dosyasi', 'gemini', merged);
     assert.ok(result.includes('MY_GEMINI.md'), 'ozel eslem uygulanmali');
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// CLI CAPABILITIES VALIDASYON TESTLERI (TASK-129)
+// ─────────────────────────────────────────────────────
+
+describe('validateCliCapabilities', () => {
+  it('gecerli capability hatasiz doner', () => {
+    const errors = validateCliCapabilities('test-cli', CLI_CAPABILITIES.gemini);
+    assert.deepEqual(errors, []);
+  });
+
+  it('tum hardcoded CLI ler valid', () => {
+    for (const [name, cap] of Object.entries(CLI_CAPABILITIES)) {
+      const errors = validateCliCapabilities(name, cap);
+      assert.deepEqual(errors, [], `${name} valid olmali`);
+    }
+  });
+
+  it('invoke eksikse hata donduruyor', () => {
+    const errors = validateCliCapabilities('bad', {
+      skills: { format: 'md', dir: '.bad/skills' },
+      context: { file: 'BAD.md', location: 'root' },
+    });
+    assert.ok(errors.some(e => e.includes('invoke')));
+  });
+
+  it('commands ve skills ikisi de yoksa hata', () => {
+    const errors = validateCliCapabilities('bad', {
+      invoke: { prefix: '/', separator: ' ' },
+      context: { file: 'BAD.md', location: 'root' },
+    });
+    assert.ok(errors.some(e => e.includes('commands veya skills')));
+  });
+
+  it('commands.dir eksikse hata', () => {
+    const errors = validateCliCapabilities('bad', {
+      commands: { format: 'toml' },
+      invoke: { prefix: '/', separator: ' ' },
+      context: { file: 'BAD.md', location: 'root' },
+    });
+    assert.ok(errors.some(e => e.includes('commands.format ve commands.dir')));
+  });
+
+  it('context eksikse hata', () => {
+    const errors = validateCliCapabilities('bad', {
+      skills: { format: 'md', dir: '.bad/skills' },
+      invoke: { prefix: '/', separator: ' ' },
+    });
+    assert.ok(errors.some(e => e.includes('context')));
+  });
+
+  it('null capability hata donduruyor', () => {
+    const errors = validateCliCapabilities('bad', null);
+    assert.ok(errors.length > 0);
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// EXTERNAL CAPABILITIES TESTLERI (TASK-127)
+// ─────────────────────────────────────────────────────
+
+describe('loadExternalCapabilities', () => {
+  it('config yoksa varsayilan CLI_CAPABILITIES doner', () => {
+    const result = loadExternalCapabilities(null);
+    assert.deepEqual(Object.keys(result).sort(), Object.keys(CLI_CAPABILITIES).sort());
+  });
+
+  it('dosya yoksa varsayilan doner', () => {
+    const result = loadExternalCapabilities('/nonexistent/config.yaml');
+    assert.deepEqual(Object.keys(result).sort(), Object.keys(CLI_CAPABILITIES).sort());
+  });
+
+  it('YAML config ile yeni CLI ekleniyor', () => {
+    const tmpFile = path.join(os.tmpdir(), `cli-config-${Date.now()}.yaml`);
+    const config = {
+      'cursor': {
+        commands: null,
+        skills: { format: 'skill.md', dir: '.cursor/skills' },
+        agents: null,
+        rules: { strategy: 'inline-context' },
+        context: { file: 'CURSOR.md', location: 'root' },
+        invoke: { prefix: '/', separator: ' ' },
+      },
+    };
+    fs.writeFileSync(tmpFile, yaml.dump(config));
+    try {
+      const result = loadExternalCapabilities(tmpFile);
+      assert.ok('cursor' in result, 'yeni CLI eklenmeli');
+      assert.equal(result.cursor.invoke.prefix, '/');
+      assert.ok('gemini' in result, 'varsayilan CLI ler korunmali');
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+
+  it('JSON config de calisiyor', () => {
+    const tmpFile = path.join(os.tmpdir(), `cli-config-${Date.now()}.json`);
+    const config = {
+      'windsurf': {
+        commands: null,
+        skills: { format: 'skill.md', dir: '.windsurf/skills' },
+        agents: null,
+        rules: { strategy: 'inline-context' },
+        context: { file: 'WINDSURF.md', location: 'root' },
+        invoke: { prefix: '#', separator: ' ' },
+      },
+    };
+    fs.writeFileSync(tmpFile, JSON.stringify(config));
+    try {
+      const result = loadExternalCapabilities(tmpFile);
+      assert.ok('windsurf' in result);
+      assert.equal(result.windsurf.invoke.prefix, '#');
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+
+  it('gecersiz config validasyon hatasiyla firlatir', () => {
+    const tmpFile = path.join(os.tmpdir(), `cli-config-bad-${Date.now()}.yaml`);
+    const config = { 'bad-cli': { invoke: 'wrong' } };
+    fs.writeFileSync(tmpFile, yaml.dump(config));
+    try {
+      assert.throws(() => loadExternalCapabilities(tmpFile), /validasyon hatalari/);
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
+  });
+
+  it('mevcut CLI yi override edebiliyor', () => {
+    const tmpFile = path.join(os.tmpdir(), `cli-config-override-${Date.now()}.yaml`);
+    const config = {
+      'gemini': {
+        commands: { format: 'toml', dir: '.gemini/custom-commands' },
+        skills: null,
+        agents: null,
+        rules: { strategy: 'inline-context' },
+        context: { file: 'GEMINI.md', location: 'root' },
+        invoke: { prefix: '/', separator: ' ' },
+      },
+    };
+    fs.writeFileSync(tmpFile, yaml.dump(config));
+    try {
+      const result = loadExternalCapabilities(tmpFile);
+      assert.equal(result.gemini.commands.dir, '.gemini/custom-commands');
+    } finally {
+      fs.unlinkSync(tmpFile);
+    }
   });
 });
