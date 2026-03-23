@@ -155,22 +155,34 @@ describe('adaptContent', () => {
 });
 
 describe('toToml', () => {
-  it('gecerli TOML ciktisi uretir', () => {
+  it('gecerli TOML ciktisi uretir — literal string (backslash guvenli)', () => {
     const result = toToml('Backlog siralayici', '# Icerik\n\nStep 1...');
     assert.ok(result.includes('description = "Backlog siralayici"'));
-    assert.ok(result.includes('prompt = """'));
+    assert.ok(result.includes("prompt = '''"));
     assert.ok(result.includes('# Icerik'));
-    assert.ok(result.endsWith('"""'));
+    assert.ok(result.endsWith("'''"));
   });
 
-  it('triple-quote icerik escape edilir', () => {
-    const result = toToml('Test', 'Ornek: """kod"""');
-    assert.ok(result.includes('\\"\\"\\"'));
+  it('backslash iceren icerik escape gerektirmez', () => {
+    const result = toToml('Test', 'grep -i "unused\\|no-unused"');
+    assert.ok(result.includes('unused\\|no-unused'));
+  });
+
+  it('triple single-quote icerik escape edilir', () => {
+    const result = toToml('Test', "Ornek: '''kod'''");
+    assert.ok(result.includes("''' + '''"));
   });
 
   it('description icindeki tirnaklari escape eder', () => {
     const result = toToml('Bir "ozel" aciklama', 'icerik');
     assert.ok(result.includes('description = "Bir \\"ozel\\" aciklama"'));
+  });
+
+  it('python tomllib ile gecerli TOML', () => {
+    const result = toToml('Test aciklama', '# Baslik\n\ngrep "test\\|foo" | head -5\npath: /usr/bin\\ndevam');
+    // \| ve \n literal olmali — basic string olsa parse hatasi verir
+    assert.ok(result.includes("'''"));
+    assert.ok(!result.includes('"""'));
   });
 });
 
@@ -292,7 +304,7 @@ describe('transformForTarget', () => {
     assert.ok('.gemini/commands/task-master.toml' in fileMap);
     assert.ok('.gemini/agents/code-review.md' in fileMap);
     assert.ok('GEMINI.md' in fileMap);
-    assert.ok(fileMap['.gemini/commands/task-master.toml'].includes('prompt = """'));
+    assert.ok(fileMap['.gemini/commands/task-master.toml'].includes("prompt = '''"));
   });
 
   it('codex — skills (commands + agents) + root AGENTS.md', () => {

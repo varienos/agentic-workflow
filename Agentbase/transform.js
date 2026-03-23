@@ -177,8 +177,10 @@ function adaptContent(content, targetCli, rules) {
 
 function toToml(description, content) {
   const escapedDesc = description.replace(/"/g, '\\"');
-  const escapedContent = content.replace(/"""/g, '\\"\\"\\"');
-  return `description = "${escapedDesc}"\n\nprompt = """\n${escapedContent}\n"""`;
+  // TOML literal string (''') — backslash escape YORUMLANMAZ
+  // Icerik icindeki ''' dizileri bolunerek escape edilir
+  const escapedContent = content.replace(/'''/g, "''' + '''");
+  return `description = "${escapedDesc}"\n\nprompt = '''\n${escapedContent}\n'''`;
 }
 
 function toSkillMd(name, description, content) {
