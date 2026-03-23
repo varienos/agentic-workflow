@@ -1,0 +1,20 @@
+# Proje
+
+<!-- GENERATE: CODEBASE_CONTEXT
+Aciklama: Proje tanimi, stack, yapi bilgileri.
+Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
+-->
+
+## Ortamlar
+
+<!-- GENERATE: SMOKE_TEST_ENDPOINTS
+Aciklama: Production ve staging ortam bilgileri.
+Gerekli manifest alanlari: environments
+-->
+
+## Onemli Kurallar
+
+<!-- CLAUDE_FILL: DOMAIN_RULES
+Bootstrap ropartajindan toplanan domain kurallari ve yasakli komutlar buraya yazilir.
+manifest.rules.domain ve manifest.rules.forbidden kullanilir.
+-->

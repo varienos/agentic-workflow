@@ -134,7 +134,8 @@ function escapeRegex(str) {
 // ─────────────────────────────────────────────────────
 
 const CLAUDE_ONLY_PATTERNS = [
-  /### Otomatik Test Sinyalleri \(Hook Tabanli\)[\s\S]*?(?=\n## |\n---|\n$)/g,
+  // Bolum basligi + icerik: satir satir tara, baska bolum baslayana kadar sil
+  /### Otomatik Test Sinyalleri \(Hook Tabanli\)(?:\n(?!## |---).*)*/g,
   /^.*settings\.json.*$/gm,
   /^\*\*Source of truth:\*\*.*\.claude\/hooks\/.*$/gm,
 ];

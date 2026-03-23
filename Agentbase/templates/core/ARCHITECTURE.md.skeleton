@@ -1,0 +1,32 @@
+# Mimari
+
+## Dizin Yapisi
+
+<!-- CLAUDE_FILL: DIRECTORY_MAP
+Bootstrap sirasinda tespit edilen dizin haritasi.
+Codebase analizi ile detaylandirilir.
+-->
+
+## Alt Proje Yapisi
+
+<!-- GENERATE: CODEBASE_CONTEXT
+Aciklama: Alt projeler ve rolleri.
+Gerekli manifest alanlari: project.subprojects
+-->
+
+## Veri Akisi
+
+<!-- CLAUDE_FILL: DATA_FLOW
+Bu bolum proje gelistirme sirasinda detaylandirilacak.
+API → DB → Frontend veri akisi dokumante edilir.
+-->
+
+## Bagimlilik Kurallari
+
+<!-- CLAUDE_FILL: DEPENDENCY_RULES
+Bu bolum proje gelistirme sirasinda detaylandirilacak.
+Katmanlar arasi bagimlilik kurallari eklenir.
+-->
+
+> Bu dosya bootstrap sirasinda iskelet olarak olusturulmustur.
+> Detaylandirmak icin: backlog'daki "ARCHITECTURE.md'yi detaylandir" gorevini tamamlayin.

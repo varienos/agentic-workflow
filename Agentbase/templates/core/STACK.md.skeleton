@@ -1,0 +1,27 @@
+# Tech Stack
+
+<!-- GENERATE: CODEBASE_CONTEXT
+Aciklama: Stack bilgileri — runtime, diller, framework'ler.
+Gerekli manifest alanlari: stack.primary, stack.detected, stack.runtime
+-->
+
+## Test
+
+<!-- GENERATE: VERIFICATION_COMMANDS
+Aciklama: Her subproject icin test komutu.
+Gerekli manifest alanlari: project.subprojects, stack.test_commands
+-->
+
+## Dosya Uzantilari
+
+<!-- GENERATE: FILE_EXTENSIONS
+Aciklama: Projede kullanilan kod dosya uzantilari.
+Gerekli manifest alanlari: stack.primary, stack.detected
+-->
+
+## Guvenlik Pattern'leri
+
+<!-- GENERATE: SECURITY_PATTERNS
+Aciklama: Stack'e gore guvenlik kontrol pattern'leri.
+Gerekli manifest alanlari: stack.primary, stack.detected, stack.orm
+-->

@@ -1,5 +1,7 @@
 # Katki Rehberi
 
+> **Note:** This document is in Turkish. For English speakers: contributions follow standard GitHub flow — fork, branch, commit (conventional format), test, PR. See sections below for details.
+
 Agentic Workflow'a katki yapmayi dusundugunuz icin tesekkurler!
 
 ## Nasil Katki Yapabilirim?

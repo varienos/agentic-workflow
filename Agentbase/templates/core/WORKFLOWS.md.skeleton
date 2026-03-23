@@ -1,0 +1,31 @@
+# Is Akislari
+
+## Git Workflow
+
+<!-- CLAUDE_FILL: GIT_WORKFLOW
+manifest.workflows.branch_model degerine gore:
+- trunk-based: main'e dogrudan commit, feature flag kullan
+- gitflow: feature/*, develop, release/*, main
+- github-flow: feature branch → PR → main
+-->
+
+## Commit Konvansiyonu
+
+<!-- GENERATE: COMMIT_CONVENTION
+Aciklama: Commit prefix tablosu.
+Gerekli manifest alanlari: workflows.commit_convention, workflows.commit_prefix_map
+-->
+
+## Test Workflow
+
+<!-- GENERATE: VERIFICATION_COMMANDS
+Aciklama: Her subproject icin test komutu.
+Gerekli manifest alanlari: project.subprojects, stack.test_commands
+-->
+
+## Migration Workflow
+
+<!-- GENERATE: MIGRATION_COMMANDS
+Aciklama: ORM'e gore migration komutlari.
+Gerekli manifest alanlari: stack.orm
+-->
