@@ -155,7 +155,7 @@ Prioritizes all open tasks using 4-dimensional scoring. Calculates Impact, Risk,
 
 ### /task-conductor
 
-Processes multiple tasks autonomously in phases. Assigns tasks to phases using prioritization, implements sequentially or in parallel within each phase, runs automatic code review at the end of each phase. Supports manual phases — pauses when tasks require human intervention. Resumes from where it left off using a state file.
+Processes multiple tasks autonomously in phases. Assigns tasks to phases using its own scoring system, implements sequentially or in parallel within each phase, performs summary and integrity checks at the end of each phase. Supports manual phases — pauses when tasks require human intervention. Resumes from where it left off using a state file.
 
 ```
 /task-conductor top 5        # Top 5 highest priority tasks
@@ -246,12 +246,14 @@ Audits a domain module (auth, profile, payment, messaging, etc.) end-to-end acro
 
 These commands are generated based on modules Bootstrap detects — not present in every project:
 
-| Command | Module | Variants | What It Does |
-|---------|--------|----------|-------------|
-| `/pre-deploy` | Deploy | Docker, Coolify, Vercel | Pre-production push control. Docker/Coolify: compile, test, migration, env sync, Docker build. Vercel: TypeScript, build, env sync, edge-runtime. PASS/FAIL/WARN report. |
-| `/post-deploy` | Deploy | Docker, Coolify | Post-deploy verification: health check, smoke test, rollback guide. Not supported for Vercel due to serverless architecture. |
-| `/idor-scan` | Security | — | IDOR vulnerability scan on API endpoints — 5-point control matrix. |
-| `/review-module <name>` | Monorepo | — | Audits a module end-to-end — 4 parallel agents, cross-layer analysis. |
+Command names use `/{variant}-{command}` format to prevent collisions — variant name is added as prefix:
+
+| Command | Module | What It Does |
+|---------|--------|-------------|
+| `/docker-pre-deploy`, `/coolify-pre-deploy`, `/vercel-pre-deploy` | Deploy | Pre-production push control. Docker/Coolify: compile, test, migration, env sync, Docker build. Vercel: TypeScript, build, env sync, edge-runtime. PASS/FAIL/WARN report. |
+| `/docker-post-deploy`, `/coolify-post-deploy` | Deploy | Post-deploy verification: health check, smoke test, rollback guide. Not supported for Vercel due to serverless architecture. |
+| `/security-idor-scan` | Security | IDOR vulnerability scan on API endpoints — 5-point control matrix. |
+| `/monorepo-review-module <name>` | Monorepo | Audits a module end-to-end — 4 parallel agents, cross-layer analysis. |
 
 ## Live Session Monitoring
 
