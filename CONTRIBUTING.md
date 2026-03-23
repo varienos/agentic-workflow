@@ -51,6 +51,41 @@ Yeni bir stack/framework modulu eklemek icin:
 4. Mevcut modulleri pattern olarak kullanin
 5. Test yazin
 
+### detect.md Nasil Calisir?
+
+Her modul, o modulun projeye uygulanip uygulanmayacagini belirleyen bir `detect.md` dosyasi icerir.
+
+**Kontrol listesi (`Checks`):** Dosya varligini veya bagimlilik varligini dogrulayan maddelerin listesidir.
+
+```markdown
+## Checks
+
+- file_exists: vercel.json
+- dependency: vercel
+- file_exists: .vercel/
+```
+
+**Minimum Match:** Kac kontrolun eslemesi gerektigini belirtir. `2/3` degeri, uc kontrolden en az ikisinin gerceklestiginde modulun aktive edilecegi anlamina gelir. Bu, kullanicilarin her kontrol dosyasini olusturmak zorunda kalmadan modulu aktive etmesine olanak tanir.
+
+```markdown
+## Minimum Match
+
+2/3
+```
+
+**Cakisma Cozumu:** Birden fazla modul ayni dosyalara eslestiginde (ornegin Docker ve Coolify her ikisi de `docker-compose.yml` dosyasina bakabilir), Bootstrap roportajdaki "Deploy platformunuz nedir?" sorusu ile kullaniciyi netlestirir. Coolify secildiginde Docker modulu YERINE Coolify aktive edilir; Docker ciktisini ust katman olarak kullandigi icin cakisma ortadan kalkar.
+
+**Kategori detect.md:** Modul dizininin kokunde bulunan `detect.md`, o kategorinin tum varyantlarini listeler ve hangisinin once kontrol edilecegini belirtir. Varyantlar sirasi onem tasiyabilir (ornegin NestJS → Fastify → Express: daha spesifik olandan daha genele dogru).
+
+**Activates:** Modul aktive olunca `generate.js`'in uretecegi dosyalar listesidir: commands (slash komutlari), agents (sub-agent'lar), rules (kural dosyalari).
+
+```markdown
+## Activates
+
+- commands/pre-deploy.skeleton.md (slash command)
+- agents/frontend.skeleton.md (sub-agent)
+```
+
 ### Dosya Isimlendirme Kurallari
 
 **`.skeleton` suffix'i:** Template dosyalari `.skeleton.md`, `.skeleton.js` veya `.skeleton.json` uzantisi kullanir. `generate.js` bu dosyalari islerken GENERATE bloklarini doldurur ve `.skeleton` uzantisini kaldirir (`task-hunter.skeleton.md` → `task-hunter.md`). Sabit dosyalar (GENERATE blogu icermeyen hook'lar gibi) `.skeleton` suffix'i olmadan saklanir ve oldugu gibi kopyalanir.
@@ -66,7 +101,20 @@ Yeni bir stack/framework modulu eklemek icin:
 - **`Codebase/`** — Uzerinde calisilan gercek proje kodunu temsil eder. Bu dizin depoda yer tutucudur; kullanici kendi projesini symlink ile baglar (`ln -s /path/to/project Codebase`). Greenfield modunda bos birakilir ve bootstrap sifirdan olusturur.
 - **`Docs/agentic/project-manifest.yaml`** — Bootstrap tarafindan uretilen manifest dosyasi. Depoda bastan YOKTUR — ilk `/bootstrap` calistirmasinda olusturulur. `generate.js` ve `transform.js` bu dosyayi girdi olarak kullanir.
 
-### Test
+### Bootstrap Roportaj Sablonlari
+
+`Agentbase/templates/interview/` dizininde dort roportaj sablon dosyasi bulunur. Bu dosyalar `generate.js` tarafindan islenmez; Bootstrap komutunun bir projeye ilk kez uygulanirken baglam olarak okudugu dahili referanslardir.
+
+| Dosya | Amaç | Urettigi Dosyalar |
+|-------|------|-------------------|
+| `phase-1-project.md` | Proje temelleri — projenin ne oldugu, ortamlari, deploy yontemi | `PROJECT.md`, `ARCHITECTURE.md`, `README.md` |
+| `phase-2-technical.md` | Teknik tercihler — test stratejisi, branch modeli, commit convention, ORM, auth | `STACK.md`, `WORKFLOWS.md`, hook konfigurasyonu |
+| `phase-3-developer.md` | Gelistirici profili — deneyim seviyesi, calisma dili, otonom calisma beklentisi | `DEVELOPER.md`, agent davranis kalibrasyonu |
+| `phase-4-rules.md` | Domain kurallari — yasakli komutlar, tasarim sistemi, guvenlik seviyesi | `rules/` dizini, koruma hook'lari |
+
+**Nasil calisir:** Bootstrap, `/bootstrap` komutu calistirildiginda bu roportaj sablonlarini sirasi ile izler. Her phase, kullaniciya sorular sormadan once codebase'i otomatik olarak tarar (auto-detection) ve mevcut bilgileri on doldurur. Kullanicinin yanitleri `Docs/agentic/project-manifest.yaml` dosyasina kaydedilir ve `generate.js` bu manifestten proje-spesifik dosyalari uretir.
+
+**Katkida bulunmak icin:** Yeni bir soru veya auto-detection kurali eklemek istiyorsaniz ilgili phase dosyasini duzenleyin. Mevcut soru yapisini (`Questions`, `Skip condition`, `Maps to`, `Downstream`) koru.
 
 ```bash
 cd Agentbase

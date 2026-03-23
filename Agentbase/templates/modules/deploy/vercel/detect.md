@@ -13,6 +13,7 @@
 ## Activates
 
 - commands/pre-deploy.skeleton.md (slash command)
+- agents/frontend.skeleton.md (sub-agent)
 
 ## Affects Core
 
