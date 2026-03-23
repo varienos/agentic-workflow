@@ -19,6 +19,8 @@
 | `Agentbase/transform.js` | Ana pipeline — parse, adapt, format, write | Olustur |
 | `Agentbase/transform.test.js` | Unit + entegrasyon testleri | Olustur |
 | `Agentbase/package.json` | Test script guncelleme | Duzenle |
+| `Agentbase/.claude/commands/bootstrap.md` | Bootstrap'a transform.js entegrasyonu | Duzenle |
+| `.gitignore` | Transform cikti dizinlerini ignore et | Duzenle |
 
 > **Not:** Tum implementasyon tek dosyada (`transform.js`) yasayacak. generate.js ile ayni pattern — fonksiyonlar module.exports ile export edilir, testler ayni dosyadan import eder.
 
@@ -196,6 +198,10 @@ describe('adaptInvokeSyntax', () => {
     const safe = 'Dosya: /usr/local/bin/test ve `cd ../Codebase/`';
     assert.equal(adaptInvokeSyntax(safe, 'codex'), safe);
   });
+
+  // Bilinen limitasyon: backtick icinde olmayan komut referanslari donusturulmez
+  // Ornek: "run /task-master to see" → degismez (backtick yok)
+  // Bu kabul edilebilir cunku tum skeleton'lar backtick kullanir.
 });
 ```
 
@@ -450,7 +456,34 @@ function inlineRules(content, rules) {
 Run: `cd Agentbase && node --test transform.test.js`
 Expected: Tum testler PASS
 
-- [ ] **Step 5: adaptContent wrapper fonksiyonunu ekle**
+- [ ] **Step 5: adaptContent wrapper fonksiyonunu ve testini ekle**
+
+adaptContent unit testi:
+
+```javascript
+const { adaptContent } = require('./transform.js');
+
+describe('adaptContent', () => {
+  it('strip, path, invoke sirasini uygular', () => {
+    const input = '`.claude/commands/task-master.md` icin `/task-master` kullanin.\n\n**Source of truth:** `settings.json`';
+    const result = adaptContent(input, 'codex');
+    // settings.json satiri cikarilmis
+    assert.ok(!result.includes('settings.json'));
+    // Yol adapte edilmis
+    assert.ok(result.includes('.codex/skills/'));
+    // Cagirma adapte edilmis
+    assert.ok(result.includes('$task-master'));
+  });
+
+  it('rules parametresi gecildiginde inline merge yapar', () => {
+    const rules = [{ name: 'rule1', content: '# Kural 1\n\nIcerik' }];
+    const result = adaptContent('# Context', 'gemini', rules);
+    assert.ok(result.includes('Kural 1'));
+  });
+});
+```
+
+Implementasyon:
 
 ```javascript
 function adaptContent(content, targetCli, rules) {
@@ -486,7 +519,7 @@ const { toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent } = require('./trans
 
 describe('toToml', () => {
   it('gecerli TOML ciktisi uretir', () => {
-    const result = toToml('task-master', 'Backlog siralayici', '# Icerik\n\nStep 1...');
+    const result = toToml('Backlog siralayici', '# Icerik\n\nStep 1...');
     assert.ok(result.includes('description = "Backlog siralayici"'));
     assert.ok(result.includes('prompt = """'));
     assert.ok(result.includes('# Icerik'));
@@ -494,12 +527,12 @@ describe('toToml', () => {
   });
 
   it('triple-quote icerik escape edilir', () => {
-    const result = toToml('test', 'Test', 'Ornek: """kod"""');
+    const result = toToml('Test', 'Ornek: """kod"""');
     assert.ok(result.includes('\\"\\"\\"'));
   });
 
   it('description icindeki tirnaklari escape eder', () => {
-    const result = toToml('test', 'Bir "ozel" aciklama', 'icerik');
+    const result = toToml('Bir "ozel" aciklama', 'icerik');
     assert.ok(result.includes('description = "Bir \\"ozel\\" aciklama"'));
   });
 });
@@ -543,7 +576,7 @@ Expected: FAIL
 - [ ] **Step 3: Formatter implementasyonlari**
 
 ```javascript
-function toToml(name, description, content) {
+function toToml(description, content) {
   const escapedDesc = description.replace(/"/g, '\\"');
   const escapedContent = content.replace(/"""/g, '\\"\\"\\"');
   return `description = "${escapedDesc}"\n\nprompt = """\n${escapedContent}\n"""`;
@@ -586,39 +619,56 @@ git commit -m "feat: toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent formatt
 
 ---
 
-### Task 6: parseClaudeOutput — .claude/ dizin parser
+### Task 6: stripFrontmatter + parseClaudeOutput — .claude/ dizin parser
 
 **Files:**
 - Modify: `Agentbase/transform.js`
 - Modify: `Agentbase/transform.test.js`
 
-- [ ] **Step 1: parseClaudeOutput testleri yaz**
+> **Kritik:** Claude agent dosyalari (`agents/*.md`) YAML frontmatter icerir (name, tools, model, color). Bu frontmatter diger CLI'lar icin gecersizdir. `parseClaudeOutput` agent dosyalarindaki frontmatter'i soyar, aksi halde toSkillMd/toOpenCodeAgent cift frontmatter uretir.
+
+- [ ] **Step 1: stripFrontmatter + parseClaudeOutput testleri yaz**
 
 ```javascript
-const { parseClaudeOutput } = require('./transform.js');
+const { stripFrontmatter, parseClaudeOutput } = require('./transform.js');
 const os = require('os');
 
+describe('stripFrontmatter', () => {
+  it('YAML frontmatter soyar', () => {
+    const input = '---\nname: test\ntools: Read, Grep\nmodel: sonnet\n---\n\n# Test Agent\n\nIcerik';
+    const result = stripFrontmatter(input);
+    assert.equal(result, '# Test Agent\n\nIcerik');
+    assert.ok(!result.includes('tools:'));
+  });
+
+  it('frontmatter yoksa icerigi degistirmez', () => {
+    const input = '# Test\n\nIcerik';
+    assert.equal(stripFrontmatter(input), input);
+  });
+
+  it('icerik icindeki --- ayiricilarina dokunmaz', () => {
+    const input = '---\nname: test\n---\n\n# Test\n\n---\n\nBolum 2';
+    const result = stripFrontmatter(input);
+    assert.ok(result.includes('---\n\nBolum 2'));
+  });
+});
+
 describe('parseClaudeOutput', () => {
-  let tmpDir;
-
-  // Her test icin gecici .claude/ dizini olustur
   function setupClaudeDir(structure) {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'transform-test-'));
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'transform-test-'));
     const claudeDir = path.join(tmpDir, '.claude');
-
     for (const [filePath, content] of Object.entries(structure)) {
       const fullPath = path.join(claudeDir, filePath);
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
       fs.writeFileSync(fullPath, content);
     }
-
-    return claudeDir;
+    return { claudeDir, tmpDir };
   }
 
   it('commands, agents, rules ve context ayristirir', () => {
-    const claudeDir = setupClaudeDir({
+    const { claudeDir, tmpDir } = setupClaudeDir({
       'commands/task-master.md': '# Task Master — Aciklama\n\nIcerik',
-      'agents/code-review.md': '# Code Review\n\nAgent icerigi',
+      'agents/code-review.md': '---\nname: code-review\ntools: Read\n---\n\n# Code Review\n\nAgent icerigi',
       'rules/workflow.md': '# Workflow\n\nKurallar',
       'CLAUDE.md': '# Context\n\nProje bilgisi',
     });
@@ -628,6 +678,9 @@ describe('parseClaudeOutput', () => {
     assert.equal(result.commands[0].name, 'task-master');
     assert.equal(result.agents.length, 1);
     assert.equal(result.agents[0].name, 'code-review');
+    // Agent frontmatter soyulmus olmali
+    assert.ok(!result.agents[0].content.includes('tools: Read'));
+    assert.ok(result.agents[0].content.startsWith('# Code Review'));
     assert.equal(result.rules.length, 1);
     assert.ok(result.context.includes('Proje bilgisi'));
 
@@ -635,7 +688,7 @@ describe('parseClaudeOutput', () => {
   });
 
   it('hooks, settings, reports, tracking atlar', () => {
-    const claudeDir = setupClaudeDir({
+    const { claudeDir, tmpDir } = setupClaudeDir({
       'commands/test.md': '# Test — Aciklama',
       'hooks/test.js': 'module.exports = {}',
       'settings.json': '{}',
@@ -662,11 +715,19 @@ describe('parseClaudeOutput', () => {
 Run: `cd Agentbase && node --test transform.test.js`
 Expected: FAIL
 
-- [ ] **Step 3: parseClaudeOutput implementasyonu**
+- [ ] **Step 3: stripFrontmatter + parseClaudeOutput implementasyonu**
 
 ```javascript
-const SKIP_DIRS = new Set(['hooks', 'reports', 'tracking', 'custom']);
-const SKIP_FILES = new Set(['settings.json', 'settings.local.json']);
+/**
+ * YAML frontmatter'i icerikten soyar.
+ * Claude agent dosyalari (agents/*.md) name, tools, model, color gibi
+ * Claude-ozel frontmatter icerir — bu diger CLI'lar icin gecersiz.
+ */
+function stripFrontmatter(content) {
+  const match = content.match(/^---\n[\s\S]*?\n---\n+/);
+  if (match) return content.slice(match[0].length);
+  return content;
+}
 
 function parseClaudeOutput(claudeDir) {
   if (!fs.existsSync(claudeDir)) {
@@ -684,16 +745,20 @@ function parseClaudeOutput(claudeDir) {
     context = fs.readFileSync(contextPath, 'utf8');
   }
 
-  // Alt dizinleri tara
-  const subdirs = { commands, agents, rules };
-  for (const [dirName, collection] of Object.entries(subdirs)) {
+  // Hedef dizinler — sadece bunlar taranir (hooks, reports, tracking vb. atlanir)
+  const dirMap = { commands, agents, rules };
+  for (const [dirName, collection] of Object.entries(dirMap)) {
     const dirPath = path.join(claudeDir, dirName);
     if (!fs.existsSync(dirPath)) continue;
 
     const files = fs.readdirSync(dirPath).filter(f => f.endsWith('.md'));
     for (const file of files) {
-      const content = fs.readFileSync(path.join(dirPath, file), 'utf8');
+      let content = fs.readFileSync(path.join(dirPath, file), 'utf8');
       const name = path.basename(file, '.md');
+      // Agent dosyalarinda Claude-ozel frontmatter'i soy
+      if (dirName === 'agents') {
+        content = stripFrontmatter(content);
+      }
       collection.push({ name, content });
     }
   }
@@ -795,6 +860,23 @@ describe('transformForTarget', () => {
     // OpenCode agent frontmatter
     assert.ok(fileMap['.opencode/agents/review.md'].includes('mode: subagent'));
   });
+
+  it('agent icerigi Claude frontmatter icermez (stripFrontmatter parseClaudeOutput icinde)', () => {
+    // Bu test parseClaudeOutput'un frontmatter soyma isini dogrular.
+    // transformForTarget'a gelen agent.content temiz olmali.
+    const source = {
+      commands: [],
+      // parseClaudeOutput zaten frontmatter soymus — burada temiz icerik
+      agents: [{ name: 'test-agent', content: '# Test Agent — Aciklama\n\nIcerik' }],
+      rules: [],
+      context: '',
+    };
+    const fileMap = transformForTarget(source, 'codex');
+    const skillContent = fileMap['.codex/skills/test-agent/SKILL.md'];
+    // Tek frontmatter olmali (toSkillMd'nin ekledigi)
+    const frontmatterCount = (skillContent.match(/^---$/gm) || []).length;
+    assert.equal(frontmatterCount, 2); // acilis --- ve kapanis ---
+  });
 });
 
 describe('writeTarget', () => {
@@ -839,7 +921,7 @@ function transformForTarget(source, targetCli) {
 
     if (cap.commands) {
       const key = `${cap.commands.dir}/${cmd.name}.toml`;
-      fileMap[key] = toToml(cmd.name, desc, adapted);
+      fileMap[key] = toToml(desc, adapted);
     } else if (cap.skills) {
       const key = `${cap.skills.dir}/${cmd.name}/SKILL.md`;
       fileMap[key] = toSkillMd(cmd.name, desc, adapted);
@@ -1122,6 +1204,7 @@ transform.js'nin sonundaki `module.exports` blogunun tum public fonksiyonlari ic
 ```javascript
 module.exports = {
   extractDescription,
+  stripFrontmatter,
   adaptInvokeSyntax,
   adaptPathReferences,
   stripClaudeOnlySections,
@@ -1173,4 +1256,69 @@ Agentbase/AGENTS.md
 ```bash
 git add .gitignore
 git commit -m "chore: transform.js cikti dizinlerini gitignore'a ekle"
+```
+
+---
+
+### Task 11: Bootstrap entegrasyonu — transform.js cagrisini ekle
+
+**Files:**
+- Modify: `Agentbase/.claude/commands/bootstrap.md`
+
+> **Not:** Bootstrap bir markdown command dosyasidir — kod degil, Claude'un takip ettigi talimat. Degisiklikler saf metin ekleme.
+
+- [ ] **Step 1: Bootstrap roportajina CLI sorusu ekle**
+
+`bootstrap.md`'deki roportaj fazina (ADIM 2 veya 3) su soruyu ekle:
+
+```markdown
+### X.X Hedef CLI Araclari
+
+Kullaniciya sor:
+
+> Hangi CLI araclarini kullaniyorsunuz? (virgul ile ayirin, bos birakirsaniz sadece Claude)
+> Secenekler: gemini, codex, kimi, opencode
+>
+> Ornek: gemini, codex
+
+Yaniti manifest'e `targets` alani olarak yaz:
+
+```yaml
+targets:
+  - claude
+  - <kullanici-yaniti-1>
+  - <kullanici-yaniti-2>
+```
+
+Kullanici bos birakırsa:
+
+```yaml
+targets:
+  - claude
+```
+```
+
+- [ ] **Step 2: Bootstrap'in generate.js sonrasina transform.js cagrisini ekle**
+
+Bootstrap'in generate.js cagirma adiminin hemen sonrasina su adimi ekle:
+
+```markdown
+### X.X Transform Pipeline
+
+Manifest'te `targets` alani `claude` disinda deger iceriyorsa:
+
+```bash
+node transform.js ../Docs/agentic/project-manifest.yaml --verbose
+```
+
+Sadece `claude` varsa bu adimi ATLA.
+
+Transform raporu ciktisini kullaniciya goster.
+```
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add Agentbase/.claude/commands/bootstrap.md
+git commit -m "feat: bootstrap'a CLI secimi ve transform.js entegrasyonu"
 ```
