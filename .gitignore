@@ -40,6 +40,7 @@ package-lock.json
 # Diger proje-spesifik root dosyalar
 AGENTS.md
 GEMINI.md
+.copilot/
 
 # ─────────────────────────────────────────────────────
 # AGENTBASE ICINDEKI BOOTSTRAP URETIMI
@@ -86,8 +87,9 @@ Agentbase/backlog/
 # Docs/superpowers/                        ← Spec ve plan dokumanlari
 # ─────────────────────────────────────────────────────
 
-# Test ortami
-test/
+# Test ortami (bootstrap test icin kullanilir, icerik ignore)
+test/*
+!test/.gitkeep
 
 # Codebase icerigi (kullanici kendi projesini symlink eder)
 # Dizin ve .gitkeep tracked, icerik ignore
