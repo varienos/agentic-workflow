@@ -204,6 +204,54 @@ function toOpenCodeAgent(name, description, content) {
 }
 
 // ─────────────────────────────────────────────────────
+// FRONTMATTER TEMIZLEME
+// ─────────────────────────────────────────────────────
+
+function stripFrontmatter(content) {
+  const match = content.match(/^---\n[\s\S]*?\n---\n+/);
+  if (match) return content.slice(match[0].length);
+  return content;
+}
+
+// ─────────────────────────────────────────────────────
+// .CLAUDE/ DIZIN PARSER
+// ─────────────────────────────────────────────────────
+
+function parseClaudeOutput(claudeDir) {
+  if (!fs.existsSync(claudeDir)) {
+    throw new Error(`Claude cikti dizini bulunamadi: ${claudeDir}. Once generate.js calistirin.`);
+  }
+
+  const commands = [];
+  const agents = [];
+  const rules = [];
+  let context = '';
+
+  const contextPath = path.join(claudeDir, 'CLAUDE.md');
+  if (fs.existsSync(contextPath)) {
+    context = fs.readFileSync(contextPath, 'utf8');
+  }
+
+  const dirMap = { commands, agents, rules };
+  for (const [dirName, collection] of Object.entries(dirMap)) {
+    const dirPath = path.join(claudeDir, dirName);
+    if (!fs.existsSync(dirPath)) continue;
+
+    const files = fs.readdirSync(dirPath).filter(f => f.endsWith('.md'));
+    for (const file of files) {
+      let content = fs.readFileSync(path.join(dirPath, file), 'utf8');
+      const name = path.basename(file, '.md');
+      if (dirName === 'agents') {
+        content = stripFrontmatter(content);
+      }
+      collection.push({ name, content });
+    }
+  }
+
+  return { commands, agents, rules, context };
+}
+
+// ─────────────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────────────
 
@@ -218,6 +266,8 @@ module.exports = {
   toSkillMd,
   toKimiAgentYaml,
   toOpenCodeAgent,
+  stripFrontmatter,
+  parseClaudeOutput,
   escapeRegex,
   CLI_CAPABILITIES,
   AGENTBASE_DIR,

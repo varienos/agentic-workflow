@@ -3,8 +3,11 @@
 
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 
-const { extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent, toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent } = require('./transform.js');
+const { extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent, toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent, stripFrontmatter, parseClaudeOutput } = require('./transform.js');
 const yaml = require('js-yaml');
 
 describe('extractDescription', () => {
@@ -198,5 +201,80 @@ describe('toOpenCodeAgent', () => {
     assert.ok(result.includes('description: "Kod inceleme"'));
     assert.ok(result.includes('mode: subagent'));
     assert.ok(result.includes('# Icerik'));
+  });
+});
+
+describe('stripFrontmatter', () => {
+  it('YAML frontmatter soyar', () => {
+    const input = '---\nname: test\ntools: Read, Grep\nmodel: sonnet\n---\n\n# Test Agent\n\nIcerik';
+    const result = stripFrontmatter(input);
+    assert.equal(result, '# Test Agent\n\nIcerik');
+    assert.ok(!result.includes('tools:'));
+  });
+
+  it('frontmatter yoksa icerigi degistirmez', () => {
+    const input = '# Test\n\nIcerik';
+    assert.equal(stripFrontmatter(input), input);
+  });
+
+  it('icerik icindeki --- ayiricilarina dokunmaz', () => {
+    const input = '---\nname: test\n---\n\n# Test\n\n---\n\nBolum 2';
+    const result = stripFrontmatter(input);
+    assert.ok(result.includes('---\n\nBolum 2'));
+  });
+});
+
+describe('parseClaudeOutput', () => {
+  function setupClaudeDir(structure) {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'transform-test-'));
+    const claudeDir = path.join(tmpDir, '.claude');
+    for (const [filePath, content] of Object.entries(structure)) {
+      const fullPath = path.join(claudeDir, filePath);
+      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+      fs.writeFileSync(fullPath, content);
+    }
+    return { claudeDir, tmpDir };
+  }
+
+  it('commands, agents, rules ve context ayristirir', () => {
+    const { claudeDir, tmpDir } = setupClaudeDir({
+      'commands/task-master.md': '# Task Master — Aciklama\n\nIcerik',
+      'agents/code-review.md': '---\nname: code-review\ntools: Read\n---\n\n# Code Review\n\nAgent icerigi',
+      'rules/workflow.md': '# Workflow\n\nKurallar',
+      'CLAUDE.md': '# Context\n\nProje bilgisi',
+    });
+    const result = parseClaudeOutput(claudeDir);
+
+    assert.equal(result.commands.length, 1);
+    assert.equal(result.commands[0].name, 'task-master');
+    assert.equal(result.agents.length, 1);
+    assert.equal(result.agents[0].name, 'code-review');
+    assert.ok(!result.agents[0].content.includes('tools: Read'));
+    assert.ok(result.agents[0].content.startsWith('# Code Review'));
+    assert.equal(result.rules.length, 1);
+    assert.ok(result.context.includes('Proje bilgisi'));
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it('hooks, settings, reports, tracking atlar', () => {
+    const { claudeDir, tmpDir } = setupClaudeDir({
+      'commands/test.md': '# Test — Aciklama',
+      'hooks/test.js': 'module.exports = {}',
+      'settings.json': '{}',
+      'reports/deploy.md': 'Deploy raporu',
+      'tracking/sessions/s1.json': '{}',
+    });
+    const result = parseClaudeOutput(claudeDir);
+
+    assert.equal(result.commands.length, 1);
+    assert.equal(result.agents.length, 0);
+    assert.equal(result.rules.length, 0);
+
+    fs.rmSync(tmpDir, { recursive: true });
+  });
+
+  it('.claude/ yoksa hata firlatir', () => {
+    assert.throws(() => parseClaudeOutput('/nonexistent/.claude'), /bulunamadi/);
   });
 });
