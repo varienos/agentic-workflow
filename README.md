@@ -127,7 +127,7 @@ Claude Code içinde:
 /bootstrap
 ```
 
-Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçimini sorar, workflow dosyalarını üretir ve scaffold kurulum komutlarını gösterir.
+Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçimini sorar, workflow dosyalarını üretir ve scaffold kurulum komutlarını gösterir. Dizin tamamen boş olmalıdır — README veya .gitkeep gibi dosyalar varsa bootstrap mevcut proje modu ile başlar.
 
 ## Bootstrap Akışı
 

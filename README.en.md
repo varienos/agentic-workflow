@@ -82,6 +82,7 @@ Note: Some command files in this repo serve as examples or core content. The act
 - Node.js 18+ and npm
 - [jq](https://jqlang.github.io/jq/) — JSON processor, required for hook rules (`brew install jq` or `apt install jq`)
 - Git 2.38+ — required for `git merge-tree --write-tree` support in pre-push hook
+- Docker CLI — required if Docker or Coolify deploy module is active (`docker build`, `docker compose` commands)
 
 ## Quick Start
 
@@ -124,7 +125,7 @@ Inside Claude Code:
 /bootstrap
 ```
 
-When Bootstrap detects an empty Codebase, it switches to greenfield mode: asks for stack selection, generates workflow files, and shows scaffold setup commands.
+When Bootstrap detects an empty Codebase, it switches to greenfield mode: asks for stack selection, generates workflow files, and shows scaffold setup commands. The directory must be completely empty — if files like README or .gitkeep exist, bootstrap starts in existing project mode instead.
 
 ## Bootstrap Flow
 
@@ -188,7 +189,9 @@ Deeply analyzes a request to create a backlog task. Scans the codebase, identifi
 Reviews recent changes with 3+1 agents. Code Reviewer evaluates overall code quality, Silent Failure Hunter checks for silent errors and flawed error handling, Regression Analyzer assesses the risk of breaking existing functionality. For security, auth, payment, or migration changes, a conditional 4th agent (Devils Advocate) analyzes breaking points from an adversarial perspective. Findings are evaluated through a decision tree: issues to fix are reported, pre-existing issues are recorded in the backlog — never dismissed as "out of scope."
 
 ```
-/task-review
+/task-review                    # Last commit
+/task-review abc1234            # Specific commit
+/task-review HEAD~3..HEAD       # Commit range
 ```
 
 ### /auto-review
@@ -196,7 +199,9 @@ Reviews recent changes with 3+1 agents. Code Reviewer evaluates overall code qua
 Diff-based, loop-compatible, and idempotent review. Examines changes since the last commit with hash checking — never reviews the same diff twice. Fixes MINOR findings directly and commits, opens backlog tasks for MAJOR findings. Compatible with an external `/loop` skill or plugin for periodic execution, for example the [superpowers](https://github.com/obra/superpowers) extension — it is not bundled with this repo. Does not re-review its own fix commits in subsequent runs.
 
 ```
-/auto-review
+/auto-review                    # Last commit
+/auto-review abc1234            # Specific commit
+/auto-review HEAD~3..HEAD       # Commit range
 ```
 
 ### /bug-hunter
@@ -213,7 +218,9 @@ Finds the root cause of a bug and fixes it. Takes a bug description, finds relat
 Reviews a bug fix from 3 different perspectives. Code Reviewer evaluates fix quality and whether it targets the correct root cause, Silent Failure Hunter checks if the fix creates new silent errors, Regression Analyzer assesses the risk of breaking other areas. Infinite loop protection — max 1 iteration.
 
 ```
-/bug-review
+/bug-review                     # Last commit
+/bug-review abc1234             # Specific commit
+/bug-review HEAD~2..HEAD        # Commit range
 ```
 
 ### /memorize
@@ -358,6 +365,7 @@ cd Agentbase && node bin/session-monitor.js                                 # Se
 
 # After bootstrap — runs once manifest has been generated:
 cd Agentbase && node generate.js ../Docs/agentic/project-manifest.yaml --dry-run  # Dry run
+cd Agentbase && node transform.js ../Docs/agentic/project-manifest.yaml --targets gemini,codex --dry-run  # CLI transform
 ```
 
 ## Contributing
