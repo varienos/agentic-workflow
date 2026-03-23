@@ -508,21 +508,22 @@ dependencies: []
 describe('session-monitor bugfixes', () => {
   const monitorPath = path.join(__dirname, '..', 'bin', 'session-monitor.js');
 
-  it('TASK-97: siralama degisince selectedId ayni PID de kaliyor', () => {
+  it('TASK-97: siralama degisince selectedId ayni session_id de kaliyor', () => {
     const mod = loadModuleExports(monitorPath, {
-      exports: ['getFilteredSessions', 'selectDelta'],
+      exports: ['getFilteredSessions', 'selectDelta', 'sessions', '_getSelectedId'],
       replacements: [
         {
           find: /let sessions = \[\];/,
           replace: `let sessions = [
-            { session_id: '200-2026-03-23', last_activity: '2026-03-23T10:00:00Z' },
-            { session_id: '100-2026-03-23', last_activity: '2026-03-23T11:00:00Z' },
-            { session_id: '300-2026-03-23', last_activity: '2026-03-23T09:00:00Z' },
+            { session_id: 'A-2026', last_activity: '${new Date().toISOString()}' },
+            { session_id: 'B-2026', last_activity: '${new Date(Date.now() - 60000).toISOString()}' },
+            { session_id: 'C-2026', last_activity: '${new Date(Date.now() - 120000).toISOString()}' },
           ];`,
         },
         {
+          // selectedId getter export et — primitive oldugundan dogrudan export ise yaramaz
           find: /let selectedId = null;/,
-          replace: `let selectedId = null;`,
+          replace: `let selectedId = null;\nfunction _getSelectedId() { return selectedId; }`,
         },
         // render() yi no-op yap (terminal ciktisi engelle)
         {
@@ -532,25 +533,27 @@ describe('session-monitor bugfixes', () => {
       ],
     });
 
-    // Ilk getFilteredSessions — selectedId null, index 0 → ilk oturum secilir
-    let filtered = mod.getFilteredSessions();
-    const firstId = filtered[0].session_id;
+    // Baslangic: getFilteredSessions → selectedId ilk oturuma (A-2026) set edilir
+    mod.getFilteredSessions();
+    assert.equal(mod._getSelectedId(), 'A-2026', 'ilk secim A olmali');
 
-    // selectDelta(1) ile ikinci oturuma gec
+    // selectDelta(1) ile B-2026 ya gec (index 0 → 1)
     mod.selectDelta(1);
-    filtered = mod.getFilteredSessions();
-    const secondId = filtered[1].session_id;
-    assert.notEqual(firstId, secondId, 'iki farkli session olmali');
+    assert.equal(mod._getSelectedId(), 'B-2026', 'selectDelta sonrasi B secili olmali');
 
-    // Simdi sessions siralamasini degistir (yeni oturum ekle)
-    // selectedId ikinci oturumda kalmali
-    filtered = mod.getFilteredSessions();
-    // selectedId set edilmis olmali — ayni session_id yi bul
-    const currentSelected = filtered.find((s, i) => {
-      // getFilteredSessions selectedIndex i gunceller
-      return i === 1; // selectDelta(1) sonrasi index 1 olmali
-    });
-    assert.ok(currentSelected, 'secim kaybolmamali');
+    // Sessions dizisini mutasyona ugrat: basa yeni eleman ekle
+    // B-2026 artik index 1 degil index 2 de
+    mod.sessions.unshift({ session_id: 'D-2026', last_activity: new Date().toISOString() });
+    // Yeni sira: [D(0), A(1), B(2), C(3)]
+
+    // getFilteredSessions selectedId ile B-2026 yi bulup index ini guncellemeli
+    const filtered = mod.getFilteredSessions();
+    assert.equal(mod._getSelectedId(), 'B-2026', 'siralama degisse de selectedId B de kalmali');
+
+    // Eski bugli davranis kontrolu: index-tabanli olsaydi, index 1 = A-2026 olurdu
+    const selectedSession = filtered.find(s => s.session_id === mod._getSelectedId());
+    assert.ok(selectedSession, 'secili session listede olmali');
+    assert.equal(selectedSession.session_id, 'B-2026', 'secili session B olmali, A degil');
   });
 
   it('TASK-98: loadBacklogIndex bozuk dosyayi atliyor', () => {
@@ -588,7 +591,7 @@ describe('session-monitor bugfixes', () => {
     assert.notEqual(stripAnsi(highColor), highColor, 'ANSI kodu stripAnsi ile farkli olmali');
   });
 
-  it('TASK-100 regresyon: summarizeBacklog ciktisinda priority ANSI renk kodu var', () => {
+  it('TASK-100 regresyon: summarizeBacklog priority segmenti ANSI renk koduna sarili', () => {
     const { summarizeBacklog, stripAnsi } = loadModuleExports(monitorPath, {
       exports: ['summarizeBacklog', 'stripAnsi'],
     });
@@ -599,11 +602,18 @@ describe('session-monitor bugfixes', () => {
     };
 
     const output = summarizeBacklog(session);
-    // ANSI renk kodu icermeli (stripAnsi ile silinmemis)
-    assert.ok(output.includes('\x1b['), 'summarizeBacklog ciktisinda ANSI renk kodu olmali');
-    // Stripped hali farkli olmali
-    assert.notEqual(stripAnsi(output), output, 'ANSI kodlari korunmus olmali');
-    // priority metni gorunur olmali
-    assert.ok(output.includes('high'), 'priority metni olmali');
+
+    // Priority segmentinin kendisi ANSI renk koduyla sarili olmali
+    // Eski bugli davranista "high" duz metin olarak geliyor, ANSI kodu yok
+    // Dogru davranista: \x1b[31mhigh\x1b[0m (kirmizi)
+    assert.match(output, /\x1b\[\d+mhigh\x1b\[0m/, 'priority "high" kendi ANSI renk koduyla sarili olmali');
+
+    // "medium" icin de kontrol et
+    const mediumSession = {
+      current_focus: { task_id: 'TASK-43' },
+      backlog_sync: { status: 'To Do', priority: 'medium', acceptance: { completed: 0, total: 2 } },
+    };
+    const mediumOutput = summarizeBacklog(mediumSession);
+    assert.match(mediumOutput, /\x1b\[\d+mmedium\x1b\[0m/, 'priority "medium" kendi ANSI renk koduyla sarili olmali');
   });
 });
