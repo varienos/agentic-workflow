@@ -252,6 +252,88 @@ function parseClaudeOutput(claudeDir) {
 }
 
 // ─────────────────────────────────────────────────────
+// PIPELINE ORKESTRASYONU
+// ─────────────────────────────────────────────────────
+
+function transformForTarget(source, targetCli) {
+  const cap = CLI_CAPABILITIES[targetCli];
+  if (!cap) return {};
+
+  const fileMap = {};
+
+  // Commands → commands (Gemini) veya skills (diger)
+  for (const cmd of source.commands) {
+    const adapted = adaptContent(cmd.content, targetCli);
+    const desc = extractDescription(cmd.content);
+
+    if (cap.commands) {
+      const key = `${cap.commands.dir}/${cmd.name}.toml`;
+      fileMap[key] = toToml(desc, adapted);
+    } else if (cap.skills) {
+      const key = `${cap.skills.dir}/${cmd.name}/SKILL.md`;
+      fileMap[key] = toSkillMd(cmd.name, desc, adapted);
+    }
+  }
+
+  // Agents
+  if (cap.agents) {
+    for (const agent of source.agents) {
+      const adapted = adaptContent(agent.content, targetCli);
+      const desc = extractDescription(agent.content);
+
+      if (cap.agents.format === 'yaml') {
+        // Kimi
+        const yamlKey = `${cap.agents.dir}/${agent.name}.yaml`;
+        const promptKey = `${cap.agents.dir}/${agent.name}-prompt.md`;
+        fileMap[yamlKey] = toKimiAgentYaml(agent.name, `./${agent.name}-prompt.md`);
+        fileMap[promptKey] = adapted;
+      } else if (cap.agents.format === 'md' && targetCli === 'opencode') {
+        const key = `${cap.agents.dir}/${agent.name}.md`;
+        fileMap[key] = toOpenCodeAgent(agent.name, desc, adapted);
+      } else {
+        // Gemini — saf markdown
+        const key = `${cap.agents.dir}/${agent.name}.md`;
+        fileMap[key] = adapted;
+      }
+    }
+  }
+
+  // Codex: agents → skills
+  if (!cap.agents && cap.skills) {
+    for (const agent of source.agents) {
+      const adapted = adaptContent(agent.content, targetCli);
+      const desc = extractDescription(agent.content);
+      const key = `${cap.skills.dir}/${agent.name}/SKILL.md`;
+      fileMap[key] = toSkillMd(agent.name, desc, adapted);
+    }
+  }
+
+  // Context
+  if (cap.context.file) {
+    const contextContent = adaptContent(source.context, targetCli, source.rules);
+    const loc = cap.context.location === 'root'
+      ? cap.context.file
+      : `${cap.context.location}/${cap.context.file}`;
+    fileMap[loc] = contextContent;
+  } else if (cap.context.strategy === 'agent-yaml-prompt') {
+    // Kimi default agent
+    const contextContent = adaptContent(source.context, targetCli, source.rules);
+    fileMap[`${cap.agents.dir}/default.yaml`] = toKimiAgentYaml('default', './default-prompt.md');
+    fileMap[`${cap.agents.dir}/default-prompt.md`] = contextContent;
+  }
+
+  return fileMap;
+}
+
+function writeTarget(outputDir, targetCli, fileMap) {
+  for (const [relPath, content] of Object.entries(fileMap)) {
+    const fullPath = path.join(outputDir, relPath);
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+    fs.writeFileSync(fullPath, content, 'utf8');
+  }
+}
+
+// ─────────────────────────────────────────────────────
 // EXPORTS
 // ─────────────────────────────────────────────────────
 
@@ -268,6 +350,8 @@ module.exports = {
   toOpenCodeAgent,
   stripFrontmatter,
   parseClaudeOutput,
+  transformForTarget,
+  writeTarget,
   escapeRegex,
   CLI_CAPABILITIES,
   AGENTBASE_DIR,

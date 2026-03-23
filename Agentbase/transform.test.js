@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const { extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent, toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent, stripFrontmatter, parseClaudeOutput } = require('./transform.js');
+const { extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent, toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent, stripFrontmatter, parseClaudeOutput, transformForTarget, writeTarget } = require('./transform.js');
 const yaml = require('js-yaml');
 
 describe('extractDescription', () => {
@@ -276,5 +276,103 @@ describe('parseClaudeOutput', () => {
 
   it('.claude/ yoksa hata firlatir', () => {
     assert.throws(() => parseClaudeOutput('/nonexistent/.claude'), /bulunamadi/);
+  });
+});
+
+describe('transformForTarget', () => {
+  it('gemini — .toml commands + .md agents + GEMINI.md uretir', () => {
+    const source = {
+      commands: [{ name: 'task-master', content: '# Task Master — Siralayici\n\n`/task-master`' }],
+      agents: [{ name: 'code-review', content: '# Code Review\n\nIcerik' }],
+      rules: [{ name: 'workflow', content: '# Workflow\n\nKurallar' }],
+      context: '# Context\n\n`/task-master` komutu\n\n`.claude/commands/`',
+    };
+    const fileMap = transformForTarget(source, 'gemini');
+
+    assert.ok('.gemini/commands/task-master.toml' in fileMap);
+    assert.ok('.gemini/agents/code-review.md' in fileMap);
+    assert.ok('GEMINI.md' in fileMap);
+    assert.ok(fileMap['.gemini/commands/task-master.toml'].includes('prompt = """'));
+  });
+
+  it('codex — skills (commands + agents) + root AGENTS.md', () => {
+    const source = {
+      commands: [{ name: 'task-master', content: '# Task Master — Siralayici\n\n`/task-master`' }],
+      agents: [{ name: 'review', content: '# Review\n\nIcerik' }],
+      rules: [],
+      context: '# Context',
+    };
+    const fileMap = transformForTarget(source, 'codex');
+
+    assert.ok('.codex/skills/task-master/SKILL.md' in fileMap);
+    assert.ok('.codex/skills/review/SKILL.md' in fileMap);
+    assert.ok('AGENTS.md' in fileMap);
+    assert.ok(fileMap['.codex/skills/task-master/SKILL.md'].includes('name: task-master'));
+    assert.ok(fileMap['.codex/skills/task-master/SKILL.md'].includes('$task-master'));
+  });
+
+  it('kimi — skills + agent yaml/prompt + default context', () => {
+    const source = {
+      commands: [{ name: 'test', content: '# Test — Aciklama\n\nIcerik' }],
+      agents: [{ name: 'review', content: '# Review\n\nIcerik' }],
+      rules: [{ name: 'rule1', content: 'Kural' }],
+      context: '# Context',
+    };
+    const fileMap = transformForTarget(source, 'kimi');
+
+    assert.ok('.kimi/skills/test/SKILL.md' in fileMap);
+    assert.ok('.kimi/agents/review.yaml' in fileMap);
+    assert.ok('.kimi/agents/review-prompt.md' in fileMap);
+    assert.ok('.kimi/agents/default.yaml' in fileMap);
+    assert.ok('.kimi/agents/default-prompt.md' in fileMap);
+    assert.ok(fileMap['.kimi/agents/default-prompt.md'].includes('Kural'));
+  });
+
+  it('opencode — skills + agents + .opencode/AGENTS.md', () => {
+    const source = {
+      commands: [{ name: 'test', content: '# Test — Aciklama\n\nIcerik' }],
+      agents: [{ name: 'review', content: '# Review — Inceleme\n\nIcerik' }],
+      rules: [],
+      context: '# Context',
+    };
+    const fileMap = transformForTarget(source, 'opencode');
+
+    assert.ok('.opencode/skills/test/SKILL.md' in fileMap);
+    assert.ok('.opencode/agents/review.md' in fileMap);
+    assert.ok('.opencode/AGENTS.md' in fileMap);
+    assert.ok(fileMap['.opencode/agents/review.md'].includes('mode: subagent'));
+  });
+
+  it('agent icerigi Claude frontmatter icermez', () => {
+    const source = {
+      commands: [],
+      agents: [{ name: 'test-agent', content: '# Test Agent — Aciklama\n\nIcerik' }],
+      rules: [],
+      context: '',
+    };
+    const fileMap = transformForTarget(source, 'codex');
+    const skillContent = fileMap['.codex/skills/test-agent/SKILL.md'];
+    const frontmatterCount = (skillContent.match(/^---$/gm) || []).length;
+    assert.equal(frontmatterCount, 2);
+  });
+});
+
+describe('writeTarget', () => {
+  it('dosyalari dogru dizine yazar', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'write-test-'));
+    const fileMap = {
+      '.gemini/commands/test.toml': 'description = "Test"',
+      'GEMINI.md': '# Gemini Context',
+    };
+    writeTarget(tmpDir, 'gemini', fileMap);
+
+    assert.ok(fs.existsSync(path.join(tmpDir, '.gemini', 'commands', 'test.toml')));
+    assert.ok(fs.existsSync(path.join(tmpDir, 'GEMINI.md')));
+    assert.equal(
+      fs.readFileSync(path.join(tmpDir, '.gemini', 'commands', 'test.toml'), 'utf8'),
+      'description = "Test"'
+    );
+
+    fs.rmSync(tmpDir, { recursive: true });
   });
 });
