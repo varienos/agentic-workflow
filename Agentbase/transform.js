@@ -609,6 +609,10 @@ function main() {
     console.log('  Mod: DRY RUN (dosya yazilmadi)');
   }
   console.log('\u2501'.repeat(55));
+
+  if (report.errors.length > 0) {
+    process.exit(1);
+  }
 }
 
 if (require.main === module) {
