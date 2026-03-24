@@ -1,0 +1,48 @@
+#!/bin/bash
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Pre-push Hook — Agentic Workflow Template Repo
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Bu hook template repo'nun kendisi icindir (Codebase degil).
+# Hedef proje hook'lari Agentbase/git-hooks/ altinda generate.js ile uretilir.
+#
+# Kontroller:
+#   1. npm test — testler gecmeden push engellenir
+#   2. release.js bilgilendirme — tag olmadan push yapilirsa uyari
+#
+# Bypass: SKIP_HOOKS=1 git push
+
+# Bypass kontrolu
+if [ "$SKIP_HOOKS" = "1" ]; then
+  echo "⚡ Pre-push hook bypass edildi (SKIP_HOOKS=1)"
+  exit 0
+fi
+
+ERRORS=0
+
+# ─── TEST KONTROLU ───
+echo "→ Testler calistiriliyor..."
+cd Agentbase && npm test --silent 2>&1
+if [ $? -ne 0 ]; then
+  echo "❌ Testler basarisiz — push engellendi"
+  ERRORS=1
+fi
+cd ..
+
+# ─── RELEASE BILGILENDIRME ───
+# Tag push'u mu kontrol et
+while read local_ref local_sha remote_ref remote_sha; do
+  if echo "$local_ref" | grep -q "refs/tags/"; then
+    echo "✅ Tag push: $local_ref"
+  fi
+done
+
+if [ "$ERRORS" -ne 0 ]; then
+  echo ""
+  echo "━━━ Pre-push BASARISIZ ━━━"
+  echo "Bypass: SKIP_HOOKS=1 git push"
+  exit 1
+fi
+
+echo "✅ Pre-push kontrolleri gecti"
+exit 0
