@@ -85,6 +85,7 @@ Not: Bu depodaki bazı komut dosyaları örnek veya çekirdek içerik olarak yer
 - [jq](https://jqlang.github.io/jq/) — JSON işlemci, hook kuralları için gerekli (`brew install jq` veya `apt install jq`)
 - Git 2.38+ — pre-push hook'undaki `git merge-tree --write-tree` desteği için gerekli
 - Docker CLI — Docker veya Coolify deploy modülü aktifse gerekli (`docker build`, `docker compose` komutları için)
+- [GitHub CLI (gh)](https://cli.github.com/) — opsiyonel, `release.js` GitHub Release oluşturma için kullanır
 
 ## Hızlı Başlangıç
 
@@ -368,6 +369,24 @@ cd Agentbase && node bin/session-monitor.js                                 # Ot
 # Bootstrap sonrası — manifest üretildikten sonra çalışır:
 cd Agentbase && node generate.js ../Docs/agentic/project-manifest.yaml --dry-run  # Kuru çalıştırma
 cd Agentbase && node transform.js ../Docs/agentic/project-manifest.yaml --targets gemini,codex --dry-run  # CLI dönüştürme
+```
+
+### Release ve CHANGELOG
+
+```bash
+cd Agentbase && node bin/release.js auto            # Otomatik: commit'lerden bump tipi belirle
+cd Agentbase && node bin/release.js patch           # Manuel: patch release (1.2.3 → 1.2.4)
+cd Agentbase && node bin/release.js minor           # Manuel: minor release (1.2.3 → 1.3.0)
+cd Agentbase && node bin/release.js major           # Manuel: major release (1.2.3 → 2.0.0)
+cd Agentbase && node bin/release.js auto --dry-run  # Kuru çalıştırma (dosya yazmaz)
+```
+
+`release.js` sırayla: version bump → CHANGELOG üret → commit → tag → push → GitHub Release oluşturur. GitHub Release için `gh` CLI gereklidir (opsiyonel — kurulu değilse atlanır).
+
+```bash
+cd Agentbase && node bin/changelog.js --all         # Tüm tag'lerden CHANGELOG üret
+cd Agentbase && node bin/changelog.js --from v1.0.0 # Belirli tag'den itibaren
+cd Agentbase && node bin/changelog.js --release v2.0.0 --dry-run  # Kuru çalıştırma
 ```
 
 ## Katkı

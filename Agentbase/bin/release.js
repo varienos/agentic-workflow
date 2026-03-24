@@ -88,7 +88,7 @@ function stageAndCommitAll() {
 
   // Dosyalari stage'le
   for (const file of files) {
-    try { run(`git add "${file}"`); } catch { /* dosya silinmis olabilir */ }
+    try { run(`git add "${file}"`); } catch { console.warn(`  ⚠ Atlandı: ${file} (silinmis veya erisilemez)`); }
   }
 
   run('git commit -m "chore: release oncesi bekleyen degisiklikler"');
@@ -196,4 +196,9 @@ function main() {
   console.log('\u2501'.repeat(55));
 }
 
-main();
+// Test icin export
+if (require.main === module) {
+  main();
+} else {
+  module.exports = { detectBump, bumpVersion, extractReleaseNotes };
+}
