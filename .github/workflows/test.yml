@@ -20,7 +20,7 @@ jobs:
 
       - name: Bagimliklar
         working-directory: Agentbase
-        run: npm ci
+        run: npm install
 
       - name: Testler
         working-directory: Agentbase
