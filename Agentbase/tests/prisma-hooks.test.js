@@ -93,6 +93,53 @@ describe('prisma-migration-check hook', () => {
     assert.match(systemMessage, /Prisma schema validasyonu basarili/);
     assert.match(systemMessage, /migration olusturulmamis/);
   });
+
+  it('ozel karakter iceren schema path shell injection olmadan gecilir', t => {
+    const projectRoot = createTempProject(t);
+    // "my project (v2)" gibi boşluklu dizin adı — eski execSync ile injection riski vardı
+    const specialSubdir = 'my project (v2)';
+    const hookPath = materializeHook(projectRoot, 'modules/orm/prisma/hooks/prisma-migration-check.js');
+    const binDir = path.join(projectRoot, 'bin');
+    const schemaPath = writeCodebaseFile(
+      projectRoot,
+      `${specialSubdir}/prisma/schema.prisma`,
+      'datasource db { provider = "postgresql" url = "postgres://localhost/test" }\n'
+    );
+
+    // Fake npx: aldığı --schema argümanından sonraki değeri dosyaya yazar
+    const captureFile = path.join(projectRoot, 'captured_schema.txt');
+    fs.mkdirSync(binDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(binDir, 'npx'),
+      [
+        '#!/bin/sh',
+        'if [ "$1" = "prisma" ] && [ "$2" = "validate" ]; then',
+        `  printf '%s' "$4" > ${captureFile}`,
+        '  exit 0',
+        'fi',
+        'if [ "$1" = "prisma" ] && [ "$2" = "migrate" ] && [ "$3" = "status" ]; then',
+        '  exit 0',
+        'fi',
+        'exit 1',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    fs.chmodSync(path.join(binDir, 'npx'), 0o755);
+
+    runHook(hookPath, makeHookInput(schemaPath), {
+      env: { PATH: `${binDir}${path.delimiter}${process.env.PATH}` },
+    });
+
+    // execFileSync ile path, shell yorumlaması olmadan tek argüman olarak geçmeli
+    const captured = fs.existsSync(captureFile)
+      ? fs.readFileSync(captureFile, 'utf8')
+      : '';
+    assert.ok(
+      captured.includes(specialSubdir),
+      `schema path ozel karakter iceren dizin adi korunmali; yakalanan: "${captured}"`
+    );
+  });
 });
 
 describe('destructive-migration-check hook', () => {

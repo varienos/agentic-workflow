@@ -306,8 +306,8 @@ describe('auto-format hook', () => {
           replace: `const CODEBASE_ROOT = ${JSON.stringify(codebaseRoot)};`,
         },
         {
-          find: /const \{ execSync \} = require\('child_process'\);/,
-          replace: 'const execSync = (...args) => { globalThis.__capturedExec.push(args); };',
+          find: /const \{ execFileSync \} = require\('child_process'\);/,
+          replace: 'const execFileSync = (...args) => { globalThis.__capturedExec.push(args); };',
         },
       ],
     });
@@ -320,8 +320,60 @@ describe('auto-format hook', () => {
     });
 
     assert.equal(capturedExec.length, 1);
-    assert.match(capturedExec[0][0], /--config/);
-    assert.match(capturedExec[0][0], new RegExp(configPath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    const [file, args] = capturedExec[0];
+    assert.equal(file, 'npx', 'execFileSync ile calistirilan program npx olmali');
+    assert.ok(args.includes('--config'), 'args dizisinde --config olmali');
+    assert.ok(args.includes(configPath), 'args dizisinde configPath olmali');
+  });
+
+  it('ozel karakter iceren path shell injection olmadan args dizisine gecilir', t => {
+    const projectRoot = createTempProject(t);
+    const codebaseRoot = path.join(projectRoot, 'Codebase');
+    // Boşluk ve özel karakter içeren path
+    const specialPath = path.join(codebaseRoot, 'apps', 'api', 'src', 'my file (v2).ts');
+    fs.mkdirSync(path.dirname(specialPath), { recursive: true });
+    fs.writeFileSync(specialPath, 'const x = 1;\n', 'utf8');
+    const capturedExec = [];
+    const hookPath = path.join(
+      __dirname,
+      '..',
+      'templates',
+      'modules',
+      'monorepo',
+      'hooks',
+      'auto-format.skeleton.js'
+    );
+    const { runFormatter } = loadModuleExports(hookPath, {
+      exports: ['runFormatter'],
+      context: {
+        __capturedExec: capturedExec,
+      },
+      replacements: [
+        {
+          find: /const CODEBASE_ROOT = .*;/,
+          replace: `const CODEBASE_ROOT = ${JSON.stringify(codebaseRoot)};`,
+        },
+        {
+          find: /const \{ execFileSync \} = require\('child_process'\);/,
+          replace: 'const execFileSync = (...args) => { globalThis.__capturedExec.push(args); };',
+        },
+      ],
+    });
+
+    runFormatter(specialPath, {
+      name: 'api',
+      path: 'apps/api',
+      configFile: null,
+      formatter: 'prettier',
+    });
+
+    assert.equal(capturedExec.length, 1);
+    const [file, args] = capturedExec[0];
+    assert.equal(file, 'npx');
+    // Path tüm özel karakterleriyle args dizisinde tek eleman olarak iletilmeli
+    assert.ok(args.includes(specialPath), 'ozel karakter iceren path args dizisinde tam olarak olmali');
+    // Shell expansion olmamali: tek tek argüman olarak geçmeli, komut stringi olarak değil
+    assert.equal(args.filter(a => a === specialPath).length, 1, 'path yalnizca bir kez gecmeli');
   });
 });
 

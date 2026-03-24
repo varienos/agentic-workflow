@@ -12,7 +12,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 
 const CODEBASE_ROOT = path.resolve(__dirname, '../../../Codebase');
 
@@ -58,7 +58,7 @@ function findPrismaDir() {
 function runPrismaValidate(prismaDir) {
   try {
     const schemaPath = path.join(prismaDir, 'schema.prisma');
-    execSync(`npx prisma validate --schema="${schemaPath}"`, {
+    execFileSync('npx', ['prisma', 'validate', '--schema', schemaPath], {
       cwd: CODEBASE_ROOT,
       timeout: 30000,
       stdio: ['pipe', 'pipe', 'pipe']
@@ -71,7 +71,8 @@ function runPrismaValidate(prismaDir) {
 
 function checkMigrationStatus(prismaDir) {
   try {
-    const result = execSync(`npx prisma migrate status --schema="${path.join(prismaDir, 'schema.prisma')}"`, {
+    const schemaPath = path.join(prismaDir, 'schema.prisma');
+    const result = execFileSync('npx', ['prisma', 'migrate', 'status', '--schema', schemaPath], {
       cwd: CODEBASE_ROOT,
       timeout: 30000,
       stdio: ['pipe', 'pipe', 'pipe']

@@ -14,7 +14,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 
 // Symlink li kurulumda gercek yolu cozer (startsWith icin gerekli)
 const CODEBASE_ROOT = (() => { const p = path.resolve(__dirname, '../../../Codebase'); try { return fs.realpathSync(p); } catch { return p; } })();
@@ -113,19 +113,19 @@ function runFormatter(filePath, subproject) {
   const cwd = path.join(CODEBASE_ROOT, subproject.path);
 
   try {
-    let cmd;
+    let args;
 
     switch (subproject.formatter) {
       case 'prettier':
-        cmd = configPath
-          ? `npx prettier --write --config "${configPath}" "${filePath}"`
-          : `npx prettier --write "${filePath}"`;
+        args = configPath
+          ? ['prettier', '--write', '--config', configPath, filePath]
+          : ['prettier', '--write', filePath];
         break;
 
       case 'biome':
-        cmd = configPath
-          ? `npx biome format --write --config-path "${path.dirname(configPath)}" "${filePath}"`
-          : `npx biome format --write "${filePath}"`;
+        args = configPath
+          ? ['biome', 'format', '--write', '--config-path', path.dirname(configPath), filePath]
+          : ['biome', 'format', '--write', filePath];
         break;
 
       default:
@@ -133,7 +133,7 @@ function runFormatter(filePath, subproject) {
         return;
     }
 
-    execSync(cmd, {
+    execFileSync('npx', args, {
       cwd: fs.existsSync(cwd) ? cwd : CODEBASE_ROOT,
       timeout: 15000,
       stdio: ['pipe', 'pipe', 'pipe']
