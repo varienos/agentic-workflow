@@ -35,14 +35,14 @@ Bu repo dört ana çalışma alanı üzerine kuruludur:
 | Yol | Amaç |
 | --- | --- |
 | `Agentbase/` | Şablonlar, üretim mantığı, Claude komutları ve yardımcı araçlar |
+| `Agentbase/backlog/` | Görev yaşam döngüsü — Backlog.md CLI ile yönetilen task'lar |
 | `Codebase/` | Üzerinde çalışılacak gerçek proje kodu |
 | `Docs/agentic/` | Bootstrap tarafından üretilen manifest dosyası (`project-manifest.yaml`) |
-| `backlog/` | Görev yaşam döngüsü — Backlog.md CLI ile yönetilen task'lar |
 
 Bu ayrımın iki önemli sonucu vardır:
 
 - Git işlemleri hedef proje tarafında, yani `Codebase/` içinde yürür.
-- Bootstrap süreci `Codebase/` dizinine yazmaz; üretimi `Agentbase/`, `Docs/agentic/` ve root `backlog/` altında yapar.
+- Bootstrap süreci `Codebase/` dizinine yazmaz; üretimi `Agentbase/` ve `Docs/agentic/` altında yapar. Backlog da `Agentbase/backlog/` içinde oluşturulur.
 
 ### Worktree Avantajı
 

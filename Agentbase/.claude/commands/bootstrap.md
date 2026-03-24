@@ -19,7 +19,7 @@ Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
 - Bootstrap Codebase'i OKUR → Agentbase'i YAPILANDIRIR.
 - Codebase'deki hicbir dosya degistirilmez, eklenmez veya silinmez.
 - Tum uretilen dosyalar Agentbase/.claude/ altina gider.
-- Manifest `../Docs/agentic/` altina gider (Codebase disinda).
+- Manifest `../Docbase/agentic/` altina gider (Codebase disinda).
 - Projenin mevcut .gitignore, package.json, CI config dosyalari korunur.
 
 ---
@@ -98,7 +98,7 @@ Ardindan /bootstrap komutunu tekrar calistirin.
 
 ### 1.3 Onceki Bootstrap Kontrolu
 
-`../Docs/agentic/project-manifest.yaml` dosyasinin varligini kontrol et.
+`../Docbase/agentic/project-manifest.yaml` dosyasinin varligini kontrol et.
 
 - **Dosya varsa**:
 
@@ -915,9 +915,9 @@ Roportaj tamamlaninca:
 
 ## ADIM 4 — MANIFEST OLUSTURMA
 
-Toplanan tum verileri birlestirerek `../Docs/agentic/project-manifest.yaml` dosyasini olustur.
+Toplanan tum verileri birlestirerek `../Docbase/agentic/project-manifest.yaml` dosyasini olustur.
 
-Onemli: Once `../Docs/agentic/` dizininin var oldugundan emin ol, yoksa olustur.
+Onemli: Once `../Docbase/agentic/` dizininin var oldugundan emin ol, yoksa olustur.
 
 ### Manifest Yapisi
 
@@ -1131,10 +1131,10 @@ Bu manifest doğru mu?
 ```
 
 - `b` secilirse → kullanicinin duzeltmesini al, manifesti guncelle, tekrar goster.
-- `a` secilirse → manifesti `../Docs/agentic/project-manifest.yaml` olarak yaz ve devam et.
+- `a` secilirse → manifesti `../Docbase/agentic/project-manifest.yaml` olarak yaz ve devam et.
 
 ```
-✅ Manifest yazildi: ../Docs/agentic/project-manifest.yaml
+✅ Manifest yazildi: ../Docbase/agentic/project-manifest.yaml
 ```
 
 ---
@@ -1273,7 +1273,7 @@ Skeleton isleme iki asamali calisiir — once deterministik script, sonra Claude
 **Adim A — Deterministik Isleme (generate.js):**
 
 ```bash
-cd Agentbase && node generate.js ../Docs/agentic/project-manifest.yaml --verbose
+cd Agentbase && node generate.js ../Docbase/agentic/project-manifest.yaml --verbose
 ```
 
 Script su isleri yapar:
@@ -1289,7 +1289,7 @@ Script su isleri yapar:
 Manifest'te `targets` alani `claude` disinda deger iceriyorsa:
 
 ```bash
-cd Agentbase && node transform.js ../Docs/agentic/project-manifest.yaml --verbose
+cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --verbose
 ```
 
 Sadece `claude` varsa veya `targets` alani yoksa bu adimi ATLA.
@@ -1763,7 +1763,7 @@ Bu proje agentic workflow kullanir. Tum yapilandirma Agentbase dizinindedir.
 ## Calisma Dizini
 - **Agentbase/** — Agent yapilandirmasi, komutlar, kurallar (BURADASIN)
 - **../Codebase/** — Proje kaynak kodu (BURAYA ERISIRSIN)
-- **../Docs/** — Proje dokumantasyonu
+- **../Docbase/** — Proje dokumantasyonu
 
 ## Temel Kurallar
 - Dil: [manifest.project.language]
@@ -1800,7 +1800,7 @@ Bu dizin Claude Code agent yapilandirmasini icerir.
 - `tracking/` — Hata ve islem takibi
 
 ## Manifest
-Proje manifesti: ../Docs/agentic/project-manifest.yaml
+Proje manifesti: ../Docbase/agentic/project-manifest.yaml
 Tum yapilandirma bu manifest'ten turetilmistir.
 ```
 
@@ -1887,7 +1887,7 @@ Bash ile kontrol et: `ls ../backlog/config.yml 2>/dev/null`
 - **Mevcut degilse** → Non-interactive init komutu calistir:
 
 ```bash
-cd .. && backlog init "[manifest.project.name]" --defaults && cd Agentbase
+backlog init "[manifest.project.name]" --defaults
 ```
 
 Bu komut `backlog/` dizinini tasks/, completed/, archive/, milestones/ alt dizinleriyle ve config.yml ile olusturur. Eger Backlog CLI kurulu degilse veya init basarisiz olursa, DURMA — kullaniciya bildir:

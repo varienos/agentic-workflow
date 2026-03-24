@@ -3,6 +3,10 @@
 Bu proje gorev/teknik borc takibini **Backlog.md** ile yapar.
 Tum gorevler `backlog/tasks/` altinda ayri markdown dosyalaridir.
 
+> **Konum:** Hedef projelerde backlog `Agentbase/backlog/` icinde olusturulur.
+> Bootstrap `backlog init` komutunu Agentbase CWD'sinde calistirir.
+> Bu repo'nun kendi backlog'u (template gelistirme icin) root'ta kalir.
+
 ## Hizli Baslangic
 
 ### Kurulum

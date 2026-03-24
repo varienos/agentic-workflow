@@ -327,7 +327,10 @@ function findBacklogDir(startDir = PROJECT_ROOT) {
     return process.env.AGENTBASE_BACKLOG_DIR;
   }
 
-  const candidates = [];
+  const candidates = [
+    // Hedef projelerde backlog Agentbase icinde olusturulur (oncelikli)
+    path.join(AGENTBASE_DIR, 'backlog'),
+  ];
   let current = startDir;
 
   for (let i = 0; i < 5; i += 1) {
