@@ -3,18 +3,7 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [1.3.1] - 2026-03-24
-
-### Düzeltilen
-
-- add JSON parse error handling, fix array filter null check, improve --modules exit code (`9cb1547`)
-- resolve failing tests - git init branch name and missing reference files (`21e3c91`)
-
-### Diğer
-
-- Initial plan (`6353c7d`)
-
-## [1.3.0] - 2026-03-24
+## [1.4.0] - 2026-03-24
 
 ### Eklenen
 
@@ -26,15 +15,29 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 ### Düzeltilen
 
+- add JSON parse error handling, fix array filter null check, improve --modules exit code (`9cb1547`)
+- resolve failing tests - git init branch name and missing reference files (`21e3c91`)
 - workflow-update skeleton kutsal kural metinleri eklendi (`1b01787`)
 - bootstrap hedef dizin netligi, interview downstream enforce, test suite (TASK-187/188/189) (`62b51ea`)
 - code review bulgulari — gitignore, stdin convention, symlink, timeout (`d524312`)
 - session-monitor guvenlik ve DRY iyilestirmeleri (TASK-182/183/184) (`61358c7`)
 - **deep-audit:** session-monitor test kapsamasi ve MAX_TEAMMATES sabit tasi (`b848d75`)
 
+### Dokümantasyon
+
+- **deep-audit:** README eksik workflow-update komutu ve agent tablosu eklendi (`6217f28`)
+
 ### Test
 
 - markdown dosyalarinda kirik link dogrulama testi eklendi (`ffb5aae`)
+
+### Bakım
+
+- release oncesi bekleyen degisiklikler (`a7eee08`)
+
+### Diğer
+
+- Initial plan (`6353c7d`)
 
 ## [1.2.0] - 2026-03-24
 
