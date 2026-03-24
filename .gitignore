@@ -37,6 +37,9 @@ package-lock.json
 # Proje-spesifik gorev takibi
 /backlog/
 
+# Release gecici dosyalari
+.release-notes.tmp
+
 # Diger proje-spesifik root dosyalar
 AGENTS.md
 GEMINI.md
