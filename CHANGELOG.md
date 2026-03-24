@@ -3,6 +3,16 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.5.0] - 2026-03-24
+
+### Eklenen
+
+- README badge'leri ve Docs → Docbase rename (`5feebf1`)
+
+### Dokümantasyon
+
+- CHANGELOG otomatik güncellendi [skip ci] (`d53dcea`)
+
 ## [1.4.2] - 2026-03-24
 
 ### Eklenen
