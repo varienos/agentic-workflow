@@ -3,6 +3,13 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.4.1] - 2026-03-24
+
+### Düzeltilen
+
+- extensions-registry.md ornek satir Turkce karakter normalize (`02f504f`)
+- changelog.yml detached HEAD hatasi — ref: main + explicit push target (`3dc3e45`)
+
 ## [1.4.0] - 2026-03-24
 
 ### Eklenen
