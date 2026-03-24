@@ -273,6 +273,28 @@ Bir domain modülünü (auth, profil, ödeme, mesaj vb.) tüm katmanlarda (API +
 /deep-audit odeme       # Ödeme modülünü denetle
 ```
 
+### /workflow-update
+
+Mevcut workflow konfigürasyonunu Codebase'in güncel durumuyla karşılaştırır. Tam re-bootstrap yapmaz — sadece değişen parçaları günceller (yeni modül ekleme, kaldırılan dependency tespiti, subproject değişiklikleri). Drift raporu gösterir, kullanıcı onayı ile incremental güncelleme yapar.
+
+```
+/workflow-update          # Drift raporu + onay ile güncelleme
+```
+
+### Agent'lar
+
+Bootstrap tarafından üretilen otonom agent'lar — komutlar bunları otomatik çağırır:
+
+| Agent | Rol |
+|-------|-----|
+| `code-review` | Genel kod kalitesi ve pattern uyumu |
+| `regression-analyzer` | Değişikliğin mevcut işlevselliği kırma riski |
+| `devils-advocate` | Güvenlik/auth/ödeme değişikliklerinde adversarial perspektif (koşullu) |
+| `frontend-expert` | Frontend mimari ve performans kararları |
+| `backend-expert` | Backend API tasarımı ve veritabanı kararları |
+| `mobile-expert` | Mobil platform-spesifik kararlar |
+| `service-documentation` | Kod değişikliği sonrası dokümantasyon güncelleme önerisi |
+
 ### Modüler Komutlar
 
 Bu komutlar Bootstrap'in tespit ettiği modüllere göre üretilir — her projede bulunmaz:
