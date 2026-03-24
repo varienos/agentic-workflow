@@ -122,7 +122,7 @@ function processJsonGenerateKeys(obj, manifest) {
       return node.map(item => walk(item))
         .filter(item => {
           // Bos objeleri temizle (aktif modulu olmayan GENERATE bloklarinin kalintisi)
-          if (item && typeof item === 'object' && !Array.isArray(item) && Object.keys(item).length === 0) {
+          if (item !== null && typeof item === 'object' && !Array.isArray(item) && Object.keys(item).length === 0) {
             return false;
           }
           return true;
@@ -1596,7 +1596,12 @@ function processSkeletonFile(filePath, manifest) {
   const fileType = detectFileType(filePath);
 
   if (fileType === 'json') {
-    const obj = JSON.parse(content);
+    let obj;
+    try {
+      obj = JSON.parse(content);
+    } catch (jsonErr) {
+      throw new Error(`Gecersiz JSON skeleton dosyasi: ${jsonErr.message}`);
+    }
     const { obj: processed, filled, marked } = processJsonGenerateKeys(obj, manifest);
     return {
       outputContent: JSON.stringify(processed, null, 2) + '\n',
@@ -1857,6 +1862,10 @@ function main() {
   }
 
   if (skeletonFiles.length === 0) {
+    if (flags.onlyModules && flags.onlyModules.length > 0) {
+      console.error(`Hata: Belirtilen moduller icin hicbir skeleton dosyasi bulunamadi: ${flags.onlyModules.join(', ')}`);
+      process.exit(1);
+    }
     console.error('Uyari: Hicbir skeleton dosyasi bulunamadi.');
     process.exit(0);
   }
