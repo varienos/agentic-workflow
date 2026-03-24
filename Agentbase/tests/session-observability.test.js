@@ -148,6 +148,20 @@ describe('session-tracker observability', () => {
     assert.equal(state.recent_events.at(-1).kind, 'backlog');
   });
 
+  it('tek tirnakli backlog task create komutu tasks_created listesini gunceller', t => {
+    const projectRoot = createTempProject(t);
+    const hookPath = materializeHook(projectRoot, 'core/hooks/session-tracker.js');
+
+    runHook(hookPath, makeToolPayload({ command: "backlog task create 'Tek tirnakli baslik'" }));
+
+    const state = readSessionState(projectRoot);
+    assert.ok(
+      state.backlog_activity.tasks_created.some(task => task.includes('Tek tirnakli baslik'))
+    );
+    assert.match(state.last_meaningful_action, /olusturuldu/i);
+    assert.equal(state.recent_events.at(-1).kind, 'backlog');
+  });
+
   it('git commit komutu commits sayacini arttirir', t => {
     const projectRoot = createTempProject(t);
     const hookPath = materializeHook(projectRoot, 'core/hooks/session-tracker.js');
@@ -359,6 +373,44 @@ priority: high
     assert.ok(task.title.includes('Satir bir'), 'literal scalar ilk satir');
     assert.ok(task.title.includes('Satir iki'), 'literal scalar ikinci satir');
     assert.equal(task.status, 'In Progress');
+  });
+
+  it('CRLF satir sonlariyla yazilmis backlog markdown frontmatter ini parse ediyor', t => {
+    const tmpDir = createTempDir(t);
+    const monitorPath = path.join(__dirname, '..', 'bin', 'session-monitor.js');
+    const { parseBacklogTaskFile } = loadModuleExports(monitorPath, {
+      exports: ['parseBacklogTaskFile'],
+    });
+    const taskPath = writeBacklogTask(
+      tmpDir,
+      'tasks/task-52 - CrLf-test.md',
+      [
+        '---',
+        'id: TASK-52',
+        'title: "CRLF gorevi"',
+        'status: In Progress',
+        'priority: high',
+        'dependencies:',
+        '  - TASK-11',
+        '---',
+        '',
+        '## Acceptance Criteria',
+        '<!-- AC:BEGIN -->',
+        '- [x] #1 Parse frontmatter',
+        '- [ ] #2 Keep metadata',
+        '<!-- AC:END -->',
+        '',
+      ].join('\r\n')
+    );
+
+    const task = parseBacklogTaskFile(taskPath);
+    assert.equal(task.id, 'TASK-52');
+    assert.equal(task.title, 'CRLF gorevi');
+    assert.equal(task.status, 'In Progress');
+    assert.equal(task.priority, 'high');
+    assert.deepEqual(Array.from(task.dependencies), ['TASK-11']);
+    assert.equal(task.acceptance.completed, 1);
+    assert.equal(task.acceptance.total, 2);
   });
 
   it('enriches older session payloads from backlog files and inferred phase', t => {
