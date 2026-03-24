@@ -3,7 +3,7 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [Yayınlanmamış] - 2026-03-24
+## [1.1.0] - 2026-03-24
 
 ### Eklenen
 
