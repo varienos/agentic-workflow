@@ -3,6 +3,12 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.6.2] - 2026-03-24
+
+### Düzeltilen
+
+- test CI npm ci → npm install (package-lock.json yok) (`ab8e4a5`)
+
 ## [1.6.1] - 2026-03-24
 
 ### Düzeltilen
