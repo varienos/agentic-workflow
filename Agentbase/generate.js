@@ -8,11 +8,12 @@
  * deterministik olarak doldurur. Karmasik bloklari Claude'a birakir.
  *
  * Kullanim:
- *   node generate.js <manifest-yolu> [--output-dir <cikti-dizini>] [--dry-run] [--verbose]
+ *   node generate.js <manifest-yolu> [--output-dir <cikti-dizini>] [--modules <modul-listesi>] [--dry-run] [--verbose]
  *
  * Ornekler:
  *   node Agentbase/generate.js Docs/agentic/project-manifest.yaml
  *   node Agentbase/generate.js Docs/agentic/project-manifest.yaml --dry-run
+ *   node Agentbase/generate.js Docs/agentic/project-manifest.yaml --modules "mobile/expo,deploy/docker"
  *   node Agentbase/generate.js Docs/agentic/project-manifest.yaml --output-dir ./out
  */
 
@@ -1737,11 +1738,46 @@ function scanSkeletonFiles(manifest) {
   return files;
 }
 
+/**
+ * Skeleton dosya listesini belirtilen modullerle filtreler.
+ * core/ dosyalari her zaman dahil edilir.
+ * modules/ dosyalari sadece onlyModules listesindeki modullerle eslesirse dahil edilir.
+ */
+function filterByModules(skeletonFiles, onlyModules) {
+  const moduleSet = new Set(onlyModules);
+  const CONTENT_DIRS = new Set(['rules', 'hooks', 'commands', 'agents']);
+
+  return skeletonFiles.filter(filePath => {
+    const relPath = path.relative(TEMPLATES_DIR, filePath);
+    if (!relPath.startsWith('modules' + path.sep)) return true; // core → her zaman dahil
+
+    const parts = relPath.split(path.sep);
+    // modules/<category>/<variant>/... seklinde modul yolunu cikar
+    const moduleSegments = [];
+    for (let i = 1; i < parts.length; i++) {
+      if (CONTENT_DIRS.has(parts[i])) break;
+      if (parts[i].includes('.skeleton.') || parts[i].endsWith('.skeleton')) break;
+      if (parts[i].endsWith('.js') || parts[i].endsWith('.md')) break;
+      moduleSegments.push(parts[i]);
+    }
+
+    if (moduleSegments.length === 0) return true;
+    const modulePath = moduleSegments.join('/');
+
+    // Tam eslesme veya ust kategori eslesmesi
+    if (moduleSet.has(modulePath)) return true;
+    for (const target of moduleSet) {
+      if (modulePath.startsWith(target + '/') || target.startsWith(modulePath + '/')) return true;
+    }
+    return false;
+  });
+}
+
 // ─────────────────────────────────────────────────────
 // CLI ARGUMAN AYRISTIRMA
 // ─────────────────────────────────────────────────────
 
-const VALUE_FLAGS = new Set(['--output-dir']);
+const VALUE_FLAGS = new Set(['--output-dir', '--modules']);
 
 /**
  * CLI argumanlarindan manifest yolunu bulur.
@@ -1774,10 +1810,16 @@ function main() {
     flags.outputDir = path.resolve(args[outputIdx + 1]);
   }
 
+  // --modules parametresi: sadece belirtilen modullerin dosyalarini isle
+  const modulesIdx = args.indexOf('--modules');
+  if (modulesIdx !== -1 && args[modulesIdx + 1]) {
+    flags.onlyModules = args[modulesIdx + 1].split(',').map(m => m.trim()).filter(Boolean);
+  }
+
   const manifestPath = findManifestArg(args);
 
   if (!manifestPath) {
-    console.error('Kullanim: node generate.js <manifest-yolu> [--output-dir <dir>] [--dry-run] [--verbose]');
+    console.error('Kullanim: node generate.js <manifest-yolu> [--output-dir <dir>] [--modules <modul-listesi>] [--dry-run] [--verbose]');
     process.exit(1);
   }
 
@@ -1807,7 +1849,12 @@ function main() {
   const outputDir = flags.outputDir || AGENTBASE_DIR;
 
   // Skeleton dosyalarini tara
-  const skeletonFiles = scanSkeletonFiles(manifest);
+  let skeletonFiles = scanSkeletonFiles(manifest);
+
+  // --modules filtresi: sadece belirtilen modullerin ve core dosyalarinin islenmesi
+  if (flags.onlyModules && flags.onlyModules.length > 0) {
+    skeletonFiles = filterByModules(skeletonFiles, flags.onlyModules);
+  }
 
   if (skeletonFiles.length === 0) {
     console.error('Uyari: Hicbir skeleton dosyasi bulunamadi.');
@@ -1920,6 +1967,7 @@ module.exports = {
   processSkeletonFile,
   resolveOutputPath,
   scanSkeletonFiles,
+  filterByModules,
   toOutputName,
   detectFileType,
   getActiveModules,

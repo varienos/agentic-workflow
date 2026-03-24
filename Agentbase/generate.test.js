@@ -22,6 +22,7 @@ const {
   processJsonGenerateKeys,
   resolveOutputPath,
   scanSkeletonFiles,
+  filterByModules,
   toOutputName,
   detectFileType,
   getActiveModules,
@@ -2013,5 +2014,88 @@ describe('GIT hook generatorlari', () => {
     const result = SIMPLE_GENERATORS.GIT_PREPUSH_DESTRUCTIVE(nodeManifest);
     assert.ok(result.includes('DROP TABLE') || result.includes('DROP COLUMN'), 'destructive SQL kontrolu olmali');
     assert.ok(result.includes('DESTRUCTIVE'), 'DESTRUCTIVE kelimesi olmali');
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// filterByModules — INCREMENTAL MODUL FILTRESI
+// ─────────────────────────────────────────────────────
+
+describe('filterByModules', () => {
+  // Gercek skeleton dosyalarini kullanarak test et
+  const fullManifest = {
+    modules: {
+      active: ['orm/prisma', 'deploy/docker', 'backend/nodejs/express', 'security', 'mobile/expo'],
+    },
+  };
+
+  it('--modules olmadan tum dosyalar dahil (fonksiyon cagrilmaz)', () => {
+    const all = scanSkeletonFiles(fullManifest);
+    assert.ok(all.length > 0, 'en az bir dosya olmali');
+  });
+
+  it('tek modul filtresi sadece o modulu ve core dosyalarini dondurur', () => {
+    const all = scanSkeletonFiles(fullManifest);
+    const filtered = filterByModules(all, ['orm/prisma']);
+
+    assert.ok(filtered.length > 0, 'en az bir dosya olmali');
+    assert.ok(filtered.length < all.length, 'filtrelenmis liste daha kisa olmali');
+
+    for (const f of filtered) {
+      const rel = path.relative(TEMPLATES_DIR, f);
+      if (rel.startsWith('modules' + path.sep)) {
+        assert.ok(
+          rel.startsWith('modules' + path.sep + 'orm' + path.sep + 'prisma'),
+          `modul dosyasi orm/prisma olmali, ama: ${rel}`
+        );
+      }
+    }
+  });
+
+  it('birden fazla modul filtresi dogru calisir', () => {
+    const all = scanSkeletonFiles(fullManifest);
+    const filtered = filterByModules(all, ['orm/prisma', 'deploy/docker']);
+
+    const moduleFiles = filtered.filter(f => {
+      const rel = path.relative(TEMPLATES_DIR, f);
+      return rel.startsWith('modules' + path.sep);
+    });
+
+    for (const f of moduleFiles) {
+      const rel = path.relative(TEMPLATES_DIR, f);
+      const isOrmPrisma = rel.startsWith('modules' + path.sep + 'orm' + path.sep + 'prisma');
+      const isDeployDocker = rel.startsWith('modules' + path.sep + 'deploy' + path.sep + 'docker');
+      assert.ok(isOrmPrisma || isDeployDocker, `beklenmeyen modul: ${rel}`);
+    }
+  });
+
+  it('core dosyalari her zaman dahil edilir', () => {
+    const all = scanSkeletonFiles(fullManifest);
+    const filtered = filterByModules(all, ['orm/prisma']);
+
+    const coreFiles = filtered.filter(f => {
+      const rel = path.relative(TEMPLATES_DIR, f);
+      return rel.startsWith('core' + path.sep);
+    });
+
+    const allCoreFiles = all.filter(f => {
+      const rel = path.relative(TEMPLATES_DIR, f);
+      return rel.startsWith('core' + path.sep);
+    });
+
+    assert.equal(coreFiles.length, allCoreFiles.length, 'core dosya sayisi ayni olmali');
+  });
+
+  it('olmayan modul filtresi sadece core dondurur', () => {
+    const all = scanSkeletonFiles(fullManifest);
+    const filtered = filterByModules(all, ['backend/ruby/rails']);
+
+    const moduleFiles = filtered.filter(f => {
+      const rel = path.relative(TEMPLATES_DIR, f);
+      return rel.startsWith('modules' + path.sep);
+    });
+
+    assert.equal(moduleFiles.length, 0, 'olmayan modul icin modul dosyasi olmamali');
+    assert.ok(filtered.length > 0, 'core dosyalari hala olmali');
   });
 });
