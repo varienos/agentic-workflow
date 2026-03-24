@@ -15,7 +15,7 @@ function createTempGitRepo(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'git-hook-test-'));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-  execSync('git init', { cwd: dir, stdio: 'pipe' });
+  execSync('git init -b main', { cwd: dir, stdio: 'pipe' });
   execSync('git config user.email "test@test.com"', { cwd: dir, stdio: 'pipe' });
   execSync('git config user.name "Test"', { cwd: dir, stdio: 'pipe' });
 
