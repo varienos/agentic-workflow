@@ -420,12 +420,13 @@ function parseAcceptance(content) {
 
 function parseBacklogTaskFile(filePath) {
   const content = fs.readFileSync(filePath, 'utf8');
-  const frontmatter = parseFrontmatter(content);
+  const normalizedContent = content.replace(/\r\n?/g, '\n');
+  const frontmatter = parseFrontmatter(normalizedContent);
   const id = frontmatter.id || (() => {
     const match = path.basename(filePath).match(/task-(\d+)/i);
     return match ? `TASK-${match[1]}` : null;
   })();
-  const title = frontmatter.title || content.match(/^#\s+(.+)$/m)?.[1] || path.basename(filePath);
+  const title = frontmatter.title || normalizedContent.match(/^#\s+(.+)$/m)?.[1] || path.basename(filePath);
 
   return {
     id,
@@ -434,7 +435,7 @@ function parseBacklogTaskFile(filePath) {
     priority: frontmatter.priority || null,
     dependencies: Array.isArray(frontmatter.dependencies) ? frontmatter.dependencies : [],
     updated_date: frontmatter.updated_date || null,
-    acceptance: parseAcceptance(content),
+    acceptance: parseAcceptance(normalizedContent),
     path: filePath,
   };
 }
