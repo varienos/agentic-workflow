@@ -346,9 +346,9 @@ function analyzeBashCommand(command, state, input, hadError) {
     return;
   }
 
-  const taskCreateMatch = command.match(/backlog\s+task\s+create\s+"([^"]+)"/i);
+  const taskCreateMatch = command.match(/backlog\s+task\s+create\s+(?:"([^"]+)"|'([^']+)')/i);
   if (taskCreateMatch) {
-    const title = taskCreateMatch[1].substring(0, 60);
+    const title = (taskCreateMatch[1] || taskCreateMatch[2]).substring(0, 60);
     state.backlog_activity.tasks_created.push(title);
     state.last_meaningful_action = `Backlog gorevi olusturuldu: ${title}`;
     pushEvent(state, 'backlog', `Gorev olustu: ${title}`);
