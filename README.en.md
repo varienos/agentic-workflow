@@ -32,6 +32,7 @@ You can integrate it into an existing project or start a brand new one from scra
 - **Documentation sync** — Service-documentation agent suggests updating PROJECT.md, ARCHITECTURE.md after code changes.
 - **Extension recommendations** — Built-in registry scan suggests relevant third-party skills and plugins after bootstrap completes.
 - **Automatic CHANGELOG** — GitHub Action auto-updates `CHANGELOG.md` only on pushes to the `main` branch. Conventional Commits are parsed.
+- **CI security scanning** — Gitleaks secret scanning and `npm audit` dependency checks run on every push and PR. Dependabot proposes weekly npm and GitHub Actions updates.
 
 ## Core Approach
 

@@ -32,6 +32,7 @@ Mevcut bir projeye entegre edebilir veya sıfırdan yeni bir proje başlatabilir
 - **Dokümantasyon senkronizasyonu** — Kod değişikliği sonrası PROJECT.md, ARCHITECTURE.md gibi dokümanların güncellenmesini öneren service-documentation agent'ı.
 - **Eklenti öneri sistemi** — Bootstrap tamamlandığında projenize uygun üçüncü parti skill ve plugin'leri öneren dahili registry taraması.
 - **Otomatik CHANGELOG** — GitHub Action, sadece `main` branch'ine yapılan push'larda `CHANGELOG.md` dosyasını otomatik günceller. Conventional Commits formatı parse edilir.
+- **CI güvenlik taraması** — Her push ve PR'da gitleaks ile secret scanning, `npm audit` ile dependency güvenlik kontrolü. Dependabot haftalık npm ve GitHub Actions güncellemesi önerir.
 
 ## Temel Yaklaşım
 
