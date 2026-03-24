@@ -3,6 +3,12 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.6.0] - 2026-03-24
+
+### Eklenen
+
+- test CI workflow ve badge ekle (`0f0117b`)
+
 ## [1.5.0] - 2026-03-24
 
 ### Eklenen
