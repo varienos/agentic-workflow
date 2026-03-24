@@ -3,6 +3,17 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [Yayınlanmamış] - 2026-03-24
+
+### Eklenen
+
+- release.js test suite + README release/changelog dokumantasyonu (`c46e8db`)
+
+### Düzeltilen
+
+- changelog.yml gereksiz npm install kaldirildi + generateAllSections testleri (TASK-161) (`2b05dfc`)
+- **deep-audit:** changelog pipe ayiricisi, CI force push, release rebase conflict (`5c6352b`)
+
 ## [1.0.2] - 2026-03-23
 
 ### Eklenen
@@ -82,7 +93,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - spec review bulgulari duzeltildi (13 bulgu, 4 yuksek onem) (`43347e2`)
 - lock dosyasi korumasini genislet + Docker CLI kosullu gereksinim (`dffbc01`)
 - prefix li modul komutlari icerikte de prefix li ad kullaniyor (TASK-92) (`f66d932`)
-- session-monitor YAML frontmatter parser folded (>-) ve literal ( (`3d108ee`)
+- session-monitor YAML frontmatter parser folded (>-) ve literal (|) scalar destegi (`3d108ee`)
 - bozuk YAML de stack trace yerine kullanici dostu hata mesaji (TASK-87) (`0f1c6c4`)
 - symlink kurulumda CODEBASE_ROOT startsWith kirik — realpathSync fallback (`5ba1924`)
 - backlog split-brain riski — bootstrap ../backlog/ kullaniyor, session-monitor PROJECT_ROOT tan basliyor (`3bd585b`)
