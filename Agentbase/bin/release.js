@@ -15,7 +15,7 @@
  *   node bin/release.js --dry-run # Degisiklik yapmadan goster
  */
 
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -86,9 +86,10 @@ function stageAndCommitAll() {
 
   if (files.length === 0) return false;
 
-  // Dosyalari stage'le
+  // Dosyalari stage'le (spawnSync: shell injection koruması)
   for (const file of files) {
-    try { run(`git add "${file}"`); } catch { console.warn(`  ⚠ Atlandı: ${file} (silinmis veya erisilemez)`); }
+    const result = spawnSync('git', ['add', '--', file], { cwd: REPO_ROOT, encoding: 'utf8' });
+    if (result.status !== 0) console.warn(`  Atlandı: ${file} (silinmis veya erisilemez)`);
   }
 
   run('git commit -m "chore: release oncesi bekleyen degisiklikler"');
@@ -161,27 +162,31 @@ function main() {
   console.log(`  CHANGELOG.md → [${newVersion}]`);
 
   // 6. Release commit
-  run('git add Agentbase/package.json CHANGELOG.md');
+  const relPkg = path.relative(REPO_ROOT, PKG_PATH);
+  const relChangelog = path.relative(REPO_ROOT, path.join(REPO_ROOT, 'CHANGELOG.md'));
+  run(`git add "${relPkg}" "${relChangelog}"`);
   run(`git commit -m "release: v${newVersion}"`);
   console.log(`  Release commit olusturuldu`);
 
-  // 7. Annotated tag
-  run(`git tag -a v${newVersion} -m "v${newVersion}"`);
-  console.log(`  Tag: v${newVersion}`);
-
-  // 8. Push
+  // 7. Rebase (tag'dan ONCE — rebase hash degistirirse tag dogru commit'e isaret etsin)
   try {
     run('git pull --rebase origin main');
   } catch (err) {
-    console.error('  ❌ Rebase conflict tespit edildi. Release durduruldu.');
+    console.error('  Rebase conflict tespit edildi. Release durduruldu.');
     console.error('  Manuel cozum: git rebase --continue veya git rebase --abort');
     process.exit(1);
   }
+
+  // 8. Annotated tag (rebase sonrasi — dogru commit hash)
+  run(`git tag -a v${newVersion} -m "v${newVersion}"`);
+  console.log(`  Tag: v${newVersion}`);
+
+  // 9. Push
   run('git push origin main');
   run(`git push origin v${newVersion}`);
   console.log(`  Push basarili: main + v${newVersion}`);
 
-  // 9. GitHub Release olustur (gh CLI varsa)
+  // 10. GitHub Release olustur (gh CLI varsa)
   try {
     const notes = extractReleaseNotes(newVersion);
     run(`gh release create v${newVersion} --title "v${newVersion}" --notes ${JSON.stringify(notes)}`);

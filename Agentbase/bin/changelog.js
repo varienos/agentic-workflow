@@ -16,7 +16,7 @@
  *   node bin/changelog.js --dry-run          # Dosyaya yazmadan göster
  */
 
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -24,15 +24,15 @@ const REPO_ROOT = path.resolve(__dirname, '../..');
 const CHANGELOG_PATH = path.join(REPO_ROOT, 'CHANGELOG.md');
 
 const CATEGORIES = {
-  feat: { label: 'Eklenen', emoji: '' },
-  fix: { label: 'Düzeltilen', emoji: '' },
-  refactor: { label: 'Yeniden Düzenlenen', emoji: '' },
-  docs: { label: 'Dokümantasyon', emoji: '' },
-  test: { label: 'Test', emoji: '' },
-  chore: { label: 'Bakım', emoji: '' },
-  perf: { label: 'Performans', emoji: '' },
-  style: { label: 'Stil', emoji: '' },
-  ci: { label: 'CI/CD', emoji: '' },
+  feat: { label: 'Eklenen' },
+  fix: { label: 'Düzeltilen' },
+  refactor: { label: 'Yeniden Düzenlenen' },
+  docs: { label: 'Dokümantasyon' },
+  test: { label: 'Test' },
+  chore: { label: 'Bakım' },
+  perf: { label: 'Performans' },
+  style: { label: 'Stil' },
+  ci: { label: 'CI/CD' },
 };
 
 const HEADER = '# Değişiklik Günlüğü\n\nTüm önemli değişiklikler bu dosyada belgelenir.\nFormat [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.\n\n';
@@ -56,7 +56,9 @@ function getAllTags() {
 }
 
 function getTagDate(tag) {
-  return git(`log -1 --format=%ai ${tag} 2>/dev/null`);
+  // spawnSync: tag adı shell injection koruması
+  const result = spawnSync('git', ['log', '-1', '--format=%ai', tag], { cwd: REPO_ROOT, encoding: 'utf8' });
+  return (result.stdout || '').trim();
 }
 
 function getCommits(from, to) {
