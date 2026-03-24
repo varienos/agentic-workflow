@@ -273,6 +273,29 @@ function processConditionalBlock(block, activeModules, manifest) {
  * Not: pattern degerleri jq test() icinde regex olarak yorumlanir —
  * regex meta-karakterleri (.*[]() vb.) literal olarak escape edilmez.
  */
+/**
+ * Bash script icerisine guvenli interpolasyon icin shell escape.
+ * Path ve deger interpolasyonlari icin — komutlar icin degil.
+ */
+function escapeForShell(str) {
+  if (!str || typeof str !== 'string') return str || '';
+  return "'" + str.replace(/'/g, "'\\''") + "'";
+}
+
+/**
+ * Manifest'ten gelen komut stringini validate eder.
+ * Tehlikeli shell zincirleme operatorleri tespit edilirse uyari ekler.
+ * Komutlari escape etmek calismay bozar — bunun yerine validate + uyari.
+ */
+function sanitizeShellCommand(cmd) {
+  if (!cmd || typeof cmd !== 'string') return cmd || '';
+  // $() ve backtick iceren komut substitution kontrolu
+  if (/\$\(|`/.test(cmd)) {
+    return `echo "UYARI: Guvenli olmayan komut tespit edildi: ${escapeForShell(cmd)}" >&2 && exit 1`;
+  }
+  return cmd;
+}
+
 function escapeForJqShell(str) {
   return str
     .replace(/\\/g, '\\\\')    // jq: \ → \\
@@ -281,6 +304,20 @@ function escapeForJqShell(str) {
     .replace(/\t/g, '\\t')     // jq: tab → \t
     .replace(/\$/g, '\\$')     // shell: $ → \$ (degisken interpolasyonunu engelle)
     .replace(/'/g, "'\\''");   // shell: ' → '\''
+}
+
+/**
+ * Forbidden pattern'in jq test() icin guvenli olup olmadigini kontrol eder.
+ * Nested quantifier (a+)+, (a*)+, (a{2,})+  gibi desenler ReDoS riski taşir.
+ * @returns {boolean} true = guvenli
+ */
+function isJqRegexSafe(pattern) {
+  if (!pattern || typeof pattern !== 'string') return false;
+  // Nested quantifier tespiti: (...)[+*] ardından [+*{]
+  if (/\([^)]*[+*][^)]*\)[+*{]/.test(pattern)) return false;
+  // Aşırı uzun pattern (1000+ karakter) timeout riski
+  if (pattern.length > 1000) return false;
+  return true;
 }
 
 /**
@@ -327,6 +364,10 @@ function getForbiddenRules(manifest) {
     const type = item.type || item.hook_type;
     const pattern = item.pattern || item.command;
     if (type === 'block' && pattern && item.reason) {
+      if (!isJqRegexSafe(pattern)) {
+        console.warn(`  Uyari: Guvenli olmayan forbidden pattern atlandi (ReDoS riski): ${pattern.slice(0, 50)}`);
+        continue;
+      }
       rules.push({ pattern, reason: item.reason });
     }
   }
@@ -1186,9 +1227,10 @@ const SIMPLE_GENERATORS = {
     const runtime = (stack.runtime || '').toLowerCase();
 
     if (testCmd) {
+      const safeCmd = sanitizeShellCommand(testCmd);
       lines.push(
         'echo "→ Test calistiriliyor..."',
-        `cd "$CODEBASE_DIR" && ${testCmd} 2>&1 || {`,
+        `cd "$CODEBASE_DIR" && ${safeCmd} 2>&1 || {`,
         '  echo "❌ Testler basarisiz!"',
         '  ERRORS=1',
         '}',
@@ -1865,7 +1907,10 @@ function main() {
 // ─────────────────────────────────────────────────────
 
 module.exports = {
+  escapeForShell,
   escapeForJqShell,
+  isJqRegexSafe,
+  sanitizeShellCommand,
   extractBlockNames,
   fillBlocks,
   findManifestArg,
@@ -1880,6 +1925,8 @@ module.exports = {
   getFileExtensions,
   getCodeExtensions,
   getSubprojectPath,
+  getCodebasePath,
+  getForbiddenRules,
   getMigrationCommands,
   SIMPLE_GENERATORS,
   TEMPLATES_DIR,
