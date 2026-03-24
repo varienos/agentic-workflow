@@ -7,12 +7,17 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 ### Eklenen
 
+- template repo pre-push hook — test zorlama (`36389c4`)
 - release.js test suite + README release/changelog dokumantasyonu (`c46e8db`)
 
 ### Düzeltilen
 
 - changelog.yml gereksiz npm install kaldirildi + generateAllSections testleri (TASK-161) (`2b05dfc`)
 - **deep-audit:** changelog pipe ayiricisi, CI force push, release rebase conflict (`5c6352b`)
+
+### Dokümantasyon
+
+- CHANGELOG otomatik güncellendi [skip ci] (`4323074`)
 
 ## [1.0.2] - 2026-03-23
 
