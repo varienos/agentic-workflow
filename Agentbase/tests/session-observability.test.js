@@ -1018,3 +1018,93 @@ describe('session-monitor derive functions', () => {
     assert.match(timeAgo(new Date(now - 86400000).toISOString()), /^1g$/);
   });
 });
+
+// ─────────────────────────────────────────────────────
+// SHARED-PATTERNS TESTLERI (deep-audit bulgusu)
+// ─────────────────────────────────────────────────────
+
+describe('shared-patterns isTestCommand', () => {
+  const { isTestCommand } = require('../bin/shared-patterns.js');
+
+  it('npm test → true', () => assert.ok(isTestCommand('npm test')));
+  it('pnpm run test → true', () => assert.ok(isTestCommand('pnpm run test')));
+  it('yarn test → true', () => assert.ok(isTestCommand('yarn test')));
+  it('jest src/foo.test.js → true', () => assert.ok(isTestCommand('jest src/foo.test.js')));
+  it('vitest → true', () => assert.ok(isTestCommand('vitest')));
+  it('pytest → true', () => assert.ok(isTestCommand('pytest')));
+  it('cargo test → true', () => assert.ok(isTestCommand('cargo test')));
+  it('go test ./... → true', () => assert.ok(isTestCommand('go test ./...')));
+  it('node --test → true', () => assert.ok(isTestCommand('node --test foo.test.js')));
+  it('phpunit → true', () => assert.ok(isTestCommand('phpunit')));
+  it('npm install → false', () => assert.ok(!isTestCommand('npm install')));
+  it('node index.js → false', () => assert.ok(!isTestCommand('node index.js')));
+  it('null → false', () => assert.ok(!isTestCommand(null)));
+  it('undefined → false', () => assert.ok(!isTestCommand(undefined)));
+  it('bos string → false', () => assert.ok(!isTestCommand('')));
+});
+
+// ─────────────────────────────────────────────────────
+// SUMMARIZE FONKSIYONLARI TESTLERI (deep-audit bulgusu)
+// ─────────────────────────────────────────────────────
+
+describe('session-monitor summarize fonksiyonlari', () => {
+  const monitorPath = path.join(__dirname, '..', 'bin', 'session-monitor.js');
+  const { summarizeTask, summarizeWait, summarizeErrors, stripAnsi } = loadModuleExports(monitorPath, {
+    exports: ['summarizeTask', 'summarizeWait', 'summarizeErrors', 'stripAnsi'],
+  });
+
+  it('summarizeTask task_id yoksa fallback mesaji', () => {
+    const result = summarizeTask({});
+    assert.ok(stripAnsi(result).includes('gorev yok'), 'fallback mesaji olmali');
+  });
+
+  it('summarizeTask task_id ve title varsa birlesik ozet', () => {
+    const result = summarizeTask({ current_focus: { task_id: 'TASK-42', title: 'Test gorevi' } });
+    const plain = stripAnsi(result);
+    assert.ok(plain.includes('TASK-42'), 'task_id olmali');
+    assert.ok(plain.includes('Test gorevi'), 'title olmali');
+  });
+
+  it('summarizeWait waiting_on=none → dim metin', () => {
+    const result = summarizeWait({ waiting_on: 'none' });
+    assert.ok(stripAnsi(result).includes('bekleme yok'));
+  });
+
+  it('summarizeWait waiting_on=test → kirmizi uyari', () => {
+    const result = summarizeWait({ waiting_on: 'test' });
+    assert.ok(result.includes('\x1b['), 'ANSI renk kodu olmali');
+    assert.ok(stripAnsi(result).includes('bekleme test'));
+  });
+
+  it('summarizeErrors count=0 → dim metin', () => {
+    const result = summarizeErrors({ errors: { count: 0 } });
+    assert.ok(stripAnsi(result).includes('hata 0'));
+  });
+
+  it('summarizeErrors count>0 → kirmizi hata sayisi', () => {
+    const result = summarizeErrors({ errors: { count: 3 } });
+    assert.ok(result.includes('\x1b['), 'ANSI renk kodu olmali');
+    assert.ok(stripAnsi(result).includes('hata 3'));
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// EDIT TOOL ENTEGRASYON TESTI (deep-audit bulgusu)
+// ─────────────────────────────────────────────────────
+
+describe('session-tracker Edit tool', () => {
+  it('Edit tool event phase=implementing ve dosya duzenlendi', t => {
+    const projectRoot = createTempProject(t);
+    const hookPath = materializeHook(projectRoot, 'core/hooks/session-tracker.js');
+
+    runHook(hookPath, makeToolPayload(
+      { old_string: 'eski', new_string: 'yeni', file_path: '/tmp/proje/src/index.js' },
+      'Edit applied'
+    ));
+
+    const state = readSessionState(projectRoot);
+    assert.equal(state.phase, 'implementing');
+    assert.ok(state.files.written.some(f => f.includes('index.js')), 'Edit dosyasi written listesinde olmali');
+    assert.equal(state.tools.by_type.Edit, 1, 'Edit olarak siniflandirilmali');
+  });
+});

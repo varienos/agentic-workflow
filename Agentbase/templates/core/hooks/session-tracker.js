@@ -15,6 +15,7 @@ const SESSION_FILE = path.join(SESSIONS_DIR, `session-${SESSION_ID}.json`);
 const MAX_FILE_ENTRIES = 50;
 const MAX_ERROR_ENTRIES = 20;
 const MAX_EVENT_ENTRIES = 24;
+const MAX_TEAMMATES = 100;
 
 function nowIso() {
   return new Date().toISOString();
@@ -437,7 +438,7 @@ function detectTeammate(input, state) {
     return;
   }
 
-  const MAX_TEAMMATES = 100;
+
   state.teammates.push({
     name,
     spawned_at: nowIso(),
