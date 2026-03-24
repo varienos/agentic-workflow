@@ -72,16 +72,19 @@ Bu phase'de otomatik tespit yoktur. Tum sorular her zaman sorulur.
     - Her komut calistirmadan once soru sorar
     - Yuksek guvenlik, dusuk hiz
     - Hook: confirmation_required = always
+    - Enforce: task-hunter.skeleton.md ADIM 2.3 "Onay BEKLEME" → "Onay BEKLE"
   - **b → plan-then-autonomous:**
     - task-hunter once plan sunar
     - Plan onaylaninca otonom calisir
     - Dengeli guvenlik/hiz
     - Hook: confirmation_required = plan-phase-only
+    - Enforce: task-hunter.skeleton.md ADIM 2.3 "Plani kullaniciya goster ve onay bekle"
   - **c → full-autonomous:**
     - task-hunter plani gosterip direkt calisir
     - Sadece hata veya belirsizlikte durur
     - Dusuk guvenlik, yuksek hiz
     - Hook: confirmation_required = on-error-only
+    - Enforce: task-hunter.skeleton.md ADIM 2.3 "Plani kaydet ve HEMEN uygulamaya basla"
 
 ### Q4 — Calisma Modu
 - **Text:** `"Projede tek mi calisiyorsun, ekip mi?"`

@@ -923,6 +923,13 @@ Onemli: Once `../Docs/agentic/` dizininin var oldugundan emin ol, yoksa olustur.
 
 Asagidaki YAML sablonunu doldur. Bos kalan alanlara `null` yaz, bilinmeyen alanlari tamamen kaldir.
 
+**YAML Guvenlik Kurallari:**
+- Serbest metin alanlari (description, reason, rule, domain kurallari) MUTLAKA tirnak icinde yaz: `"deger"`
+- YAML ozel karakterler (`: # - | > [ ] { }`) iceren degerler icin cift tirnak ZORUNLU
+- Cok satirli degerler icin YAML literal block scalar (`|`) kullan
+- Production URL'lerini dogrudan yazmak yerine env var referansi oner: `"$PROD_URL veya .env'den alinir"`
+- Kullanici cevaplarini manifest'e yazarken icerigini OLDUKLARI GIBI koru ama YAML-safe formatla
+
 ```yaml
 manifest:
   version: "1.0.0"
@@ -940,6 +947,7 @@ project:
   language: "[ana dil]"
   team_size: "[solo|small-team|large-team]"
   security_level: "[standard|high|critical]"
+  api_prefix: "[/api|/api/v1|/v1|null]"
   subprojects:
     - name: "[alt proje adi]"
       path: "[goreceli yol]"
@@ -980,6 +988,8 @@ developer:
   experience: "[junior|mid|senior|new-to-stack]"
   autonomy: "[ask-every-step|plan-then-auto|full-auto]"
 
+targets: ["claude"]                                       # her zaman claude dahil. ornek: [claude, gemini, kimi]
+
 workflows:
   branch_model: "[direct-push|feature-pr|gitflow|trunk]"
   commit_convention: "[conventional|free|custom]"
@@ -996,6 +1006,7 @@ workflows:
   test_strategy: "[tdd|tests-exist|minimal|none]"
   auto_format_hook: [true|false]
   migration_strategy: "[orm|manual-sql|none|null]"
+  ci_pipeline: "[github-actions|gitlab-ci|jenkins|null]"  # auto-detect: .github/workflows/, .gitlab-ci.yml
 
 modules:
   # Single proje: Her kategori tek bir leaf secer.
@@ -1207,13 +1218,15 @@ Lead (sen)
   └──► Teammate 5: root-generator (Agent tool)
        Gorev: Root dokumantasyon dosyalarini uret
        Girdi: manifest + codebase analiz sonuclari (Adim 2'den)
-       Cikti: ./PROJECT.md
-              ./STACK.md
-              ./DEVELOPER.md
-              ./ARCHITECTURE.md
-              ./WORKFLOWS.md
+       Hedef dizin: Agentbase/.claude/ (Codebase'e ASLA yazma — Kutsal Kural 2)
+       Cikti: .claude/PROJECT.md
+              .claude/STACK.md
+              .claude/DEVELOPER.md
+              .claude/ARCHITECTURE.md
+              .claude/WORKFLOWS.md
        NOT: Bu dosyalar sifirdan uretilir (skeleton kullanilMAZ).
             Manifest + codebase analizindeki bilgilerle doldurulur.
+            Hedef: Agentbase/.claude/ — Codebase root'a YAZMA.
 
 ### 5.1.2 Uzman Agent Uretimi
 
@@ -1324,8 +1337,8 @@ Sen Bootstrap'in bir teammate'isin. Gorevin: [gorev aciklamasi]
 2. CLAUDE_FILL olmayan GENERATE bloklarini da manifest verisiyle doldur (format asagida)
 3. .skeleton uzantisini kaldir (eger generate.js zaten kaldirmissa atlat)
 4. Statik dosyalari oldugu gibi kopyala
-5. Hedef dizine yaz: [hedef yol]
-6. Codebase'e ASLA yazma
+5. Hedef dizine yaz: Agentbase/.claude/ altina (orn: .claude/commands/, .claude/hooks/, .claude/rules/)
+6. Codebase'e ASLA yazma — tum cikti Agentbase/ icinde kalir (Kutsal Kural 2)
 7. Her dosya yazildiginda bildir
 8. Monorepo (project.type == "monorepo") icin GENERATE bloklarini subproject-scope'lu doldur:
    - VERIFICATION_COMMANDS, TEST_COMMANDS, COMPILE_COMMANDS → her subproject icin AYRI satir uret
