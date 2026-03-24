@@ -1169,4 +1169,4 @@ function main() {
   render();
 }
 
-main();
+if (require.main === module) main();

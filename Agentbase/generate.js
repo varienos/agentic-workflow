@@ -54,9 +54,6 @@ function createJsGenerateRe() {
   return /\/\* GENERATE: (\w+)\n[\s\S]*?\*\/\s*\n?\s*\/\* END GENERATE \*\//g;
 }
 
-// Geriye uyumluluk icin export edilen sabitler (test'lerde kullanilabilir)
-const MD_GENERATE_RE = createMdGenerateRe();
-const JS_GENERATE_RE = createJsGenerateRe();
 
 /**
  * Bir icerikten tum GENERATE blok isimlerini cikarir.
