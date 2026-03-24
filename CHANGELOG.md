@@ -1,16 +1,42 @@
 # Değişiklik Günlüğü
 
 Tüm önemli değişiklikler bu dosyada belgelenir.
-Format [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) standardını takip eder.
+Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [1.1.3] - 2026-03-24
+## [1.2.0] - 2026-03-24
+
+### Eklenen
+
+- generate.js guvenlik iyilestirmeleri ve test kapsamasi (TASK-170/171/172/173) (`4bfa158`)
 
 ### Düzeltilen
 
+- **security:** sanitizeSnippet key=value maskesinde key adini koru (`7c75f12`)
+- **security:** sanitizeSnippet key=value maskesinde captured grup kullan (`4cc4d2e`)
+- **security:** generate.js shell escape, sanitize ve ReDoS kontrol fonksiyonları (`17896ed`)
+- **security:** tespit edilen secret degerini loglamayacak sekilde maskele (TASK-166) (`30eb52f`)
+- **test:** 2668b54 refactor kaynaklı kırık test altyapısını düzelt (`86d2f73`)
+- 8 modul hook settings.json kosullu kayit + tire destegi (TASK-164) (`5986e22`)
+- **deep-audit:** hook ve bin dosyalarinda main() kosulsuz cagrisini guvenceye al (`ebbed02`)
+- **security:** execSync shell injection riskini execFileSync ile gider (TASK-165) (`0cde124`)
+- **session:** backlog task create tek tirnak baslikini da yakala (`a61d125`)
+- **deep-audit:** README tutarlilik eksiklikleri gider (`0b28622`)
+- **deep-audit:** .release-notes.tmp gitignore'a eklendi (`55a943c`)
 - release notes --notes-file backtick injection — ikinci duzeltme (`8b30820`)
+
+### Yeniden Düzenlenen
+
+- readStdin ve guard hook factory — 12 dosyadan duplicate kaldirildi (TASK-163) (`2668b54`)
+- release.js changelog.js ortak fonksiyonlari DRY (TASK-162) (`a52856d`)
+
+### Dokümantasyon
+
+- guvenlik hook ve session-tracker aciklamalari README'ye eklendi (TASK-168/169) (`622ce88`)
+- CONTRIBUTING.md test tablosunu 7'den 13 dosyaya guncelle (`a604f72`)
 
 ### Bakım
 
+- release oncesi bekleyen degisiklikler (`b89446f`)
 - release oncesi bekleyen degisiklikler (`c135cc6`)
 - release oncesi bekleyen degisiklikler (`198df1e`)
 
