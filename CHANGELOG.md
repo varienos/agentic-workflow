@@ -3,6 +3,17 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.3.1] - 2026-03-24
+
+### Düzeltilen
+
+- add JSON parse error handling, fix array filter null check, improve --modules exit code (`9cb1547`)
+- resolve failing tests - git init branch name and missing reference files (`21e3c91`)
+
+### Diğer
+
+- Initial plan (`6353c7d`)
+
 ## [1.3.0] - 2026-03-24
 
 ### Eklenen
