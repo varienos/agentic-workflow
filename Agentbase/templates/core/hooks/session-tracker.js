@@ -293,6 +293,28 @@ const { isTestCommand } = (() => {
   }
 })();
 
+/**
+ * Bilinen secret pattern'lerini metinden maskeler.
+ * Hata snippet'leri session dosyasina yazilmadan once bu fonksiyondan gecmeli.
+ */
+function sanitizeSnippet(text) {
+  if (!text) return text;
+  return text
+    // OpenAI / Anthropic / genel sk- API anahtarlari
+    .replace(/\bsk-[a-zA-Z0-9_-]{8,}/g, '[REDACTED]')
+    // AWS access key ID'leri
+    .replace(/\b(AKIA|ASIA|AROA|AIDA|ANPA|ANVA|APKA)[A-Z0-9]{16}\b/g, '[REDACTED]')
+    // JWT token'lari (3 base64 segment)
+    .replace(/eyJ[a-zA-Z0-9+/_-]+={0,2}\.eyJ[a-zA-Z0-9+/_-]+={0,2}\.[a-zA-Z0-9+/_-]+={0,2}/g, '[REDACTED]')
+    // Tek tirnak veya cift tirnak icinde gorece uzun token/secret degerleri
+    // key=value / key: value bicimindeki atamalarda
+    .replace(/(?:secret|token|password|passwd|api[_-]?key|auth[_-]?key|bearer)\s*[:=]\s*['"`]([^'"`\s]{8,})['"`]/gi, (_, __) => `${'$1'.replace(/./g, 'x')} [REDACTED]`)
+    // Bearer token'lari (Authorization header'larinda)
+    .replace(/Bearer\s+[a-zA-Z0-9._-]{20,}/g, 'Bearer [REDACTED]')
+    // Private key bloklari
+    .replace(/-----BEGIN [A-Z ]+ PRIVATE KEY-----[\s\S]*?-----END [A-Z ]+ PRIVATE KEY-----/g, '[REDACTED PRIVATE KEY]');
+}
+
 function detectErrors(input, state, toolType) {
   const result = input.tool_result;
   if (!hasToolError(result)) return false;
@@ -303,7 +325,7 @@ function detectErrors(input, state, toolType) {
     timestamp: nowIso(),
     tool: toolType,
     target: getTarget(input, toolType),
-    snippet: resultStr.substring(0, 200),
+    snippet: sanitizeSnippet(resultStr.substring(0, 200)),
   });
 
   if (state.errors.history.length > MAX_ERROR_ENTRIES) {

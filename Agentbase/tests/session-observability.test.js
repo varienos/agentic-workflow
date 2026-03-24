@@ -872,6 +872,58 @@ describe('session-tracker utility functions', () => {
     assert.equal(shortenPath(''), '', 'empty string → empty string');
     assert.equal(typeof shortenPath(null), 'string', 'donus tipi string olmali');
   });
+
+  it('sanitizeSnippet sk- API anahtarini maskeler', () => {
+    const { sanitizeSnippet } = loadModuleExports(trackerPath, {
+      exports: ['sanitizeSnippet'],
+    });
+
+    const text = 'Error: invalid key sk-abc123XYZ789abcdef in request';
+    const result = sanitizeSnippet(text);
+    assert.ok(!result.includes('sk-abc123XYZ789abcdef'), 'API anahtari maskelenmeli');
+    assert.ok(result.includes('[REDACTED]'), '[REDACTED] etiketi olmali');
+  });
+
+  it('sanitizeSnippet AWS access key maskeleniyor', () => {
+    const { sanitizeSnippet } = loadModuleExports(trackerPath, {
+      exports: ['sanitizeSnippet'],
+    });
+
+    const text = 'Auth failed: AKIAIOSFODNN7EXAMPLE is not authorized';
+    const result = sanitizeSnippet(text);
+    assert.ok(!result.includes('AKIAIOSFODNN7EXAMPLE'), 'AWS key maskelenmeli');
+    assert.ok(result.includes('[REDACTED]'), '[REDACTED] etiketi olmali');
+  });
+
+  it('sanitizeSnippet Bearer token maskeleniyor', () => {
+    const { sanitizeSnippet } = loadModuleExports(trackerPath, {
+      exports: ['sanitizeSnippet'],
+    });
+
+    const text = 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyIjoiYWxpY2UifQ.abc123xyz';
+    const result = sanitizeSnippet(text);
+    assert.ok(!result.includes('eyJhbGciOiJIUzI1NiJ9'), 'JWT token maskelenmeli');
+    assert.ok(result.includes('[REDACTED]'), '[REDACTED] etiketi olmali');
+  });
+
+  it('sanitizeSnippet zararsiz metin degistirilmiyor', () => {
+    const { sanitizeSnippet } = loadModuleExports(trackerPath, {
+      exports: ['sanitizeSnippet'],
+    });
+
+    const text = 'TypeError: Cannot read property foo of undefined at line 12';
+    const result = sanitizeSnippet(text);
+    assert.equal(result, text, 'zararsiz hata mesaji degistirilmemeli');
+  });
+
+  it('sanitizeSnippet null veya bos string ile cagrilinca calisiyor', () => {
+    const { sanitizeSnippet } = loadModuleExports(trackerPath, {
+      exports: ['sanitizeSnippet'],
+    });
+
+    assert.equal(sanitizeSnippet(null), null, 'null → null dondurur');
+    assert.equal(sanitizeSnippet(''), '', 'bos string → bos string');
+  });
 });
 
 // ─────────────────────────────────────────────────────

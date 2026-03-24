@@ -14,6 +14,15 @@ const {
 } = require('./helpers/hook-runner.js');
 const { loadModuleExports } = require('./helpers/module-loader.js');
 
+// shared-hook-utils.js core/hooks'ta yaşıyor; module testleri kendi __dirname'ini kullanır.
+// VM bağlamında require yolunu doğru dosyaya yönlendirir.
+const sharedHookUtilsReplacement = {
+  find: /require\(require\('path'\)\.join\(__dirname,\s*'shared-hook-utils\.js'\)\)/g,
+  replace: `require(${JSON.stringify(
+    path.join(__dirname, '..', 'templates', 'core', 'hooks', 'shared-hook-utils.js')
+  )})`,
+};
+
 describe('code-review-check hook', () => {
   it('reports critical findings and preserves the original payload on stdout', t => {
     const projectRoot = createTempProject(t);
@@ -31,6 +40,8 @@ describe('code-review-check hook', () => {
     assert.equal(result.stdout.trim(), input);
     assert.match(result.stderr, /CRITICAL/);
     assert.match(result.stderr, /Hardcoded API key/);
+    assert.match(result.stderr, /\[REDACTED\]/, 'secret degeri loglanmamali, [REDACTED] olmali');
+    assert.ok(!result.stderr.includes('sk-secretvalue'), 'gercek API anahtari stderr\'e yazilmamali');
   });
 
   it('skips files outside the configured extension list', t => {
@@ -234,6 +245,7 @@ describe('auto-format hook', () => {
     );
     const { fixSmartQuotes } = loadModuleExports(hookPath, {
       exports: ['fixSmartQuotes'],
+      replacements: [sharedHookUtilsReplacement],
     });
 
     const fixed = fixSmartQuotes('“Merhaba” — test…');
@@ -258,6 +270,7 @@ describe('auto-format hook', () => {
     const { detectSubproject, findFormatterConfig } = loadModuleExports(hookPath, {
       exports: ['detectSubproject', 'findFormatterConfig'],
       replacements: [
+        sharedHookUtilsReplacement,
         {
           find: /const CODEBASE_ROOT = .*;/,
           replace: `const CODEBASE_ROOT = ${JSON.stringify(codebaseRoot)};`,
@@ -301,6 +314,7 @@ describe('auto-format hook', () => {
         __capturedExec: capturedExec,
       },
       replacements: [
+        sharedHookUtilsReplacement,
         {
           find: /const CODEBASE_ROOT = .*;/,
           replace: `const CODEBASE_ROOT = ${JSON.stringify(codebaseRoot)};`,
@@ -349,6 +363,7 @@ describe('auto-format hook', () => {
         __capturedExec: capturedExec,
       },
       replacements: [
+        sharedHookUtilsReplacement,
         {
           find: /const CODEBASE_ROOT = .*;/,
           replace: `const CODEBASE_ROOT = ${JSON.stringify(codebaseRoot)};`,

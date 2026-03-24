@@ -160,7 +160,7 @@ async function main() {
         importantIssues.slice(0, 5).forEach(issue => {
           const icon = issue.severity === 'CRITICAL' ? '[!!!]' : '[!!]';
           console.error(`  ${icon} [${issue.severity}] Satir ${issue.line}: ${issue.message}`);
-          console.error(`      ${issue.code}`);
+          console.error(`      [REDACTED]`);
         });
 
         if (importantIssues.length > 5) {
