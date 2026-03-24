@@ -3,6 +3,12 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.6.1] - 2026-03-24
+
+### Düzeltilen
+
+- test workflow her push'ta calissin ve manuel tetikleme destekle (`31a2d50`)
+
 ## [1.6.0] - 2026-03-24
 
 ### Eklenen
