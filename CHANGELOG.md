@@ -3,7 +3,7 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [1.1.2] - 2026-03-24
+## [1.1.3] - 2026-03-24
 
 ### Düzeltilen
 
@@ -11,6 +11,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 ### Bakım
 
+- release oncesi bekleyen degisiklikler (`c135cc6`)
 - release oncesi bekleyen degisiklikler (`198df1e`)
 
 ## [1.1.1] - 2026-03-24
