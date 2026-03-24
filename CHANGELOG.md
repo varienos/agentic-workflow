@@ -3,10 +3,15 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [Yayınlanmamış] - 2026-03-24
+## [1.1.1] - 2026-03-24
+
+### Düzeltilen
+
+- release notes --notes-file ile backtick shell injection onlendi (`8651009`)
 
 ### Dokümantasyon
 
+- CHANGELOG otomatik güncellendi [skip ci] (`f7b8fe1`)
 - CHANGELOG otomatik güncellendi [skip ci] (`bd03eec`)
 
 ## [1.1.0] - 2026-03-24
