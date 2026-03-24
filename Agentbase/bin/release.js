@@ -187,12 +187,18 @@ function main() {
   console.log(`  Push basarili: main + v${newVersion}`);
 
   // 10. GitHub Release olustur (gh CLI varsa)
+  // NOT: --notes-file kullanilir — backtick iceren CHANGELOG satirlari
+  // --notes ile shell'de komut olarak yorumlanir
   try {
     const notes = extractReleaseNotes(newVersion);
-    run(`gh release create v${newVersion} --title "v${newVersion}" --notes ${JSON.stringify(notes)}`);
+    const notesFile = path.join(REPO_ROOT, '.release-notes.tmp');
+    fs.writeFileSync(notesFile, notes, 'utf8');
+    run(`gh release create v${newVersion} --title "v${newVersion}" --notes-file "${notesFile}"`);
+    try { fs.unlinkSync(notesFile); } catch {}
     console.log(`  GitHub Release: v${newVersion}`);
   } catch {
     console.log('  GitHub Release olusturulamadi (gh CLI yok veya auth gerekli)');
+    try { fs.unlinkSync(path.join(REPO_ROOT, '.release-notes.tmp')); } catch {}
   }
 
   console.log('');
