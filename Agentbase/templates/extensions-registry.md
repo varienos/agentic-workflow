@@ -11,7 +11,7 @@ Yeni eklenti eklerken bu formatı kullan:
 ```markdown
 | Ad | Repo | Agent | Kategori | Açıklama |
 |---|---|---|---|---|
-| **İsim** | [repo-adı](github-url) | Claude/Gemini/Codex/Hepsi | Kategori | Tek satır açıklama |
+| **İsim** | [repo-adi](https://github.com/org/repo) | Claude/Gemini/Codex/Hepsi | Kategori | Tek satir aciklama |
 ```
 
 ---
