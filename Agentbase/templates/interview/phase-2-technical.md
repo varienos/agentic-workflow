@@ -13,10 +13,10 @@
 | Test commands          | `package.json#scripts.test`, `Makefile` test targets       | `manifest.stack.test_commands`       |
 | Linter config          | `.eslintrc.*`, `biome.json`, `.flake8`, `.rubocop.yml`     | `manifest.stack.linter`              |
 | Formatter config       | `.prettierrc.*`, `biome.json`, `.editorconfig`, `ruff.toml` | `manifest.stack.formatter`           |
-| Branch model           | `git branch -a` analysis, CI branch triggers               | `manifest.workflows.branch_hints`    |
+| Branch model           | `git branch -a` analysis, CI branch triggers               | `manifest.workflows.branch_model`    |
 | CI/CD pipeline         | `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`      | `manifest.workflows.ci_pipeline`     |
 | ORM / Database         | Prisma schema, TypeORM config, SQLAlchemy, Django models   | `manifest.stack.orm`                 |
-| Migration files        | `migrations/` directory, Prisma migrations, Alembic        | `manifest.stack.migration_hints`     |
+| Migration files        | `migrations/` directory, Prisma migrations, Alembic        | `manifest.stack.migration_strategy`  |
 
 ---
 

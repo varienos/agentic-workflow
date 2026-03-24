@@ -31,7 +31,7 @@
    | `pre-rebase` | Rebase başlamadan önce | Korumalı branch'lerde rebase'i engelleme |
    | `post-rewrite` | Commit amend veya rebase sonrası | Test çalıştırma, hook'ları yeniden tetikleme |
 
-5. Skill/plugin seçimini geliştirici yapmasın, Opus yapsın. Her şeyi yüklemek context'i şişirir ve agent'ın performansını düşürür. Bootstrap sırasında Opus, proje ihtiyacına göre extensions.md'den sadece gerekli olanları seçmeli. Az ama doğru > çok ama gereksiz.
+5. Skill/plugin seçimini geliştirici yapmasın, Opus yapsın. Her şeyi yüklemek context'i şişirir ve agent'ın performansını düşürür. Bootstrap sırasında Opus, proje ihtiyacına göre extensions-registry.md'den sadece gerekli olanları seçmeli. Az ama doğru > çok ama gereksiz.
 6. Agent mimari karar veremez. Kod, test, review yazabilir ama "bu sistemde bu olmasın" diyemez, beklenmedik mantıksızlıkları kendi başına fark edemez. Mimari kararlar, sınırlar ve "hayır"lar insana ait. Agent verilen mimariyi uygular — mimariyi tasarlamaz. Temel bilmeyen biri AI ile doğru ürün oluşturamaz, yapsa bile sürdürülebilir olmaz.
 7. Agent "test fail, benim değişikliğim değil" deyip durmamalı. Baseline comparison ile pre-existing hatayı tespit et, backlog'a kaydet, kendi işine devam et. Pre-existing hatalar ayrı task olarak takip edilmeli — yoksa kaybolur, kimse düzeltmez.
 
@@ -159,7 +159,7 @@ Kaynak: [shanraisshan/claude-code-best-practice](https://github.com/shanraisshan
 - Feature-özel sub-agent + skills > genel QA/backend agent
 - Küçük işler için vanilla Claude Code, karmaşık workflow'lardan daha iyi çalışır
 
-> **Not:** Metodlar → [methods.md](methods.md), eklentiler → [extensions.md](extensions.md)'e taşındı.
+> **Not:** Metodlar → [methods.md](methods.md), eklentiler → [extensions-registry.md](../extensions-registry.md)'e taşındı.
 
 ---
 
