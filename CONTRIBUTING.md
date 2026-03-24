@@ -128,12 +128,18 @@ Yeni eklenen her JS dosyasi icin test dosyasi ZORUNLUDUR.
 | Test Dosyasi | Ne Test Eder |
 |---|---|
 | `generate.test.js` | generate.js fonksiyonlari, SIMPLE_GENERATORS, CLI arguman parse |
+| `transform.test.js` | transform.js donusum fonksiyonlari (extractDescription, TOML/YAML formatlari) |
+| `tests/changelog.test.js` | CHANGELOG uretici yardimcilari (formatDate, groupByType) |
+| `tests/codebase-guard.test.js` | codebase-guard hook'u — Codebase config path engelleme kurallari |
 | `tests/core-hooks.test.js` | Core hook'lar (code-review, test-enforcer, team-trigger, auto-test-runner, auto-format, openapi-sync) |
-| `tests/prisma-hooks.test.js` | Prisma-spesifik hook'lar (db-push-guard, migration-check, destructive-migration) |
-| `tests/guard-hooks.test.js` | Framework guard hook'lari (artisan, spark, django, manage-py) |
-| `tests/git-hooks.test.js` | Git pre-commit/pre-push hook'lari (E2E: temp git repo ile) |
-| `tests/session-observability.test.js` | Session-tracker ve session-monitor testleri |
 | `tests/generate-regressions.test.js` | generate.js regresyon ve CLI entegrasyon testleri |
+| `tests/git-hooks.test.js` | Git pre-commit/pre-push hook'lari (E2E: temp git repo ile) |
+| `tests/guard-hooks.test.js` | Framework guard hook'lari (artisan, spark, django, manage-py) |
+| `tests/hook-edge-cases.test.js` | Tum hook'larda edge case dayanikliligi (bos stdin, bozuk JSON, uzun path) |
+| `tests/kutsal-rules-regressions.test.js` | Kutsal kural regresyonlari — skeleton'larda config yazma ve git siniri kontrolu |
+| `tests/prisma-hooks.test.js` | Prisma-spesifik hook'lar (db-push-guard, migration-check, destructive-migration) |
+| `tests/release.test.js` | Release script yardimcilari (detectBump: major/minor/patch karar mantigi) |
+| `tests/session-observability.test.js` | Session-tracker ve session-monitor testleri |
 
 ### Hook Test Yardimcilari
 
