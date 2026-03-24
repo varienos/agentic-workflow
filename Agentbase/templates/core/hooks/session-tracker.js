@@ -308,7 +308,7 @@ function sanitizeSnippet(text) {
     .replace(/eyJ[a-zA-Z0-9+/_-]+={0,2}\.eyJ[a-zA-Z0-9+/_-]+={0,2}\.[a-zA-Z0-9+/_-]+={0,2}/g, '[REDACTED]')
     // Tek tirnak veya cift tirnak icinde gorece uzun token/secret degerleri
     // key=value / key: value bicimindeki atamalarda
-    .replace(/(?:secret|token|password|passwd|api[_-]?key|auth[_-]?key|bearer)\s*[:=]\s*['"`]([^'"`\s]{8,})['"`]/gi, (_, captured) => captured.replace(/./g, 'x') + ' [REDACTED]')
+    .replace(/(?:secret|token|password|passwd|api[_-]?key|auth[_-]?key|bearer)\s*[:=]\s*['"`]([^'"`\s]{8,})['"`]/gi, (match, captured) => match.replace(captured, '[REDACTED]'))
     // Bearer token'lari (Authorization header'larinda)
     .replace(/Bearer\s+[a-zA-Z0-9._-]{20,}/g, 'Bearer [REDACTED]')
     // Private key bloklari
