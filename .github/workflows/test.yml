@@ -3,11 +3,10 @@ name: Tests
 on:
   push:
     branches: [main]
-    paths:
-      - 'Agentbase/**'
   pull_request:
     paths:
       - 'Agentbase/**'
+  workflow_dispatch:
 
 jobs:
   test:
