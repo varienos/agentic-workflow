@@ -1881,7 +1881,7 @@ Atlanan (template bulunamadi):
 
 ### 6.1 Backlog Baslatma
 
-Bash ile kontrol et: `ls ../backlog/config.yml 2>/dev/null`
+Bash ile kontrol et: `ls backlog/config.yml 2>/dev/null`
 
 - **Mevcutsa** → Atlat, mevcut backlog'u koru.
 - **Mevcut degilse** → Non-interactive init komutu calistir:
@@ -1890,7 +1890,7 @@ Bash ile kontrol et: `ls ../backlog/config.yml 2>/dev/null`
 backlog init "[manifest.project.name]" --defaults
 ```
 
-Bu komut `backlog/` dizinini tasks/, completed/, archive/, milestones/ alt dizinleriyle ve config.yml ile olusturur. Eger Backlog CLI kurulu degilse veya init basarisiz olursa, DURMA — kullaniciya bildir:
+Bu komut mevcut Agentbase CWD'sinde `backlog/` dizinini tasks/, completed/, archive/, milestones/ alt dizinleriyle ve config.yml ile olusturur. Eger Backlog CLI kurulu degilse veya init basarisiz olursa, DURMA — kullaniciya bildir:
 
 ```
 Backlog CLI bulunamadi veya init basarisiz oldu.
@@ -2029,7 +2029,59 @@ backlog task create "Ilk feature'i planla ve implement et" \
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### 7.1 Eklenti Oneri Sistemi
+### 7.1 Onboarding Rehberi Olustur
+
+Tamamlanma raporundan hemen sonra `.claude/onboarding.md` dosyasini olustur. Bu dosya hedef projede yeni baslayan gelistiriciye ilk adimlari anlatir.
+
+Asagidaki sablonu manifest bilgileriyle doldurarak `.claude/onboarding.md` olarak yaz:
+
+```markdown
+# Onboarding — [manifest.project.name]
+
+## Ilk Adimlar
+
+1. **Git hook'larini etkinlestir:**
+   ```bash
+   cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"
+   ```
+
+2. **Backlog'u kontrol et:**
+   ```bash
+   backlog board
+   ```
+
+3. **Session monitor'u ac (ayri terminal):**
+   ```bash
+   cd Agentbase && node bin/session-monitor.js
+   ```
+
+## Ilk Task
+
+```bash
+/task-hunter 1
+```
+
+## Gunluk Workflow
+
+```
+/task-plan "ozellik veya bug aciklamasi"   → Backlog'a gorev olustur
+/task-hunter <id>                          → Gorevi otonom implement et
+/task-review <id>                          → Degisiklikleri review et
+/task-master                               → Tum gorevleri onceliklendir
+/deep-audit <alan>                         → Domain bazli derin denetim
+```
+
+## Proje Bilgisi
+
+- **Stack:** [manifest.stack.runtime] [manifest.stack.orm varsa: + manifest.stack.orm]
+- **Aktif Moduller:** [manifest.modules.active listesi]
+- **Otonomi:** [manifest.developer.autonomy]
+- **Guvenlik Seviyesi:** [manifest.project.security_level]
+```
+
+---
+
+### 7.2 Eklenti Oneri Sistemi
 
 Tamamlanma raporundan sonra, eklenti havuzunu tarayarak projeye uygun eklentileri oner.
 

@@ -13,7 +13,8 @@ jobs:
     if: |
       !contains(github.event.head_commit.message, '[skip ci]') &&
       !startsWith(github.event.head_commit.message, 'release:') &&
-      !startsWith(github.event.head_commit.message, 'docs: CHANGELOG')
+      !startsWith(github.event.head_commit.message, 'docs: CHANGELOG') &&
+      !startsWith(github.event.head_commit.message, 'chore: release')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,18 +43,28 @@ jobs:
       - name: Bump tipi tespit et
         if: steps.check.outputs.commits == 'true'
         id: bump
+        env:
+          TAG: ${{ steps.check.outputs.tag }}
         run: |
-          TAG="${{ steps.check.outputs.tag }}"
-          RANGE="${TAG:+$TAG..HEAD}"
-          COMMITS=$(git log $RANGE --pretty=format:"%s" --no-merges)
+          node - <<'NODE' >> "$GITHUB_OUTPUT"
+          const { spawnSync } = require('child_process');
+          const { detectBump, parseGitLogMessages } = require('./Agentbase/bin/release.js');
 
-          if echo "$COMMITS" | grep -qE "BREAKING|!:"; then
-            echo "type=major" >> $GITHUB_OUTPUT
-          elif echo "$COMMITS" | grep -q "^feat"; then
-            echo "type=minor" >> $GITHUB_OUTPUT
-          else
-            echo "type=patch" >> $GITHUB_OUTPUT
-          fi
+          const tag = process.env.TAG;
+          const args = ['log', '--pretty=format:%s%x1f%b%x1e', '--no-merges'];
+          if (tag) {
+            args.push(`${tag}..HEAD`);
+          }
+
+          const result = spawnSync('git', args, { encoding: 'utf8' });
+          if (result.status !== 0) {
+            process.stderr.write(result.stderr || 'git log failed');
+            process.exit(result.status);
+          }
+
+          const commits = parseGitLogMessages(result.stdout);
+          process.stdout.write(`type=${detectBump(commits)}\n`);
+          NODE
 
       - name: Release yap
         if: steps.check.outputs.commits == 'true'

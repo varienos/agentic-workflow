@@ -70,13 +70,13 @@ function getCommits(from, to) {
 
   return raw.split('\n').filter(Boolean).map(line => {
     const [hash, subject, author, date] = line.split('\0');
-    const match = subject.match(/^([\w-]+)(?:\(([^)]*)\))?:\s*(.+)$/u);
+    const match = subject.match(/^([\w-]+)(?:\(([^)]*)\))?(!)?:\s*(.+)$/u);
     if (!match) return { hash: hash.slice(0, 7), type: 'other', scope: null, message: subject, author, date };
     return {
       hash: hash.slice(0, 7),
       type: match[1],
       scope: match[2] || null,
-      message: match[3].trim(),
+      message: match[4].trim(),
       author,
       date,
     };
@@ -163,13 +163,15 @@ function generateAllSections() {
   return sections;
 }
 
-function releaseVersion(version) {
-  if (!fs.existsSync(CHANGELOG_PATH)) {
+function releaseVersion(version, options = {}) {
+  const { changelogPath = CHANGELOG_PATH, dryRun = false } = options;
+
+  if (!fs.existsSync(changelogPath)) {
     console.error('Hata: CHANGELOG.md bulunamadı.');
     process.exit(1);
   }
 
-  const content = fs.readFileSync(CHANGELOG_PATH, 'utf8');
+  const content = fs.readFileSync(changelogPath, 'utf8');
   const displayVersion = version.replace(/^v/, '');
   const today = new Date().toISOString().slice(0, 10);
 
@@ -184,8 +186,14 @@ function releaseVersion(version) {
     process.exit(1);
   }
 
-  fs.writeFileSync(CHANGELOG_PATH, updated);
+  if (dryRun) {
+    console.log(updated);
+    return updated;
+  }
+
+  fs.writeFileSync(changelogPath, updated);
   console.log(`CHANGELOG.md güncellendi: [Yayınlanmamış] → [${displayVersion}] (${today})`);
+  return updated;
 }
 
 function main() {
@@ -199,7 +207,7 @@ function main() {
 
   // --release modu: mevcut CHANGELOG'daki Yayınlanmamış → versiyon
   if (releaseTag) {
-    releaseVersion(releaseTag);
+    releaseVersion(releaseTag, { dryRun });
     return;
   }
 

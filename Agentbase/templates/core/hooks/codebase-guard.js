@@ -10,6 +10,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const { readStdin } = require(path.join(__dirname, 'shared-hook-utils.js'));
 
 const CODEBASE_ROOT = (() => { const p = path.resolve(__dirname, '../../..', '../Codebase'); try { return fs.realpathSync(p); } catch { return p; } })();
 

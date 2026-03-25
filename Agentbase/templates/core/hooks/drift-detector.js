@@ -71,19 +71,44 @@ async function main() {
     state.callCount = 0;
     const currentHash = computeConfigHash();
 
-    if (state.lastHash && state.lastHash !== currentHash && !isInCooldown(state.lastSuggested)) {
-      state.lastHash = currentHash;
-      state.lastSuggested = new Date().toISOString();
-      writeState(state);
+    const messages = [];
 
-      process.stdout.write(JSON.stringify({
-        systemMessage: 'Codebase config dosyalari degismis olabilir. /workflow-update calistirmayi dusunun.',
-      }));
-      return;
+    if (state.lastHash && state.lastHash !== currentHash && !isInCooldown(state.lastSuggested)) {
+      state.lastSuggested = new Date().toISOString();
+      messages.push('Codebase config dosyalari degismis olabilir. /workflow-update calistirmayi dusunun.');
+    }
+
+    // Hook integrity: settings.json deki hook referanslari fiziksel dosyalarla eslesiyor mu?
+    const settingsPath = path.join(__dirname, '..', 'settings.json');
+    try {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      const hookTypes = ['PreToolUse', 'PostToolUse'];
+      for (const type of hookTypes) {
+        for (const group of (settings[type] || [])) {
+          for (const hook of (group.hooks || [])) {
+            if (hook.type === 'command' && hook.command) {
+              const hookFile = hook.command.replace(/^node\s+/, '').split(' ')[0];
+              const absPath = path.resolve(path.join(__dirname, '..', '..'), hookFile);
+              if (!fs.existsSync(absPath)) {
+                messages.push(`Hook dosyasi eksik: ${hookFile} (settings.json da kayitli ama dosya yok)`);
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // settings.json okunamazsa sessizce gec
     }
 
     state.lastHash = currentHash;
     writeState(state);
+
+    if (messages.length > 0) {
+      process.stdout.write(JSON.stringify({
+        systemMessage: messages.join('\n'),
+      }));
+      return;
+    }
   } catch {
     // Hook hatalari sessizce yutulur
   }

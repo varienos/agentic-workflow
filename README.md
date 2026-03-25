@@ -22,7 +22,7 @@ Mevcut bir projeye entegre edebilir veya sıfırdan yeni bir proje başlatabilir
 - **Otonom görev yönetimi** — Backlog'dan görev al, planla, implement et, test et, commit et, kapat. Tek komutla.
 - **Otomatik code review** — 3+1 agent ile her değişikliği inceler: kod kalitesi, sessiz hatalar, regresyon riski. Güvenlik değişikliklerinde koşullu Devils Advocate perspektifi.
 - **Akıllı bug fix** — Root cause analizi, maks 3 hipotez, minimal fix, regresyon testi. Sonsuz derinliğe dalmaz.
-- **Deploy güvenlik ağı** — İki katmanlı koruma: (1) pre-push git hook'ları ile localhost leak, migration tutarlılığı ve env sync kontrolü, (2) `/pre-deploy` ve `/post-deploy` slash komutları ile platform-spesifik kontroller (Docker build, health check, rollback rehberi). Git hook'larının etkinleştirilmesini gerektirir (bkz. Bootstrap Akışı adım 9).
+- **Deploy güvenlik ağı** — İki katmanlı koruma: (1) pre-push git hook'ları ile localhost leak, migration tutarlılığı ve env sync kontrolü, (2) `/{varyant}-pre-deploy` ve `/{varyant}-post-deploy` slash komutları ile platform-spesifik kontroller (örn. `/docker-pre-deploy`, `/coolify-post-deploy`, rollback rehberi). Git hook'larının etkinleştirilmesini gerektirir (bkz. Bootstrap Akışı adım 9).
 - **Codebase config koruması** — `codebase-guard` hook'u Codebase içine `.claude/`, `CLAUDE.md`, `.mcp.json` yazmayı otomatik engeller. Agent config dosyaları yalnızca Agentbase'de yaşar.
 - **Test zorlama** — `test-enforcer` hook'u kaynak dosya değişikliklerinde ilgili testlerin çalıştırılmasını hatırlatır. Pre-push hook'u ile test geçmeden push engellenir.
 - **Proje-spesifik kurallar** — Stack'inize göre hook'lar, framework kuralları ve koruma mekanizmaları otomatik üretilir.
@@ -31,7 +31,7 @@ Mevcut bir projeye entegre edebilir veya sıfırdan yeni bir proje başlatabilir
 - **Çoklu CLI desteği** — Claude Code çıktıları `transform.js` ile Gemini CLI, Codex CLI, Kimi CLI ve OpenCode formatlarına dönüştürülebilir.
 - **Dokümantasyon senkronizasyonu** — Kod değişikliği sonrası PROJECT.md, ARCHITECTURE.md gibi dokümanların güncellenmesini öneren service-documentation agent'ı.
 - **Eklenti öneri sistemi** — Bootstrap tamamlandığında projenize uygun üçüncü parti skill ve plugin'leri öneren dahili registry taraması.
-- **Otomatik CHANGELOG** — GitHub Action, sadece `main` branch'ine yapılan push'larda `CHANGELOG.md` dosyasını otomatik günceller. Conventional Commits formatı parse edilir.
+- **Otomatik CHANGELOG** — Conventional Commit push'ları `main` branch'inde auto-release akışını tetikler; oluşan `v*` tag'i ayrı GitHub Action ile `CHANGELOG.md` dosyasını üretip `main` branch'ine geri yazar.
 - **CI güvenlik taraması** — Her push ve PR'da gitleaks ile secret scanning, `npm audit` ile dependency güvenlik kontrolü. Dependabot haftalık npm ve GitHub Actions güncellemesi önerir.
 
 ## Temel Yaklaşım
@@ -49,6 +49,8 @@ Bu ayrımın iki önemli sonucu vardır:
 
 - Git işlemleri hedef proje tarafında, yani `Codebase/` içinde yürür.
 - Bootstrap süreci `Codebase/` dizinine yazmaz; üretimi `Agentbase/` ve `Docbase/agentic/` altında yapar. Backlog da `Agentbase/backlog/` içinde oluşturulur.
+
+Not: Bu template repo kendi geliştirme backlog'unu kökteki `backlog/` dizininde tutar; bootstrap ile hedef workspace için üretilen backlog ise `Agentbase/backlog/` altında yaşar.
 
 ### Worktree Avantajı
 
@@ -142,19 +144,36 @@ Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçim
 
 `/bootstrap` komutu yüksek seviyede şu adımlarla çalışır:
 
-1. Ön koşulları doğrular. Backlog CLI, `Codebase/` erişimi ve varsa önceki manifest kontrol edilir.
-2. Hedef projeyi analiz eder. Proje tipi, dizin yapısı, alt projeler, paket yöneticisi, test araçları ve modül adayları çıkarılır.
-3. Eksik bilgileri fazlı röportajla toplar. Proje, teknik tercih, geliştirici profili ve domain kuralları netleştirilir.
-4. `Docbase/agentic/project-manifest.yaml` dosyasını üretir.
-5. Manifeste göre ilgili komutları, ajanları, hook'ları, kuralları ve yardımcı dokümanları oluşturur.
-6. Backlog'u başlatır ve başlangıç görevlerini oluşturur (`backlog/` root dizinde).
-7. Röportajda seçilen hedef CLI araçları varsa (Gemini/Codex/Kimi/OpenCode) `transform.js` ile `.claude/` çıktılarını ilgili formatlara dönüştürür.
-8. Yeniden çalıştırmalarda `overwrite`, `merge` ve `incremental` senaryolarını destekler.
-9. Git hook'larını etkinleştirmeniz için gerekli komutu gösterir (otomatik çalıştırmaz): `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
+1. **Ön koşul kontrolleri.** Backlog CLI, `Codebase/` erişimi ve varsa önceki manifest kontrol edilir.
+2. **Codebase analizi.** Proje tipi, dizin yapısı, alt projeler, paket yöneticisi, test araçları ve modül adayları çıkarılır.
+3. **Fazlı röportaj.** Proje, teknik tercih, geliştirici profili ve domain kuralları netleştirilir.
+4. **Manifest üretimi.** `Docbase/agentic/project-manifest.yaml` dosyası oluşturulur.
+5. **Dosya üretimi.** Manifeste göre komutlar, ajanlar, hook'lar, kurallar ve yardımcı dokümanlar üretilir. Hedef CLI araçları seçildiyse `transform.js` ile dönüştürme yapılır.
+6. **Backlog başlatma.** Backlog `Agentbase/backlog/` dizininde oluşturulur ve başlangıç görevleri yaratılır.
+7. **Tamamlanma raporu.** Onboarding rehberi (`onboarding.md`), eklenti önerileri ve git hook etkinleştirme komutu gösterilir: `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
+
+Yeniden çalıştırmalarda `overwrite`, `merge` ve `incremental` senaryoları desteklenir.
 
 ## Komutlar
 
 Bootstrap tamamlandıktan sonra kullanılabilir hale gelen komutlar:
+
+### /task-plan
+
+Bir isteği derinlemesine analiz ederek backlog görevi oluşturur. Codebase'i tarar, etkilenen dosyaları tespit eder, karmaşıklık skoru hesaplar, model önerisi yapar ve kabul kriterleriyle birlikte görevi backlog'a yazar. Scope büyükse görevi birden fazla task'a böler. Görev oluşturur ama kod YAZMAZ — implementasyon task-hunter'a bırakılır.
+
+```
+/task-plan "Kullanıcı profil sayfasına avatar yükleme özelliği ekle"
+/task-plan "API rate limiting implement et"
+```
+
+### /task-master
+
+Backlog'daki tüm açık görevleri 4 boyutlu skorlama ile önceliklendirir. Her görev için Impact (etki), Risk (risk), Dependency (bağımlılık) ve Complexity (karmaşıklık — ters orantılı) skorları hesaplanır. Sonuç olarak faz bazlı bir çalışma planı çıkarır: Faz 1 kritik görevler, Faz 2 önemli görevler, Faz 3 planlanmış görevler, MANUEL fazda kullanıcının daha önce manuel olarak önceliklendirdiği görevler (puanlama dışı tutulur, raporun sonunda ayrıca listelenir). MANUEL fazı tetiklemek için: geçmiş bir oturumda "X görevini MANUEL olarak önceliklendir" şeklinde bir yönerge verilmiş ve agent hafızasına kaydedilmiş olmalıdır.
+
+```
+/task-master
+```
 
 ### /task-hunter
 
@@ -164,14 +183,6 @@ Backlog'daki bir görevi otonom olarak implement eder. Görev dosyasını okur, 
 /task-hunter 42          # Tek görev
 /task-hunter 42,43,44    # Sırayla birden fazla görev (virgülle)
 /task-hunter auth        # Keyword ile görev arama
-```
-
-### /task-master
-
-Backlog'daki tüm açık görevleri 4 boyutlu skorlama ile önceliklendirir. Her görev için Impact (etki), Risk (risk), Dependency (bağımlılık) ve Complexity (karmaşıklık — ters orantılı) skorları hesaplanır. Sonuç olarak faz bazlı bir çalışma planı çıkarır: Faz 1 kritik görevler, Faz 2 önemli görevler, Faz 3 planlanmış görevler, MANUEL fazda kullanıcının daha önce manuel olarak önceliklendirdiği görevler (puanlama dışı tutulur, raporun sonunda ayrıca listelenir). MANUEL fazı tetiklemek için: geçmiş bir oturumda "X görevini MANUEL olarak önceliklendir" şeklinde bir yönerge verilmiş ve agent hafızasına kaydedilmiş olmalıdır.
-
-```
-/task-master
 ```
 
 ### /task-conductor
@@ -184,15 +195,6 @@ Birden fazla görevi faz bazlı otonom olarak işler. Görevleri kendi puanlama 
 /task-conductor 3,5,8        # Virgülle ayrılmış görev ID'leri
 /task-conductor keyword auth # Keyword ile görev arama
 /task-conductor resume       # Kaldığı yerden devam et
-```
-
-### /task-plan
-
-Bir isteği derinlemesine analiz ederek backlog görevi oluşturur. Codebase'i tarar, etkilenen dosyaları tespit eder, karmaşıklık skoru hesaplar, model önerisi yapar ve kabul kriterleriyle birlikte görevi backlog'a yazar. Scope büyükse görevi birden fazla task'a böler. Görev oluşturur ama kod YAZMAZ — implementasyon task-hunter'a bırakılır.
-
-```
-/task-plan "Kullanıcı profil sayfasına avatar yükleme özelliği ekle"
-/task-plan "API rate limiting implement et"
 ```
 
 ### /task-review
@@ -234,6 +236,24 @@ Bug fix'ini 3 farklı perspektiften inceler. Code Reviewer fix'in kalitesini ve 
 /bug-review HEAD~2..HEAD        # Commit aralığı
 ```
 
+### /deep-audit
+
+Bir domain modülünü (auth, profil, ödeme, mesaj vb.) tüm katmanlarda (API + DB + Mobil + Frontend) uçtan uca denetler. Bulguları iki boyutta sınıflandırır: basit olanları doğrudan düzeltir, karmaşık olanları backlog'a kaydeder.
+
+```
+/deep-audit auth        # Auth modülünü denetle
+/deep-audit profil      # Profil modülünü denetle
+/deep-audit odeme       # Ödeme modülünü denetle
+```
+
+### /workflow-update
+
+Mevcut workflow konfigürasyonunu Codebase'in güncel durumuyla karşılaştırır. Tam re-bootstrap yapmaz — sadece değişen parçaları günceller (yeni modül ekleme, kaldırılan dependency tespiti, subproject değişiklikleri). Drift raporu gösterir, kullanıcı onayı ile incremental güncelleme yapar.
+
+```
+/workflow-update          # Drift raporu + onay ile güncelleme
+```
+
 ### /memorize
 
 Oturum içerisinde öğrenilen bilgileri kalıcı hafızaya kaydeder. Rutin işlemleri değil, sadece tekrarlama riski olan yapısal bilgileri kaydeder: beklenmedik tuzaklar, kullanıcı tercihleri, mimari kararlar, sürpriz keşifler, yeni tool/dependency notları. Her kayıt `Why` (neden önemli) ve `How to apply` (nasıl uygulanacak) alanlarıyla yapılır.
@@ -267,24 +287,6 @@ API endpoint'lerini hızlıca doğrular. Post-deploy sonrası veya bağımsız o
 /api-smoke                               # Manifestteki varsayılan URL
 /api-smoke staging                       # Staging ortamı
 /api-smoke https://custom-url.com        # Özel URL
-```
-
-### /deep-audit
-
-Bir domain modülünü (auth, profil, ödeme, mesaj vb.) tüm katmanlarda (API + DB + Mobil + Frontend) uçtan uca denetler. Bulguları iki boyutta sınıflandırır: basit olanları doğrudan düzeltir, karmaşık olanları backlog'a kaydeder.
-
-```
-/deep-audit auth        # Auth modülünü denetle
-/deep-audit profil      # Profil modülünü denetle
-/deep-audit odeme       # Ödeme modülünü denetle
-```
-
-### /workflow-update
-
-Mevcut workflow konfigürasyonunu Codebase'in güncel durumuyla karşılaştırır. Tam re-bootstrap yapmaz — sadece değişen parçaları günceller (yeni modül ekleme, kaldırılan dependency tespiti, subproject değişiklikleri). Drift raporu gösterir, kullanıcı onayı ile incremental güncelleme yapar.
-
-```
-/workflow-update          # Drift raporu + onay ile güncelleme
 ```
 
 ### Agent'lar
@@ -375,7 +377,7 @@ Go, Rust ve Java/Kotlin mevcut proje analizinde de otomatik tespit edilir (`go.m
 Claude Code çıktıları `transform.js` ile diğer CLI formatlarına dönüştürülebilir. Bootstrap röportajında hedef araçlar seçilir veya mevcut projeler `--targets` parametresiyle doğrudan çalıştırabilir:
 
 ```bash
-node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,codex,kimi,opencode
+cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,codex,kimi,opencode
 ```
 
 | Hedef CLI | Komut Formatı | Agent Formatı | Bağlam Dosyası |
@@ -424,6 +426,8 @@ cd Agentbase && node bin/release.js auto --dry-run  # Kuru çalıştırma (dosya
 ```
 
 `release.js` sırayla: version bump → CHANGELOG üret → commit → tag → push → GitHub Release oluşturur. GitHub Release için `gh` CLI gereklidir (opsiyonel — kurulu değilse atlanır).
+
+GitHub Actions tarafında akış iki aşamalıdır: `main` push'u `auto-release.yml` ile bump/tag üretir; oluşan `v*` tag'i `changelog.yml` iş akışını tetikleyip `CHANGELOG.md` değişikliğini `main` branch'ine geri gönderir.
 
 ```bash
 cd Agentbase && node bin/changelog.js --all         # Tüm tag'lerden CHANGELOG üret

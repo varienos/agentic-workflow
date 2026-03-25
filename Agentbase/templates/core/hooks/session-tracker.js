@@ -65,6 +65,7 @@ function createInitialState() {
     git_activity: {
       commits: 0,
       branches_created: [],
+      push_failures: { count: 0, last_reason: '', last_at: null },
     },
     current_focus: createEmptyFocus(),
     phase: 'planning',
@@ -128,6 +129,7 @@ function normalizeState(state) {
   normalized.git_activity.branches_created = Array.isArray(normalized.git_activity.branches_created)
     ? normalized.git_activity.branches_created
     : [];
+  normalized.git_activity.push_failures = normalized.git_activity.push_failures || { count: 0, last_reason: '', last_at: null };
 
   normalized.current_focus = {
     ...createEmptyFocus(),
@@ -185,6 +187,15 @@ function saveState(state) {
     state.last_activity = nowIso();
     syncBacklogSnapshot(state);
     fs.writeFileSync(SESSION_FILE, JSON.stringify(state), { mode: 0o600 });
+
+    // 3+ ardisik push fail uyarisi
+    const pf = state.git_activity && state.git_activity.push_failures;
+    if (pf && pf.count >= 3) {
+      process.stdout.write(JSON.stringify({
+        systemMessage: `${pf.count}x ardisik git push basarisiz. Son hata: ${pf.last_reason || 'bilinmiyor'}. Pre-push hook ciktisini kontrol edin.`,
+      }));
+      return;
+    }
   } catch {
     // Hook sessiz kalmali.
   }
@@ -367,6 +378,26 @@ function analyzeBashCommand(command, state, input, hadError) {
     state.git_activity.commits++;
     state.last_meaningful_action = 'Git commit olusturuldu';
     pushEvent(state, 'git', 'Git commit olustu');
+    return;
+  }
+
+  if (/git\s+push\b/i.test(command)) {
+    if (!state.git_activity.push_failures) {
+      state.git_activity.push_failures = { count: 0, last_reason: '', last_at: null };
+    }
+    if (hadError) {
+      const pushResult = input.tool_result || '';
+      const pushResultStr = typeof pushResult === 'string' ? pushResult : JSON.stringify(pushResult);
+      state.git_activity.push_failures.count++;
+      state.git_activity.push_failures.last_reason = sanitizeSnippet(pushResultStr.substring(0, 120));
+      state.git_activity.push_failures.last_at = new Date().toISOString();
+      state.last_meaningful_action = 'Git push basarisiz';
+      pushEvent(state, 'git', 'Push basarisiz');
+    } else {
+      state.git_activity.push_failures = { count: 0, last_reason: '', last_at: null };
+      state.last_meaningful_action = 'Git push basarili';
+      pushEvent(state, 'git', 'Push basarili');
+    }
     return;
   }
 

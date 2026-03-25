@@ -3,38 +3,55 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [Yayınlanmamış] - 2026-03-25
+
+### Eklenen
+
+- release.js versiyon drift dogrulamasi + CLI entegrasyon testleri (`15cabc3`)
+- session-monitor runtime test seam — handleKey, cleanup, state API (TASK-195) (`7cf1cb5`)
+- CI security scanning — gitleaks, npm audit, dependabot (TASK-192) (`86cd19f`)
+
+### Düzeltilen
+
+- **deep-audit:** transform-cli test fixture manifest.targets tutarliligi (`3a57d7f`)
+- **deep-audit:** transform.js guvenlik ve kalite duzeltmeleri + 11 yeni test (`c3b057b`)
+- resetState teardown — watcher/interval close + sessions/loadMeta sifirlama (review bulgusu) (`7d4e4fd`)
+- security.yml review bulgulari — PR paths filtresi, GITLEAKS_LICENSE notu, audit permissions (`791b759`)
+- tutarlilik testinde null capability false negative duzeltildi (`a2977f6`)
+- test CI npm ci → npm install (package-lock.json yok) (`ab8e4a5`)
+
+### Yeniden Düzenlenen
+
+- transform.js global mutable state kaldirildi + symlink traversal + double-transform fix (TASK-200/201/202) (`cd66ed2`)
+
+### Test
+
+- shared-hook-utils test suite — createGuardHook, runGuard, preCheck, match (TASK-197) (`f6b2ca0`)
+- changelog.js test kapsamini genislet — getCommits, getAllTags, Unicode regex (`670bc68`)
+- transform.js CLI entegrasyon testleri — 11 senaryo (`4d8469e`)
+- PATH_MAPS ↔ CLI_CAPABILITIES tutarlilik testi ve frozen snapshot (`fb7cd2e`)
+
+
 ## [1.7.0] - 2026-03-25
 
 ### Eklenen
 
-- release.js versiyon drift dogrulamasi + CLI entegrasyon testleri (`ea93e42`)
-- session-monitor runtime test seam — handleKey, cleanup, state API (TASK-195) (`83aa45b`)
-- CI security scanning — gitleaks, npm audit, dependabot (TASK-192) (`e6295e0`)
+- session-monitor runtime test seam — handleKey, cleanup, state API (TASK-195) (`7cf1cb5`)
+- CI security scanning — gitleaks, npm audit, dependabot (TASK-192) (`86cd19f`)
 
 ### Düzeltilen
 
-- **deep-audit:** transform-cli test fixture manifest.targets tutarliligi (`70cf85a`)
-- **deep-audit:** transform.js guvenlik ve kalite duzeltmeleri + 11 yeni test (`220fc50`)
-- resetState teardown — watcher/interval close + sessions/loadMeta sifirlama (review bulgusu) (`72cbfce`)
-- security.yml review bulgulari — PR paths filtresi, GITLEAKS_LICENSE notu, audit permissions (`313d603`)
-- tutarlilik testinde null capability false negative duzeltildi (`fe76686`)
-
-### Yeniden Düzenlenen
-
-- transform.js global mutable state kaldirildi + symlink traversal + double-transform fix (TASK-200/201/202) (`859a66a`)
+- resetState teardown — watcher/interval close + sessions/loadMeta sifirlama (review bulgusu) (`7d4e4fd`)
+- security.yml review bulgulari — PR paths filtresi, GITLEAKS_LICENSE notu, audit permissions (`791b759`)
+- tutarlilik testinde null capability false negative duzeltildi (`a2977f6`)
+- test CI npm ci → npm install (package-lock.json yok) (`ab8e4a5`)
 
 ### Test
 
-- shared-hook-utils test suite — createGuardHook, runGuard, preCheck, match (TASK-197) (`94e64a0`)
-- changelog.js test kapsamini genislet — getCommits, getAllTags, Unicode regex (`41746f1`)
-- transform.js CLI entegrasyon testleri — 11 senaryo (`7341803`)
-- PATH_MAPS ↔ CLI_CAPABILITIES tutarlilik testi ve frozen snapshot (`1c69742`)
+- changelog.js test kapsamini genislet — getCommits, getAllTags, Unicode regex (`670bc68`)
+- transform.js CLI entegrasyon testleri — 11 senaryo (`4d8469e`)
+- PATH_MAPS ↔ CLI_CAPABILITIES tutarlilik testi ve frozen snapshot (`fb7cd2e`)
 
-## [1.6.2] - 2026-03-24
-
-### Düzeltilen
-
-- test CI npm ci → npm install (package-lock.json yok) (`ab8e4a5`)
 
 ## [1.6.1] - 2026-03-24
 

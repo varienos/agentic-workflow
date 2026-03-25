@@ -140,6 +140,13 @@ Yeni eklenen her JS dosyasi icin test dosyasi ZORUNLUDUR.
 | `tests/prisma-hooks.test.js` | Prisma-spesifik hook'lar (db-push-guard, migration-check, destructive-migration) |
 | `tests/release.test.js` | Release script yardimcilari (detectBump: major/minor/patch karar mantigi) |
 | `tests/session-observability.test.js` | Session-tracker ve session-monitor testleri |
+| `tests/interview-structure.test.js` | Interview phase dosyalarinin yapisi (Questions, Maps to, Phase Completion) |
+| `tests/markdown-links.test.js` | Repo genelinde markdown link gecerliligi ve placeholder tespiti |
+| `tests/session-monitor-runtime.test.js` | Session monitor TUI runtime (handleKey, cleanup, watcher, render) |
+| `tests/transform-cli.test.js` | Transform.js CLI entegrasyonu (E2E: manifest + dry-run + rapor) |
+| `tests/workflow-update.test.js` | Workflow update manifest meta ve diff engine entegrasyonu |
+| `tests/docs-consistency.test.js` | README TR/EN senkronizasyonu ve dokumantasyon tutarliligi |
+| `tests/shared-hook-utils.test.js` | Guard hook factory (createGuardHook, runGuard) birim testleri |
 
 ### Hook Test Yardimcilari
 

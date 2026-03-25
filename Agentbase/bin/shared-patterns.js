@@ -1,35 +1,11 @@
 'use strict';
 
 /**
- * shared-patterns.js — session-tracker ve session-monitor arasinda
- * paylasilan yardimci fonksiyonlar.
+ * shared-patterns.js — Re-export
  *
- * Her iki dosya bu modulu require ederek ayni pattern setini kullanir.
- * DRY prensibi: test komutu tespiti tek yerde tanimlaniyor.
+ * Canonical dosya: templates/core/hooks/shared-patterns.js
+ * Bu dosya geriye uyumluluk icin re-export yapar.
+ * session-monitor.js ve testler bu dosyayi import eder.
  */
 
-const TEST_COMMAND_PATTERNS = [
-  /\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?test\b/i,
-  /\bnode\s+--test\b/i,
-  /\bjest\b/i,
-  /\bvitest\b/i,
-  /\bpytest\b/i,
-  /\bphpunit\b/i,
-  /\bcargo\s+test\b/i,
-  /\bgo\s+test\b/i,
-];
-
-/**
- * Komutun bir test komutu olup olmadigini kontrol eder.
- * @param {string} command - Bash komutu
- * @returns {boolean}
- */
-function isTestCommand(command) {
-  if (!command) return false;
-  return TEST_COMMAND_PATTERNS.some(p => p.test(command));
-}
-
-module.exports = {
-  TEST_COMMAND_PATTERNS,
-  isTestCommand,
-};
+module.exports = require('../templates/core/hooks/shared-patterns.js');

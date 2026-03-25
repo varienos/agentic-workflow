@@ -90,7 +90,7 @@ describe('pre-commit hook', () => {
 
     const result = tryCommitWithFiles(repo, { TESTS_VERIFIED: '1' });
     assert.equal(result.status, 0, 'TESTS_VERIFIED=1 ile commit basarisiz olmamali');
-    assert.ok(result.stdout.includes('TESTS_VERIFIED') || true, 'bypass mesaji olmali');
+    assert.equal(result.status, 0, 'TESTS_VERIFIED=1 ile commit gecmeli');
   });
 
   it('.env dosyasi commit edilemez', t => {

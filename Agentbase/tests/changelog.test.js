@@ -20,6 +20,7 @@ const {
   getLatestTag,
   getTagDate,
   getCommits,
+  releaseVersion,
   formatDate,
   CATEGORIES,
   HEADER,
@@ -119,23 +120,33 @@ describe('generateSection', () => {
 // ─────────────────────────────────────────────────────
 
 describe('releaseVersion', () => {
-  // releaseVersion fs.writeFileSync kullanıyor, mock ile test
   it('Yayinlanmamis bolumunu versiyon ile degistiriyor', () => {
     const tmpFile = path.join(os.tmpdir(), `changelog-release-${Date.now()}.md`);
     const content = HEADER + '## [Yayınlanmamış] - 2026-03-23\n\n### Eklenen\n\n- Test ozellik (`abc1234`)\n';
     fs.writeFileSync(tmpFile, content);
 
-    // releaseVersion CHANGELOG_PATH kullanıyor, dogrudan dosya icerigini test edelim
-    const original = fs.readFileSync(tmpFile, 'utf8');
     const today = new Date().toISOString().slice(0, 10);
-    const updated = original.replace(
-      /## \[Yayınlanmamış\]\s*-\s*\d{4}-\d{2}-\d{2}/,
-      `## [1.0.0] - ${today}`
-    );
+    releaseVersion('1.0.0', { changelogPath: tmpFile });
+    const updated = fs.readFileSync(tmpFile, 'utf8');
 
     assert.ok(updated.includes('[1.0.0]'), 'versiyon degismeli');
     assert.ok(!updated.includes('[Yayınlanmamış]'), 'Yayinlanmamis kalmamali');
     assert.ok(updated.includes('Test ozellik'), 'icerik korunmali');
+    assert.ok(updated.includes(`## [1.0.0] - ${today}`), 'bugunun tarihi yazilmali');
+
+    fs.unlinkSync(tmpFile);
+  });
+
+  it('dry-run modunda dosyayi degistirmez ve guncel icerigi dondurur', () => {
+    const tmpFile = path.join(os.tmpdir(), `changelog-release-dry-${Date.now()}.md`);
+    const content = HEADER + '## [Yayınlanmamış] - 2026-03-23\n\n### Eklenen\n\n- Dry run test (`abc1234`)\n';
+    fs.writeFileSync(tmpFile, content);
+
+    const updated = releaseVersion('v2.0.0', { changelogPath: tmpFile, dryRun: true });
+    const after = fs.readFileSync(tmpFile, 'utf8');
+
+    assert.ok(updated.includes('[2.0.0]'), 'dry-run ciktisi yeni versiyonu icermeli');
+    assert.equal(after, content, 'dry-run dosyayi degistirmemeli');
 
     fs.unlinkSync(tmpFile);
   });
@@ -264,7 +275,7 @@ describe('getCommits', () => {
 
   it('conventional commit regex Unicode prefix destekliyor', () => {
     // Regex dogrudan test: getCommits icinde kullanilan pattern
-    const regex = /^([\w-]+)(?:\(([^)]*)\))?:\s*(.+)$/u;
+    const regex = /^([\w-]+)(?:\(([^)]*)\))?(!)?:\s*(.+)$/u;
 
     // Standart prefix'ler
     assert.ok(regex.test('feat: yeni ozellik'));
@@ -273,6 +284,8 @@ describe('getCommits', () => {
 
     // Tire iceren prefix (deep-audit gibi)
     assert.ok(regex.test('fix(deep-audit): duzeltme'));
+    assert.ok(regex.test('feat!: breaking degisim'));
+    assert.ok(regex.test('fix(api)!: kritik duzeltme'));
 
     // Non-conventional mesaj → eslesmemeli
     assert.ok(!regex.test('sadece bir mesaj'));
@@ -280,12 +293,22 @@ describe('getCommits', () => {
   });
 
   it('scope lu commit dogru parse ediliyor', () => {
-    const regex = /^([\w-]+)(?:\(([^)]*)\))?:\s*(.+)$/u;
+    const regex = /^([\w-]+)(?:\(([^)]*)\))?(!)?:\s*(.+)$/u;
     const match = 'fix(api): null pointer duzeltildi'.match(regex);
     assert.ok(match);
     assert.equal(match[1], 'fix');
     assert.equal(match[2], 'api');
-    assert.equal(match[3], 'null pointer duzeltildi');
+    assert.equal(match[4], 'null pointer duzeltildi');
+  });
+
+  it('breaking bang syntax type ve scope bilgisini koruyor', () => {
+    const regex = /^([\w-]+)(?:\(([^)]*)\))?(!)?:\s*(.+)$/u;
+    const match = 'fix(api)!: kritik duzeltme'.match(regex);
+    assert.ok(match);
+    assert.equal(match[1], 'fix');
+    assert.equal(match[2], 'api');
+    assert.equal(match[3], '!');
+    assert.equal(match[4], 'kritik duzeltme');
   });
 });
 

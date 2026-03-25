@@ -22,7 +22,7 @@ You can integrate it into an existing project or start a brand new one from scra
 - **Autonomous task management** — Pick a task from backlog, plan, implement, test, commit, close. Single command.
 - **Automatic code review** — 3+1 agents review every change: code quality, silent failures, regression risk. Conditional Devils Advocate perspective for security changes.
 - **Smart bug fix** — Root cause analysis, max 3 hypotheses, minimal fix, regression test. Doesn't dive into endless depth.
-- **Deploy safety net** — Pre-push checks, post-deploy verification, rollback guide. Control steps vary by deploy platform (Docker/Coolify: migration + Docker build; Vercel: TypeScript + edge-runtime). Requires git hook activation (see Bootstrap Flow step 9).
+- **Deploy safety net** — Two layers: (1) pre-push git hooks for localhost leak, migration consistency, and env sync checks, (2) `/{variant}-pre-deploy` and `/{variant}-post-deploy` slash commands for platform-specific controls (for example `/docker-pre-deploy`, `/coolify-post-deploy`, plus rollback guidance). Requires git hook activation (see Bootstrap Flow step 9).
 - **Codebase config protection** — `codebase-guard` hook automatically blocks writing `.claude/`, `CLAUDE.md`, `.mcp.json` inside Codebase. Agent config lives exclusively in Agentbase.
 - **Test enforcement** — `test-enforcer` hook reminds you to run related tests when source files change. Pre-push hook prevents pushing without passing tests.
 - **Project-specific rules** — Hooks, framework rules, and protection mechanisms are auto-generated based on your stack.
@@ -31,7 +31,7 @@ You can integrate it into an existing project or start a brand new one from scra
 - **Multi-CLI support** — Claude Code outputs can be transformed to Gemini CLI, Codex CLI, Kimi CLI, and OpenCode formats via `transform.js`.
 - **Documentation sync** — Service-documentation agent suggests updating PROJECT.md, ARCHITECTURE.md after code changes.
 - **Extension recommendations** — Built-in registry scan suggests relevant third-party skills and plugins after bootstrap completes.
-- **Automatic CHANGELOG** — GitHub Action auto-updates `CHANGELOG.md` only on pushes to the `main` branch. Conventional Commits are parsed.
+- **Automatic CHANGELOG** — Conventional Commit pushes on the `main` branch trigger the auto-release flow; the resulting `v*` tag triggers a separate GitHub Action that regenerates `CHANGELOG.md` and writes it back to `main`.
 - **CI security scanning** — Gitleaks secret scanning and `npm audit` dependency checks run on every push and PR. Dependabot proposes weekly npm and GitHub Actions updates.
 
 ## Core Approach
@@ -49,6 +49,8 @@ Two important consequences of this separation:
 
 - Git operations run on the project side, inside `Codebase/`.
 - Bootstrap never writes to `Codebase/`; it produces output under `Agentbase/` and `Docbase/agentic/`. The backlog is also created inside `Agentbase/backlog/`.
+
+Note: This template repo keeps its own development backlog in the root-level `backlog/` directory; the backlog produced by bootstrap for the target workspace lives under `Agentbase/backlog/`.
 
 ### Worktree Advantage
 
@@ -142,19 +144,36 @@ When Bootstrap detects an empty Codebase, it switches to greenfield mode: asks f
 
 The `/bootstrap` command works through these high-level steps:
 
-1. Validates prerequisites. Backlog CLI, `Codebase/` access, and any previous manifest are checked.
-2. Analyzes the target project. Project type, directory structure, subprojects, package manager, test tools, and module candidates are extracted.
-3. Collects missing info through a phased interview. Project, technical preferences, developer profile, and domain rules are clarified.
-4. Generates the `Docbase/agentic/project-manifest.yaml` file.
-5. Creates the relevant commands, agents, hooks, rules, and supporting documentation based on the manifest.
-6. Initializes the backlog and creates starter tasks (`backlog/` in root directory).
-7. If target CLI tools were selected during the interview (Gemini/Codex/Kimi/OpenCode), transforms the `.claude/` output into those formats via `transform.js`.
-8. Supports `overwrite`, `merge`, and `incremental` scenarios for re-runs.
-9. Shows the command needed to activate git hooks (does not run it automatically): `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
+1. **Prerequisite checks.** Backlog CLI, `Codebase/` access, and any previous manifest are checked.
+2. **Codebase analysis.** Project type, directory structure, subprojects, package manager, test tools, and module candidates are extracted.
+3. **Phased interview.** Project, technical preferences, developer profile, and domain rules are clarified.
+4. **Manifest generation.** The `Docbase/agentic/project-manifest.yaml` file is created.
+5. **File generation.** Commands, agents, hooks, rules, and supporting docs are produced from the manifest. If target CLI tools were selected, `transform.js` converts the output.
+6. **Backlog initialization.** The backlog is created in `Agentbase/backlog/` with starter tasks.
+7. **Completion report.** Onboarding guide (`onboarding.md`), extension suggestions, and the git hook activation command are shown: `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
+
+Re-runs support `overwrite`, `merge`, and `incremental` scenarios.
 
 ## Commands
 
 Commands available after bootstrap completes:
+
+### /task-plan
+
+Deeply analyzes a request to create a backlog task. Scans the codebase, identifies affected files, calculates complexity score, suggests a model, and writes the task to the backlog with acceptance criteria. Splits into multiple tasks if the scope is too large. Creates tasks but does NOT write code — implementation is left to task-hunter.
+
+```
+/task-plan "Add avatar upload to user profile page"
+/task-plan "Implement API rate limiting"
+```
+
+### /task-master
+
+Prioritizes all open tasks using 4-dimensional scoring. Calculates Impact, Risk, Dependency, and Complexity (inverse) scores for each task. Produces a phase-based work plan: Phase 1 critical tasks, Phase 2 important tasks, Phase 3 planned tasks, MANUAL phase for tasks requiring human intervention (excluded from scoring, listed separately at the end of the report). To trigger the MANUAL phase: a directive such as "Prioritize task X manually" must have been given in a previous session and saved to agent memory.
+
+```
+/task-master
+```
 
 ### /task-hunter
 
@@ -164,14 +183,6 @@ Autonomously implements a task from the backlog. Reads the task file, discovers 
 /task-hunter 42          # Single task
 /task-hunter 42,43,44    # Multiple tasks in sequence (comma-separated)
 /task-hunter auth        # Search task by keyword
-```
-
-### /task-master
-
-Prioritizes all open tasks using 4-dimensional scoring. Calculates Impact, Risk, Dependency, and Complexity (inverse) scores for each task. Produces a phase-based work plan: Phase 1 critical tasks, Phase 2 important tasks, Phase 3 planned tasks, MANUAL phase for tasks requiring human intervention (excluded from scoring, listed separately at the end of the report). To trigger the MANUAL phase: a directive such as "Prioritize task X manually" must have been given in a previous session and saved to agent memory.
-
-```
-/task-master
 ```
 
 ### /task-conductor
@@ -184,15 +195,6 @@ Processes multiple tasks autonomously in phases. Assigns tasks to phases using i
 /task-conductor 3,5,8        # Comma-separated task IDs
 /task-conductor keyword auth # Search by keyword
 /task-conductor resume       # Resume from where it left off
-```
-
-### /task-plan
-
-Deeply analyzes a request to create a backlog task. Scans the codebase, identifies affected files, calculates complexity score, suggests a model, and writes the task to the backlog with acceptance criteria. Splits into multiple tasks if the scope is too large. Creates tasks but does NOT write code — implementation is left to task-hunter.
-
-```
-/task-plan "Add avatar upload to user profile page"
-/task-plan "Implement API rate limiting"
 ```
 
 ### /task-review
@@ -234,6 +236,24 @@ Reviews a bug fix from 3 different perspectives. Code Reviewer evaluates fix qua
 /bug-review HEAD~2..HEAD        # Commit range
 ```
 
+### /deep-audit
+
+Audits a domain module (auth, profile, payment, messaging, etc.) end-to-end across all layers (API + DB + Mobile + Frontend). Classifies findings in two dimensions: fixes simple ones directly, records complex ones in the backlog.
+
+```
+/deep-audit auth        # Audit auth module
+/deep-audit profile     # Audit profile module
+/deep-audit payment     # Audit payment module
+```
+
+### /workflow-update
+
+Compares current workflow configuration with the Codebase's current state. Does NOT perform a full re-bootstrap — only updates changed parts (new module detection, removed dependency handling, subproject changes). Shows a drift report and applies incremental updates with user confirmation.
+
+```
+/workflow-update          # Drift report + update with confirmation
+```
+
 ### /memorize
 
 Records learned information from the session to persistent memory. Records only structural information with repetition risk, not routine operations: unexpected traps, user preferences, architectural decisions, surprise discoveries, new tool/dependency notes. Each record includes `Why` (why it matters) and `How to apply` (how to use it) fields.
@@ -267,24 +287,6 @@ Quickly validates API endpoints. Can be run post-deploy or independently at any 
 /api-smoke                               # Default URL from manifest
 /api-smoke staging                       # Staging environment
 /api-smoke https://custom-url.com        # Custom URL
-```
-
-### /deep-audit
-
-Audits a domain module (auth, profile, payment, messaging, etc.) end-to-end across all layers (API + DB + Mobile + Frontend). Classifies findings in two dimensions: fixes simple ones directly, records complex ones in the backlog.
-
-```
-/deep-audit auth        # Audit auth module
-/deep-audit profile     # Audit profile module
-/deep-audit payment     # Audit payment module
-```
-
-### /workflow-update
-
-Compares current workflow configuration with the Codebase's current state. Does NOT perform a full re-bootstrap — only updates changed parts (new module detection, removed dependency handling, subproject changes). Shows a drift report and applies incremental updates with user confirmation.
-
-```
-/workflow-update          # Drift report + update with confirmation
 ```
 
 ### Agents
@@ -375,7 +377,7 @@ Go, Rust, and Java/Kotlin are also auto-detected during existing-project analysi
 Claude Code outputs can be transformed to other CLI formats via `transform.js`. Target tools are selected during the bootstrap interview, or existing projects can run directly with the `--targets` flag:
 
 ```bash
-node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,codex,kimi,opencode
+cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,codex,kimi,opencode
 ```
 
 | Target CLI | Command Format | Agent Format | Context File |
@@ -424,6 +426,8 @@ cd Agentbase && node bin/release.js auto --dry-run  # Dry run (no file changes)
 ```
 
 `release.js` runs sequentially: version bump → generate CHANGELOG → commit → tag → push → create GitHub Release. GitHub Release creation requires `gh` CLI (optional — skipped if not installed).
+
+In GitHub Actions the flow has two stages: a `main` push runs `auto-release.yml` to calculate the bump and create the tag; the resulting `v*` tag then triggers `changelog.yml`, which commits the regenerated `CHANGELOG.md` back to `main`.
 
 ```bash
 cd Agentbase && node bin/changelog.js --all          # Generate CHANGELOG from all tags
