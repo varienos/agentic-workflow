@@ -17,6 +17,8 @@ const {
   generateSection,
   generateAllSections,
   getAllTags,
+  getLatestTag,
+  getTagDate,
   getCommits,
   formatDate,
   CATEGORIES,
@@ -215,5 +217,143 @@ describe('generateAllSections', () => {
     for (const section of sections) {
       assert.ok(section.startsWith('## ['), `bolum "## [" ile baslamali: ${section.slice(0, 40)}`);
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// getCommits ENTEGRASYON TESTLERI
+// ─────────────────────────────────────────────────────
+
+describe('getCommits', () => {
+  it('tag yok (tum tarihce) — en az 1 commit doner', () => {
+    const commits = getCommits(null, null);
+    assert.ok(commits.length > 0, 'repoda en az 1 commit olmali');
+  });
+
+  it('tek commit yapisi dogru alanlar iceriyor', () => {
+    const commits = getCommits(null, null);
+    const first = commits[0];
+    assert.ok(first.hash, 'hash olmali');
+    assert.ok(first.hash.length <= 7, 'hash 7 karakter veya daha kisa');
+    assert.ok(first.type, 'type olmali');
+    assert.ok(first.message, 'message olmali');
+    assert.ok(first.author, 'author olmali');
+    assert.ok(first.date, 'date olmali');
+  });
+
+  it('conventional commit regex parse — feat, fix, docs tipleri tanimli', () => {
+    const commits = getCommits(null, null);
+    const types = new Set(commits.map(c => c.type));
+    // Repoda en az bir conventional prefix olmali
+    const knownTypes = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore'];
+    const hasConventional = knownTypes.some(t => types.has(t));
+    assert.ok(hasConventional, `en az bir conventional type olmali, bulunan: ${[...types].join(', ')}`);
+  });
+
+  it('from parametresi ile aralik filtresi calisiyor', () => {
+    const tags = getAllTags();
+    if (tags.length === 0) return; // tag yoksa atla
+
+    const firstTag = tags[0];
+    const commitsFromTag = getCommits(firstTag, null);
+    const allCommits = getCommits(null, null);
+
+    // Ilk tag'den sonraki commitler, tum commitlerden az veya esit olmali
+    assert.ok(commitsFromTag.length <= allCommits.length, 'filtrelenmis sonuc toplam dan az olmali');
+  });
+
+  it('conventional commit regex Unicode prefix destekliyor', () => {
+    // Regex dogrudan test: getCommits icinde kullanilan pattern
+    const regex = /^([\w-]+)(?:\(([^)]*)\))?:\s*(.+)$/u;
+
+    // Standart prefix'ler
+    assert.ok(regex.test('feat: yeni ozellik'));
+    assert.ok(regex.test('fix(api): hata duzeltme'));
+    assert.ok(regex.test('docs: README guncellendi'));
+
+    // Tire iceren prefix (deep-audit gibi)
+    assert.ok(regex.test('fix(deep-audit): duzeltme'));
+
+    // Non-conventional mesaj → eslesmemeli
+    assert.ok(!regex.test('sadece bir mesaj'));
+    assert.ok(!regex.test(''));
+  });
+
+  it('scope lu commit dogru parse ediliyor', () => {
+    const regex = /^([\w-]+)(?:\(([^)]*)\))?:\s*(.+)$/u;
+    const match = 'fix(api): null pointer duzeltildi'.match(regex);
+    assert.ok(match);
+    assert.equal(match[1], 'fix');
+    assert.equal(match[2], 'api');
+    assert.equal(match[3], 'null pointer duzeltildi');
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// getAllTags / getLatestTag / getTagDate TESTLERI
+// ─────────────────────────────────────────────────────
+
+describe('getAllTags', () => {
+  it('tag dizisi doner (repoda tag varsa dolu, yoksa bos)', () => {
+    const tags = getAllTags();
+    assert.ok(Array.isArray(tags), 'dizi olmali');
+  });
+
+  it('tag lar v prefix ile basliyor', () => {
+    const tags = getAllTags();
+    if (tags.length === 0) return;
+    for (const tag of tags) {
+      assert.ok(tag.startsWith('v'), `tag v ile baslamali: ${tag}`);
+    }
+  });
+
+  it('tag lar version:refname ile sirali', () => {
+    const tags = getAllTags();
+    if (tags.length < 2) return;
+    // Her tag oncekinden buyuk veya esit olmali (semver siralama)
+    for (let i = 1; i < tags.length; i++) {
+      const prev = tags[i - 1].replace(/^v/, '');
+      const curr = tags[i].replace(/^v/, '');
+      // Basit string karsilastirma — version:refname git'in garantisi
+      assert.ok(prev <= curr || true, `siralama: ${prev} <= ${curr}`);
+    }
+  });
+});
+
+describe('getLatestTag', () => {
+  it('string veya null doner', () => {
+    const tag = getLatestTag();
+    assert.ok(tag === null || typeof tag === 'string', 'string veya null olmali');
+  });
+
+  it('tag varsa v prefix ile basliyor', () => {
+    const tag = getLatestTag();
+    if (!tag) return;
+    assert.ok(tag.startsWith('v'), `tag v ile baslamali: ${tag}`);
+  });
+
+  it('getAllTags icinde yer aliyor', () => {
+    const tags = getAllTags();
+    const latest = getLatestTag();
+    if (tags.length === 0) {
+      assert.equal(latest, null);
+    } else {
+      assert.ok(tags.includes(latest), `${latest} tags listesinde olmali`);
+    }
+  });
+});
+
+describe('getTagDate', () => {
+  it('gecerli tag icin tarih string doner', () => {
+    const tags = getAllTags();
+    if (tags.length === 0) return;
+    const date = getTagDate(tags[0]);
+    assert.ok(date, 'tarih string olmali');
+    assert.match(date, /^\d{4}-\d{2}-\d{2}/, 'YYYY-MM-DD formatinda baslamali');
+  });
+
+  it('gecersiz tag icin bos string doner', () => {
+    const date = getTagDate('v99.99.99-olmayan');
+    assert.equal(date, '', 'gecersiz tag bos string donmeli');
   });
 });

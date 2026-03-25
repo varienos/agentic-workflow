@@ -16,7 +16,7 @@
  *   node bin/changelog.js --dry-run          # Dosyaya yazmadan göster
  */
 
-const { execSync, spawnSync } = require('child_process');
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -37,45 +37,40 @@ const CATEGORIES = {
 
 const HEADER = '# Değişiklik Günlüğü\n\nTüm önemli değişiklikler bu dosyada belgelenir.\nFormat [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.\n\n';
 
-function git(cmd) {
-  try {
-    return execSync(`git ${cmd}`, { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
-  } catch {
-    return '';
-  }
+function gitSpawn(...args) {
+  const result = spawnSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' });
+  return (result.stdout || '').trim();
 }
 
 function getLatestTag() {
-  return git('describe --tags --abbrev=0 2>/dev/null') || null;
+  return gitSpawn('describe', '--tags', '--abbrev=0') || null;
 }
 
 function getAllTags() {
-  const raw = git('tag --sort=version:refname -l "v*"');
+  const raw = gitSpawn('tag', '--sort=version:refname', '-l', 'v*');
   if (!raw) return [];
   return raw.split('\n').filter(Boolean);
 }
 
 function getTagDate(tag) {
-  // spawnSync: tag adı shell injection koruması
-  const result = spawnSync('git', ['log', '-1', '--format=%ai', tag], { cwd: REPO_ROOT, encoding: 'utf8' });
-  return (result.stdout || '').trim();
+  return gitSpawn('log', '-1', '--format=%ai', tag);
 }
 
 function getCommits(from, to) {
-  let range = '';
+  const args = ['log', '--pretty=format:%H%x00%s%x00%an%x00%ai', '--no-merges'];
   if (from && to) {
-    range = `${from}..${to}`;
+    args.push(`${from}..${to}`);
   } else if (from) {
-    range = `${from}..HEAD`;
+    args.push(`${from}..HEAD`);
   } else if (to) {
-    range = to;
+    args.push(to);
   }
-  const raw = git(`log ${range} --pretty=format:"%H%x00%s%x00%an%x00%ai" --no-merges`);
+  const raw = gitSpawn(...args);
   if (!raw) return [];
 
   return raw.split('\n').filter(Boolean).map(line => {
     const [hash, subject, author, date] = line.split('\0');
-    const match = subject.match(/^(\w+)(?:\(([^)]*)\))?:\s*(.+)$/);
+    const match = subject.match(/^([\w-]+)(?:\(([^)]*)\))?:\s*(.+)$/u);
     if (!match) return { hash: hash.slice(0, 7), type: 'other', scope: null, message: subject, author, date };
     return {
       hash: hash.slice(0, 7),
