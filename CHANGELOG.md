@@ -3,6 +3,33 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.7.0] - 2026-03-25
+
+### Eklenen
+
+- release.js versiyon drift dogrulamasi + CLI entegrasyon testleri (`ea93e42`)
+- session-monitor runtime test seam — handleKey, cleanup, state API (TASK-195) (`83aa45b`)
+- CI security scanning — gitleaks, npm audit, dependabot (TASK-192) (`e6295e0`)
+
+### Düzeltilen
+
+- **deep-audit:** transform-cli test fixture manifest.targets tutarliligi (`70cf85a`)
+- **deep-audit:** transform.js guvenlik ve kalite duzeltmeleri + 11 yeni test (`220fc50`)
+- resetState teardown — watcher/interval close + sessions/loadMeta sifirlama (review bulgusu) (`72cbfce`)
+- security.yml review bulgulari — PR paths filtresi, GITLEAKS_LICENSE notu, audit permissions (`313d603`)
+- tutarlilik testinde null capability false negative duzeltildi (`fe76686`)
+
+### Yeniden Düzenlenen
+
+- transform.js global mutable state kaldirildi + symlink traversal + double-transform fix (TASK-200/201/202) (`859a66a`)
+
+### Test
+
+- shared-hook-utils test suite — createGuardHook, runGuard, preCheck, match (TASK-197) (`94e64a0`)
+- changelog.js test kapsamini genislet — getCommits, getAllTags, Unicode regex (`41746f1`)
+- transform.js CLI entegrasyon testleri — 11 senaryo (`7341803`)
+- PATH_MAPS ↔ CLI_CAPABILITIES tutarlilik testi ve frozen snapshot (`1c69742`)
+
 ## [1.6.2] - 2026-03-24
 
 ### Düzeltilen
