@@ -1062,75 +1062,76 @@ function render() {
   process.stdout.write(lines.join('\n') + '\n');
 }
 
+function handleKey(key) {
+  if (key === '\x03' || key.toLowerCase() === 'q') {
+    cleanup();
+    process.exit(0);
+    return;
+  }
+
+  if (key === '\t') {
+    viewMode = viewMode === 'timeline' ? 'radar' : 'timeline';
+    detailView = false;
+    showHelp = false;
+    render();
+    return;
+  }
+
+  if (key === '\r' || key === '\n') {
+    if (!showHelp && getFilteredSessions().length > 0) {
+      detailView = true;
+      render();
+    }
+    return;
+  }
+
+  if (key === '\x1b') {
+    if (detailView || showHelp) {
+      detailView = false;
+      showHelp = false;
+      render();
+    }
+    return;
+  }
+
+  if (key === '\x1b[A' || key.toLowerCase() === 'k') {
+    detailView = false;
+    selectDelta(-1);
+    return;
+  }
+
+  if (key === '\x1b[B' || key.toLowerCase() === 'j') {
+    detailView = false;
+    selectDelta(1);
+    return;
+  }
+
+  switch (key.toLowerCase()) {
+    case 'r':
+      render();
+      break;
+    case 'c':
+      showClosed = !showClosed;
+      detailView = false;
+      render();
+      break;
+    case 'h':
+      showHelp = !showHelp;
+      detailView = false;
+      render();
+      break;
+    default:
+      break;
+  }
+}
+
 function setupInput() {
   if (!process.stdin.isTTY) return;
 
   process.stdin.setRawMode(true);
   process.stdin.resume();
   process.stdin.setEncoding('utf8');
-
-  process.stdin.on('data', key => {
-    if (key === '\x03' || key.toLowerCase() === 'q') {
-      cleanup();
-      process.exit(0);
-      return;
-    }
-
-    if (key === '\t') {
-      viewMode = viewMode === 'timeline' ? 'radar' : 'timeline';
-      detailView = false;
-      showHelp = false;
-      render();
-      return;
-    }
-
-    if (key === '\r' || key === '\n') {
-      if (!showHelp && getFilteredSessions().length > 0) {
-        detailView = true;
-        render();
-      }
-      return;
-    }
-
-    if (key === '\x1b') {
-      if (detailView || showHelp) {
-        detailView = false;
-        showHelp = false;
-        render();
-      }
-      return;
-    }
-
-    if (key === '\x1b[A' || key.toLowerCase() === 'k') {
-      detailView = false;
-      selectDelta(-1);
-      return;
-    }
-
-    if (key === '\x1b[B' || key.toLowerCase() === 'j') {
-      detailView = false;
-      selectDelta(1);
-      return;
-    }
-
-    switch (key.toLowerCase()) {
-      case 'r':
-        render();
-        break;
-      case 'c':
-        showClosed = !showClosed;
-        detailView = false;
-        render();
-        break;
-      case 'h':
-        showHelp = !showHelp;
-        detailView = false;
-        render();
-        break;
-      default:
-        break;
-    }
-  });
+  process.stdin.on('data', handleKey);
 }
 
 function setupWatcher() {
@@ -1186,5 +1187,36 @@ function main() {
   setupWatcher();
   render();
 }
+
+// Test seam: runtime fonksiyonlari dogrudan cagrilabilir
+module.exports = {
+  // Mevcut export'lar (module-loader ile kullanilan)
+  parseBacklogTaskFile, loadBacklogIndex, enrichSession, fitAnsi, stripAnsi,
+  sanitizeForDisplay, formatDisplayPath, findBacklogDir, shortcutHint,
+  buildHeaderMetaContent, buildHeaderTitle, getFilteredSessions, selectDelta,
+  priorityColor, summarizeBacklog, summarizeTask, summarizeWait, summarizeErrors,
+  loadSessions, derivePhase, timeAgo, inferLegacyTaskId,
+  // Runtime seam — TUI test'leri icin
+  handleKey, setupWatcher, cleanup, render, main,
+  // State getter/setter — test'lerde state kontrolu icin
+  getState() {
+    return { viewMode, detailView, showHelp, showClosed, selectedIndex, selectedId, cleanedUp };
+  },
+  setState(patch) {
+    if ('viewMode' in patch) viewMode = patch.viewMode;
+    if ('detailView' in patch) detailView = patch.detailView;
+    if ('showHelp' in patch) showHelp = patch.showHelp;
+    if ('showClosed' in patch) showClosed = patch.showClosed;
+    if ('selectedIndex' in patch) selectedIndex = patch.selectedIndex;
+    if ('selectedId' in patch) selectedId = patch.selectedId;
+    if ('cleanedUp' in patch) cleanedUp = patch.cleanedUp;
+  },
+  resetState() {
+    viewMode = 'timeline'; detailView = false; showHelp = false;
+    showClosed = true; selectedIndex = 0; selectedId = null;
+    cleanedUp = false; renderTimeout = null; lastRender = 0;
+    watcher = null; refreshInterval = null;
+  },
+};
 
 if (require.main === module) main();
