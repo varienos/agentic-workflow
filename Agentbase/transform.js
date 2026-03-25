@@ -87,6 +87,17 @@ function validateCliCapabilities(name, cap) {
     errors.push(`${name}: context tanimi zorunlu`);
   }
 
+  // Path-safe: dir/file/location degerleri '..' icermemeli ve absolute olmamali
+  const pathFields = [
+    cap.commands?.dir, cap.skills?.dir, cap.agents?.dir,
+    cap.context?.file, cap.context?.location,
+  ].filter(Boolean);
+  for (const p of pathFields) {
+    if (typeof p === 'string' && (p.includes('..') || path.isAbsolute(p))) {
+      errors.push(`${name}: path degeri '${p}' guvenli degil (.. veya absolute path yasak)`);
+    }
+  }
+
   return errors;
 }
 
@@ -129,6 +140,7 @@ function loadExternalCapabilities(configPath) {
 // ─────────────────────────────────────────────────────
 
 function extractDescription(content) {
+  if (!content || typeof content !== 'string') return 'Agentic workflow komutu';
   // "# Task Master — Aciklama", "# Task Master - Aciklama", "# Task Master: Aciklama"
   const titleMatch = content.match(/^#\s+.+?\s*[—\-:]\s*(.+)$/m);
   if (titleMatch) return titleMatch[1].trim();
@@ -240,7 +252,9 @@ function adaptPathReferences(content, targetCli, pathMaps = PATH_MAPS) {
   const maps = pathMaps[targetCli];
   if (maps) {
     for (const [from, to] of Object.entries(maps)) {
-      result = result.replace(new RegExp(escapeRegex(from), 'g'), to);
+      // $& gibi replacement token'larini escape et (external config'den gelebilir)
+      const safeTo = to.replace(/\$/g, '$$$$');
+      result = result.replace(new RegExp(escapeRegex(from), 'g'), safeTo);
     }
   }
 
@@ -353,8 +367,9 @@ function toToml(description, content) {
 }
 
 function toSkillMd(name, description, content) {
+  const safeName = name.replace(/"/g, '\\"').replace(/:/g, '');
   const escapedDesc = description.replace(/"/g, '\\"');
-  return `---\nname: ${name}\ndescription: "${escapedDesc}"\n---\n\n${content}`;
+  return `---\nname: "${safeName}"\ndescription: "${escapedDesc}"\n---\n\n${content}`;
 }
 
 function toKimiAgentYaml(name, promptPath) {
@@ -630,7 +645,7 @@ function main() {
 
   // Manifest transform config ile global sabitleri override et
   if (Array.isArray(manifest?.transform?.skip_paths)) {
-    SKIP_PATHS = manifest.transform.skip_paths;
+    SKIP_PATHS = manifest.transform.skip_paths.filter(p => typeof p === 'string');
   }
 
   const claudeDir = path.join(AGENTBASE_DIR, '.claude');

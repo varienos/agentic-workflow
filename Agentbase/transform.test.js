@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const { extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent, toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent, stripFrontmatter, parseClaudeOutput, formatCommand, formatAgent, transformForTarget, writeTarget, resolveTargets, mergePathMaps, validateCliCapabilities, loadExternalCapabilities, CLI_CAPABILITIES, PATH_MAPS } = require('./transform.js');
+const { escapeRegex, extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent, toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent, stripFrontmatter, parseClaudeOutput, formatCommand, formatAgent, transformForTarget, writeTarget, resolveTargets, mergePathMaps, validateCliCapabilities, loadExternalCapabilities, CLI_CAPABILITIES, PATH_MAPS } = require('./transform.js');
 const yaml = require('js-yaml');
 
 describe('extractDescription', () => {
@@ -207,7 +207,7 @@ describe('toSkillMd', () => {
   it('YAML frontmatter + icerik uretir', () => {
     const result = toSkillMd('task-master', 'Backlog siralayici', '# Icerik');
     assert.ok(result.startsWith('---\n'));
-    assert.ok(result.includes('name: task-master'));
+    assert.ok(result.includes('name: "task-master"'));
     assert.ok(result.includes('description: "Backlog siralayici"'));
     assert.ok(result.includes('---\n\n# Icerik'));
   });
@@ -336,7 +336,7 @@ describe('transformForTarget', () => {
     assert.ok('.codex/skills/task-master/SKILL.md' in fileMap);
     assert.ok('.codex/skills/review/SKILL.md' in fileMap);
     assert.ok('AGENTS.md' in fileMap);
-    assert.ok(fileMap['.codex/skills/task-master/SKILL.md'].includes('name: task-master'));
+    assert.ok(fileMap['.codex/skills/task-master/SKILL.md'].includes('name: "task-master"'));
     assert.ok(fileMap['.codex/skills/task-master/SKILL.md'].includes('$task-master'));
   });
 
@@ -472,7 +472,7 @@ describe('formatCommand', () => {
   it('Codex: SKILL.md dosyasi uretir', () => {
     const result = formatCommand('task-master', 'Backlog siralayici', '# Icerik', cap.codex);
     assert.ok('.codex/skills/task-master/SKILL.md' in result);
-    assert.ok(result['.codex/skills/task-master/SKILL.md'].includes('name: task-master'));
+    assert.ok(result['.codex/skills/task-master/SKILL.md'].includes('name: "task-master"'));
   });
 
   it('Kimi: SKILL.md dosyasi uretir', () => {
@@ -512,7 +512,7 @@ describe('formatAgent', () => {
   it('Codex: agents dizini yok, skills olarak uretir', () => {
     const result = formatAgent('reviewer', 'Inceleme', '# Icerik', cap.codex, 'codex');
     assert.ok('.codex/skills/reviewer/SKILL.md' in result);
-    assert.ok(result['.codex/skills/reviewer/SKILL.md'].includes('name: reviewer'));
+    assert.ok(result['.codex/skills/reviewer/SKILL.md'].includes('name: "reviewer"'));
   });
 
   it('ne agents ne skills yoksa bos nesne doner', () => {
@@ -844,5 +844,95 @@ describe('PATH_MAPS frozen snapshot — kasitli olmayan drift korunmasi', () => 
       Object.keys(PATH_MAPS).length,
       'CLI sayisi uyumsuz — yeni CLI eklendiginde her iki map de guncellemeli'
     );
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// DEEP AUDIT: EKSIK TEST KAPSAMI DUZELTMELERI
+// ─────────────────────────────────────────────────────
+
+describe('escapeRegex', () => {
+  it('regex meta karakterleri escape ediyor', () => {
+    assert.equal(escapeRegex('a.b*c?d'), 'a\\.b\\*c\\?d');
+    assert.equal(escapeRegex('[test](url)'), '\\[test\\]\\(url\\)');
+    assert.equal(escapeRegex('a+b'), 'a\\+b');
+  });
+
+  it('bos string icin bos string doner', () => {
+    assert.equal(escapeRegex(''), '');
+  });
+
+  it('ozel karakter icermeyen string degismez', () => {
+    assert.equal(escapeRegex('hello-world'), 'hello-world');
+  });
+});
+
+describe('extractDescription — edge cases', () => {
+  it('null input icin varsayilan aciklama doner', () => {
+    assert.equal(extractDescription(null), 'Agentic workflow komutu');
+  });
+
+  it('undefined input icin varsayilan aciklama doner', () => {
+    assert.equal(extractDescription(undefined), 'Agentic workflow komutu');
+  });
+
+  it('bos string icin varsayilan aciklama doner', () => {
+    assert.equal(extractDescription(''), 'Agentic workflow komutu');
+  });
+});
+
+describe('writeTarget — path traversal korunmasi', () => {
+  it('../ iceren path reddedilir', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wt-traversal-'));
+    try {
+      const fileMap = { '../../etc/evil.txt': 'exploit' };
+      const errors = writeTarget(tmpDir, 'test', fileMap);
+      assert.ok(errors.length > 0, 'path traversal hatasi olmali');
+      assert.ok(errors[0].includes('Path traversal'), 'hata mesaji path traversal icermeli');
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('normal relative path yazilir', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wt-normal-'));
+    try {
+      const fileMap = { '.gemini/commands/test.toml': 'description = "test"' };
+      const errors = writeTarget(tmpDir, 'gemini', fileMap);
+      assert.equal(errors.length, 0, 'hata olmamali');
+      assert.ok(fs.existsSync(path.join(tmpDir, '.gemini', 'commands', 'test.toml')));
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('validateCliCapabilities — path-safe kontrol', () => {
+  it('commands.dir icinde .. reddedilir', () => {
+    const errors = validateCliCapabilities('evil', {
+      commands: { format: 'toml', dir: '../../etc' },
+      invoke: { prefix: '/', separator: ' ' },
+      context: { file: 'test.md', location: 'root' },
+    });
+    assert.ok(errors.some(e => e.includes('guvenli degil')), '.. iceren dir reddedilmeli');
+  });
+
+  it('absolute path reddedilir', () => {
+    const errors = validateCliCapabilities('evil', {
+      skills: { format: 'skill.md', dir: '/tmp/evil' },
+      invoke: { prefix: '/', separator: ' ' },
+      context: { file: 'test.md', location: 'root' },
+    });
+    assert.ok(errors.some(e => e.includes('guvenli degil')), 'absolute dir reddedilmeli');
+  });
+
+  it('guvenli relative path kabul edilir', () => {
+    const errors = validateCliCapabilities('safe', {
+      commands: { format: 'toml', dir: '.gemini/commands' },
+      invoke: { prefix: '/', separator: ' ' },
+      context: { file: 'GEMINI.md', location: 'root' },
+    });
+    const pathErrors = errors.filter(e => e.includes('guvenli degil'));
+    assert.equal(pathErrors.length, 0, 'guvenli path hata vermemeli');
   });
 });
