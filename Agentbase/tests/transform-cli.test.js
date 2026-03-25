@@ -39,12 +39,12 @@ function createFixture(t, options = {}) {
   );
 
   // Manifest
+  // NOT: targets ust duzey alanda — resolveTargets manifest.targets okuyor
   const manifestContent = options.manifestContent || `
 project:
   name: test-project
-transform:
-  targets:
-    - gemini
+targets:
+  - gemini
 `;
   const manifestPath = path.join(rootDir, 'manifest.yaml');
   if (options.manifestContent !== null) {
@@ -104,7 +104,10 @@ describe('transform.js CLI entegrasyon', () => {
   });
 
   it('gecersiz target ile exit 1 ve hata detayi', t => {
-    const { rootDir, manifestPath } = createFixture(t);
+    // Manifest'te targets yok — --targets dogrudan hedef listesi olur
+    const { rootDir, manifestPath } = createFixture(t, {
+      manifestContent: 'project:\n  name: test\n',
+    });
     const result = runTransform(rootDir, [manifestPath, '--targets', 'olmayan_cli']);
 
     assert.equal(result.status, 1);
@@ -197,7 +200,10 @@ transform:
   });
 
   it('birden fazla target ayni anda calisir', t => {
-    const { rootDir, manifestPath } = createFixture(t);
+    // Manifest'te her iki target tanimli olmali (targets filtre olarak calisir)
+    const { rootDir, manifestPath } = createFixture(t, {
+      manifestContent: 'project:\n  name: test\ntargets:\n  - gemini\n  - codex\n',
+    });
 
     const result = runTransform(rootDir, [manifestPath, '--targets', 'gemini,codex', '--dry-run']);
 
