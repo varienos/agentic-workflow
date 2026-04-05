@@ -3,6 +3,13 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.9.0] - 2026-04-05
+
+### Eklenen
+
+- naming conventions sistemi, CONVENTIONS.skeleton, ultrathink plan doc (`17e047b`)
+- task-plan ultrathink mode — derin dusunme fazi, thinking gate, Opus zorunlu (`0a08fd8`)
+
 ## [1.8.0] - 2026-03-25
 
 ### Eklenen
