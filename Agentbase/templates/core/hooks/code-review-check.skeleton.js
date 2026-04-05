@@ -57,6 +57,21 @@ const SECURITY_PATTERNS = [
   /* END GENERATE */
 ];
 
+// Isimlendirme konvansiyonu kontrol pattern'leri
+const NAMING_PATTERNS = [
+  /* GENERATE: NAMING_PATTERNS
+   * Bootstrap manifest.conventions.naming alanina gore isimlendirme kontrolu ekler.
+   *
+   * camelCase projesi:
+   *   { pattern: /(?:const|let|var)\s+[a-z]+_[a-z]+/, severity: 'LOW', message: 'snake_case degisken — camelCase bekleniyor' },
+   *   { pattern: /function\s+[a-z]+_[a-z]+/, severity: 'LOW', message: 'snake_case fonksiyon — camelCase bekleniyor' },
+   *
+   * snake_case projesi:
+   *   { pattern: /(?:def|class)\s+[a-z]+[A-Z]/, severity: 'LOW', message: 'camelCase tespit edildi — snake_case bekleniyor' },
+   */
+  /* END GENERATE */
+];
+
 // Kontrol edilecek dosya uzantilari
 const FILE_EXTENSIONS = [
   /* GENERATE: FILE_EXTENSIONS

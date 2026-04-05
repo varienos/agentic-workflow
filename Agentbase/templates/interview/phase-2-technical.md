@@ -115,13 +115,33 @@
   - **e → none:**
     - Auth-spesifik checklist maddeleri eklenmez
 
+### Q7 — Kod Isimlendirme Kurallari
+- **Text:** `"Projede hangi isimlendirme konvansiyonu kullaniliyor?"`
+- **Options:**
+  - `a)` camelCase (JavaScript/TypeScript varsayilani)
+  - `b)` snake_case (Python/PHP varsayilani)
+  - `c)` PascalCase + camelCase (C#, Java pattern)
+  - `d)` Mevcut linter/formatter config'den tespit et
+  - `e)` Ozel (acikla)
+- **Auto-detect:** `.eslintrc.*`, `biome.json`, `ruff.toml`, `.editorconfig` dosyalarindan naming rule cikarilir. Tespit edildiyse hint olarak gosterilir.
+- **Follow-up:** `"Dosya isimlendirme kurali? (kebab-case, snake_case, PascalCase)"`
+- **Skip condition:** never — always ask
+- **Maps to:** `manifest.conventions.naming`, `manifest.conventions.file_naming`
+- **Downstream:**
+  - `.claude/CONVENTIONS.md` icindeki NAMING_RULES blogu doldurulur
+  - code-review-check hook'unda naming pattern kontrolu aktif olur
+  - Tum agent'lar yeni kod yazarken bu konvansiyona uyar
+  - **a → camelCase:** `functionName`, `variableName`, dosya: `kebab-case.js`
+  - **b → snake_case:** `function_name`, `variable_name`, dosya: `snake_case.py`
+  - **c → PascalCase+camelCase:** `ClassName`, `methodName`, dosya: `PascalCase.cs`
+
 ---
 
 ## Phase Completion
 
 When all applicable questions are answered, Bootstrap:
 
-1. Populates `manifest.workflows.*` and `manifest.stack.*` fields
+1. Populates `manifest.workflows.*`, `manifest.stack.*` and `manifest.conventions.*` fields
 2. Generates draft `STACK.md` with detected + confirmed tech details
 3. Generates draft `WORKFLOWS.md` with branch/test/commit rules
 4. Configures hook templates based on answers

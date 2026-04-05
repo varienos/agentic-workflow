@@ -691,6 +691,54 @@ const SIMPLE_GENERATORS = {
     ].join('\n');
   },
 
+  NAMING_RULES(manifest) {
+    const naming = manifest?.conventions?.naming || 'camelCase';
+    const fileNaming = manifest?.conventions?.file_naming || 'kebab-case';
+    const componentNaming = manifest?.conventions?.component_naming || null;
+
+    const namingMap = {
+      camelCase: {
+        variable: ['camelCase', '`userName`, `isActive`'],
+        function: ['camelCase', '`getUserById`, `calculateTotal`'],
+        constant: ['UPPER_SNAKE_CASE', '`MAX_RETRY`, `API_URL`'],
+        class: ['PascalCase', '`UserService`, `PaymentController`'],
+      },
+      snake_case: {
+        variable: ['snake_case', '`user_name`, `is_active`'],
+        function: ['snake_case', '`get_user_by_id`, `calculate_total`'],
+        constant: ['UPPER_SNAKE_CASE', '`MAX_RETRY`, `API_URL`'],
+        class: ['PascalCase', '`UserService`, `PaymentController`'],
+      },
+      PascalCase: {
+        variable: ['camelCase', '`userName`, `isActive`'],
+        function: ['camelCase', '`getUserById`, `calculateTotal`'],
+        constant: ['UPPER_SNAKE_CASE', '`MAX_RETRY`, `API_URL`'],
+        class: ['PascalCase', '`UserService`, `PaymentController`'],
+      },
+    };
+
+    const rules = namingMap[naming] || namingMap.camelCase;
+    const rows = Object.entries(rules).map(([k, [fmt, ex]]) =>
+      `| ${k} | ${fmt} | ${ex} |`
+    );
+
+    const lines = [
+      `### Isimlendirme: ${naming}`,
+      '',
+      '| Oge | Format | Ornek |',
+      '|-----|--------|-------|',
+      ...rows,
+    ];
+
+    if (componentNaming) {
+      lines.push('', `**Component isimlendirme:** ${componentNaming}`);
+    }
+
+    lines.push('', `### Dosya Isimlendirme: ${fileNaming}`);
+
+    return lines.join('\n');
+  },
+
   VERIFICATION_COMMANDS(manifest) {
     const subprojects = manifest?.project?.subprojects || [];
     const testCommands = manifest?.stack?.test_commands || {};
@@ -1650,6 +1698,7 @@ function resolveOutputPath(skeletonPath, outputDir) {
     // core root files (settings.json, CLAUDE.md, claude-ignore)
     if (filename === 'settings.json') return path.join(outputDir, '.claude', filename);
     if (filename === 'CLAUDE.md') return path.join(outputDir, '.claude', filename);
+    if (filename === 'CONVENTIONS.md') return path.join(outputDir, '.claude', filename);
     if (filename === 'claude-ignore') return path.join(outputDir, '.claude-ignore');
     return path.join(outputDir, filename);
   }

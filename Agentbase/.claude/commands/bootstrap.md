@@ -772,6 +772,28 @@ S6: Projede authentication var mi? Hangi yontem?
 → Manifest: `stack.auth_method` alanina yaz (`jwt`, `oauth2`, `session`, `api-key`, `none`).
 → code-review agent checklist'ine auth-spesifik kontroller eklenecek.
 
+**S7 (isimlendirme konvansiyonu):**
+```
+S7: Kod isimlendirme konvansiyonunuz?
+    a) camelCase (JavaScript/TypeScript)
+    b) snake_case (Python/PHP)
+    c) PascalCase + camelCase (C#, Java)
+    d) Linter/formatter config'den tespit et
+    e) Ozel: ___
+
+    Dosya isimlendirme:
+    a) kebab-case (ornek: user-service.js)
+    b) snake_case (ornek: user_service.py)
+    c) PascalCase (ornek: UserService.cs)
+
+    [Tespit edilen: ...]
+>
+```
+
+→ Manifest: `conventions.naming` ve `conventions.file_naming` alanlarina yaz.
+→ `.claude/CONVENTIONS.md` uretiminde kullanilacak.
+→ code-review hook naming pattern kontrolunu etkiler.
+
 ### Faz 3 — Gelistirici Profili
 *Bu faz DEVELOPER.md icin veri toplar.*
 
@@ -1007,6 +1029,14 @@ workflows:
   auto_format_hook: [true|false]
   migration_strategy: "[orm|manual-sql|none|null]"
   ci_pipeline: "[github-actions|gitlab-ci|jenkins|null]"  # auto-detect: .github/workflows/, .gitlab-ci.yml
+
+conventions:
+  naming: "[camelCase|snake_case|PascalCase|custom]"       # degisken/fonksiyon isimlendirme
+  file_naming: "[kebab-case|snake_case|PascalCase|custom]" # dosya isimlendirme
+  component_naming: "[PascalCase|null]"                     # React/Vue component isimlendirme (varsa)
+  commit_language: "[tr|en]"                                # commit mesaj dili
+  commit_format: "[conventional|free|custom]"               # commit mesaj formati
+  docblock: "[required|optional|none]"                      # docblock/jsdoc zorunlulugu
 
 modules:
   # Single proje: Her kategori tek bir leaf secer.
