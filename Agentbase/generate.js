@@ -1637,7 +1637,11 @@ const SIMPLE_GENERATORS = {
       '  `backlog task create "..." --labels command-refresh --priority low`',
       '  Komut dosyasina dokunma.',
       '',
-      '**Sinirlar:** Commit atma. `git add` yapma. Sadece dosya yaz.',
+      '**Sinirlar:**',
+      '- Sadece bu calistirmada dogrudan gozlemledigin seyi yansit — hipotetik ekleme YASAK.',
+      '- Emin degilsen no-op bitir.',
+      '- Commit atma. `git add` yapma. Sadece dosya yaz.',
+      '',
       'Kullanici diff-te gorecek, kendisi karar verecek.',
     ].join('\n');
   },

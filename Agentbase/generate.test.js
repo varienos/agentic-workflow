@@ -2126,6 +2126,8 @@ describe('SIMPLE_GENERATORS.SELF_REFRESH', () => {
     assert.match(out, /backlog task create/);
     assert.match(out, /Commit atma/);
     assert.match(out, /git add.+yapma/);
+    assert.match(out, /hipotetik ekleme YASAK/i);
+    assert.match(out, /Emin degilsen no-op/i);
   });
 
   it('task-plan pilot skeleton SELF_REFRESH marker icerir', () => {
