@@ -1609,6 +1609,38 @@ const SIMPLE_GENERATORS = {
 
     return lines.join('\n');
   },
+
+  // --- SELF-REFRESH BLOKU ---
+  // Tum komut skeleton-larinin sonuna enjekte edilen sabit bolum.
+  // Komut calistiktan sonra kendi metnini proje gercegine karsi kontrol eder.
+  // Manifest bagimsizdir: her komutta ayni metin uretilir.
+
+  SELF_REFRESH(_manifest) {
+    return [
+      '## Self-Refresh — Komut guncelligi',
+      '',
+      'Komut bitmeden once son adim: bu calistirma sirasinda projenin',
+      'su anki gerceginden ogrendiklerin ile komut metnini karsilastir.',
+      '',
+      '**Soru:** Komutun mevcut hali projeyi dogru tanitiyor mu?',
+      '- Eksik bir path/klasor var mi?',
+      '- Eski bir stack referansi var mi?',
+      '- Kural listesinde eksik/gereksiz bir madde var mi?',
+      '- Kapsam disi kalmis yeni bir proje alani var mi?',
+      '',
+      '**Karar agaci:**',
+      '- **Yok** -> no-op, bitir.',
+      '- **Kucuk** (<=3 satir, mekanik): `Edit` ile komut dosyasini guncelle,',
+      '  `.claude/commands/_evolution.log` dosyasina tek satir not dus:',
+      '  `YYYY-MM-DD — <komut>: <kisa aciklama>`',
+      '- **Buyuk** (bolum yazimi, kapsam genislemesi, yeniden yapilandirma):',
+      '  `backlog task create "..." --labels command-refresh --priority low`',
+      '  Komut dosyasina dokunma.',
+      '',
+      '**Sinirlar:** Commit atma. `git add` yapma. Sadece dosya yaz.',
+      'Kullanici diff-te gorecek, kendisi karar verecek.',
+    ].join('\n');
+  },
 };
 
 // ─────────────────────────────────────────────────────

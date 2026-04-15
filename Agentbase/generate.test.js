@@ -2099,3 +2099,51 @@ describe('filterByModules', () => {
     assert.ok(filtered.length > 0, 'core dosyalari hala olmali');
   });
 });
+
+// ─────────────────────────────────────────────────────
+// SELF_REFRESH BLOK TESTLERI
+// ─────────────────────────────────────────────────────
+
+describe('SIMPLE_GENERATORS.SELF_REFRESH', () => {
+  it('sabit bir Markdown bolumu doner, manifest bagimsiz', () => {
+    const generator = SIMPLE_GENERATORS.SELF_REFRESH;
+    assert.equal(typeof generator, 'function');
+
+    const emptyManifest = {};
+    const richManifest = { project: { name: 'x' }, paths: { codebase: 'app' } };
+    const a = generator(emptyManifest);
+    const b = generator(richManifest);
+
+    assert.equal(a, b, 'SELF_REFRESH manifest bagimsiz olmali');
+  });
+
+  it('uretilen bolum "Self-Refresh" basligi, karar agaci ve sinirlar icerir', () => {
+    const out = SIMPLE_GENERATORS.SELF_REFRESH({});
+    assert.match(out, /## Self-Refresh/);
+    assert.match(out, /Kucuk/i);
+    assert.match(out, /Buyuk/i);
+    assert.match(out, /_evolution\.log/);
+    assert.match(out, /backlog task create/);
+    assert.match(out, /Commit atma/);
+    assert.match(out, /git add.+yapma/);
+  });
+
+  it('fillBlocks SELF_REFRESH marker-ini degistirir, filled listesine ekler', () => {
+    const input = [
+      '# Komut',
+      '',
+      'Icerik.',
+      '',
+      '<!-- GENERATE: SELF_REFRESH',
+      'Aciklama: Komut son adim - self-refresh check',
+      '-->',
+      '',
+    ].join('\n');
+
+    const { content, filled, marked } = fillBlocks(input, 'md', {});
+    assert.ok(filled.includes('SELF_REFRESH'));
+    assert.deepEqual(marked, []);
+    assert.doesNotMatch(content, /<!-- GENERATE: SELF_REFRESH/);
+    assert.match(content, /## Self-Refresh/);
+  });
+});
