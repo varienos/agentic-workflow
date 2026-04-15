@@ -2195,6 +2195,27 @@ describe('SIMPLE_GENERATORS.SELF_REFRESH', () => {
     assert.deepEqual(missing, [], `module/commands marker eksik: ${missing.join(', ')}`);
   });
 
+  it('processSkeletonFile task-plan uzerinde Self-Refresh bolumu uretir (E2E)', () => {
+    const pathMod = require('path');
+    const { processSkeletonFile } = require('./generate.js');
+    const skeletonPath = pathMod.join(
+      TEMPLATES_DIR, 'core', 'commands', 'task-plan.skeleton.md'
+    );
+
+    const minimalManifest = {
+      project: { name: 'test-proj', description: 'smoke', subprojects: [] },
+      stack: { primary: 'node' },
+      paths: { codebase: 'Codebase' },
+    };
+
+    const { outputContent, filled } = processSkeletonFile(skeletonPath, minimalManifest);
+    assert.ok(filled.includes('SELF_REFRESH'));
+    assert.match(outputContent, /## Self-Refresh/);
+    assert.doesNotMatch(outputContent, /<!-- GENERATE: SELF_REFRESH/);
+    assert.match(outputContent, /_evolution\.log/);
+    assert.match(outputContent, /backlog task create/);
+  });
+
   it('fillBlocks SELF_REFRESH marker-ini degistirir, filled listesine ekler', () => {
     const input = [
       '# Komut',
