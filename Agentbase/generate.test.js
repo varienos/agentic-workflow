@@ -2128,6 +2128,34 @@ describe('SIMPLE_GENERATORS.SELF_REFRESH', () => {
     assert.match(out, /git add.+yapma/);
   });
 
+  it('task-plan pilot skeleton SELF_REFRESH marker icerir', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const skeletonPath = path.join(
+      TEMPLATES_DIR, 'core', 'commands', 'task-plan.skeleton.md'
+    );
+    const content = fs.readFileSync(skeletonPath, 'utf8');
+    assert.match(
+      content,
+      /<!-- GENERATE: SELF_REFRESH\n/,
+      'task-plan.skeleton.md SELF_REFRESH marker icermeli'
+    );
+  });
+
+  it('task-plan skeleton generate-den gectikten sonra Self-Refresh bolumune sahip', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const skeletonPath = path.join(
+      TEMPLATES_DIR, 'core', 'commands', 'task-plan.skeleton.md'
+    );
+    const raw = fs.readFileSync(skeletonPath, 'utf8');
+
+    const { content, filled } = fillBlocks(raw, 'md', {});
+    assert.ok(filled.includes('SELF_REFRESH'));
+    assert.match(content, /## Self-Refresh/);
+    assert.doesNotMatch(content, /<!-- GENERATE: SELF_REFRESH/);
+  });
+
   it('fillBlocks SELF_REFRESH marker-ini degistirir, filled listesine ekler', () => {
     const input = [
       '# Komut',

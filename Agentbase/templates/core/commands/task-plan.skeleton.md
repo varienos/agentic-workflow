@@ -413,3 +413,11 @@ backlog task create "feat: Order listesi frontend sayfasi (#ana_gorev)" --priori
 8. **Backlog CLI kullan** — Gorevleri SADECE `backlog task create` ile olustur.
 9. **Model/Teammate onerisi** — Her gorev icin uygun model ve teammate onerisi ver.
 10. **Codebase yolu** — Tum dosya analizleri `../Codebase/` uzerinden.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->
+
