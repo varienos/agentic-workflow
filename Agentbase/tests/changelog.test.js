@@ -256,7 +256,7 @@ describe('getCommits', () => {
     const commits = getCommits(null, null);
     const types = new Set(commits.map(c => c.type));
     // Repoda en az bir conventional prefix olmali
-    const knownTypes = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore'];
+    const knownTypes = ['feat', 'fix', 'refactor', 'docs', 'test', 'chore', 'release'];
     const hasConventional = knownTypes.some(t => types.has(t));
     assert.ok(hasConventional, `en az bir conventional type olmali, bulunan: ${[...types].join(', ')}`);
   });

@@ -33,6 +33,7 @@ const CATEGORIES = {
   perf: { label: 'Performans' },
   style: { label: 'Stil' },
   ci: { label: 'CI/CD' },
+  release: { label: 'Sürüm' },
 };
 
 const HEADER = '# Değişiklik Günlüğü\n\nTüm önemli değişiklikler bu dosyada belgelenir.\nFormat [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.\n\n';
@@ -107,7 +108,7 @@ function generateSection(version, date, commits) {
   lines.push(`## [${version}] - ${date}`);
   lines.push('');
 
-  const typeOrder = ['feat', 'fix', 'refactor', 'perf', 'docs', 'test', 'chore', 'style', 'ci', 'other'];
+  const typeOrder = ['feat', 'fix', 'refactor', 'perf', 'docs', 'test', 'chore', 'style', 'ci', 'release', 'other'];
 
   for (const type of typeOrder) {
     const group = groups[type];
