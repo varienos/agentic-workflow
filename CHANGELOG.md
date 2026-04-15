@@ -3,11 +3,38 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.10.0] - 2026-04-15
+
+### Eklenen
+
+- **extensions:** Graphify knowledge graph skill eklendi (`4a32e9b`)
+- **changelog:** release type destegi eklendi (`e0e7da0`)
+- **module-commands:** SELF_REFRESH marker 7 modul komuta eklendi (`fe65610`)
+- **core-commands:** SELF_REFRESH marker 13 core komuta eklendi (`0e6bb82`)
+- **task-plan:** SELF_REFRESH marker eklendi (pilot) (`d28463e`)
+- **generate:** SELF_REFRESH GENERATE blogu eklendi (`4ff6d40`)
+
+### Düzeltilen
+
+- **self-refresh:** review follow-up — hipotetik ekleme YASAK kisiti (`58fa60a`)
+
+### Test
+
+- **generate:** SELF_REFRESH E2E smoke testi eklendi (`508a886`)
+
+### Bakım
+
+- .worktrees/ gitignore'a eklendi (`679ce98`)
+
 ## [1.9.1] - 2026-04-05
 
 ### Düzeltilen
 
 - docs/ dizinini gitignore'a ekle, repodan kaldir (`111b508`)
+
+### Sürüm
+
+- v1.9.1 (`c4754ae`)
 
 ## [1.9.0] - 2026-04-05
 
@@ -16,11 +43,19 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - naming conventions sistemi, CONVENTIONS.skeleton, ultrathink plan doc (`17e047b`)
 - task-plan ultrathink mode — derin dusunme fazi, thinking gate, Opus zorunlu (`0a08fd8`)
 
+### Sürüm
+
+- v1.9.0 (`e1dfcb9`)
+
 ## [1.8.0] - 2026-03-25
 
 ### Eklenen
 
 - deep audit oturumu — changelog shell injection fix, hook integrity, push fail sayaci, README tutarlilik (`94b16a7`)
+
+### Sürüm
+
+- v1.8.0 (`12f6f2e`)
 
 ## [1.7.0] - 2026-03-25
 
@@ -49,11 +84,19 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - transform.js CLI entegrasyon testleri — 11 senaryo (`7341803`)
 - PATH_MAPS ↔ CLI_CAPABILITIES tutarlilik testi ve frozen snapshot (`1c69742`)
 
+### Sürüm
+
+- v1.7.0 (`8eaed28`)
+
 ## [1.6.2] - 2026-03-24
 
 ### Düzeltilen
 
 - test CI npm ci → npm install (package-lock.json yok) (`ab8e4a5`)
+
+### Sürüm
+
+- v1.6.2 (`0730f37`)
 
 ## [1.6.1] - 2026-03-24
 
@@ -61,11 +104,19 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 - test workflow her push'ta calissin ve manuel tetikleme destekle (`31a2d50`)
 
+### Sürüm
+
+- v1.6.1 (`021b4b0`)
+
 ## [1.6.0] - 2026-03-24
 
 ### Eklenen
 
 - test CI workflow ve badge ekle (`0f0117b`)
+
+### Sürüm
+
+- v1.6.0 (`f8cf20c`)
 
 ## [1.5.0] - 2026-03-24
 
@@ -76,6 +127,10 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 ### Dokümantasyon
 
 - CHANGELOG otomatik güncellendi [skip ci] (`d53dcea`)
+
+### Sürüm
+
+- v1.5.0 (`145eaed`)
 
 ## [1.4.2] - 2026-03-24
 
@@ -91,12 +146,20 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 - release oncesi bekleyen degisiklikler (`e6f1aaf`)
 
+### Sürüm
+
+- v1.4.2 (`d63bf3d`)
+
 ## [1.4.1] - 2026-03-24
 
 ### Düzeltilen
 
 - extensions-registry.md ornek satir Turkce karakter normalize (`02f504f`)
 - changelog.yml detached HEAD hatasi — ref: main + explicit push target (`3dc3e45`)
+
+### Sürüm
+
+- v1.4.1 (`ade582e`)
 
 ## [1.4.0] - 2026-03-24
 
@@ -108,12 +171,20 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 - release oncesi bekleyen degisiklikler (`a7eee08`)
 
+### Sürüm
+
+- v1.4.0 (`2424c95`)
+
 ## [1.3.1] - 2026-03-24
 
 ### Düzeltilen
 
 - add JSON parse error handling, fix array filter null check, improve --modules exit code (`9cb1547`)
 - resolve failing tests - git init branch name and missing reference files (`21e3c91`)
+
+### Sürüm
+
+- v1.3.1 (`75595cc`)
 
 ### Diğer
 
@@ -140,6 +211,10 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 ### Test
 
 - markdown dosyalarinda kirik link dogrulama testi eklendi (`ffb5aae`)
+
+### Sürüm
+
+- v1.3.0 (`5b18341`)
 
 ## [1.2.0] - 2026-03-24
 
@@ -178,6 +253,12 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - release oncesi bekleyen degisiklikler (`c135cc6`)
 - release oncesi bekleyen degisiklikler (`198df1e`)
 
+### Sürüm
+
+- v1.2.0 (`f8b654f`)
+- v1.1.3 (`0029c1a`)
+- v1.1.2 (`67ca977`)
+
 ## [1.1.1] - 2026-03-24
 
 ### Düzeltilen
@@ -188,6 +269,11 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 - CHANGELOG otomatik güncellendi [skip ci] (`f7b8fe1`)
 - CHANGELOG otomatik güncellendi [skip ci] (`bd03eec`)
+
+### Sürüm
+
+- v1.1.1 (`a7fd7e7`)
+- v1.1.0 (`1ae3125`)
 
 ## [1.1.0] - 2026-03-24
 
@@ -205,6 +291,10 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 - CHANGELOG otomatik güncellendi [skip ci] (`4323074`)
 
+### Sürüm
+
+- v1.1.0 (`e4bcbd0`)
+
 ## [1.0.2] - 2026-03-23
 
 ### Eklenen
@@ -214,6 +304,11 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 ### Dokümantasyon
 
 - CHANGELOG otomatik güncellendi [skip ci] (`6040309`)
+
+### Sürüm
+
+- v1.0.2 (`2736875`)
+- v1.0.2 (`034b3a8`)
 
 ## [1.0.1] - 2026-03-23
 
@@ -230,6 +325,10 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 ### Dokümantasyon
 
 - CHANGELOG otomatik güncellendi [skip ci] (`b32f7cd`)
+
+### Sürüm
+
+- v1.0.1 (`e1801ff`)
 
 ## [1.0.0] - 2026-03-23
 
