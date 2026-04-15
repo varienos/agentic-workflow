@@ -342,3 +342,10 @@ Tum adimlarin sonuclarini asagidaki formatta raporla:
 6. **Missing migration = FAIL** — Commit edilmemis migration dosyasi her zaman FAIL.
 7. **Kisa rapor** — Gereksiz detaydan kacin, sadece durum + aksiyon.
 8. **Sonuc raporu ZORUNLU** — Her durumda Step 8 raporu olusturulmali.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

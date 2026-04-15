@@ -362,3 +362,10 @@ TARIH | COMMIT | DURUM | PLATFORM | OZET
 5. **Deploy logu ZORUNLU** — Her durumda Step 8 log kaydi olusturulmali.
 6. **Sonuc raporu ZORUNLU** — Her durumda Step 9 raporu olusturulmali.
 7. **Rollback rehberi SADECE DEPLOY_FAIL'de** — DEPLOY_OK/WARN durumunda rollback bolumu gosterilmez.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

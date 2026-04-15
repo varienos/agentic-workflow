@@ -220,3 +220,10 @@ Tum adimlarin sonuclarini asagidaki formatta raporla:
 4. **Duzeltme yapma** — Hata bulursan raporla, duzeltmeye calisma.
 5. **Tum adimlari calistir** — Bir adim basarisiz olsa bile sonraki adima gec.
 6. **Sonuc raporu ZORUNLU** — Her durumda Step 7 raporu olusturulmali.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

@@ -305,3 +305,10 @@ cd ../Codebase && npm run test -- --passWithNoTests
 8. **False positive'e dikkat** — Public endpoint'lerde IDOR arama (ornegin urun listeleme).
 9. **Admin endpoint'leri ayri** — Admin panel endpoint'leri farkli kurallara tabi (role-based, IDOR degil).
 10. **Codebase yolu** — Tum proje dosyalarina `../Codebase/` uzerinden eris.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

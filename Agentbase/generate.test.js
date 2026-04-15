@@ -2171,6 +2171,30 @@ describe('SIMPLE_GENERATORS.SELF_REFRESH', () => {
     assert.deepEqual(missing, [], `SELF_REFRESH marker eksik: ${missing.join(', ')}`);
   });
 
+  it('tum module/commands skeleton-lari SELF_REFRESH marker icerir', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const moduleCommandPaths = [
+      ['deploy', 'coolify', 'commands', 'post-deploy.skeleton.md'],
+      ['deploy', 'coolify', 'commands', 'pre-deploy.skeleton.md'],
+      ['deploy', 'docker', 'commands', 'post-deploy.skeleton.md'],
+      ['deploy', 'docker', 'commands', 'pre-deploy.skeleton.md'],
+      ['deploy', 'vercel', 'commands', 'pre-deploy.skeleton.md'],
+      ['monorepo', 'commands', 'review-module.skeleton.md'],
+      ['security', 'commands', 'idor-scan.skeleton.md'],
+    ];
+
+    const missing = [];
+    for (const parts of moduleCommandPaths) {
+      const full = path.join(TEMPLATES_DIR, 'modules', ...parts);
+      const content = fs.readFileSync(full, 'utf8');
+      if (!/<!-- GENERATE: SELF_REFRESH\n/.test(content)) {
+        missing.push(parts.join('/'));
+      }
+    }
+    assert.deepEqual(missing, [], `module/commands marker eksik: ${missing.join(', ')}`);
+  });
+
   it('fillBlocks SELF_REFRESH marker-ini degistirir, filled listesine ekler', () => {
     const input = [
       '# Komut',

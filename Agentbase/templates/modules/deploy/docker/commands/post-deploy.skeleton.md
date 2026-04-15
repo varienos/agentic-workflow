@@ -260,3 +260,10 @@ Eger DEPLOY_FAIL durumu olusursa:
 4. **Tum adimlari calistir** — Bir adim basarisiz olsa bile sonraki adima gec.
 5. **Deploy logu ZORUNLU** — Her durumda Step 7 log kaydi olusturulmali.
 6. **Sonuc raporu ZORUNLU** — Her durumda Step 8 raporu olusturulmali.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

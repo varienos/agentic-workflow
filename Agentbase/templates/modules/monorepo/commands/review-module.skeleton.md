@@ -383,3 +383,10 @@ Dead code bulgusu varsa BILGI seviyesinde raporla. Silme karari kullaniciya bira
 8. **Rapor ZORUNLU** — Her durumda sonuc raporu olustur.
 9. **Dead code raporla** — Kullanilmayan kodu sil DEGIL, raporla.
 10. **Codebase yolu** — Tum proje dosyalarina `../Codebase/` uzerinden eris.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->
