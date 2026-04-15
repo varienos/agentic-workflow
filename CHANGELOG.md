@@ -26,6 +26,10 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 - .worktrees/ gitignore'a eklendi (`679ce98`)
 
+### Sürüm
+
+- v1.10.0 (`f6cd910`)
+
 ## [1.9.1] - 2026-04-05
 
 ### Düzeltilen
