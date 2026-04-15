@@ -63,6 +63,7 @@ Yeni eklenti eklerken bu formatı kullan:
 | **Claude Cognitive** | [GMaN1911/claude-cognitive](https://github.com/GMaN1911/claude-cognitive) | Claude | Dikkat tabanlı dosya enjeksiyonu ile çalışma belleği |
 | **Context Mode** | [mksglu/context-mode](https://github.com/mksglu/context-mode) | Claude | Tool çıktılarını sandbox'ta işleyip context'e sadece gerekli kısmı gönderiyor — %98 context tasarrufu (315KB → 5.4KB). Session state de koruyor |
 | **Gemini Beads** | [thoreinstein/gemini-beads](https://github.com/thoreinstein/gemini-beads) | Gemini | Git destekli bellek sistemi |
+| **Graphify** | [safishamsi/graphify](https://github.com/safishamsi/graphify) | Hepsi | Herhangi bir klasörü (kod, dokümanlar, makaleler, görseller, videolar) sorgulanabilir knowledge graph'a dönüştürme |
 
 ## Code Quality / Review
 

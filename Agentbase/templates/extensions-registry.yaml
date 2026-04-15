@@ -123,6 +123,19 @@ extensions:
       - condition: "project.team_size == large-team"
     conflicts: []
 
+  - name: "Graphify"
+    repo: "safishamsi/graphify"
+    url: "https://github.com/safishamsi/graphify"
+    agent: all
+    category: memory
+    install: "Repo'yu klonlayip CLAUDE.md'ye skill path ekleyin"
+    description: "Herhangi bir klasoru (kod, dokuman, gorsel, video) sorgulanabilir knowledge graph'a donusturen skill"
+    triggers:
+      - condition: "project.team_size == large-team"
+      - condition: "project.type == monorepo"
+      - condition: "project.subprojects.length >= 3"
+    conflicts: []
+
   # ─── WORKFLOW ───
 
   - name: "Claude CodePro"
