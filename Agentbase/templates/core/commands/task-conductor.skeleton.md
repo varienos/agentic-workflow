@@ -428,3 +428,10 @@ Tum fazlar tamamlandiginda:
 16. **Pattern takip et** — Mevcut koddaki yapiyi takip et. Yeni convention icat etme.
 17. **Guvenlik** — `.env`, credential, secret ASLA commit'e dahil edilmez.
 18. **Otonom calis** — Belirsiz AC disinda kullaniciya soru sorma.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

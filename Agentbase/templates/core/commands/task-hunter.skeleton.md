@@ -752,3 +752,10 @@ Ornek cikti:
 19. **DTO validasyon** — Her API endpoint'i input icin DTO + class-validator kullanmali.
 20. **Error response format** — API hatalari `{ error: string, code: string, details?: any }` formatinda donmeli.
 -->
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

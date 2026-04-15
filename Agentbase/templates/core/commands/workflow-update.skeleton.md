@@ -119,3 +119,10 @@ Kutsal Kurallar:
 - Codebase icinde `.claude/` OLUSTURULMAZ
 - Git sadece Codebase de calisir
 -->
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

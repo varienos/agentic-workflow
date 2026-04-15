@@ -286,3 +286,10 @@ Bu komut `/loop` ile kullanildiginda su garantileri saglar:
 8. **Kendi fix commit'ine takilma** - `last_fix_commit` kontrolu zorunlu.
 9. **Backlog CLI kullan** - Task olusturma/guncelleme islemlerini SADECE `backlog` komutlari ile yap.
 10. **Codebase yolu** - Tum git ve kod erisimleri `../Codebase/` uzerinden yapilir.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

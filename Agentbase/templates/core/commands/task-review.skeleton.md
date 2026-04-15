@@ -260,3 +260,10 @@ fix: review bulgusu — <sorun_ozeti>
 9. **Backlog CLI kullan** — Onceden var olan sorunlari `backlog task create` ile kaydet.
 10. **Guvenlik** — Hassas veri (credential, token) diff'te varsa KRITIK olarak raporla.
 11. **Codebase yolu** — Tum dosya erisimleri `../Codebase/` uzerinden.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

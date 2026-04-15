@@ -861,3 +861,10 @@ Kalici bulgulari memory sistemiyle kaydet.
 10. **Mevcut kodu bozma** — Her duzeltme oncesi dosyayi oku, mevcut stili takip et.
 11. **Dead code temizliginde YUKSEK guven gerekli** — Dinamik cagri riski olan bulgular ASLA dogrudan temizlenmez.
 12. **IDOR taramasi ZORUNLU** — Kullaniciya ozel veri iceren moduller icin.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

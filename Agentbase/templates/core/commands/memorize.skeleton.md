@@ -146,3 +146,10 @@ context: <hangi_gorev_veya_oturumda_orenildi>
 6. **Kategoriyi dogru sec** — Yanlis kategoriye koymaktan kacin.
 7. **Kisa tut** — Bir hafiza dosyasi 50 satirdan uzun olmamali.
 8. **Hassas bilgi kaydetme** — Credential, secret, kisisel bilgi ASLA hafizaya yazilmaz.
+
+<!-- GENERATE: SELF_REFRESH
+Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
+Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
+isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
+task-i olarak rapor edilir.
+-->

@@ -2156,6 +2156,21 @@ describe('SIMPLE_GENERATORS.SELF_REFRESH', () => {
     assert.doesNotMatch(content, /<!-- GENERATE: SELF_REFRESH/);
   });
 
+  it('tum core/commands skeleton-lari SELF_REFRESH marker icerir', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const dir = path.join(TEMPLATES_DIR, 'core', 'commands');
+    const files = fs.readdirSync(dir).filter(f => f.endsWith('.skeleton.md'));
+    assert.ok(files.length >= 14, `14 core command bekleniyor, ${files.length} bulundu`);
+
+    const missing = [];
+    for (const f of files) {
+      const content = fs.readFileSync(path.join(dir, f), 'utf8');
+      if (!/<!-- GENERATE: SELF_REFRESH\n/.test(content)) missing.push(f);
+    }
+    assert.deepEqual(missing, [], `SELF_REFRESH marker eksik: ${missing.join(', ')}`);
+  });
+
   it('fillBlocks SELF_REFRESH marker-ini degistirir, filled listesine ekler', () => {
     const input = [
       '# Komut',
