@@ -109,3 +109,6 @@ Codebase/*
 Docbase/agentic/project-manifest.yaml
 /Docbase/superpowers/
 /Docbase/agentic/
+
+# Git worktrees (superpowers skill tarafindan kullanilir)
+.worktrees/
