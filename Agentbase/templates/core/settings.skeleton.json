@@ -93,6 +93,17 @@
             "timeout": 10
           }
         }
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "__doc__": "Commit format validator — git commit -m mesaji conventional prefix ile eslesmezse blocklar",
+            "type": "command",
+            "command": "node .claude/hooks/commit-format-guard.js",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -137,6 +148,12 @@
             "type": "command",
             "command": "node .claude/hooks/team-trigger.js",
             "timeout": 100
+          },
+          {
+            "__doc__": "Turkce diakritik kontrolu — UI metinlerinde ASCII'lestirilmis Turkce kelimeleri yakalar (blocking yok)",
+            "type": "command",
+            "command": "node .claude/hooks/turkish-diacritic-guard.js",
+            "timeout": 10
           }
         ],
         "__GENERATE__POSTTOOLUSE_EDITWRITE_HOOKS__": {
