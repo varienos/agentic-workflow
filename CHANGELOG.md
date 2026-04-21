@@ -7,7 +7,15 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 ### Düzeltilen
 
-- **bootstrap:** TTY olmayan ortamda AI import akisi duzeltildi (`8191f87`)
+- **bootstrap:** TTY olmayan ortamda AI import akisi duzeltildi (`a99e4ed`)
+
+### Dokümantasyon
+
+- CHANGELOG otomatik güncellendi [skip ci] (`576c9f7`)
+
+### Sürüm
+
+- v1.11.1 (`b78921b`)
 
 ## [1.11.0] - 2026-04-21
 
