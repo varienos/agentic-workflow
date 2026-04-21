@@ -3,6 +3,13 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.11.0] - 2026-04-21
+
+### Eklenen
+
+- **bootstrap:** codebase AI varlik import ozelligi eklendi (`630eb9c`)
+- **hooks:** turkce diakritik ve commit format guard eklendi (`50707c7`)
+
 ## [1.10.0] - 2026-04-15
 
 ### Eklenen
