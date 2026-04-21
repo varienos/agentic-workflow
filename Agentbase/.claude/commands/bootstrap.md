@@ -15,12 +15,18 @@ Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
 - Worktree izolasyonu: `cd ../Codebase && git worktree add ...`
 - Bu ayrim Codebase'in guvenli worktree izolasyonunu saglar — agent ve backlog dosyalarindan bagimsiz.
 
-### 2. Bootstrap Codebase'e ASLA yazmaz
+### 2. Bootstrap Codebase'e ASLA yazmaz (tek istisna: AI Import)
 - Bootstrap Codebase'i OKUR → Agentbase'i YAPILANDIRIR.
 - Codebase'deki hicbir dosya degistirilmez, eklenmez veya silinmez.
 - Tum uretilen dosyalar Agentbase/.claude/ altina gider.
 - Manifest `../Docbase/agentic/` altina gider (Codebase disinda).
 - Projenin mevcut .gitignore, package.json, CI config dosyalari korunur.
+
+**ISTISNA — AI Import (Adim 1.2.5):** Kullanicinin cift onayiyla (tam metin
+"TASIMA VE SILME ONAYI") Codebase icindeki onceki Claude Code ve Backlog
+varlıklari (`.claude/`, `.claude/memory/`, `.claude/agent-memory/`, `CLAUDE.md`,
+`.mcp.json`, `backlog/*`) Agentbase'e tasinir ve kaynak Codebase'ten silinir.
+Bu tek istisna disinda Codebase'e yazma/silme ASLA yapilmaz.
 
 ---
 
@@ -95,6 +101,36 @@ Ardindan /bootstrap komutunu tekrar calistirin.
   - **b secilirse** → KOMPLE DUR (mevcut davranis).
 
 - **Dosyalar varsa** → `GREENFIELD_MODE = false`. `✅ Codebase bulundu` yazdir, bulunan ust-duzey dosya/klasorleri listele ve devam et.
+
+### 1.2.5 Codebase AI Varlik Import
+
+`GREENFIELD_MODE = false` ise Codebase'te onceki Claude Code veya Backlog
+varliklari (`.claude/`, `CLAUDE.md`, `.mcp.json`, `backlog/tasks/` vb.)
+olabilir. Bu varliklari tespit et ve kullaniciya import secenegi sun.
+
+Bash ile calistir:
+
+```
+node bin/import-codebase-ai.js --codebase ../Codebase --agentbase .
+```
+
+Script kendi cikti akisini yonetir — tespit raporunu, cift onay surecini
+ve islem sonucunu dogrudan kullaniciya gosterir. Script stdout'una son
+satirda bir marker yazar:
+
+- **`NO_IMPORT_NEEDED`** → Codebase'te AI varligi yok. Devam et.
+- **`IMPORT_CANCELLED`** → Kullanici onayi reddetti veya hedef cakismasi var.
+  Codebase ve Agentbase degismedi. Devam et.
+- **`IMPORT_DONE`** → Import basariyla tamamlandi. Rapor dosyasi
+  `Agentbase/.claude/custom/_imported/[ts]/import-report.md` olarak yazildi.
+  Devam et.
+- **`IMPORT_ERROR`** → Hata olustu. Stderr'deki mesaji kullaniciya goster
+  ve KOMPLE DUR.
+
+**ONEMLI — KUTSAL KURAL 2 MUAFIYETI:** Bu adim Codebase'e silme yapabilen tek
+bootstrap adimidir. Script ici cift onay (ikinci onayda tam metin "TASIMA VE
+SILME ONAYI" istenir) zorunludur. `--yes` bayragi sadece CI/test icindir;
+bootstrap.md bu bayragi VERMEZ.
 
 ### 1.3 Onceki Bootstrap Kontrolu
 

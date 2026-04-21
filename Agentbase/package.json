@@ -9,7 +9,9 @@
     "test": "node --test generate.test.js transform.test.js tests/*.test.js",
     "changelog": "node bin/changelog.js",
     "changelog:dry": "node bin/changelog.js --dry-run",
-    "release": "node bin/release.js"
+    "release": "node bin/release.js",
+    "import-ai:dry": "node bin/import-codebase-ai.js --codebase ../Codebase --agentbase . --dry-run",
+    "import-ai": "node bin/import-codebase-ai.js --codebase ../Codebase --agentbase ."
   },
   "engines": {
     "node": ">=18.0.0"
