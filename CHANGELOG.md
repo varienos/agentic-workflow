@@ -7,8 +7,16 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 ### Eklenen
 
-- **bootstrap:** codebase AI varlik import ozelligi eklendi (`630eb9c`)
-- **hooks:** turkce diakritik ve commit format guard eklendi (`50707c7`)
+- **bootstrap:** codebase AI varlik import ozelligi eklendi (`e10801c`)
+- **hooks:** turkce diakritik ve commit format guard eklendi (`67af85f`)
+
+### Dokümantasyon
+
+- CHANGELOG otomatik güncellendi [skip ci] (`11ca2fb`)
+
+### Sürüm
+
+- v1.11.0 (`39a09ec`)
 
 ## [1.10.0] - 2026-04-15
 
