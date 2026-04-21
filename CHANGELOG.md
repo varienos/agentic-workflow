@@ -3,6 +3,12 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [1.11.1] - 2026-04-21
+
+### Düzeltilen
+
+- **bootstrap:** TTY olmayan ortamda AI import akisi duzeltildi (`8191f87`)
+
 ## [1.11.0] - 2026-04-21
 
 ### Eklenen
