@@ -11,14 +11,22 @@
  * Muafiyet sadece kullanıcının çift onayıyla etkinleşir.
  *
  * Kullanım:
- *   node bin/import-codebase-ai.js --codebase ../Codebase --agentbase .
  *   node bin/import-codebase-ai.js --codebase ../Codebase --agentbase . --dry-run
+ *     Tespit raporu, fiziksel değişiklik yok.
+ *
  *   node bin/import-codebase-ai.js --codebase ../Codebase --agentbase . --yes
+ *     Non-interaktif yürütme. Çift onay bu script dışında (bootstrap.md içinde
+ *     chat üzerinden veya CI konfigürasyonunda) alınmış olmalıdır. `--yes`
+ *     sadece onay kanıtını scripte iletir; onay olmadan bu bayrak VERİLMEZ.
+ *
+ *   node bin/import-codebase-ai.js --codebase ../Codebase --agentbase .
+ *     TTY interaktif mod. Claude Code / Gemini CLI Bash tool'u TTY sağlamadığı
+ *     için agent oturumlarında kullanılmaz — sadece gerçek terminal oturumunda.
  *
  * Stdout markerları (bootstrap.md tarafından okunur):
  *   NO_IMPORT_NEEDED   — tespit edilen varlık yok
- *   IMPORT_CANCELLED   — kullanıcı onayı reddetti
- *   IMPORT_DONE        — başarıyla tamamlandı
+ *   IMPORT_CANCELLED   — kullanıcı onayı reddetti veya hedef çakışması
+ *   IMPORT_DONE        — başarıyla tamamlandı (dry-run veya gerçek)
  *   IMPORT_ERROR       — hata oluştu
  */
 

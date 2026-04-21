@@ -108,29 +108,67 @@ Ardindan /bootstrap komutunu tekrar calistirin.
 varliklari (`.claude/`, `CLAUDE.md`, `.mcp.json`, `backlog/tasks/` vb.)
 olabilir. Bu varliklari tespit et ve kullaniciya import secenegi sun.
 
-Bash ile calistir:
+**Adim 1.2.5.a — Tespit (dry-run):**
 
 ```
-node bin/import-codebase-ai.js --codebase ../Codebase --agentbase .
+node bin/import-codebase-ai.js --codebase ../Codebase --agentbase . --dry-run
 ```
 
-Script kendi cikti akisini yonetir — tespit raporunu, cift onay surecini
-ve islem sonucunu dogrudan kullaniciya gosterir. Script stdout'una son
-satirda bir marker yazar:
+Script stdout'unu kullaniciya aynen goster. Son satirdaki marker'a gore:
 
-- **`NO_IMPORT_NEEDED`** → Codebase'te AI varligi yok. Devam et.
-- **`IMPORT_CANCELLED`** → Kullanici onayi reddetti veya hedef cakismasi var.
-  Codebase ve Agentbase degismedi. Devam et.
-- **`IMPORT_DONE`** → Import basariyla tamamlandi. Rapor dosyasi
-  `Agentbase/.claude/custom/_imported/[ts]/import-report.md` olarak yazildi.
-  Devam et.
-- **`IMPORT_ERROR`** → Hata olustu. Stderr'deki mesaji kullaniciya goster
-  ve KOMPLE DUR.
+- **`NO_IMPORT_NEEDED`** → Codebase'te AI varligi yok. Adim 1.3'e gec.
+- **`IMPORT_CANCELLED`** → Hedef cakismasi var (raporda listelenir). Manuel
+  inceleme gerekli, kullaniciya bildir ve Adim 1.3'e gec.
+- **`IMPORT_DONE`** (dry-run isaretiyle) → Tespit tamamlandi, Adim 1.2.5.b'ye
+  gec.
+- **`IMPORT_ERROR`** → Stderr mesajini goster ve KOMPLE DUR.
+
+**Adim 1.2.5.b — Chat uzerinden cift onay:**
+
+Claude Code / Gemini CLI icinde `node --interactive` TTY saglamaz. Bu yuzden
+cift onay script yerine bu akisin icinde kullanici ile chat uzerinden alinir.
+
+Kullaniciya dry-run ciktisini ozetleyip su mesaji goster:
+
+```
+Yukaridaki varliklar Codebase'ten Agentbase'e tasinacak ve Codebase'ten
+silinecek. Devam etmek istiyor musunuz? (yes/no)
+```
+
+- Kullanici `no` / `hayir` / bos yanit verirse → "Import iptal edildi, mevcut
+  Codebase korundu" yazdir ve Adim 1.3'e gec.
+- Kullanici `yes` / `evet` verirse ikinci onayi iste:
+
+```
+⚠️  KUTSAL KURAL 2 MUAFIYETI
+Bu islem Codebase'teki dosyalari silecek (geri donusu git history'dedir).
+Onaylamak icin tam metni yaziniz:
+
+  TASIMA VE SILME ONAYI
+```
+
+- Kullanicinin yaniti tam olarak `TASIMA VE SILME ONAYI` degilse → iptal,
+  Adim 1.3'e gec.
+- Tam metin eslesirse Adim 1.2.5.c'ye gec.
+
+**Adim 1.2.5.c — Gercek yurutme (`--yes`):**
+
+```
+node bin/import-codebase-ai.js --codebase ../Codebase --agentbase . --yes
+```
+
+`--yes` bayragi chat uzerinden alinmis cift onayi scripte bildirir. Script
+interaktif prompt atlar ve tespit → kopya → silme → rapor adimlarini
+yurutur. Cikti marker'i:
+
+- **`IMPORT_DONE`** → Rapor `Agentbase/.claude/custom/_imported/[ts]/import-report.md`
+  yolunu gosterir. Kullaniciya bildir ve Adim 1.3'e gec.
+- **`IMPORT_ERROR`** → Stderr mesajini goster ve KOMPLE DUR.
 
 **ONEMLI — KUTSAL KURAL 2 MUAFIYETI:** Bu adim Codebase'e silme yapabilen tek
-bootstrap adimidir. Script ici cift onay (ikinci onayda tam metin "TASIMA VE
-SILME ONAYI" istenir) zorunludur. `--yes` bayragi sadece CI/test icindir;
-bootstrap.md bu bayragi VERMEZ.
+bootstrap adimidir. Silme yalnizca Adim 1.2.5.b'deki cift onay tam olarak
+karsilandiysa yurutulur. `--yes` bayragi bu onayin scripte iletimi icindir;
+onay olmadan ASLA verilmez.
 
 ### 1.3 Onceki Bootstrap Kontrolu
 
