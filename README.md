@@ -154,6 +154,33 @@ Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçim
 
 Yeniden çalıştırmalarda `overwrite`, `merge` ve `incremental` senaryoları desteklenir.
 
+### Geçiş Rehberi (1.10.x → 1.11.x)
+
+Sürüm 1.11.x ile birlikte Bootstrap **breaking change** içerir: `templates/interview/phase-{1-4}-*.md` dosyaları zorunlu kaynak haline geldi (TASK-214). Eski sürümlerde mevcut olan "yoksa varsayılan kullan" fallback davranışı kaldırıldı; eksik dosya tespit edilirse Bootstrap **fail-fast** durur.
+
+**Standart kurulumlarda (1.11.x klonlanmış):** Hiçbir manuel adım gerekmez — phase dosyaları zaten yerinde.
+
+**Kısmi/özelleştirilmiş kurulumlardan geçiyorsanız:**
+
+1. `Agentbase/templates/interview/` dizininin var olduğunu ve içinde 4 dosya olduğunu doğrulayın:
+   ```bash
+   ls Agentbase/templates/interview/
+   # Beklenen: phase-1-project.md  phase-2-technical.md  phase-3-developer.md  phase-4-rules.md
+   ```
+2. Herhangi bir dosya eksikse en güncel `main` kolundan kopyalayın:
+   ```bash
+   git checkout main -- Agentbase/templates/interview/
+   ```
+3. Manifest'inizi 1.11.x formatına yükseltmek için: `manifest.template_version` alanını `"1.1.0"`'a güncelleyin (veya Bootstrap'i `overwrite` modunda yeniden çalıştırın — manifest otomatik bump edilir).
+4. Eski manifest'lerde `manifest.rules.design_system: null` görülebilir. Yeni davranış `"none"` string'i kullanır; downstream tüketiciler her ikisini de eşdeğer işler (geriye uyumlu, manuel müdahale gerekmez).
+
+**Doğrulama:**
+```bash
+cd Agentbase && npm test  # tests/interview-phase-validation.test.js geçmeli
+```
+
+Daha fazla detay için: `CHANGELOG.md` → `[Unreleased]` bölümü.
+
 ## Komutlar
 
 Bootstrap tamamlandıktan sonra kullanılabilir hale gelen komutlar:

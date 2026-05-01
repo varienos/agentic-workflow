@@ -1027,7 +1027,7 @@ Asagidaki YAML sablonunu doldur. Bos kalan alanlara `null` yaz, bilinmeyen alanl
 ```yaml
 manifest:
   version: "1.0.0"
-  template_version: "1.0.0"
+  template_version: "1.1.0"  # 1.0.0 → 1.1.0: interview phase dosyalari zorunlu (TASK-214). Geriye uyumlu — eski manifest'ler 'overwrite' modunda otomatik bump edilir.
   generated_at: "[tarih-saat]"
   generation_mode: "[fresh|overwrite|merge|incremental]"
   managed_files:

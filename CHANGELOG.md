@@ -3,6 +3,31 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [Unreleased]
+
+### Eklenen
+
+- **bootstrap:** ADIM 2.7 toplu tespit özeti + `manifest.detected.*` şeması (TASK-207, TASK-211); 8 alanlık tespit + tek `AskUserQuestion` onayı + "Düzelteceğim" multiSelect akışı + GREENFIELD özet atlama.
+- **bootstrap:** ADIM 2.4'e 5 otomatik tespit alt-bölümü (TASK-212) — `test_framework`, `commit_convention` (50 commit %60 eşik), `migration`, `auth_method`, `design_system`.
+- **bootstrap:** Faz 3/4 subjektif sorular için `AskUserQuestion` batch çağrıları (TASK-208) — etkileşim ~20→~7-8.
+- **bootstrap:** ADIM 2 başına Placeholder Çözümleme Protokolü (TASK-213) — canonical format `{detected.<field>}`, boş fallback davranışı.
+- **bootstrap:** ADIM 1.4 Interview Phase Template Doğrulaması (TASK-214) — `templates/interview/phase-{1-4}-*.md` zorunlu kaynak; eksikse fail-fast hata.
+- **test:** `tests/interview-phase-validation.test.js` — 15 test (mevcut dosya kontrolü + missing-phase-file regresyon simülasyonu).
+
+### Değiştirilen
+
+- **bootstrap:** Faz 4 S2 design_system için skip condition tamamen kaldırıldı (TASK-209). UI tespit edilmedi/greenfield durumlarda da soru sorulur, default "Yok"; `manifest.rules.design_system = "none"` (string, null değil).
+- **bootstrap:** ADIM 3 inline default soru blokları silindi (TASK-210); fazlar artık `templates/interview/phase-{N}-*.md` dosyalarına refere ediyor.
+- **manifest:** `template_version` `1.0.0` → `1.1.0` (minor bump — interview phase dosyaları zorunlu, fallback davranış değişikliği).
+
+### Kaldırılan
+
+- **bootstrap:** "Mevcut değilse aşağıdaki varsayılan soruları kullan" fallback cümlesi (TASK-214). Phase template dosyaları artık zorunlu kaynak.
+
+### ⚠️ BREAKING CHANGE
+
+- **bootstrap interview dosyaları zorunlu:** `templates/interview/phase-1-project.md`, `phase-2-technical.md`, `phase-3-developer.md`, `phase-4-rules.md` dosyalarından biri eksikse Bootstrap fail-fast durur. Eski projelerde bu dosyalar mevcut olmalıdır (TASK-185 sonrası standart kurulumda bulunur). Eksik kurulumlar için geçiş rehberi: `README.md` → "Bootstrap Akışı / Geçiş Rehberi (1.10.x → 1.11.x)" bölümü.
+
 ## [1.11.1] - 2026-04-21
 
 ### Düzeltilen
