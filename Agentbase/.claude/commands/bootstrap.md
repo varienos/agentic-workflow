@@ -17,7 +17,7 @@ Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
 
 ### 2. Bootstrap Codebase'e ASLA yazmaz (tek istisna: AI Import)
 - Bootstrap Codebase'i OKUR → Agentbase'i YAPILANDIRIR.
-- Codebase'deki hicbir dosya degistirilmez, eklenmez veya silinmez.
+- Codebase'deki hiçbir dosya degistirilmez, eklenmez veya silinmez.
 - Tum uretilen dosyalar Agentbase/.claude/ altina gider.
 - Manifest `../Docbase/agentic/` altina gider (Codebase disinda).
 - Projenin mevcut .gitignore, package.json, CI config dosyalari korunur.
@@ -49,7 +49,7 @@ Bootstrap cok sayida dosya olusturma, dizin yaratma ve backlog islemleri yapacak
    Devam etmek icin Enter'a basin >
 ```
 
-> Bu bir ONERI — zorunluluk degil. Kullanici devam etmek isterse bypass olmadan da calisir.
+> Bu bir ONERI — zorunluluk degil. Kullanıcı devam etmek isterse bypass olmadan da calisir.
 
 ### 1.1 Backlog CLI Kontrolu
 
@@ -87,24 +87,28 @@ Projenizi bu dizine koyun veya sembolik link olusturun:
 Ardindan /bootstrap komutunu tekrar calistirin.
 ```
 
-- **Dizin var ama bos** → Greenfield moduna gec. Kullaniciya sor:
+- **Dizin var ama bos** → Greenfield moduna gec. Kullaniciya `AskUserQuestion` ile sor (plain text prompt kullanma):
 
+```yaml
+AskUserQuestion cagrisi:
+  question: "📦 Codebase/ dizini boş. Sıfırdan yeni bir proje mi başlıyorsunuz?"
+  header: "Greenfield"
+  multiSelect: false
+  options:
+    - label: "Evet, greenfield"
+      description: "Stack ve proje bilgileri röportajda sorulacak"
+    - label: "Hayır, duracağım"
+      description: "Önce projeyi Codebase/ dizinine koyacağım"
 ```
-📦 Codebase/ dizini bos. Sifirdan yeni bir proje mi basliyorsunuz?
-   a) Evet — greenfield modunda devam et (stack ve proje bilgileri roportajda sorulacak)
-   b) Hayir — once projeyi Codebase/ dizinine koyacagim
 
->
-```
-
-  - **a secilirse** → `GREENFIELD_MODE = true` olarak kaydet. `✅ Greenfield modu aktif` yazdir ve devam et.
-  - **b secilirse** → KOMPLE DUR (mevcut davranis).
+  - **"Evet, greenfield"** → `GREENFIELD_MODE = true` olarak kaydet. `✅ Greenfield modu aktif` yazdir ve devam et.
+  - **"Hayır, duracağım"** → KOMPLE DUR (mevcut davranis).
 
 - **Dosyalar varsa** → `GREENFIELD_MODE = false`. `✅ Codebase bulundu` yazdir, bulunan ust-duzey dosya/klasorleri listele ve devam et.
 
 ### 1.2.5 Codebase AI Varlik Import
 
-`GREENFIELD_MODE = false` ise Codebase'te onceki Claude Code veya Backlog
+`GREENFIELD_MODE = false` ise Codebase'te önceki Claude Code veya Backlog
 varliklari (`.claude/`, `CLAUDE.md`, `.mcp.json`, `backlog/tasks/` vb.)
 olabilir. Bu varliklari tespit et ve kullaniciya import secenegi sun.
 
@@ -204,7 +208,7 @@ Yerel customization: [yok | dosya listesi]
 Yeniden calistirma modu secin:
   1) overwrite   — Bootstrap-yonetimli dosyalari sifirdan uret; `.claude/custom/`, `reports/`, `tracking/` korunur
   2) merge       — Manifest farklarini birlestir; yeni modulleri ekle; artik tespit edilmeyen modulleri pasife al; sadece etkilenen dosyalari guncelle
-  3) incremental — Sadece girdisi veya template'i degisen dosyalari guncelle
+  3) incremental — Sadece girdisi veya template'i degisen dosyalari güncelle
   4) iptal
 
 Secim: [1/2/3/4]
@@ -238,7 +242,7 @@ Tum kontroller basarili oldugunda:
 
 ## ADIM 2 — CODEBASE ANALIZI (Otomatik)
 
-> **GREENFIELD_MODE = true ise** bu adimin tamamini atla. Asagidaki mesaji goster ve dogrudan ADIM 3'e gec:
+> **GREENFIELD_MODE = true ise** bu adimin tamamini atla. Asagidaki mesaji göster ve dogrudan ADIM 3'e gec:
 >
 > ```
 > 🌱 Greenfield modu — otomatik codebase analizi atlanıyor.
@@ -427,7 +431,7 @@ Tum detect.md dosyalari asagidaki yapisal formati kullanir. Bu format hem Claude
 | `config_key` | `config_key: package.json -> workspaces` | Config dosyasinda belirli bir key var mi |
 | `not_dependency` | `not_dependency: next` | Paketin dependency'lerde OLMAMASI gerektigi (negatif kontrol) |
 
-**Minimum Match formati:** `X/Y` — Y kontrol icinden minimum X'inin saglanmasi gerekir. Standalone moduller icin `1/N` (herhangi 1 yeterli) kullanilir.
+**Minimum Match formati:** `X/Y` — Y kontrol icinden minimum X'inin saglanmasi gerekir. Standalone moduller için `1/N` (herhangi 1 yeterli) kullanilir.
 
 **Tespit akisi:**
 
@@ -601,6 +605,9 @@ Mevcut davranista degisiklik yok. Sonucu goster:
    Atlanan varyantlar: [kategori bazinda listelenen inaktif varyantlar]
 ```
 
+> **Detected Alan Üretim Noktası (TASK-212/T3 hook):**
+> Aşağıdaki 8 alanın otomatik tespit mantığı **TASK-212** kapsamında 2.4.1–2.4.5 alt-bölümleri olarak eklenecektir: `test_framework`, `formatter`, `linter`, `orm`, `auth_method`, `design_system`, `deploy_platform`, `commit_convention`. T1a (TASK-207) sadece `manifest.detected` şemasını ve ADIM 2.7 özet/onay yapısını kurar; otomatik tespit mantığı T3'ün işidir. T3 tamamlanana kadar bu blok boş kalır ve ADIM 2.7'de Bölüm 2/3 atlanır (greenfield ile aynı davranış).
+
 ### 2.5 Script Tespiti
 
 **package.json scripts:** Root ve her alt projenin package.json icindeki `scripts` bolumunu oku. Ozellikle: `dev`, `build`, `test`, `lint`, `start`, `format`, `typecheck`, `migrate`
@@ -655,9 +662,11 @@ Sonucu goster:
 
 Endpoint bulunamazsa atla — smoke test fallback (health + status) kullanilir.
 
-### 2.7 Analiz Ozeti
+### 2.7 Analiz Ozeti ve Tek Onay
 
-Tum sonuclari bir ozet halinde goster:
+İki bölümlü özet göster: önce genel analiz özeti, sonra `manifest.detected.*` tablosu, ardından **tek bir AskUserQuestion** ile toplu onay al. Bu yapı `feedback_bootstrap_interview.md` (2026-04-22) kuralının uygulamasıdır: kod analizinden çıkarılabilen bilgiler ADIM 3'te tek tek sorulmaz, tabloda gösterilip toplu onaylanır.
+
+**Bölüm 1 — Genel özet (her zaman gösterilir):**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -668,10 +677,64 @@ Runtime:       [runtime]
 Alt Projeler:  [sayi]
 Aktif Moduller:[liste]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Simdi eksik bilgileri tamamlamak icin kisa bir roportaj yapacagim.
-Her seferinde tek soru soracagim.
 ```
+
+**Bölüm 2 — Tespit Edilenler tablosu (manifest.detected boş değilse):**
+
+`manifest.detected` içinde en az bir alan dolu ise aşağıdaki tabloyu göster:
+
+```
+🔍 Tespit Edilenler:
+┌─────────────────────┬────────────────────────────────────┬────────┬────────────────────────────────┐
+│ Alan                │ Değer                              │ Güven  │ Kaynak                         │
+├─────────────────────┼────────────────────────────────────┼────────┼────────────────────────────────┤
+│ test_framework      │ {detected.test_framework.value}    │ {…}    │ {detected.test_framework.source}│
+│ formatter           │ {detected.formatter.value}         │ {…}    │ {detected.formatter.source}     │
+│ linter              │ {detected.linter.value}            │ {…}    │ {detected.linter.source}        │
+│ orm                 │ {detected.orm.value}               │ {…}    │ {detected.orm.source}           │
+│ auth_method         │ {detected.auth_method.value}       │ {…}    │ {detected.auth_method.source}   │
+│ design_system       │ {detected.design_system.value}     │ {…}    │ {detected.design_system.source} │
+│ deploy_platform     │ {detected.deploy_platform.value}   │ {…}    │ {detected.deploy_platform.source}│
+│ commit_convention   │ {detected.commit_convention.value} │ {…}    │ {detected.commit_convention.source}│
+└─────────────────────┴────────────────────────────────────┴────────┴────────────────────────────────┘
+```
+
+**Düşük güven gösterimi:** `confidence: low` olan alanlar için "Değer" sütununda etiket eklenir. Örnek: `conventional [düşük güven]`. Kullanıcı bu işareti gördüğünde değeri daha dikkatli doğrular.
+
+**Boş alan davranışı:** `manifest.detected.<alan>` yoksa veya `value` `null`/boşsa o satır tabloda hiç gösterilmez (alan tamamen atlanır, "—" yazılmaz).
+
+**Bölüm 3 — Tek onay sorusu (Bölüm 2 gösterildiyse):**
+
+`AskUserQuestion` tool'unu şu parametrelerle çağır:
+
+```yaml
+question: "Yukarıdaki tespitler doğru mu?"
+header: "Tespit onay"
+multiSelect: false
+options:
+  - label: "Evet, hepsi doğru"
+    description: "Tabloda gösterilen tüm tespitler manifest'e olduğu gibi yazılır; ADIM 3'te bu alanlara karşılık gelen sorular atlanır, sadece subjektif sorular sorulur."
+  - label: "Düzelteceğim"
+    description: "Hangi alanların yanlış olduğunu seçmek istiyorum (multiSelect akışı — TASK-211/T1b kapsamında implement edilir)."
+```
+
+**"Evet, hepsi doğru" cevabı:** `manifest.detected.<alan>.value` değerleri ilgili final alanlara kopyalanır:
+- `detected.test_framework.value` → `stack.test_framework` (ve `workflows.test_strategy` türetilir: framework varsa `tests-exist`, yoksa `none`)
+- `detected.formatter.value` → `stack.formatter`
+- `detected.linter.value` → `stack.linter`
+- `detected.orm.value` → `stack.orm`
+- `detected.auth_method.value` → `stack.auth_method`
+- `detected.design_system.value` → `rules.design_system`
+- `detected.deploy_platform.value` → `environments[*].deploy_platform`
+- `detected.commit_convention.value` → `workflows.commit_convention`
+
+ADIM 3'te bu alanlara karşılık gelen sorular atlanır; sadece subjektif sorular (proje tanımı, geliştirici profili, domain kuralları, ek notlar) sorulur.
+
+**"Düzelteceğim" cevabı:** TASK-211 (T1b) tarafından implement edilecek multiSelect akışı tetiklenir. T1b henüz uygulanmadıysa fallback olarak ADIM 3 tüm sorularıyla çalışır (skip condition iptal).
+
+**GREENFIELD modu:** `GREENFIELD_MODE = true` ise `manifest.detected` baştan boş olur → Bölüm 2 ve Bölüm 3 atlanır. Bölüm 1'in altına şu mesaj yazılır: "Greenfield mod — tüm röportaj soruları sorulacak." Ardından doğrudan ADIM 3'e geçilir.
+
+**Detected boş + GREENFIELD değil durumu:** T3 (TASK-212) henüz tamamlanmadıysa bu durum oluşur. Bu durumda da Bölüm 2 ve Bölüm 3 atlanır, ADIM 3 tüm sorularıyla çalışır.
 
 ---
 
@@ -684,6 +747,13 @@ Her seferinde tek soru soracagim.
 4. Mumkun olan her yerde coktan secmeli (a/b/c/d) format kullan.
 5. Kullanicinin cevabini al, kaydet, sonraki soruya gec.
 6. Her fazin basinda faz basligini goster.
+7. **Çoktan seçmeli tüm soruları `AskUserQuestion` tool'u ile sor — plain text `>` promptu kullanma.** Her sorunun Markdown bloğunun hemen altında "AskUserQuestion çağrısı" şablonu verilmiştir; o şablonu tool parametresi olarak kullan. Kısıtlar:
+   - Her soru 2–4 seçenek arası olmalı. 5+ seçenek varsa en popüler 4'ünü göster — "Other" otomatik eklenir (manuel ekleme).
+   - `multiSelect: true` → birden fazla seçim gerektiğinde (örn. stack, hedef CLI araçları).
+   - `header` max 12 karakter kısa label (chip olarak gösterilir).
+   - Kullanıcı "Other" seçerse verdiği serbest metni manifest'e o şekilde yaz.
+   - **Free-text isteyen sorular** (proje tanımı, domain kuralları, ek notlar vb.) AskUserQuestion kullanma — `>` promptuyla sormaya devam et.
+   - "Tespit edilen: ..." ipuçlarını `description` alanına kısaltarak taşı; gerekirse soru metnine de parantez içinde ekle.
 
 Eger `templates/interview/phase-{N}-*.md` dosyalari mevcutsa onlari oku ve soru sablonlarini oradan al. Mevcut degilse asagidaki varsayilan sorulari kullan.
 
@@ -693,25 +763,29 @@ Eger `templates/interview/phase-{N}-*.md` dosyalari mevcutsa onlari oku ve soru 
 > **GREENFIELD_MODE = true ise** otomatik tespit sonuclari yok. Bu fazda S0 (stack secimi) ek sorusu sorulur ve tum sorular (S2, S3 dahil) skip condition'siz sorulur.
 
 **S0 (SADECE GREENFIELD_MODE — stack secimi):**
-```
-━━━ Faz 1/4: Proje Temelleri (Greenfield) ━━━
 
-S0: Hangi teknoloji stack'ini kullanacaksiniz?
-    a) Node.js (Express/Fastify/Next.js/Expo)
-    b) Python (Django/FastAPI/Flask)
-    c) PHP (Laravel/CodeIgniter)
-    d) Go
-    e) Rust
-    f) Java/Kotlin
-    g) Diger: ___
+Önce faz başlığını yazdır: `━━━ Faz 1/4: Proje Temelleri (Greenfield) ━━━`
 
-    Birden fazla secebilirsiniz (orn: a,c)
+Sonra `AskUserQuestion` tool'unu şu parametrelerle çağır:
 
->
+```yaml
+question: "Hangi teknoloji stack'ini kullanacaksınız? (Birden fazla seçebilirsiniz; 'Other' seçerseniz Rust/Java/Kotlin gibi stack'ler için serbest metin girebilirsiniz)"
+header: "Stack"
+multiSelect: true
+options:
+  - label: "Node.js"
+    description: "Express/Fastify/Next.js/Expo"
+  - label: "Python"
+    description: "Django/FastAPI/Flask"
+  - label: "PHP"
+    description: "Laravel/CodeIgniter"
+  - label: "Go"
+    description: "net/http, Gin, Echo"
 ```
 
 S0 cevabina gore:
-- `manifest.stack.primary` ve `manifest.stack.detected` doldurulur.
+- `manifest.stack.primary` ve `manifest.stack.detected` doldurulur (seçilen label'lar).
+- Kullanıcı "Other" seçtiyse girdiği serbest metin `manifest.stack.detected` listesine eklenir.
 - Sonraki sorulardaki "[Tespit edilen: ...]" ipuclari bos birakilir.
 
 **S1 (her zaman sor):**
@@ -725,29 +799,48 @@ S1: Bu projeyi kisaca tanimlar misiniz?
 ```
 
 **S2 (ortamlar — greenfield'da da sor, skip condition yok):**
+
+`AskUserQuestion` tool'unu şu parametrelerle çağır:
+
+```yaml
+question: "Projenin çalışma ortamları nelerdir? [Tespit edilen: production URL varsa bu soru metnine ekle]"
+header: "Ortamlar"
+multiSelect: false
+options:
+  - label: "Sadece local"
+    description: "Hiçbir deploy ortamı yok"
+  - label: "Local + staging"
+    description: "Geliştirme + test ortamı"
+  - label: "Local + prod"
+    description: "Geliştirme + canlı ortam"
+  - label: "Local+stg+prod"
+    description: "Üç katmanlı tam akış"
 ```
-S2: Projenin calisma ortamlari nelerdir?
-    a) Sadece local
-    b) Local + staging
-    c) Local + production
-    d) Local + staging + production
 
-    [Tespit edilen: production URL varsa belirt]
+Cevaptan sonra, eğer kullanıcı production içeren bir seçenek işaretlediyse plain text ile Production URL sor:
 
-    Production URL (varsa):
+```
+Production URL (varsa):
 >
 ```
 
 **S3 (deploy — greenfield'da da sor, skip condition yok):**
-```
-S3: Deploy yonteminiz nedir?
-    a) Manuel (SSH/FTP)
-    b) CI/CD (GitHub Actions, GitLab CI vb.)
-    c) Platform (Vercel, Netlify, Railway vb.)
-    d) Container (Docker + Coolify/Portainer vb.)
-    e) Henuz deploy yok
 
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır (5. seçenek "Henüz deploy yok" için "Other" kullan — kullanıcı "Other" seçip "yok" yazarsa `stack.deploy = "none"`):
+
+```yaml
+question: "Deploy yönteminiz nedir?"
+header: "Deploy"
+multiSelect: false
+options:
+  - label: "Manuel"
+    description: "SSH veya FTP ile elle deploy"
+  - label: "CI/CD"
+    description: "GitHub Actions, GitLab CI vb."
+  - label: "Platform"
+    description: "Vercel, Netlify, Railway vb."
+  - label: "Container"
+    description: "Docker + Coolify/Portainer vb."
 ```
 
 **S4 (alt proje rolleri — sadece monorepo ise sor):**
@@ -760,108 +853,166 @@ S4: Alt projelerin rollerini dogrulayalim:
 ```
 
 **S5 (API prefix — sadece API tespit edildiyse veya S0'da secildiyse sor):**
-```
-S5: API prefix'iniz nedir?
-    a) /api
-    b) /api/v1
-    c) /v1
-    d) Prefix yok
-    e) Diger: ___
 
-    [Tespit edilen: route dosyalarindan tahmin]
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır. Özel bir prefix için kullanıcı "Other" seçip değer yazabilir. Tespit edilen varsa soru metnine parantez içinde ekle:
+
+```yaml
+question: "API prefix'iniz nedir? [Tespit edilen: route dosyalarından tahmin — varsa buraya yaz]"
+header: "API prefix"
+multiSelect: false
+options:
+  - label: "/api"
+    description: "Standart prefix"
+  - label: "/api/v1"
+    description: "Versiyonlu standart prefix"
+  - label: "/v1"
+    description: "Sadece versiyon prefix'i"
+  - label: "Prefix yok"
+    description: "Root'tan serve ediliyor"
 ```
 
 ### Faz 2 — Teknik Tercihler
 *Bu faz STACK.md ve WORKFLOWS.md icin veri toplar.*
 
 **S1 (test stratejisi):**
-```
-━━━ Faz 2/4: Teknik Tercihler ━━━
 
-S1: Test stratejiniz nedir?
-    a) TDD — once test, sonra kod
-    b) Testler var — feature sonrasi test yaziliyor
-    c) Minimal — kritik yerler icin test
-    d) Test yok
+Önce faz başlığını yazdır: `━━━ Faz 2/4: Teknik Tercihler ━━━`
 
-    [Tespit edilen test framework: ...]
->
+Sonra `AskUserQuestion` tool'unu şu parametrelerle çağır. Tespit edilen test framework varsa soru metnine parantez içinde ekle:
+
+```yaml
+question: "Test stratejiniz nedir? [Tespit edilen test framework: ...]"
+header: "Test"
+multiSelect: false
+options:
+  - label: "TDD"
+    description: "Önce test, sonra kod"
+  - label: "Post-hoc"
+    description: "Feature sonrası test yazılıyor"
+  - label: "Minimal"
+    description: "Kritik yerler için test"
+  - label: "Test yok"
+    description: "Test yazılmıyor"
 ```
 
 **S2 (branch modeli):**
-```
-S2: Git branch modeliniz nedir?
-    a) Direct push — main/master'a direkt push
-    b) Feature branch + PR
-    c) GitFlow (develop/release/hotfix)
-    d) Trunk-based (kisa omurlu branch'ler)
 
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır:
+
+```yaml
+question: "Git branch modeliniz nedir?"
+header: "Branch"
+multiSelect: false
+options:
+  - label: "Direct push"
+    description: "main/master'a doğrudan push"
+  - label: "Feature + PR"
+    description: "Feature branch + pull request"
+  - label: "GitFlow"
+    description: "develop / release / hotfix akışı"
+  - label: "Trunk-based"
+    description: "Kısa ömürlü feature branch'ler"
 ```
 
 **S3 (commit convention):**
-```
-S3: Commit mesaj konvansiyonunuz?
-    a) Conventional Commits (feat:, fix:, refactor: vb.)
-    b) Serbest format
-    c) Ozel format (aciklayiniz)
 
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır. "Özel format" için kullanıcı "Other" seçip açıklama yazsın:
+
+```yaml
+question: "Commit mesaj konvansiyonunuz?"
+header: "Commit"
+multiSelect: false
+options:
+  - label: "Conventional"
+    description: "feat:, fix:, refactor: vb. prefix'ler"
+  - label: "Serbest"
+    description: "Herhangi bir format, sabit kural yok"
 ```
 
 **S4 (migration stratejisi — sadece DB tespit edildiyse sor):**
-```
-S4: Veritabani migration stratejiniz?
-    a) ORM migration (Prisma migrate, Eloquent migrate vb.)
-    b) Manuel SQL dosyalari
-    c) Henuz migration sistemi yok
 
-    [Tespit edilen ORM: ...]
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır. Tespit edilen ORM varsa soru metnine parantez içinde ekle:
+
+```yaml
+question: "Veritabanı migration stratejiniz? [Tespit edilen ORM: ...]"
+header: "Migration"
+multiSelect: false
+options:
+  - label: "ORM migration"
+    description: "Prisma migrate, Eloquent migrate vb."
+  - label: "Manuel SQL"
+    description: "Elle yazılan SQL dosyaları"
+  - label: "Yok"
+    description: "Henüz migration sistemi yok"
 ```
 
 **S5 (format hook — sadece formatter tespit edildiyse sor):**
-```
-S5: Commit oncesi otomatik format hook istiyor musunuz?
-    a) Evet — her commit'te otomatik formatla
-    b) Hayir — manuel calistiracagim
 
-    [Tespit edilen formatter: ...]
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır. Tespit edilen formatter'ı soru metnine parantez içinde ekle:
+
+```yaml
+question: "Commit öncesi otomatik format hook istiyor musunuz? [Tespit edilen formatter: ...]"
+header: "Format hook"
+multiSelect: false
+options:
+  - label: "Evet"
+    description: "Her commit'te otomatik formatla"
+  - label: "Hayır"
+    description: "Manuel çalıştıracağım"
 ```
 
 **S6 (authentication tipi):**
-```
-S6: Projede authentication var mi? Hangi yontem?
-    a) JWT (token-based)
-    b) OAuth2 (Google, GitHub, vb.)
-    c) Session-based
-    d) API key
-    e) Yok / henuz planlanmadi
 
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır. "Yok/henüz planlanmadı" için kullanıcı "Other" seçip "none" yazsın (veya bu seçeneği 4. option yapıp "API key" yerine "Other"a yönlendir):
+
+```yaml
+question: "Projede authentication var mı? Hangi yöntem?"
+header: "Auth"
+multiSelect: false
+options:
+  - label: "JWT"
+    description: "Token-based authentication"
+  - label: "OAuth2"
+    description: "Google, GitHub vb. SSO"
+  - label: "Session"
+    description: "Session-based (cookie)"
+  - label: "Yok"
+    description: "Auth yok / henüz planlanmadı"
 ```
+
+Not: API key veya başka özel yöntem için kullanıcı "Other" seçer; cevaptan sonra `stack.auth_method` alanına map et.
 
 → Manifest: `stack.auth_method` alanina yaz (`jwt`, `oauth2`, `session`, `api-key`, `none`).
 → code-review agent checklist'ine auth-spesifik kontroller eklenecek.
 
 **S7 (isimlendirme konvansiyonu):**
-```
-S7: Kod isimlendirme konvansiyonunuz?
-    a) camelCase (JavaScript/TypeScript)
-    b) snake_case (Python/PHP)
-    c) PascalCase + camelCase (C#, Java)
-    d) Linter/formatter config'den tespit et
-    e) Ozel: ___
 
-    Dosya isimlendirme:
-    a) kebab-case (ornek: user-service.js)
-    b) snake_case (ornek: user_service.py)
-    c) PascalCase (ornek: UserService.cs)
+`AskUserQuestion` tool'unu **iki soruyu aynı çağrıda** ileterek sor (tool 1-4 soru destekler):
 
-    [Tespit edilen: ...]
->
+```yaml
+questions:
+  - question: "Kod isimlendirme konvansiyonunuz? [Tespit edilen: linter/formatter config'den göster]"
+    header: "Naming"
+    multiSelect: false
+    options:
+      - label: "camelCase"
+        description: "JavaScript / TypeScript"
+      - label: "snake_case"
+        description: "Python / PHP"
+      - label: "PascalCase"
+        description: "C# / Java (tür + metot karışık)"
+      - label: "Config'den"
+        description: "Linter/formatter config'den otomatik tespit"
+  - question: "Dosya isimlendirme nasıl olsun?"
+    header: "File naming"
+    multiSelect: false
+    options:
+      - label: "kebab-case"
+        description: "Örn: user-service.js"
+      - label: "snake_case"
+        description: "Örn: user_service.py"
+      - label: "PascalCase"
+        description: "Örn: UserService.cs"
 ```
 
 → Manifest: `conventions.naming` ve `conventions.file_naming` alanlarina yaz.
@@ -872,46 +1023,73 @@ S7: Kod isimlendirme konvansiyonunuz?
 *Bu faz DEVELOPER.md icin veri toplar.*
 
 **S1 (deneyim seviyesi):**
-```
-━━━ Faz 3/4: Gelistirici Profili ━━━
 
-S1: Bu projenin tech stack'indeki deneyim seviyeniz?
-    a) Junior — ogrenme asamasindayim, detayli aciklama isterim
-    b) Mid — temel bilgiler var, karmasik konularda rehberlik isterim
-    c) Senior — deneyimliyim, kisa ve oz yanitlar yeterli
-    d) Stack'e yeniyim — baska stack'lerde deneyimliyim ama bu stack yeni
+Önce faz başlığını yazdır: `━━━ Faz 3/4: Geliştirici Profili ━━━`
 
->
+Sonra `AskUserQuestion` tool'unu şu parametrelerle çağır:
+
+```yaml
+question: "Bu projenin tech stack'indeki deneyim seviyeniz?"
+header: "Seviye"
+multiSelect: false
+options:
+  - label: "Junior"
+    description: "Öğrenme aşamasında, detaylı açıklama isterim"
+  - label: "Mid"
+    description: "Temel var, karmaşık konularda rehberlik isterim"
+  - label: "Senior"
+    description: "Deneyimli, kısa ve öz yanıtlar yeterli"
+  - label: "Stack yeni"
+    description: "Başka stack'lerde deneyimli, bu stack yeni"
 ```
 
 **S2 (iletisim dili):**
-```
-S2: Claude ile iletisim diliniz?
-    a) Turkce
-    b) English
-    c) Diger (belirtiniz)
 
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır. Başka dil için kullanıcı "Other" seçip yazar:
+
+```yaml
+question: "Claude ile iletişim diliniz?"
+header: "Dil"
+multiSelect: false
+options:
+  - label: "Türkçe"
+    description: "Tüm iletişim Türkçe"
+  - label: "English"
+    description: "All communication in English"
 ```
 
 **S3 (otonomi seviyesi):**
-```
-S3: Claude'un otonomi seviyesi ne olsun?
-    a) Her adimda sor — her islemden once onay al
-    b) Planla ve uygula — plani goster, onay al, sonra otonom calis
-    c) Tam otonom — direkt yap, sadece sonuc bildir
 
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır:
+
+```yaml
+question: "Claude'un otonomi seviyesi ne olsun?"
+header: "Otonomi"
+multiSelect: false
+options:
+  - label: "Her adımda"
+    description: "Her işlemden önce onay al"
+  - label: "Planla-uygula"
+    description: "Planı göster, onay al, sonra otonom çalış"
+  - label: "Tam otonom"
+    description: "Doğrudan yap, sadece sonuç bildir"
 ```
 
 **S4 (calisma modu):**
-```
-S4: Projede tek mi calisiyorsun, ekip mi?
-    a) Solo — tek gelistirici
-    b) Kucuk ekip (2-4 kisi)
-    c) Buyuk ekip (5+ kisi)
 
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır:
+
+```yaml
+question: "Projede tek mi çalışıyorsun, ekip mi?"
+header: "Ekip"
+multiSelect: false
+options:
+  - label: "Solo"
+    description: "Tek geliştirici"
+  - label: "Küçük ekip"
+    description: "2–4 kişi"
+  - label: "Büyük ekip"
+    description: "5+ kişi"
 ```
 
 → Manifest: `project.team_size` alanina yaz (`solo`, `small-team`, `large-team`).
@@ -920,50 +1098,69 @@ S4: Projede tek mi calisiyorsun, ekip mi?
 ### Faz 4 — Domain Kurallari
 *Bu faz rules/ dosyalari icin veri toplar.*
 
-**S1 (yasakli komutlar):**
+**S1 (yasakli komutlar — free text):**
+
+Önce faz başlığını yazdır: `━━━ Faz 4/4: Domain Kuralları ━━━`
+
+Bu soru serbest metin gerektirdiği için plain `>` promptuyla sor (AskUserQuestion kullanma):
+
 ```
-━━━ Faz 4/4: Domain Kurallari ━━━
+S1: Yasaklanması gereken komut veya pattern var mı?
+    (Örnek: "git push --force", "DROP TABLE", "rm -rf /")
 
-S1: Yasaklanmasi gereken komut veya pattern var mi?
-    (Ornek: "git push --force", "DROP TABLE", "rm -rf /")
-
-    Virgul ile ayirarak yazin veya "yok" deyin:
+    Virgül ile ayırarak yazın veya "yok" deyin:
 >
 ```
 
 **S2 (design system — sadece UI framework tespit edildiyse sor):**
-```
-S2: Kullandiginiz tasarim sistemi / component kutuphanesi?
-    a) Material UI / MUI
-    b) Ant Design
-    c) Shadcn/ui
-    d) React Native Paper
-    e) Tailwind UI
-    f) Ozel component kutuphanesi
-    g) Yok / belirli bir sey kullanmiyorum
 
-    [Tespit edilen: ...]
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır. Diğer component kütüphaneleri için kullanıcı "Other" seçip yazsın. Tespit edilen varsa soru metnine parantez içinde ekle:
+
+```yaml
+question: "Kullandığınız tasarım sistemi / component kütüphanesi? [Tespit edilen: ...]"
+header: "Design sys"
+multiSelect: false
+options:
+  - label: "MUI"
+    description: "Material UI / MUI"
+  - label: "Shadcn/ui"
+    description: "Radix UI + Tailwind"
+  - label: "Tailwind UI"
+    description: "Tailwind CSS tabanlı"
+  - label: "Yok"
+    description: "Belirli bir şey kullanmıyorum"
 ```
 
-**S3 (domain kurallari):**
-```
-S3: Projeye ozel kurallar var mi?
-    (Ornek: "API response formati her zaman {status, message, data} olsun",
-     "Tum componentlerde tema renkleri kullanilsin", "Log seviyesi: info")
+Not: Ant Design, React Native Paper, özel kütüphane vb. için kullanıcı "Other" seçer.
 
-    Her kurali ayri satirda yazin veya "yok" deyin:
+**S3 (domain kurallari — free text):**
+
+Bu soru serbest metin gerektirdiği için plain `>` promptuyla sor (AskUserQuestion kullanma):
+
+```
+S3: Projeye özel kurallar var mı?
+    (Örnek: "API response formatı her zaman {status, message, data} olsun",
+     "Tüm componentlerde tema renkleri kullanılsın", "Log seviyesi: info")
+
+    Her kuralı ayrı satırda yazın veya "yok" deyin:
 >
 ```
 
 **S4 (guvenlik oncelik seviyesi):**
-```
-S4: Projenin guvenlik oncelik seviyesi nedir?
-    a) Standart — genel web uygulamasi
-    b) Yuksek — finans, saglik, kisisel veri (KVKK/GDPR)
-    c) Kritik — odeme isleme, devlet sistemleri
 
->
+`AskUserQuestion` tool'unu şu parametrelerle çağır:
+
+```yaml
+question: "Projenin güvenlik öncelik seviyesi nedir?"
+header: "Güvenlik"
+multiSelect: false
+options:
+  - label: "Standart"
+    description: "Genel web uygulaması"
+  - label: "Yüksek"
+    description: "Finans, sağlık, kişisel veri (KVKK/GDPR)"
+  - label: "Kritik"
+    description: "Ödeme işleme, devlet sistemleri"
 ```
 
 → Manifest: `project.security_level` alanina yaz (`standard`, `high`, `critical`).
@@ -971,30 +1168,38 @@ S4: Projenin guvenlik oncelik seviyesi nedir?
 → Guvenlik hook'lari ve pre-commit taramasi seviyesini belirler.
 
 **S5 (hedef CLI araclari):**
+
+`AskUserQuestion` tool'unu `multiSelect: true` ile şu parametrelerle çağır. Hiçbirini seçmezse `targets: [claude]`:
+
+```yaml
+question: "Claude Code dışında hangi CLI araçlarını kullanıyorsunuz? (Agentbase bu araçlara da komut/skill üretecek — hiçbiri seçilmezse sadece Claude hedef alınır)"
+header: "CLI hedefler"
+multiSelect: true
+options:
+  - label: "Gemini"
+    description: "Gemini CLI"
+  - label: "Codex"
+    description: "Codex CLI"
+  - label: "Kimi"
+    description: "Kimi CLI"
+  - label: "OpenCode"
+    description: "OpenCode CLI"
 ```
-S5: Claude Code disinda hangi CLI araclarini kullaniyorsunuz?
-    (Agentbase bu araclara da komut/skill uretecek)
 
-    a) Gemini CLI
-    b) Codex CLI
-    c) Kimi CLI
-    d) OpenCode
-    e) Hicbiri — sadece Claude Code
+→ Manifest: `targets` alanına yaz. Her zaman `claude` dahil edilir.
+→ Örnek: Gemini + Kimi seçilirse → `targets: [claude, gemini, kimi]`
+→ Hiçbiri seçilmezse → `targets: [claude]`
+→ Kullanıcı "Other" ile başka bir CLI yazarsa manifest'e onu da ekle.
 
-    Virgul ile birden fazla secebilirsiniz (ornek: a,b,c)
-    veya "e" deyin:
->
+**S6 (ek notlar — free text):**
+
+Bu soru serbest metin gerektirdiği için plain `>` promptuyla sor (AskUserQuestion kullanma):
+
 ```
-
-→ Manifest: `targets` alanina yaz. Her zaman `claude` dahil edilir. Kullanici "e" secerse `targets: [claude]`.
-→ Ornek: a,c secilirse → `targets: [claude, gemini, kimi]`
-
-**S6 (ek notlar):**
-```
-S6: Eklemek istediginiz baska bir sey var mi?
+S6: Eklemek istediğiniz başka bir şey var mı?
     (Herhangi bir kural, not, tercih)
 
-    Yazin veya "yok/gecis" deyin:
+    Yazın veya "yok/geçiş" deyin:
 >
 ```
 
@@ -1058,6 +1263,19 @@ project:
         frontend: "[eslesen leaf yolu veya null]"
         mobile: "[eslesen leaf yolu veya null]"
 
+detected:                                                 # ADIM 2.4 cıktısı — kullanıcı onayı bekleyen ham tespitler (T3/TASK-212 implement eder)
+  # Her alan: { value, confidence: high|medium|low, source: "<dosya:detay>" }
+  # ADIM 2.7'de tabloya yansır; "Evet, hepsi doğru" onayında value alanları stack/workflows/rules/environments alanlarına kopyalanır.
+  # Greenfield modunda veya T3 tamamlanmadan önce bu blok tamamen boş kalır → ADIM 2.7 Bölüm 2/3 atlanır.
+  test_framework:    { value: "[jest|vitest|mocha|pytest|phpunit|null]", confidence: "[high|medium|low]", source: "[ornek: package.json:devDependencies]" }
+  formatter:         { value: "[prettier|biome|ruff|null]",              confidence: "[high|medium|low]", source: "[paket veya config dosyasi]" }
+  linter:            { value: "[eslint|biome|ruff|null]",                confidence: "[high|medium|low]", source: "[paket veya config dosyasi]" }
+  orm:               { value: "[prisma|typeorm|sequelize|drizzle|eloquent|django-orm|null]", confidence: "[high|medium|low]", source: "[paket]" }
+  auth_method:       { value: "[jwt|oauth2|session|api-key|none]",       confidence: "[high|medium|low]", source: "[paket: passport/jsonwebtoken/express-session]" }
+  design_system:     { value: "[mui|shadcn|tailwind|antd|rn-paper|none]", confidence: "[high|medium|low]", source: "[paket kombinasyonu]" }
+  deploy_platform:   { value: "[github-actions|gitlab-ci|vercel|docker|none]", confidence: "[high|medium|low]", source: "[CI dosyasi veya config]" }
+  commit_convention: { value: "[conventional|free|unknown]",             confidence: "[high|medium|low]", source: "[git log heuristic %X — 50 commit ornegi]" }
+
 stack:
   runtime: "[node|python|go|rust|php|java]"
   runtime_version: "[versiyon — tespit edilebildiyse]"
@@ -1090,7 +1308,7 @@ workflows:
   branch_model: "[direct-push|feature-pr|gitflow|trunk]"
   commit_convention: "[conventional|free|custom]"
   commit_prefix_map:
-    feat: "Yeni ozellik"
+    feat: "Yeni özellik"
     fix: "Hata duzeltme"
     refactor: "Yeniden yapilandirma"
     docs: "Dokumantasyon"
@@ -1143,7 +1361,7 @@ rules:
       hook_type: "pre-commit"
   domain:
     - name: "[kural adi]"
-      rule: "[kural aciklamasi]"
+      rule: "[kural açıklaması]"
   design_system: "[kullanilan UI kutuphanesi veya null]"
 ```
 
@@ -1357,7 +1575,7 @@ Monorepo tespit edildiginde (`project.type == "monorepo"`), core-generator her s
 4. GENERATE bloklarini subproject-spesifik doldur:
    - `CODEBASE_CONTEXT` → sadece o subproject'in dizin yapisi ve stack'i
    - Framework rules → sadece o subproject'in framework'u
-5. Agent frontmatter'ini guncelle:
+5. Agent frontmatter'ini güncelle:
    - `name: {subproject.name}-expert` (ornegin `api-expert`, `mobile-expert`, `admin-expert`)
    - `tools`, `model`, `color` kaynak skeleton'dan miras alinir
 
