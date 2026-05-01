@@ -744,11 +744,82 @@ options:
 
 ADIM 3'te bu alanlara karşılık gelen sorular atlanır; sadece subjektif sorular (proje tanımı, geliştirici profili, domain kuralları, ek notlar) sorulur.
 
-**"Düzelteceğim" cevabı:** TASK-211 (T1b) tarafından implement edilecek multiSelect akışı tetiklenir. T1b henüz uygulanmadıysa fallback olarak ADIM 3 tüm sorularıyla çalışır (skip condition iptal).
+**"Düzelteceğim" cevabı:** Aşağıdaki **Bölüm 4 — Düzeltme Akışı** tetiklenir.
 
-**GREENFIELD modu:** `GREENFIELD_MODE = true` ise `manifest.detected` baştan boş olur → Bölüm 2 ve Bölüm 3 atlanır. Bölüm 1'in altına şu mesaj yazılır: "Greenfield mod — tüm röportaj soruları sorulacak." Ardından doğrudan ADIM 3'e geçilir.
+**Bölüm 4 — Düzeltme Akışı (multiSelect):**
 
-**Detected boş + GREENFIELD değil durumu:** T3 (TASK-212) henüz tamamlanmadıysa bu durum oluşur. Bu durumda da Bölüm 2 ve Bölüm 3 atlanır, ADIM 3 tüm sorularıyla çalışır.
+Bu bölüm SADECE Bölüm 3'te kullanıcı "Düzelteceğim" seçtiyse çalışır.
+
+**Adım 4.1 — Geçerli alan listesi:** `valid = [Bölüm 1.5'ten geçen detected anahtarları]`. Bu liste tabloda gösterilen alanlardır (yani 1-8 elemanlı bir alt küme).
+
+**Adım 4.2 — Soru biçimi (dinamik):**
+
+Soruyu `valid.length`'e göre seç:
+
+| `valid.length` | Yöntem | Detay |
+|---|---|---|
+| 0 | Akış sonu | Bölüm 4 sessizce atlanır (zaten Bölüm 2/3 atlanmış olmalıydı). |
+| 1 | Tek soru, 2 seçenek | `AskUserQuestion` tek soru, `multiSelect: false`. Seçenekler: "Yanlış, soruyu sor" / "Doğru, manifest'e yaz". |
+| 2-4 | Tek soru, multiSelect | `AskUserQuestion` tek soru, `multiSelect: true`, seçenekler `valid` alan adları. |
+| 5-8 | İki soru, multiSelect | `AskUserQuestion` tek çağrıda 2 soru (set 1: ilk 4 alan, set 2: kalan 4 alan), her ikisi `multiSelect: true`. |
+
+**5-8 alan örneği (questions parametresi):**
+
+```yaml
+questions:
+  - question: "Yanlış olan alanları seçin (Set 1):"
+    header: "Düzelt 1"
+    multiSelect: true
+    options:
+      - label: "test_framework"
+        description: "Mevcut: {detected.test_framework.value}"
+      - label: "formatter"
+        description: "Mevcut: {detected.formatter.value}"
+      - label: "linter"
+        description: "Mevcut: {detected.linter.value}"
+      - label: "orm"
+        description: "Mevcut: {detected.orm.value}"
+  - question: "Yanlış olan alanları seçin (Set 2):"
+    header: "Düzelt 2"
+    multiSelect: true
+    options:
+      - label: "auth_method"
+        description: "Mevcut: {detected.auth_method.value}"
+      - label: "design_system"
+        description: "Mevcut: {detected.design_system.value}"
+      - label: "deploy_platform"
+        description: "Mevcut: {detected.deploy_platform.value}"
+      - label: "commit_convention"
+        description: "Mevcut: {detected.commit_convention.value}"
+```
+
+**Set bölümü:** `valid` listesinden ilk 4 → Set 1, sonraki 4 → Set 2. Daha az varsa Set 2 oluşturulmaz. Sıralama deterministik (manifest.detected anahtar sırası).
+
+**Adım 4.3 — Sonuç işleme:**
+
+`wrong = [kullanıcının seçtiği tüm alanlar]` (her iki set'in birleşimi). `correct = valid - wrong`.
+
+- `correct` içindeki alanlar için `detected.<alan>.value` ilgili final manifest alanına **kopyalanır** (Bölüm 3'teki kopyalama listesi). ADIM 3'te bu alanların sorusu **atlanır**.
+- `wrong` içindeki alanlar için **kopyalama yok**. ADIM 3'te o alanların sorusu **her zaman sorulur** (skip condition iptal).
+- `wrong` boşsa ("Doğru, manifest'e yaz" seçildi veya hiçbir şey işaretlenmedi): Bölüm 3'teki "Evet" akışıyla aynı davranış (tüm `valid` alanlar kopyalanır, ilgili sorular atlanır).
+
+**Adım 4.4 — Bilgi mesajı (devam etmeden önce):**
+
+Stdout'a kısa özet yaz:
+```
+✅ Onaylanan alanlar: [correct listesi virgülle ayrılmış]
+❓ Yeniden sorulacak: [wrong listesi virgülle ayrılmış]
+```
+
+`wrong` boşsa "Yeniden sorulacak" satırı gösterilmez.
+
+---
+
+**GREENFIELD modu (Bölüm 1.5'ten önce kontrol):**
+
+`GREENFIELD_MODE = true` ise (ADIM 1'de tespit edilir, boş Codebase göstergesi) `manifest.detected` zaten baştan boş olur → **Bölüm 1.5, 2, 3, 4 tamamen atlanır**. Bölüm 1'in altına şu mesaj yazılır: "Greenfield mod — tüm röportaj soruları sorulacak." Ardından doğrudan ADIM 3'e geçilir; ADIM 3'teki tüm skip condition'lar iptal edilir (her soru sorulur).
+
+**Detected boş + GREENFIELD değil:** T3 (TASK-212) henüz tamamlanmadıysa veya tüm alanlar Bölüm 1.5 doğrulamasından düşerse bu durum oluşur. Bu durumda da Bölüm 2/3/4 atlanır, ADIM 3 tüm sorularıyla çalışır (greenfield ile aynı fallback).
 
 ---
 
