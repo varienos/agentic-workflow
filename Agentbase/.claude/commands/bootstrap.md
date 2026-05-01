@@ -253,6 +253,32 @@ Tum kontroller basarili oldugunda:
 
 Her alt adimi yaptiginda konsolda sonuclari goster.
 
+### Placeholder Çözümleme Protokolü
+
+Bootstrap akışında ADIM 3'teki `AskUserQuestion` çağrılarında "Tespit edilen değer" ipuçları için **canonical placeholder formatı** kullanılır. Bu protokol ipucu yerleştirme mantığını standartlaştırır.
+
+**Canonical format:**
+```
+[Tespit edilen: {detected.<field>}]
+```
+
+Örnek: `[Tespit edilen: {detected.test_framework}]`. Bootstrap parser bu ifadeyi gördüğünde `manifest.detected.<field>.value` değerini substitute eder. Sonuç: `[Tespit edilen: vitest]`.
+
+**Substitute kuralları:**
+
+| Durum | Davranış |
+|---|---|
+| `manifest.detected.<field>` mevcut, `value` dolu, confidence ≥ medium | `{detected.<field>}` → `value` substitute edilir. Soru metninde göster. |
+| `manifest.detected.<field>` mevcut, confidence == "low" | `value` substitute edilir + "[düşük güven]" eklenir: `[Tespit edilen: free [düşük güven]]`. |
+| `manifest.detected.<field>` yok veya `value` null/boş | **Tüm `[Tespit edilen: {detected.<field>}]` ifadesi silinir** (parantez ve içerik dahil; `[]` boş bırakılmaz). |
+| GREENFIELD_MODE = true | `manifest.detected` baştan boş → tüm placeholder ifadeleri otomatik silinir (yukarıdaki kuralın doğal sonucu). |
+
+**Sadece bootstrap.md kapsamı:** Bu protokol bootstrap.md'deki `AskUserQuestion` `question:` alanlarında uygulanır. `templates/interview/phase-{N}-*.md` dosyalarındaki placeholder'lar **bu task kapsamı dışındadır** (T4/TASK-213 scope sınırı; ileride ayrı task açılabilir).
+
+**Detected dışı placeholder'lar:** `[Tespit edilen: ...]` ifadesinde `{detected.<field>}` referansı yoksa (örn. `[Tespit edilen: route dosyalarından tahmin]`), bu canonical olmayan bir özel ipucudur. Parser dokunmaz; metin olduğu gibi gösterilir. Bu durum Faz 1 S2 (production URL), Faz 1 S4 (alt proje rolleri), Faz 1 S5 (API prefix) gibi `manifest.detected` listesinde olmayan alanlar için geçerlidir.
+
+---
+
 ### 2.1 Proje Tipi Tespiti
 
 `../Codebase/` dizininde asagidaki dosyalari ara:
@@ -1042,7 +1068,7 @@ options:
 Sonra `AskUserQuestion` tool'unu şu parametrelerle çağır. Tespit edilen test framework varsa soru metnine parantez içinde ekle:
 
 ```yaml
-question: "Test stratejiniz nedir? [Tespit edilen test framework: ...]"
+question: "Test stratejiniz nedir? [Tespit edilen: {detected.test_framework}]"
 header: "Test"
 multiSelect: false
 options:
@@ -1095,7 +1121,7 @@ options:
 `AskUserQuestion` tool'unu şu parametrelerle çağır. Tespit edilen ORM varsa soru metnine parantez içinde ekle:
 
 ```yaml
-question: "Veritabanı migration stratejiniz? [Tespit edilen ORM: ...]"
+question: "Veritabanı migration stratejiniz? [Tespit edilen: {detected.orm}]"
 header: "Migration"
 multiSelect: false
 options:
@@ -1112,7 +1138,7 @@ options:
 `AskUserQuestion` tool'unu şu parametrelerle çağır. Tespit edilen formatter'ı soru metnine parantez içinde ekle:
 
 ```yaml
-question: "Commit öncesi otomatik format hook istiyor musunuz? [Tespit edilen formatter: ...]"
+question: "Commit öncesi otomatik format hook istiyor musunuz? [Tespit edilen: {detected.formatter}]"
 header: "Format hook"
 multiSelect: false
 options:
@@ -1152,7 +1178,7 @@ Not: API key veya başka özel yöntem için kullanıcı "Other" seçer; cevapta
 
 ```yaml
 questions:
-  - question: "Kod isimlendirme konvansiyonunuz? [Tespit edilen: linter/formatter config'den göster]"
+  - question: "Kod isimlendirme konvansiyonunuz? [Tespit edilen linter: {detected.linter}; formatter: {detected.formatter}]"
     header: "Naming"
     multiSelect: false
     options:
@@ -1264,7 +1290,7 @@ Bu üç soru subjektif çoktan seçmelidir; tek `AskUserQuestion` çağrısında
 
 ```yaml
 questions:
-  - question: "Kullandığınız tasarım sistemi / component kütüphanesi? [Tespit edilen: {detected.design_system.value}]"
+  - question: "Kullandığınız tasarım sistemi / component kütüphanesi? [Tespit edilen: {detected.design_system}]"
     header: "Design sys"
     multiSelect: false
     options:
