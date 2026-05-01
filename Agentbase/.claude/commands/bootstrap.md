@@ -666,7 +666,13 @@ Endpoint bulunamazsa atla — smoke test fallback (health + status) kullanilir.
 
 İki bölümlü özet göster: önce genel analiz özeti, sonra `manifest.detected.*` tablosu, ardından **tek bir AskUserQuestion** ile toplu onay al. Bu yapı `feedback_bootstrap_interview.md` (2026-04-22) kuralının uygulamasıdır: kod analizinden çıkarılabilen bilgiler ADIM 3'te tek tek sorulmaz, tabloda gösterilip toplu onaylanır.
 
-**Bölüm 1 — Genel özet (her zaman gösterilir):**
+**Bölüm 0 — Erken çıkış kontrolü (en başta yapılır):**
+
+`GREENFIELD_MODE = true` ise ADIM 2.7'nin **HİÇBİR çıktısı üretilmez** (Bölüm 1 dahil). Tek satır mesaj yazılır: "Greenfield mod — analiz özeti atlanıyor, tüm röportaj soruları sorulacak." Ardından doğrudan ADIM 3'e geçilir; ADIM 3'teki tüm skip condition'lar iptal edilir.
+
+`GREENFIELD_MODE = false` ise Bölüm 1'den itibaren akış devam eder.
+
+**Bölüm 1 — Genel özet (GREENFIELD değilse gösterilir):**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -759,7 +765,7 @@ Soruyu `valid.length`'e göre seç:
 | `valid.length` | Yöntem | Detay |
 |---|---|---|
 | 0 | Akış sonu | Bölüm 4 sessizce atlanır (zaten Bölüm 2/3 atlanmış olmalıydı). |
-| 1 | Tek soru, 2 seçenek | `AskUserQuestion` tek soru, `multiSelect: false`. Seçenekler: "Yanlış, soruyu sor" / "Doğru, manifest'e yaz". |
+| 1 | Tek soru, 2 seçenek | `AskUserQuestion` tek soru, `multiSelect: false`. Seçenekler: "Yanlış, soruyu sor" / "Doğru, manifest'e yaz". **Mapping:** "Yanlış" → `wrong = [valid[0]]`; "Doğru" → `wrong = []`. |
 | 2-4 | Tek soru, multiSelect | `AskUserQuestion` tek soru, `multiSelect: true`, seçenekler `valid` alan adları. |
 | 5-8 | İki soru, multiSelect | `AskUserQuestion` tek çağrıda 2 soru (set 1: ilk 4 alan, set 2: kalan 4 alan), her ikisi `multiSelect: true`. |
 
@@ -797,7 +803,13 @@ questions:
 
 **Adım 4.3 — Sonuç işleme:**
 
-`wrong = [kullanıcının seçtiği tüm alanlar]` (her iki set'in birleşimi). `correct = valid - wrong`.
+`raw = [kullanıcının seçtiği tüm label'lar]` (her iki set'in birleşimi).
+
+**Normalize:** `wrong = unique(raw ∩ valid)` — yani `raw` içinden **yalnızca `valid` kümesinde olan ve benzersiz** alan adları alınır. `valid` dışında bir label (Other/serbest metin/beklenmeyen değer) veya duplicate gelirse:
+- Stderr'a uyarı: `[WARN] Düzeltme akışı: geçersiz seçim atlandı: {label}`
+- O label `wrong` listesine **eklenmez** (sessizce yok sayılır, kullanıcıya sorgu tekrarlanmaz).
+
+`correct = valid - wrong`.
 
 - `correct` içindeki alanlar için `detected.<alan>.value` ilgili final manifest alanına **kopyalanır** (Bölüm 3'teki kopyalama listesi). ADIM 3'te bu alanların sorusu **atlanır**.
 - `wrong` içindeki alanlar için **kopyalama yok**. ADIM 3'te o alanların sorusu **her zaman sorulur** (skip condition iptal).
