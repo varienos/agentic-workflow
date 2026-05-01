@@ -7,37 +7,42 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 ### Eklenen
 
-- **codex:** clarify bootstrap verify flow (`a74617c`)
-- **bootstrap:** ADIM 1.4 interview phase doğrulamasi + fallback kaldirildi (TASK-214) (`adfb3a9`)
-- **bootstrap:** Faz 4 design_system skip kaldir + 'none' default + uyumluluk (TASK-209) (`fdc01b5`)
-- **bootstrap:** placeholder canonical format + Cozumleme Protokolu (TASK-213) (`b62228a`)
-- **bootstrap:** Faz 3/4 batch + ADIM 3 KURAL 1 guncellendi (TASK-208) (`988c5e4`)
-- **bootstrap:** ADIM 2.4'e 5 alt-bolum otomatik tespit + phase skip conditions (TASK-212) (`8e353dc`)
-- **bootstrap:** ADIM 2.7 Bolum 4 Duzeltme Akisi (multiSelect) + GREENFIELD netligi (TASK-211) (`c40d240`)
-- **bootstrap:** ADIM 2.7 toplu tespit ozeti + manifest.detected.* semasi (TASK-207) (`0c4b476`)
+- **codex:** clarify bootstrap verify flow (`9c1283f`)
+- **bootstrap:** ADIM 1.4 interview phase doğrulamasi + fallback kaldirildi (TASK-214) (`00ef85d`)
+- **bootstrap:** Faz 4 design_system skip kaldir + 'none' default + uyumluluk (TASK-209) (`b464799`)
+- **bootstrap:** placeholder canonical format + Cozumleme Protokolu (TASK-213) (`d0c1686`)
+- **bootstrap:** Faz 3/4 batch + ADIM 3 KURAL 1 guncellendi (TASK-208) (`a8b75e0`)
+- **bootstrap:** ADIM 2.4'e 5 alt-bolum otomatik tespit + phase skip conditions (TASK-212) (`3dea4eb`)
+- **bootstrap:** ADIM 2.7 Bolum 4 Duzeltme Akisi (multiSelect) + GREENFIELD netligi (TASK-211) (`c236241`)
+- **bootstrap:** ADIM 2.7 toplu tespit ozeti + manifest.detected.* semasi (TASK-207) (`df920a6`)
 
 ### Düzeltilen
 
-- **#214:** codex review bulgulari duzeltildi (`9bc1af6`)
-- **#210:** codex review bulgusu duzeltildi (`d068725`)
-- **#209:** codex review bulgulari duzeltildi (`122f86b`)
-- **#213:** codex review bulgulari duzeltildi (`14d12c3`)
-- **#208:** codex review bulgulari duzeltildi (`bff886d`)
-- **#212:** codex review bulgulari duzeltildi (`2f96474`)
-- **#211:** codex review bulgulari duzeltildi (`234c3c1`)
-- **#207:** codex review bulgulari duzeltildi (`69f749c`)
+- **#214:** codex review bulgulari duzeltildi (`10c5be1`)
+- **#210:** codex review bulgusu duzeltildi (`2379aec`)
+- **#209:** codex review bulgulari duzeltildi (`a363853`)
+- **#213:** codex review bulgulari duzeltildi (`48aa55d`)
+- **#208:** codex review bulgulari duzeltildi (`1e770af`)
+- **#212:** codex review bulgulari duzeltildi (`b3ec1b1`)
+- **#211:** codex review bulgulari duzeltildi (`2752653`)
+- **#207:** codex review bulgulari duzeltildi (`dd90512`)
 
 ### Yeniden Düzenlenen
 
-- **bootstrap:** ADIM 3 inline default'lari sil — kompakt iskelet (TASK-210) (`4da65df`)
+- **bootstrap:** ADIM 3 inline default'lari sil — kompakt iskelet (TASK-210) (`8c1571e`)
 
 ### Dokümantasyon
 
-- **release:** T6 zinciri CHANGELOG + README gecis rehberi + version bump (TASK-215) (`fcf3466`)
+- **release:** T6 zinciri CHANGELOG + README gecis rehberi + version bump (TASK-215) (`cf95d14`)
+- CHANGELOG otomatik güncellendi [skip ci] (`5d9dcca`)
 
 ### Bakım
 
-- release oncesi bekleyen degisiklikler (`40b3385`)
+- release oncesi bekleyen degisiklikler (`86e0231`)
+
+### Sürüm
+
+- v2.0.0 (`63c5e41`)
 
 ## [1.11.1] - 2026-04-21
 
