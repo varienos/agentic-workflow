@@ -3,30 +3,41 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [Yayınlanmamış]
+## [2.0.0] - 2026-05-01
 
 ### Eklenen
 
-- **bootstrap:** ADIM 2.7 toplu tespit özeti + `manifest.detected.*` şeması (TASK-207, TASK-211); 8 alanlık tespit + tek `AskUserQuestion` onayı + "Düzelteceğim" multiSelect akışı + GREENFIELD özet atlama.
-- **bootstrap:** ADIM 2.4'e 5 otomatik tespit alt-bölümü (TASK-212) — `test_framework`, `commit_convention` (50 commit %60 eşik), `migration`, `auth_method`, `design_system`.
-- **bootstrap:** Faz 3/4 subjektif sorular için `AskUserQuestion` batch çağrıları (TASK-208) — etkileşim ~20→~7-8.
-- **bootstrap:** ADIM 2 başına Placeholder Çözümleme Protokolü (TASK-213) — canonical format `{detected.<field>}`, boş fallback davranışı.
-- **bootstrap:** ADIM 1.4 Interview Phase Template Doğrulaması (TASK-214) — `templates/interview/phase-{1-4}-*.md` zorunlu kaynak; eksikse fail-fast hata.
-- **test:** `tests/interview-phase-validation.test.js` — 15 test (mevcut dosya kontrolü + missing-phase-file regresyon simülasyonu).
+- **codex:** clarify bootstrap verify flow (`a74617c`)
+- **bootstrap:** ADIM 1.4 interview phase doğrulamasi + fallback kaldirildi (TASK-214) (`adfb3a9`)
+- **bootstrap:** Faz 4 design_system skip kaldir + 'none' default + uyumluluk (TASK-209) (`fdc01b5`)
+- **bootstrap:** placeholder canonical format + Cozumleme Protokolu (TASK-213) (`b62228a`)
+- **bootstrap:** Faz 3/4 batch + ADIM 3 KURAL 1 guncellendi (TASK-208) (`988c5e4`)
+- **bootstrap:** ADIM 2.4'e 5 alt-bolum otomatik tespit + phase skip conditions (TASK-212) (`8e353dc`)
+- **bootstrap:** ADIM 2.7 Bolum 4 Duzeltme Akisi (multiSelect) + GREENFIELD netligi (TASK-211) (`c40d240`)
+- **bootstrap:** ADIM 2.7 toplu tespit ozeti + manifest.detected.* semasi (TASK-207) (`0c4b476`)
 
-### Değiştirilen
+### Düzeltilen
 
-- **bootstrap:** Faz 4 S2 design_system için skip condition tamamen kaldırıldı (TASK-209). UI tespit edilmedi/greenfield durumlarda da soru sorulur, default "Yok"; `manifest.rules.design_system = "none"` (string, null değil).
-- **bootstrap:** ADIM 3 inline default soru blokları silindi (TASK-210); fazlar artık `templates/interview/phase-{N}-*.md` dosyalarına refere ediyor.
-- **manifest:** `template_version` `1.0.0` → `1.1.0` (minor bump — interview phase dosyaları zorunlu, fallback davranış değişikliği).
+- **#214:** codex review bulgulari duzeltildi (`9bc1af6`)
+- **#210:** codex review bulgusu duzeltildi (`d068725`)
+- **#209:** codex review bulgulari duzeltildi (`122f86b`)
+- **#213:** codex review bulgulari duzeltildi (`14d12c3`)
+- **#208:** codex review bulgulari duzeltildi (`bff886d`)
+- **#212:** codex review bulgulari duzeltildi (`2f96474`)
+- **#211:** codex review bulgulari duzeltildi (`234c3c1`)
+- **#207:** codex review bulgulari duzeltildi (`69f749c`)
 
-### Kaldırılan
+### Yeniden Düzenlenen
 
-- **bootstrap:** "Mevcut değilse aşağıdaki varsayılan soruları kullan" fallback cümlesi (TASK-214). Phase template dosyaları artık zorunlu kaynak.
+- **bootstrap:** ADIM 3 inline default'lari sil — kompakt iskelet (TASK-210) (`4da65df`)
 
-### ⚠️ BREAKING CHANGE
+### Dokümantasyon
 
-- **bootstrap interview dosyaları zorunlu:** `templates/interview/phase-1-project.md`, `phase-2-technical.md`, `phase-3-developer.md`, `phase-4-rules.md` dosyalarından biri eksikse Bootstrap fail-fast durur. Eski projelerde bu dosyalar mevcut olmalıdır (TASK-185 sonrası standart kurulumda bulunur). Eksik kurulumlar için geçiş rehberi: `README.md` → "Bootstrap Akışı / Geçiş Rehberi (1.10.x → 1.11.x)" bölümü.
+- **release:** T6 zinciri CHANGELOG + README gecis rehberi + version bump (TASK-215) (`fcf3466`)
+
+### Bakım
+
+- release oncesi bekleyen degisiklikler (`40b3385`)
 
 ## [1.11.1] - 2026-04-21
 

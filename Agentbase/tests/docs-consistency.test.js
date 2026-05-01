@@ -60,10 +60,42 @@ describe('README docs consistency', () => {
       readmeEn.includes('no automatic hook parity is claimed'),
       'English README must state automatic hook parity is not claimed'
     );
+    assert.ok(
+      readmeTr.includes('skill/context yüzeyidir; native slash command garantisi verilmez'),
+      'Turkce README Codex hedefini native slash command olarak sunmamali'
+    );
+    assert.ok(
+      readmeEn.includes('skill/context surface, not a command runtime; no native slash-command guarantee is made'),
+      'English README must not present Codex target as a native slash-command runtime'
+    );
     assert.ok(!readmeTr.includes('Codex icin ayri bootstrap calistirin'), 'Turkce README ayri Codex bootstrap onermemeli');
     assert.ok(!readmeEn.includes('run a separate Codex bootstrap'), 'English README must not recommend a separate Codex bootstrap');
     assert.ok(!readmeTr.includes('Claude Code hooklari Codexte otomatik calisir'), 'Turkce README Codex hook parity overclaim tasimamali');
     assert.ok(!readmeEn.includes('Claude Code hooks run automatically in Codex'), 'English README must not overclaim hook parity');
+  });
+
+  it('scopes automatic hook behavior to Claude Code runtime', () => {
+    assert.ok(
+      readmeTr.includes("Claude Code runtime'ında `codebase-guard` hook'u"),
+      'Turkce README codebase-guard otomasyonunu Claude Code runtime ile sinirlamali'
+    );
+    assert.ok(
+      readmeTr.includes("Claude Code runtime'ında `test-enforcer` hook'u"),
+      'Turkce README test-enforcer otomasyonunu Claude Code runtime ile sinirlamali'
+    );
+    assert.ok(
+      readmeEn.includes('In the Claude Code runtime, the `codebase-guard` hook'),
+      'English README must scope codebase-guard automation to Claude Code runtime'
+    );
+    assert.ok(
+      readmeEn.includes('In the Claude Code runtime, the `test-enforcer` hook'),
+      'English README must scope test-enforcer automation to Claude Code runtime'
+    );
+  });
+
+  it('does not reference obsolete Bootstrap Flow step numbers', () => {
+    assert.ok(!readmeTr.includes('Bootstrap Akışı adım 9'), 'Turkce README obsolete bootstrap step number kullanmamali');
+    assert.ok(!readmeEn.includes('Bootstrap Flow step 9'), 'English README must not reference obsolete bootstrap step number');
   });
 
   it('describes automatic changelog generation as tag-driven after auto-release', () => {
