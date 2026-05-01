@@ -329,7 +329,7 @@ describe('transformForTarget', () => {
       commands: [{ name: 'task-master', content: '# Task Master — Siralayici\n\n`/task-master`' }],
       agents: [{ name: 'review', content: '# Review\n\nIcerik' }],
       rules: [],
-      context: '# Context',
+      context: '# Context\n\nBkz: `CLAUDE.md`',
     };
     const fileMap = transformForTarget(source, 'codex');
 
@@ -338,6 +338,7 @@ describe('transformForTarget', () => {
     assert.ok('AGENTS.md' in fileMap);
     assert.ok(fileMap['.codex/skills/task-master/SKILL.md'].includes('name: "task-master"'));
     assert.ok(fileMap['.codex/skills/task-master/SKILL.md'].includes('$task-master'));
+    assert.ok(fileMap['AGENTS.md'].includes('AGENTS.md'));
   });
 
   it('kimi — skills + agent yaml/prompt + default context', () => {

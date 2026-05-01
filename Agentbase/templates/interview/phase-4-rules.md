@@ -110,7 +110,7 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
     - Enforce: task-review.skeleton.md devils-advocate ZORUNLU + maks 2 iterasyon
 
 ### Q5 — Hedef CLI Araclari
-- **Text:** `"Claude Code disinda hangi CLI araclarini kullaniyorsunuz? (Agentbase bu araclara da komut/skill uretecek)"`
+- **Text:** `"Claude Code disinda hangi CLI araclarini kullaniyorsunuz? (Agentbase tek bootstrap ciktisini bu hedeflere transform edecek)"`
 - **Options:**
   - `a)` Gemini CLI
   - `b)` Codex CLI
@@ -121,8 +121,11 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.targets`
 - **Downstream:**
+  - `claude` canonical kaynak olarak her zaman manifestte kalir; diger degerler transform hedefidir
   - `transform.js` secilen hedeflere gore `.gemini/`, `.codex/`, `.kimi/`, `.opencode/` dizinleri uretir
-  - Sadece `e` secilirse `targets: [claude]` — transform atlanir
+  - Codex secimi ikinci bootstrap baslatmaz; `.codex/skills/*/SKILL.md` ve `AGENTS.md` transform ciktisidir
+  - Codex secildiyse transform sonrasi opsiyonel `/codex-verify` pass'i onerilir
+  - Sadece `e` secilirse `targets: [claude]` — transform ve Codex verify/adapt atlanir
 
 ### Q6 — Son Eklemeler
 - **Text:** `"Baska eklemek istedigin bir sey var mi? Bu son soru."`

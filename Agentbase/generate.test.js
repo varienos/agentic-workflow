@@ -2163,7 +2163,7 @@ describe('SIMPLE_GENERATORS.SELF_REFRESH', () => {
     const path = require('path');
     const dir = path.join(TEMPLATES_DIR, 'core', 'commands');
     const files = fs.readdirSync(dir).filter(f => f.endsWith('.skeleton.md'));
-    assert.ok(files.length >= 14, `14 core command bekleniyor, ${files.length} bulundu`);
+    assert.ok(files.length >= 15, `15 core command bekleniyor, ${files.length} bulundu`);
 
     const missing = [];
     for (const f of files) {

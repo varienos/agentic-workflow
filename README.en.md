@@ -148,7 +148,7 @@ The `/bootstrap` command works through these high-level steps:
 2. **Codebase analysis.** Project type, directory structure, subprojects, package manager, test tools, and module candidates are extracted.
 3. **Phased interview.** Project, technical preferences, developer profile, and domain rules are clarified.
 4. **Manifest generation.** The `Docbase/agentic/project-manifest.yaml` file is created.
-5. **File generation.** Commands, agents, hooks, rules, and supporting docs are produced from the manifest. If target CLI tools were selected, `transform.js` converts the output.
+5. **File generation.** Commands, agents, hooks, rules, and supporting docs are produced from the manifest. If target CLI tools were selected, `transform.js` converts the output. If Codex was selected, do not run a separate bootstrap; the optional `/codex-verify` step only checks the Codex target surface after transform.
 6. **Backlog initialization.** The backlog is created in `Agentbase/backlog/` with starter tasks.
 7. **Completion report.** Onboarding guide (`onboarding.md`), extension suggestions, and the git hook activation command are shown: `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
 
@@ -252,6 +252,14 @@ Compares current workflow configuration with the Codebase's current state. Does 
 
 ```
 /workflow-update          # Drift report + update with confirmation
+```
+
+### /codex-verify
+
+Optional verify/adapt step for the Codex target after `transform.js` runs. There is no second Codex bootstrap; this command checks the manifest, `.codex/skills/*/SKILL.md`, and `AGENTS.md`. It does not claim hook runtime parity, and it only reports or suggests narrow adaptations for the Codex target surface.
+
+```
+/codex-verify
 ```
 
 ### /memorize
@@ -387,7 +395,9 @@ cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --tar
 | **Kimi CLI** | `.kimi/skills/*/SKILL.md` | `.kimi/agents/*.yaml` | Inside agent prompt |
 | **OpenCode** | `.opencode/skills/*/SKILL.md` | `.opencode/agents/*.md` | `.opencode/AGENTS.md` |
 
-The transform process uses `.claude/` output as source and adapts it to the target CLI's format: invoke syntax (`/` to `$`, `@`, etc.), file path references, and TOML/YAML/Markdown serialization are handled automatically. `generate.js` is never modified — transform runs as a completely separate post-processor.
+The transform process uses `.claude/` output as the canonical source and adapts it to the target CLI's format: invoke syntax (`/` to `$`, `@`, etc.), file path references, and TOML/YAML/Markdown serialization are handled automatically. `generate.js` is never modified — transform runs as a completely separate post-processor.
+
+For Codex, the output is `Agentbase/.codex/skills/*/SKILL.md` and `Agentbase/AGENTS.md`. There is no second Codex bootstrap: `codex` in `manifest.targets` means "transform the Claude canonical output for Codex." After transform, you can optionally run `/codex-verify` to check skill frontmatter, `$command` invoke syntax, path adaptation, and that no automatic hook parity is claimed. If only Claude Code is selected, transform and Codex verify/adapt are skipped.
 
 ## Production-Proven Patterns
 

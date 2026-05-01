@@ -1097,7 +1097,7 @@ developer:
   autonomy: "[ask-every-step|plan-then-auto|full-auto]"
   communication_language: "[tr|en|other]"        # iletisim dili (Faz 3 Q2 sonucu); manifest.project.language KOD dili icin (TypeScript/Python/...) ayri alandir.
 
-targets: ["claude"]                                       # her zaman claude dahil. ornek: [claude, gemini, kimi]
+targets: ["claude"]                                       # claude canonical kaynak; digerleri transform hedefidir. ornek: [claude, codex, gemini, kimi]
 
 workflows:
   branch_model: "[direct-push|feature-pr|gitflow|trunk]"
@@ -1283,7 +1283,7 @@ Lead (sen)
   │    Girdi: manifest + templates/core/commands/*.skeleton.md
   │                     + templates/core/agents/*.skeleton.md
   │                     + templates/core/rules/*.md (sabit) ve *.skeleton.md
-  │    Cikti: .claude/commands/ (13 core command dosyasi)
+  │    Cikti: .claude/commands/ (15 core command dosyasi)
   │           .claude/agents/ (7 core + uzman agent'lar)
   │           .claude/rules/ (2 dosya)
   │    UZMAN AGENT URETIMI (bkz. 5.1.2):
@@ -1413,6 +1413,14 @@ Sadece `claude` varsa veya `targets` alani yoksa bu adimi ATLA.
 
 Transform raporu ciktisini kullaniciya goster. Bu adim `.claude/` ciktisini diger CLI formatlarina (`.gemini/`, `.codex/`, `.kimi/`, `.opencode/`) donusturur.
 
+**Codex karari:** Codex icin ikinci bootstrap CALISTIRILMAZ. `manifest.targets` icindeki `codex` sadece transform hedefidir; canonical kaynak yine `claude` ciktisidir. Codex secildiyse transform `.codex/skills/*/SKILL.md` ve `AGENTS.md` uretir. Transform tamamlandiktan sonra kullaniciya opsiyonel `/codex-verify` adimini oner:
+
+```
+/codex-verify
+```
+
+Bu pass manifesti ve uretilen Codex hedef yuzeyini denetler; bootstrap, manifest veya backlog'u yeniden baslatmaz. Sadece `targets: [claude]` varsa hem transform hem Codex verify/adapt atlanir.
+
 **Script tarafindan doldurulan basit bloklar:**
 `COMMIT_CONVENTION`, `VERIFICATION_COMMANDS`, `TEST_COMMANDS`, `COMPILE_COMMANDS`, `BUILD_COMMANDS`, `MIGRATION_COMMANDS`, `FILE_EXTENSIONS`, `CODE_EXTENSIONS`, `MEMORY_PATH`, `PRISMA_PATH`, `LARAVEL_PATHS`, `DJANGO_PATHS`, `TYPEORM_PATHS`, `SECURITY_PATTERNS`, `LAYER_TESTS`, `SUBPROJECT_CONFIGS`, `STACK_SPECIFIC_IGNORES`, `DEPLOY_LOG_PATH`, `HEALTH_CHECK_URL`, `SMOKE_TEST_ENDPOINTS`, `API_SMOKE_SCRIPT`, `API_SMOKE_NODE_TESTS`, `TASK_ROUTING_CONFIG`, `GIT_PRECOMMIT_COMPILE`, `GIT_PRECOMMIT_TEST`, `GIT_PRECOMMIT_LINT`, `GIT_PRECOMMIT_FORMAT`, `GIT_PREPUSH_LOCALHOST`, `GIT_PREPUSH_MIGRATION`, `GIT_PREPUSH_ENV`, `GIT_PREPUSH_DESTRUCTIVE`
 
@@ -1517,6 +1525,7 @@ Teammate'ler skeleton dosyalarini islerken hangi GENERATE bloklarinin hangi dosy
 | bug-hunter.skeleton.md | CODEBASE_CONTEXT, VERIFICATION_COMMANDS, COMMIT_CONVENTION |
 | bug-review.skeleton.md | CODEBASE_CONTEXT, REVIEW_CHECKLIST, COMMIT_CONVENTION |
 | auto-review.skeleton.md | CODEBASE_CONTEXT |
+| codex-verify.skeleton.md | SELF_REFRESH |
 | deep-audit.skeleton.md | CODEBASE_CONTEXT, MODULE_MAPPING, SUBPROJECT_LAYERS, REVIEW_AGENTS, VERIFICATION_COMMANDS, IDOR_CHECKLIST |
 | deadcode.skeleton.md | CODEBASE_CONTEXT, DEADCODE_TOOLS, COMMIT_CONVENTION |
 | memorize.skeleton.md | MEMORY_PATH |
@@ -2090,6 +2099,13 @@ backlog task create "Ilk feature'i planla ve implement et" \
    /bootstrap  — Kurulumu ilk kez yapar veya kontrollu sekilde yeniden calistirir
    [diger komutlar]
 
+🤖 Codex Hedefi:
+   [manifest.targets codex iceriyorsa bu blogu goster]
+   Transform ciktisi: Agentbase/.codex/skills/*/SKILL.md ve Agentbase/AGENTS.md
+   Sonraki adim: /codex-verify
+   Not: Codex icin ikinci bootstrap calistirma; mevcut manifest canonical kaynaktir.
+   [manifest.targets sadece claude ise bu blogu ATLA]
+
 🔒 Git Hook Kurulumu:
    Codebase'de commit/push kontrollerini aktif etmek icin:
 
@@ -2187,6 +2203,18 @@ Asagidaki sablonu manifest bilgileriyle doldurarak `.claude/onboarding.md` olara
 /task-master                               → Tum gorevleri onceliklendir
 /deep-audit <alan>                         → Domain bazli derin denetim
 ```
+
+## Codex Hedefi
+
+[manifest.targets codex iceriyorsa goster:]
+
+```bash
+/codex-verify
+```
+
+Bu adim opsiyoneldir. Codex icin ayri bootstrap calistirmaz; yalnizca `.codex/skills/` ve `AGENTS.md` hedef yuzeyini denetler.
+
+[manifest.targets sadece claude ise bu bolumu ATLA.]
 
 ## Proje Bilgisi
 
