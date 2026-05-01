@@ -1233,11 +1233,11 @@ questions:
         description: "5+ kişi"
 ```
 
-**Cevap eşleme:**
-- Soru 1 → `manifest.developer.experience` (`junior|mid|senior|new-to-stack`)
-- Soru 2 → `manifest.developer.communication_language` (`tr|en`); kullanıcı "Other" seçerse serbest metin
-- Soru 3 → `manifest.developer.autonomy` (`ask-every-step|plan-then-auto|full-auto`)
-- Soru 4 → `manifest.project.team_size` (`solo|small-team|large-team`)
+**Cevap eşleme (header tabanlı):**
+- `header == "Seviye"` → `manifest.developer.experience` (`junior|mid|senior|new-to-stack`)
+- `header == "Dil"` → `manifest.developer.communication_language` (`tr|en|other`); kullanıcı "Other" seçerse serbest metin (örn: "fr"). Bu alan **iletişim dilidir**, `manifest.project.language` (kod dili: TypeScript/Python/...) ile karıştırılmamalıdır.
+- `header == "Otonomi"` → `manifest.developer.autonomy` (`ask-every-step|plan-then-auto|full-auto`)
+- `header == "Ekip"` → `manifest.project.team_size` (`solo|small-team|large-team`)
 
 → WORKFLOWS.md review surecini etkiler (solo: opsiyonel, kucuk ekip: onerilen, buyuk ekip: zorunlu PR).
 
@@ -1300,10 +1300,14 @@ questions:
         description: "OpenCode CLI"
 ```
 
-**Cevap eşleme:**
-- Soru 1 (design system) → `manifest.rules.design_system`. "Other" seçilirse serbest metin (Ant Design, React Native Paper, özel kütüphane vb.); "Yok" seçilirse `"none"`.
-- Soru 2 (güvenlik) → `manifest.project.security_level` (`standard|high|critical`). task-hunter Dual-Pass modifier `high|critical` ise AKTIF.
-- Soru 3 (CLI hedefler) → `manifest.targets`. Her zaman `claude` dahil; örnek: Gemini+Kimi seçilirse `[claude, gemini, kimi]`. Hiçbiri seçilmezse `[claude]`. "Other" ile başka CLI eklenebilir.
+**Cevap eşleme (header tabanlı — index DEĞİL):**
+
+S2 skip durumunda batch index kayar; bu yüzden mapping `header` alanına göre yapılır:
+- `header == "Design sys"` → `manifest.rules.design_system`. "Other" seçilirse serbest metin (Ant Design, React Native Paper, özel kütüphane vb.); "Yok" seçilirse `"none"`.
+- `header == "Güvenlik"` → `manifest.project.security_level` (`standard|high|critical`). task-hunter Dual-Pass modifier `high|critical` ise AKTIF.
+- `header == "CLI hedefler"` → `manifest.targets`. Her zaman `claude` dahil; örnek: Gemini+Kimi seçilirse `[claude, gemini, kimi]`. Hiçbiri seçilmezse `[claude]`. "Other" ile başka CLI eklenebilir.
+
+**S2 skip senaryosu:** Batch 2 element olarak gönderilir (Güvenlik + CLI hedefler). `manifest.rules.design_system` boş bırakılır (T5/TASK-209 sonrası `"none"` default'a geçecek). Header tabanlı mapping sayesinde Güvenlik ve CLI cevapları doğru alana yazılır.
 
 **S3 (domain kurallari — free text):**
 
@@ -1431,6 +1435,7 @@ environments:
 developer:
   experience: "[junior|mid|senior|new-to-stack]"
   autonomy: "[ask-every-step|plan-then-auto|full-auto]"
+  communication_language: "[tr|en|other]"        # iletisim dili (Faz 3 Q2 sonucu); manifest.project.language KOD dili icin (TypeScript/Python/...) ayri alandir.
 
 targets: ["claude"]                                       # her zaman claude dahil. ornek: [claude, gemini, kimi]
 
