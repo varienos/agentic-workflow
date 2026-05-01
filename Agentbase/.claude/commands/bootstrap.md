@@ -605,8 +605,66 @@ Mevcut davranista degisiklik yok. Sonucu goster:
    Atlanan varyantlar: [kategori bazinda listelenen inaktif varyantlar]
 ```
 
-> **Detected Alan Üretim Noktası (TASK-212/T3 hook):**
-> Aşağıdaki 8 alanın otomatik tespit mantığı **TASK-212** kapsamında 2.4.1–2.4.5 alt-bölümleri olarak eklenecektir: `test_framework`, `formatter`, `linter`, `orm`, `auth_method`, `design_system`, `deploy_platform`, `commit_convention`. T1a (TASK-207) sadece `manifest.detected` şemasını ve ADIM 2.7 özet/onay yapısını kurar; otomatik tespit mantığı T3'ün işidir. T3 tamamlanana kadar bu blok boş kalır ve ADIM 2.7'de Bölüm 2/3 atlanır (greenfield ile aynı davranış).
+> **Detected Alan Üretimi (2.4.1–2.4.5):**
+> Aşağıdaki 5 alt-bölüm `manifest.detected.*` alanlarını otomatik doldurur. Her tespit `{ value, confidence: high|medium|low, source: "<dosya:detay>" }` formatında yazılır. Geri kalan 3 alan (`formatter`, `linter`, `deploy_platform`) `templates/interview/phase-2-technical.md` Auto-Detection tablosundan dolaylı olarak doldurulur.
+
+#### 2.4.1 — test_framework
+
+**Kaynak:** `package.json#devDependencies` veya `dependencies`, `Pipfile`, `pyproject.toml`, `composer.json#require-dev`.
+
+**Eşleme:**
+- `jest` → `value: "jest"`, `confidence: "high"`, `source: "package.json:devDependencies"`
+- `vitest` → `value: "vitest"`, `confidence: "high"`, aynı kaynak
+- `mocha` → `value: "mocha"`, `confidence: "high"`, aynı kaynak
+- `pytest` → `value: "pytest"`, `confidence: "high"`, `source: "Pipfile veya pyproject.toml"`
+- `phpunit/phpunit` → `value: "phpunit"`, `confidence: "high"`, `source: "composer.json:require-dev"`
+- Hiçbir test paketi yok → `value: null`, `confidence: "low"`, `source: "no test framework detected"`
+
+#### 2.4.2 — commit_convention
+
+**Kaynak:** `git log --oneline -50` (boşsa `git log --all --oneline -50`).
+
+**Heuristic:**
+- 50 commit'in regex `^(feat|fix|refactor|docs|test|chore|style|perf|ci):` ile eşleşme oranını hesapla.
+- Boş repo (0 commit): `value: "unknown"`, `confidence: "low"`, `source: "git log boş"`
+- Eşleşme oranı `< %30`: `value: "free"`, `confidence: "low"`, `source: "git log heuristic %X"`
+- `%30 ≤ oran ≤ %60`: `value: "conventional"`, `confidence: "medium"`, `source: "git log heuristic %X"`
+- Oran `> %60`: `value: "conventional"`, `confidence: "high"`, `source: "git log heuristic %X"`
+
+**Güvenlik:** `git log` komutu shell injection'a karşı `execFileSync('git', ['log', '--oneline', '-50'])` ile çalıştırılır.
+
+#### 2.4.3 — migration
+
+**Kaynak:** Daha önce tespit edilen `manifest.stack.orm` + dosya sistemi (`migrations/`, `prisma/migrations/`, `db/migrate/`, `alembic/versions/`).
+
+**Eşleme:**
+- `manifest.stack.orm` null değil (Prisma/TypeORM/Sequelize/Drizzle/Eloquent/Django ORM tespit edildi) → `value: "orm"`, `confidence: "high"`, `source: "stack.orm:{orm_value}"`
+- ORM yok ama `migrations/` veya benzeri klasör var → `value: "manual-sql"`, `confidence: "medium"`, `source: "migrations/ klasörü tespit edildi"`
+- Hiçbiri yok → `value: "none"`, `confidence: "low"`, `source: "no migration system"`
+
+#### 2.4.4 — auth_method
+
+**Kaynak:** `package.json#dependencies` (Node.js), `Pipfile`/`pyproject.toml` (Python), `composer.json` (PHP).
+
+**Öncelik sırası (ilk eşleşen kazanır):**
+- `passport`, `passport-*` → `value: "oauth2"`, `confidence: "medium"`, `source: "package.json: passport"`
+- `jsonwebtoken`, `jose`, `bcrypt`, `argon2` → `value: "jwt"`, `confidence: "medium"`, `source: "package.json: {paket}"`
+- `express-session`, `cookie-session`, `iron-session` → `value: "session"`, `confidence: "medium"`, `source: "package.json: {paket}"`
+- Hiçbiri yok → `value: "none"`, `confidence: "low"`, `source: "no auth library detected"`
+
+**Not:** Confidence `medium` çünkü paket varlığı auth method'u kanıtlamaz; kullanım kalıbı doğrulanmalı (kullanıcı onayı bekleniyor).
+
+#### 2.4.5 — design_system
+
+**Kaynak:** `package.json#dependencies`.
+
+**Öncelik sırası (ilk eşleşen kazanır):**
+- `@mui/*` (`@mui/material`, `@mui/x-*`) → `value: "mui"`, `confidence: "high"`, `source: "package.json: @mui/material"`
+- `@radix-ui/*` AND `tailwindcss` ikisi de var → `value: "shadcn"`, `confidence: "high"`, `source: "package.json: @radix-ui + tailwindcss"`
+- `tailwindcss` var ama `@radix-ui/*` yok → `value: "tailwind"`, `confidence: "medium"`, `source: "package.json: tailwindcss only"`
+- `antd` → `value: "antd"`, `confidence: "high"`, `source: "package.json: antd"`
+- `react-native-paper` → `value: "rn-paper"`, `confidence: "high"`, `source: "package.json: react-native-paper"`
+- Hiçbiri yok → `value: "none"`, `confidence: "low"`, `source: "no design system detected"`
 
 ### 2.5 Script Tespiti
 

@@ -40,9 +40,12 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
   - **warn** → uyari gosterilir, onay istenir
 
 ### Q2 — Tasarim Sistemi / Component Library
-- **Text:** `"Bir tasarim sistemi/component library kullaniyor musunuz? (Orn: Material UI, Tailwind, ozel design system)"`
+- **Text:** `"Bir tasarım sistemi/component library kullanıyor musunuz? (Örn: Material UI, Tailwind, özel design system)"`
 - **Type:** yes/no + follow-up
-- **Skip condition:** No UI framework detected (react/vue/svelte/expo)
+- **Skip condition:** Aşağıdaki koşullardan biri sağlanırsa sorulmaz:
+  - `manifest.detected.design_system.confidence == "high"` (MUI/Shadcn/Antd/RN-Paper paketi tespit edildi)
+  - UI framework hiç tespit edilmediyse (mevcut davranış korundu — TASK-209/T5 bu durumu değiştirebilir)
+- **Default selection:** `manifest.detected.design_system.confidence == "medium"` ise tespit edilen değer default seçili (örn: Tailwind only). `low` ise default yok, standart soru.
 - **Follow-up (if yes):** `"Temel kurallarini kisa acikla (renk kullanimi, component pattern, vb.)"`
 - **Maps to:** `manifest.rules.domain[]` (category: design-system)
 - **Downstream:**
@@ -55,7 +58,7 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
     - "Her yeni component Storybook story'si ile birlikte olusturulur"
 
 ### Q3 — Domain-Spesifik Kurallar
-- **Text:** `"Projede agent'larin bilmesi gereken domain-spesifik kurallar var mi? (Orn: 'API response formati her zaman {status, data, message}', 'Kullanici verisi log'a yazilmaz') Serbest format."`
+- **Text:** `"Projede agent'ların bilmesi gereken domain-spesifik kurallar var mı? (Örn: 'API response formatı her zaman {status, data, message}', 'Kullanıcı verisi log'a yazılmaz') Serbest format."`
 - **Type:** open-ended, multi-value
 - **Format:** Her kural ayri satirda. Serbest format kabul edilir.
 - **Skip condition:** never — always ask

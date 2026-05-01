@@ -29,7 +29,8 @@
   - `b)` Testler var ama her zaman yazilmiyor
   - `c)` Minimal test — sadece kritik path'ler
   - `d)` Henuz test yok
-- **Skip condition:** never — always ask
+- **Skip condition:** `manifest.detected.test_framework.confidence == "high"` ise sorulmaz (test framework paketi tespit edildi → test stratejisi `tests-exist` varsayılır).
+- **Default selection:** `manifest.detected.test_framework.confidence == "medium"` ise tespit edilen değer default seçili (`b` testler var). `low` ise default yok, standart soru.
 - **Maps to:** `manifest.workflows.test_strategy`
 - **Downstream:**
   - **a → TDD:** task-hunter her task'a test yazma adimi ekler, verification gate test pass gerektirir
@@ -59,7 +60,8 @@
   - `b)` Serbest format
   - `c)` Proje-spesifik convention var (acikla)
 - **Follow-up (if c):** `"Convention'inizi kisa aciklayin"`
-- **Skip condition:** never — always ask
+- **Skip condition:** `manifest.detected.commit_convention.confidence == "high"` ise sorulmaz (git log heuristic > %60 conventional eşleşme).
+- **Default selection:** `manifest.detected.commit_convention.confidence == "medium"` ise tespit edilen değer default seçili (genellikle `a` conventional). `low` ise default yok, standart soru.
 - **Maps to:** `manifest.workflows.commit_convention`, `manifest.workflows.commit_prefix_map`
 - **Downstream:**
   - Commit message validation hook
@@ -73,7 +75,10 @@
   - `a)` ORM migration ({detected_orm})
   - `b)` Manuel SQL
   - `c)` Migration yok
-- **Skip condition:** No database/ORM detected
+- **Skip condition:** Aşağıdaki koşullardan biri sağlanırsa sorulmaz:
+  - `manifest.detected.migration.confidence == "high"` (ORM tespit edildi → otomatik `a`)
+  - Database/ORM hiç tespit edilmediyse (mevcut davranış korundu)
+- **Default selection:** `manifest.detected.migration.confidence == "medium"` ise tespit edilen değer default seçili (genellikle `b` manuel SQL). `low` ise default yok, standart soru.
 - **Maps to:** `manifest.stack.migration_strategy`
 - **Downstream:**
   - `STACK.md` database section
@@ -100,7 +105,8 @@
   - `c)` Session-based
   - `d)` API key
   - `e)` Yok / henuz planlanmadi
-- **Skip condition:** never — always ask
+- **Skip condition:** `manifest.detected.auth_method.confidence == "high"` ise sorulmaz. (Not: T3 implementasyonunda auth tespitleri `medium` ile sınırlı; `high` confidence yalnızca ileride netleşmiş kullanım kalıbı doğrulaması ile döner — pratikte bu soru genellikle `medium` default ile sorulur.)
+- **Default selection:** `manifest.detected.auth_method.confidence == "medium"` ise tespit edilen değer default seçili (jwt/oauth2/session). `low` ise default yok, standart soru.
 - **Maps to:** `manifest.stack.auth_method`
 - **Downstream:**
   - **a → JWT:**
