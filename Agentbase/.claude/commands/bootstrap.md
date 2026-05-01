@@ -1290,12 +1290,15 @@ S1: Yasaklanması gereken komut veya pattern var mı?
 
 Bu üç soru subjektif çoktan seçmelidir; tek `AskUserQuestion` çağrısında batch olarak sorulur.
 
-**S2 skip ve default davranışı (TASK-209/T5):**
-- `manifest.detected.design_system.confidence == "high"` ise S2 elementi questions array'inden **çıkarılır** (batch 2 element olur — ADIM 2.7 toplu onayında zaten doğrulandı).
-- Diğer tüm durumlarda (confidence:medium, confidence:low, alan yok, GREENFIELD_MODE=true) S2 **her zaman sorulur** ve default seçenek belirlenir:
-  - `confidence:medium` → tespit edilen değer default (örn: Tailwind only)
-  - `confidence:low`, alan yok, GREENFIELD → default `"Yok / kullanmıyorum"`
-- Önceki davranış ("UI framework hiç tespit edilmediyse skip") **kaldırıldı**: kullanıcı UI yoksa bile "Yok" diyerek niyetini ifade edebilmelidir.
+**S2 default davranışı (TASK-209/T5 — skip TAMAMEN kaldırıldı):**
+
+S2 batch'in **her zaman parçasıdır** (3 element); skip yoktur. Default seçim `manifest.detected.design_system.confidence` değerine göre belirlenir:
+
+- `confidence == "high"` → tespit edilen değer default seçili (örn: MUI tespit edildi → "MUI" default). T3'ün "high → skip" kuralı design_system için **override edilir**; ADIM 2.7 toplu onayı sadece default'u etkiler, soru yine sorulur. Kullanıcı doğrulamak için Enter'a basabilir veya başka bir seçenek belirleyebilir.
+- `confidence == "medium"` → tespit edilen değer default (örn: Tailwind only).
+- `confidence == "low"`, alan yok, GREENFIELD_MODE=true → default `"Yok / kullanmıyorum"`.
+
+**Gerekçe:** Önceki davranış (UI hiç tespit edilmedi → soru atlanır) kullanıcının "Yok" diyerek niyetini ifade etmesini engelliyordu. Aynı şekilde "high → skip" da yanlış tespitlerin sessiz kabulüne yol açabiliyordu. Soru her zaman sorulur, default seçim ile UX hızlı kalır.
 
 ```yaml
 questions:
@@ -1346,7 +1349,7 @@ S2 skip durumunda batch index kayar; bu yüzden mapping `header` alanına göre 
 - `header == "Güvenlik"` → `manifest.project.security_level` (`standard|high|critical`). task-hunter Dual-Pass modifier `high|critical` ise AKTIF.
 - `header == "CLI hedefler"` → `manifest.targets`. Her zaman `claude` dahil; örnek: Gemini+Kimi seçilirse `[claude, gemini, kimi]`. Hiçbiri seçilmezse `[claude]`. "Other" ile başka CLI eklenebilir.
 
-**S2 skip senaryosu:** Batch 2 element olarak gönderilir (Güvenlik + CLI hedefler). `manifest.rules.design_system` boş bırakılır (T5/TASK-209 sonrası `"none"` default'a geçecek). Header tabanlı mapping sayesinde Güvenlik ve CLI cevapları doğru alana yazılır.
+**Batch tutarlılığı:** Batch her zaman 3 element olarak gönderilir (TASK-209/T5 sonrası S2 skip yok). Header tabanlı mapping sayesinde her cevap doğru alana yazılır; alan kayması riski yok.
 
 **S3 (domain kurallari — free text):**
 

@@ -42,9 +42,12 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
 ### Q2 — Tasarim Sistemi / Component Library
 - **Text:** `"Bir tasarım sistemi/component library kullanıyor musunuz? (Örn: Material UI, Tailwind, özel design system)"`
 - **Type:** yes/no + follow-up
-- **Skip condition:** SADECE `manifest.detected.design_system.confidence == "high"` ise sorulmaz (ADIM 2.7 toplu onayında zaten doğrulandı; MUI/Shadcn/Antd/RN-Paper paketi yüksek güvenle tespit edilmiş demektir).
-- **UI framework yok / greenfield davranışı (TASK-209/T5 ile güncellendi):** UI framework hiç tespit edilmediyse veya `manifest.detected.design_system` boş/null ise soru **yine de sorulur**, default seçim `"Yok / kullanmıyorum"`. Greenfield modunda da sorulur (kullanıcı sonradan UI eklemeyi planlıyor olabilir).
-- **Default selection:** `manifest.detected.design_system.confidence == "medium"` ise tespit edilen değer default seçili (örn: Tailwind only). `low` veya yok ise default `"Yok"`.
+- **Skip condition:** never — always ask (TASK-209/T5 ile T3'ün design_system için skip:high kuralı **override edildi**; soru her zaman sorulur, ADIM 2.7 onayı sadece default seçimini etkiler).
+- **Default selection (confidence'a göre):**
+  - `manifest.detected.design_system.confidence == "high"` → tespit edilen değer default seçili (MUI/Shadcn/Antd/RN-Paper). Kullanıcı doğrulamak için Enter'a basabilir.
+  - `confidence == "medium"` → tespit edilen değer default (örn: Tailwind only).
+  - `confidence == "low"`, alan yok, GREENFIELD_MODE=true → default `"Yok / kullanmıyorum"`.
+- **UI framework yok / greenfield:** Soru her durumda sorulur (kullanıcı UI yoksa bile "Yok" diyerek niyetini ifade edebilmeli; sonradan UI eklemeyi planlıyor olabilir).
 - **"Yok" cevabı semantiği:** Kullanıcı "Yok / kullanmıyorum" seçerse `manifest.rules.design_system = "none"` yazılır (string `"none"`, **null DEĞİL**). Eski manifest'lerde `null` olabilir; downstream tüketiciler `null` ile `"none"`'u **eşdeğer** işlemelidir (geriye uyumluluk).
 - **Follow-up (if yes):** `"Temel kurallarini kisa acikla (renk kullanimi, component pattern, vb.)"`
 - **Maps to:** `manifest.rules.domain[]` (category: design-system)
