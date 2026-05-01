@@ -230,6 +230,27 @@ Secim: [1/2/3/4]
 
 - **Dosya yoksa** → Sessizce devam et.
 
+### 1.4 Interview Phase Template Doğrulaması
+
+Bootstrap, `templates/interview/phase-{N}-*.md` dosyalarının varlığını **zorunlu** olarak doğrular. Aşağıdaki 4 dosya beklenir:
+
+- `Agentbase/templates/interview/phase-1-project.md`
+- `Agentbase/templates/interview/phase-2-technical.md`
+- `Agentbase/templates/interview/phase-3-developer.md`
+- `Agentbase/templates/interview/phase-4-rules.md`
+
+Her bir dosyanın varlığını `fs.existsSync` ile kontrol et. Eksik dosya tespit edilirse Bootstrap **hemen DUR** ve şu hatayı stderr'a yaz:
+
+```
+❌ HATA: templates/interview/phase-{N}-*.md eksik. Lütfen template kurulumunu doğrulayın.
+
+Eksik dosyalar:
+  - {tam yol 1}
+  - {tam yol 2}
+```
+
+Bu zorunlu kaynak kontrolü TASK-210/T6a sonrasında ADIM 3'ün phase template'lerine refere etmesi nedeniyle gereklidir; önceki "yoksa default kullan" fallback davranışı TASK-214/T6b ile kaldırılmıştır. Bu breaking change TASK-215/T6c kapsamında CHANGELOG'a kaydedilir.
+
 Tum kontroller basarili oldugunda:
 
 ```
@@ -944,7 +965,7 @@ Stdout'a kısa özet yaz:
    - **Free-text isteyen sorular** (proje tanımı, domain kuralları, ek notlar vb.) AskUserQuestion kullanma — `>` promptuyla sormaya devam et.
    - "Tespit edilen: ..." ipuçlarını `description` alanına kısaltarak taşı; gerekirse soru metnine de parantez içinde ekle.
 
-Eger `templates/interview/phase-{N}-*.md` dosyalari mevcutsa onlari oku ve soru sablonlarini oradan al. Mevcut degilse asagidaki varsayilan sorulari kullan.
+`templates/interview/phase-{N}-*.md` dosyaları **zorunludur** — ADIM 1.4'te dosya doğrulaması yapılır, eksikse Bootstrap durur. ADIM 3'te bu dosyalar okunup soru blokları oradan işlenir; bootstrap.md'de inline default sorular **yoktur** (TASK-210/T6a sonrası kaldırıldı, TASK-214/T6b sonrası fallback de kaldırıldı).
 
 ### Faz 1 — Proje Temelleri
 *Bu faz `PROJECT.md` ve `ARCHITECTURE.md` icin veri toplar.*
