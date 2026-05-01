@@ -277,6 +277,8 @@ Bootstrap akışında ADIM 3'teki `AskUserQuestion` çağrılarında "Tespit edi
 
 **Detected dışı placeholder'lar:** `[Tespit edilen: ...]` ifadesinde `{detected.<field>}` referansı yoksa (örn. `[Tespit edilen: route dosyalarından tahmin]`), bu canonical olmayan bir özel ipucudur. Parser dokunmaz; metin olduğu gibi gösterilir. Bu durum Faz 1 S2 (production URL), Faz 1 S4 (alt proje rolleri), Faz 1 S5 (API prefix) gibi `manifest.detected` listesinde olmayan alanlar için geçerlidir.
 
+**Çoklu alan ipuçları:** Bir soru birden fazla detected alanını göstermek istiyorsa **her alan için ayrı bir bracket** kullanılır (canonical formatın gereği — tek bracket içinde birden fazla `{detected.X}` referansı yasaktır, çünkü fallback davranışı belirsizleşir). Örnek: `[Tespit edilen linter: {detected.linter}] [Tespit edilen formatter: {detected.formatter}]`. Her bracket bağımsız substitute/silme kuralına tabidir; biri silinirken diğeri kalabilir.
+
 ---
 
 ### 2.1 Proje Tipi Tespiti
@@ -1178,7 +1180,7 @@ Not: API key veya başka özel yöntem için kullanıcı "Other" seçer; cevapta
 
 ```yaml
 questions:
-  - question: "Kod isimlendirme konvansiyonunuz? [Tespit edilen linter: {detected.linter}; formatter: {detected.formatter}]"
+  - question: "Kod isimlendirme konvansiyonunuz? [Tespit edilen linter: {detected.linter}] [Tespit edilen formatter: {detected.formatter}]"
     header: "Naming"
     multiSelect: false
     options:
