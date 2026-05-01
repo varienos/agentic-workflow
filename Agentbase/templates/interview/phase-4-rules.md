@@ -42,10 +42,10 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
 ### Q2 — Tasarim Sistemi / Component Library
 - **Text:** `"Bir tasarım sistemi/component library kullanıyor musunuz? (Örn: Material UI, Tailwind, özel design system)"`
 - **Type:** yes/no + follow-up
-- **Skip condition:** Aşağıdaki koşullardan biri sağlanırsa sorulmaz:
-  - `manifest.detected.design_system.confidence == "high"` (MUI/Shadcn/Antd/RN-Paper paketi tespit edildi)
-  - UI framework hiç tespit edilmediyse (mevcut davranış korundu — TASK-209/T5 bu durumu değiştirebilir)
-- **Default selection:** `manifest.detected.design_system.confidence == "medium"` ise tespit edilen değer default seçili (örn: Tailwind only). `low` ise default yok, standart soru.
+- **Skip condition:** SADECE `manifest.detected.design_system.confidence == "high"` ise sorulmaz (ADIM 2.7 toplu onayında zaten doğrulandı; MUI/Shadcn/Antd/RN-Paper paketi yüksek güvenle tespit edilmiş demektir).
+- **UI framework yok / greenfield davranışı (TASK-209/T5 ile güncellendi):** UI framework hiç tespit edilmediyse veya `manifest.detected.design_system` boş/null ise soru **yine de sorulur**, default seçim `"Yok / kullanmıyorum"`. Greenfield modunda da sorulur (kullanıcı sonradan UI eklemeyi planlıyor olabilir).
+- **Default selection:** `manifest.detected.design_system.confidence == "medium"` ise tespit edilen değer default seçili (örn: Tailwind only). `low` veya yok ise default `"Yok"`.
+- **"Yok" cevabı semantiği:** Kullanıcı "Yok / kullanmıyorum" seçerse `manifest.rules.design_system = "none"` yazılır (string `"none"`, **null DEĞİL**). Eski manifest'lerde `null` olabilir; downstream tüketiciler `null` ile `"none"`'u **eşdeğer** işlemelidir (geriye uyumluluk).
 - **Follow-up (if yes):** `"Temel kurallarini kisa acikla (renk kullanimi, component pattern, vb.)"`
 - **Maps to:** `manifest.rules.domain[]` (category: design-system)
 - **Downstream:**

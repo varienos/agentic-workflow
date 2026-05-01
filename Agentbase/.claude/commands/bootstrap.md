@@ -1288,7 +1288,14 @@ S1: Yasaklanması gereken komut veya pattern var mı?
 
 **S2+S4+S5 (tek batch çağrısı — 3 element: design system + güvenlik + CLI hedefleri):**
 
-Bu üç soru subjektif çoktan seçmelidir; tek `AskUserQuestion` çağrısında batch olarak sorulur. **S2 skip:** `manifest.detected.design_system.confidence == "high"` ise S2 elementi questions array'inden çıkarılır (batch 2 element olur). UI framework hiç tespit edilmediyse de S2 atlanabilir (mevcut davranış — TASK-209/T5 değiştirebilir).
+Bu üç soru subjektif çoktan seçmelidir; tek `AskUserQuestion` çağrısında batch olarak sorulur.
+
+**S2 skip ve default davranışı (TASK-209/T5):**
+- `manifest.detected.design_system.confidence == "high"` ise S2 elementi questions array'inden **çıkarılır** (batch 2 element olur — ADIM 2.7 toplu onayında zaten doğrulandı).
+- Diğer tüm durumlarda (confidence:medium, confidence:low, alan yok, GREENFIELD_MODE=true) S2 **her zaman sorulur** ve default seçenek belirlenir:
+  - `confidence:medium` → tespit edilen değer default (örn: Tailwind only)
+  - `confidence:low`, alan yok, GREENFIELD → default `"Yok / kullanmıyorum"`
+- Önceki davranış ("UI framework hiç tespit edilmediyse skip") **kaldırıldı**: kullanıcı UI yoksa bile "Yok" diyerek niyetini ifade edebilmelidir.
 
 ```yaml
 questions:
@@ -1303,7 +1310,7 @@ questions:
       - label: "Tailwind UI"
         description: "Tailwind CSS tabanlı"
       - label: "Yok"
-        description: "Belirli bir şey kullanmıyorum"
+        description: "Kullanmıyorum (manifest.rules.design_system = \"none\" yazılır)"
   - question: "Projenin güvenlik öncelik seviyesi nedir?"
     header: "Güvenlik"
     multiSelect: false
@@ -1331,7 +1338,11 @@ questions:
 **Cevap eşleme (header tabanlı — index DEĞİL):**
 
 S2 skip durumunda batch index kayar; bu yüzden mapping `header` alanına göre yapılır:
-- `header == "Design sys"` → `manifest.rules.design_system`. "Other" seçilirse serbest metin (Ant Design, React Native Paper, özel kütüphane vb.); "Yok" seçilirse `"none"`.
+- `header == "Design sys"` → `manifest.rules.design_system`. **Mapping kuralları:**
+  - `"MUI"` → `"mui"`; `"Shadcn/ui"` → `"shadcn"`; `"Tailwind UI"` → `"tailwind"`.
+  - `"Yok"` → `"none"` (string `"none"`, **null DEĞİL**).
+  - `"Other"` → kullanıcının yazdığı serbest metin (Ant Design → `"antd"`, React Native Paper → `"rn-paper"`, özel kütüphane → kullanıcı verdiği değer).
+  - **Geriye uyumluluk:** Eski manifest'lerde `design_system: null` olabilir. Downstream tüketiciler `null` ile `"none"`'u eşdeğer kabul etmelidir. Bootstrap re-run'larında `null` görüldüğünde otomatik `"none"`'a normalize edilir.
 - `header == "Güvenlik"` → `manifest.project.security_level` (`standard|high|critical`). task-hunter Dual-Pass modifier `high|critical` ise AKTIF.
 - `header == "CLI hedefler"` → `manifest.targets`. Her zaman `claude` dahil; örnek: Gemini+Kimi seçilirse `[claude, gemini, kimi]`. Hiçbiri seçilmezse `[claude]`. "Other" ile başka CLI eklenebilir.
 
@@ -1525,7 +1536,7 @@ rules:
   domain:
     - name: "[kural adi]"
       rule: "[kural açıklaması]"
-  design_system: "[kullanilan UI kutuphanesi veya null]"
+  design_system: "[mui|shadcn|tailwind|antd|rn-paper|<custom>|none]"   # Default 'none' (kullanmiyor); null DEPRECATED ama geriye uyumlu — null gorulurse 'none' ile esdeger islenir.
 ```
 
 Uyumluluk kurali:
