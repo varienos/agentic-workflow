@@ -239,7 +239,7 @@ Bootstrap, `templates/interview/phase-{N}-*.md` dosyalarının varlığını **z
 - `Agentbase/templates/interview/phase-3-developer.md`
 - `Agentbase/templates/interview/phase-4-rules.md`
 
-Her bir dosyanın varlığını `fs.existsSync` ile kontrol et. Eksik dosya tespit edilirse Bootstrap **hemen DUR** ve şu hatayı stderr'a yaz:
+Her bir dosya için `fs.statSync(path)` çağır ve `stat.isFile()` true olduğunu doğrula. Hata fırlatırsa veya dosya değilse (örn: dizin) eksik kabul et. Sadece `fs.existsSync` yetersizdir — bozuk yol veya dizin kaynağında ADIM 3 okumasına kadar gecikmeden net hata vermek için tip kontrolü zorunludur. Eksik veya geçersiz dosya tespit edilirse Bootstrap **hemen DUR** ve şu hatayı stderr'a yaz:
 
 ```
 ❌ HATA: templates/interview/phase-{N}-*.md eksik. Lütfen template kurulumunu doğrulayın.
