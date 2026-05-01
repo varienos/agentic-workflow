@@ -140,7 +140,7 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
 
 Bu phase'in soruları karışık tipte: Q1/Q3/Q6 free-text, Q2/Q4/Q5 çoktan seçmeli (subjektif). Bootstrap, ADIM 3'te şu sırayı izler:
 - Q1 (yasaklı komutlar) → free-text `>` prompt
-- **[Q2 + Q4 + Q5] → tek `AskUserQuestion` çağrısı (3 element batch):** design system + güvenlik öncelik + CLI hedefler. Q2 skip condition'ı (`detected.design_system.confidence == "high"`) sağlanırsa batch 2 element olur.
+- **[Q2 + Q4 + Q5] → tek `AskUserQuestion` çağrısı (3 element batch):** design system + güvenlik öncelik + CLI hedefler. Batch her zaman 3 element (TASK-209/T5 sonrası Q2 design_system için skip yok; default seçim confidence değerine göre belirlenir, soru her zaman sorulur).
 - Q3 (domain kuralları) → free-text `>` prompt
 - Q6 (ek notlar) → free-text `>` prompt
 
