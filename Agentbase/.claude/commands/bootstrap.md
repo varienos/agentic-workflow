@@ -625,7 +625,7 @@ Mevcut davranista degisiklik yok. Sonucu goster:
 **Kaynak:** `git log --oneline -50` (boşsa `git log --all --oneline -50`).
 
 **Heuristic:**
-- 50 commit'in regex `^(feat|fix|refactor|docs|test|chore|style|perf|ci):` ile eşleşme oranını hesapla.
+- 50 commit'in regex `^(feat|fix|refactor|docs|test|chore|style|perf|ci|build|revert)(\([^)]+\))?!?:` ile eşleşme oranını hesapla. Bu desen scope'lu (`feat(api):`), breaking-change (`feat!:`, `feat(api)!:`) ve standart Conventional Commits varyantlarının tümünü yakalar.
 - Boş repo (0 commit): `value: "unknown"`, `confidence: "low"`, `source: "git log boş"`
 - Eşleşme oranı `< %30`: `value: "free"`, `confidence: "low"`, `source: "git log heuristic %X"`
 - `%30 ≤ oran ≤ %60`: `value: "conventional"`, `confidence: "medium"`, `source: "git log heuristic %X"`
@@ -635,11 +635,12 @@ Mevcut davranista degisiklik yok. Sonucu goster:
 
 #### 2.4.3 — migration
 
-**Kaynak:** Daha önce tespit edilen `manifest.stack.orm` + dosya sistemi (`migrations/`, `prisma/migrations/`, `db/migrate/`, `alembic/versions/`).
+**Kaynak (öncelik sırası):** (1) `manifest.detected.orm.value` (henüz onay öncesi ham tespit), (2) fallback `manifest.stack.orm` (kullanıcı onayı sonrası — re-run senaryosu), (3) dosya sistemi (`migrations/`, `prisma/migrations/`, `db/migrate/`, `alembic/versions/`).
 
 **Eşleme:**
-- `manifest.stack.orm` null değil (Prisma/TypeORM/Sequelize/Drizzle/Eloquent/Django ORM tespit edildi) → `value: "orm"`, `confidence: "high"`, `source: "stack.orm:{orm_value}"`
-- ORM yok ama `migrations/` veya benzeri klasör var → `value: "manual-sql"`, `confidence: "medium"`, `source: "migrations/ klasörü tespit edildi"`
+- `detected.orm.value` null değil (Prisma/TypeORM/Sequelize/Drizzle/Eloquent/Django ORM tespit edildi) → `value: "orm"`, `confidence: "high"`, `source: "detected.orm.value:{orm_value}"`
+- `detected.orm` yok ama `manifest.stack.orm` dolu (re-run) → `value: "orm"`, `confidence: "high"`, `source: "stack.orm:{orm_value}"`
+- ORM hiç yok ama `migrations/` veya benzeri klasör var → `value: "manual-sql"`, `confidence: "medium"`, `source: "migrations/ klasörü tespit edildi"`
 - Hiçbiri yok → `value: "none"`, `confidence: "low"`, `source: "no migration system"`
 
 #### 2.4.4 — auth_method
@@ -770,6 +771,7 @@ Bölüm 2'ye geçmeden önce `manifest.detected` içindeki **her alan için** a�
 │ formatter           │ {detected.formatter.value}         │ {…}    │ {detected.formatter.source}     │
 │ linter              │ {detected.linter.value}            │ {…}    │ {detected.linter.source}        │
 │ orm                 │ {detected.orm.value}               │ {…}    │ {detected.orm.source}           │
+│ migration           │ {detected.migration.value}         │ {…}    │ {detected.migration.source}     │
 │ auth_method         │ {detected.auth_method.value}       │ {…}    │ {detected.auth_method.source}   │
 │ design_system       │ {detected.design_system.value}     │ {…}    │ {detected.design_system.source} │
 │ deploy_platform     │ {detected.deploy_platform.value}   │ {…}    │ {detected.deploy_platform.source}│
@@ -801,6 +803,7 @@ options:
 - `detected.formatter.value` → `stack.formatter`
 - `detected.linter.value` → `stack.linter`
 - `detected.orm.value` → `stack.orm`
+- `detected.migration.value` → `stack.migration_strategy` (ve `workflows.migration_strategy`)
 - `detected.auth_method.value` → `stack.auth_method`
 - `detected.design_system.value` → `rules.design_system`
 - `detected.deploy_platform.value` → `environments[*].deploy_platform`
@@ -1426,6 +1429,7 @@ detected:                                                 # ADIM 2.4 cıktısı 
   formatter:         { value: "[prettier|biome|ruff|null]",              confidence: "[high|medium|low]", source: "[paket veya config dosyasi]" }
   linter:            { value: "[eslint|biome|ruff|null]",                confidence: "[high|medium|low]", source: "[paket veya config dosyasi]" }
   orm:               { value: "[prisma|typeorm|sequelize|drizzle|eloquent|django-orm|null]", confidence: "[high|medium|low]", source: "[paket]" }
+  migration:         { value: "[orm|manual-sql|none]",                   confidence: "[high|medium|low]", source: "[detected.orm veya migrations/ klasoru]" }
   auth_method:       { value: "[jwt|oauth2|session|api-key|none]",       confidence: "[high|medium|low]", source: "[paket: passport/jsonwebtoken/express-session]" }
   design_system:     { value: "[mui|shadcn|tailwind|antd|rn-paper|none]", confidence: "[high|medium|low]", source: "[paket kombinasyonu]" }
   deploy_platform:   { value: "[github-actions|gitlab-ci|vercel|docker|none]", confidence: "[high|medium|low]", source: "[CI dosyasi veya config]" }
