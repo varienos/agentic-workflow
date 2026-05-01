@@ -679,6 +679,20 @@ Aktif Moduller:[liste]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
+**Bölüm 1.5 — Detected Alan Doğrulama:**
+
+Bölüm 2'ye geçmeden önce `manifest.detected` içindeki **her alan için** aşağıdaki doğrulamaları yap:
+
+1. `value` mevcut, `null` değil ve boş string değil.
+2. `source` mevcut ve string tipinde.
+3. `confidence` değeri **kesin olarak** şu enum'da: `high`, `medium`, `low`. Başka değer (örn. `unknown`, `medium-high`, sayı, boş) kabul edilmez.
+
+**Davranış:**
+- Doğrulamayı geçmeyen alanlar tabloda **gösterilmez** ve "Evet" onayında final manifest alanlarına **kopyalanmaz**.
+- Bu alanlar için ADIM 3'te ilgili soru kullanıcıya sorulur (skip condition iptal — soru her zaman gösterilir).
+- Bir veya daha fazla alan invalid ise stderr'a tek satırlık uyarı yazılır: `[WARN] manifest.detected.<alan> invalid (confidence|value|source) — interview fallback`.
+- Hiçbir alan doğrulamayı geçmezse `manifest.detected` boş kabul edilir → Bölüm 2 ve Bölüm 3 atlanır, ADIM 3 tüm sorularıyla çalışır.
+
 **Bölüm 2 — Tespit Edilenler tablosu (manifest.detected boş değilse):**
 
 `manifest.detected` içinde en az bir alan dolu ise aşağıdaki tabloyu göster:
