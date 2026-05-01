@@ -899,11 +899,14 @@ Stdout'a kısa özet yaz:
 ## ADIM 3 — FAZLI ROPORTAJ
 
 **KURALLAR:**
-1. Her seferinde SADECE BIR soru sor.
+1. **Soru gruplandırma:**
+   - **Tespit edilebilir sorular** (test_framework, commit_convention, migration, auth, design_system vb.) ADIM 2.7'de toplu tabloda doğrulanır — ADIM 3'te tek tek sorulmaz.
+   - **Subjektif çoktan seçmeli sorular** (deneyim, dil, otonomi, ekip, güvenlik, CLI hedefleri vb.) ilişkili olanlar `AskUserQuestion`'ın 4-soru batch desteği ile **tek çağrıda birlikte** sorulur. Faz 3 S1-S4 → tek call (4 element); Faz 4 S2+S4+S5 → tek call (3 element).
+   - **Free-text sorular** ayrı kalır, batch'lenmez. Her biri kendi `>` promptu ile sorulur. Liste: Faz 1 S1 (proje tanımı), Faz 4 S1 (yasaklı komutlar), Faz 4 S3 (domain kuralları), Faz 4 S6 (ek notlar).
 2. Onceki adimda tespit edilen bilgiyi once goster — kullanici onaylarsa veya duzeltirse devam et.
-3. Tespit edilip dogrulama gerektirmeyen sorulari atla.
+3. Tespit edilip dogrulama gerektirmeyen sorulari atla (ADIM 2.7 onayı sonrası `manifest.detected.<alan>.confidence == "high"` ise skip; bkz. phase-2-technical.md/phase-4-rules.md skip conditions).
 4. Mumkun olan her yerde coktan secmeli (a/b/c/d) format kullan.
-5. Kullanicinin cevabini al, kaydet, sonraki soruya gec.
+5. Kullanicinin cevabini al, kaydet, sonraki adima gec (batch'te tüm cevaplar tek seferde alınır).
 6. Her fazin basinda faz basligini goster.
 7. **Çoktan seçmeli tüm soruları `AskUserQuestion` tool'u ile sor — plain text `>` promptu kullanma.** Her sorunun Markdown bloğunun hemen altında "AskUserQuestion çağrısı" şablonu verilmiştir; o şablonu tool parametresi olarak kullan. Kısıtlar:
    - Her soru 2–4 seçenek arası olmalı. 5+ seçenek varsa en popüler 4'ünü göster — "Other" otomatik eklenir (manuel ekleme).
@@ -1178,79 +1181,64 @@ questions:
 → code-review hook naming pattern kontrolunu etkiler.
 
 ### Faz 3 — Gelistirici Profili
-*Bu faz DEVELOPER.md icin veri toplar.*
+*Bu faz DEVELOPER.md icin veri toplar. Tüm 4 soru subjektiftir; tek `AskUserQuestion` batch çağrısında sorulur.*
 
-**S1 (deneyim seviyesi):**
+**S1+S2+S3+S4 (tek batch çağrısı — 4 element):**
 
 Önce faz başlığını yazdır: `━━━ Faz 3/4: Geliştirici Profili ━━━`
 
-Sonra `AskUserQuestion` tool'unu şu parametrelerle çağır:
+Sonra `AskUserQuestion` tool'unu **tek çağrıda 4 soru ile** çağır:
 
 ```yaml
-question: "Bu projenin tech stack'indeki deneyim seviyeniz?"
-header: "Seviye"
-multiSelect: false
-options:
-  - label: "Junior"
-    description: "Öğrenme aşamasında, detaylı açıklama isterim"
-  - label: "Mid"
-    description: "Temel var, karmaşık konularda rehberlik isterim"
-  - label: "Senior"
-    description: "Deneyimli, kısa ve öz yanıtlar yeterli"
-  - label: "Stack yeni"
-    description: "Başka stack'lerde deneyimli, bu stack yeni"
+questions:
+  - question: "Bu projenin tech stack'indeki deneyim seviyeniz?"
+    header: "Seviye"
+    multiSelect: false
+    options:
+      - label: "Junior"
+        description: "Öğrenme aşamasında, detaylı açıklama isterim"
+      - label: "Mid"
+        description: "Temel var, karmaşık konularda rehberlik isterim"
+      - label: "Senior"
+        description: "Deneyimli, kısa ve öz yanıtlar yeterli"
+      - label: "Stack yeni"
+        description: "Başka stack'lerde deneyimli, bu stack yeni"
+  - question: "Claude ile iletişim diliniz?"
+    header: "Dil"
+    multiSelect: false
+    options:
+      - label: "Türkçe"
+        description: "Tüm iletişim Türkçe"
+      - label: "English"
+        description: "All communication in English"
+  - question: "Claude'un otonomi seviyesi ne olsun?"
+    header: "Otonomi"
+    multiSelect: false
+    options:
+      - label: "Her adımda"
+        description: "Her işlemden önce onay al"
+      - label: "Planla-uygula"
+        description: "Planı göster, onay al, sonra otonom çalış"
+      - label: "Tam otonom"
+        description: "Doğrudan yap, sadece sonuç bildir"
+  - question: "Projede tek mi çalışıyorsun, ekip mi?"
+    header: "Ekip"
+    multiSelect: false
+    options:
+      - label: "Solo"
+        description: "Tek geliştirici"
+      - label: "Küçük ekip"
+        description: "2–4 kişi"
+      - label: "Büyük ekip"
+        description: "5+ kişi"
 ```
 
-**S2 (iletisim dili):**
+**Cevap eşleme:**
+- Soru 1 → `manifest.developer.experience` (`junior|mid|senior|new-to-stack`)
+- Soru 2 → `manifest.developer.communication_language` (`tr|en`); kullanıcı "Other" seçerse serbest metin
+- Soru 3 → `manifest.developer.autonomy` (`ask-every-step|plan-then-auto|full-auto`)
+- Soru 4 → `manifest.project.team_size` (`solo|small-team|large-team`)
 
-`AskUserQuestion` tool'unu şu parametrelerle çağır. Başka dil için kullanıcı "Other" seçip yazar:
-
-```yaml
-question: "Claude ile iletişim diliniz?"
-header: "Dil"
-multiSelect: false
-options:
-  - label: "Türkçe"
-    description: "Tüm iletişim Türkçe"
-  - label: "English"
-    description: "All communication in English"
-```
-
-**S3 (otonomi seviyesi):**
-
-`AskUserQuestion` tool'unu şu parametrelerle çağır:
-
-```yaml
-question: "Claude'un otonomi seviyesi ne olsun?"
-header: "Otonomi"
-multiSelect: false
-options:
-  - label: "Her adımda"
-    description: "Her işlemden önce onay al"
-  - label: "Planla-uygula"
-    description: "Planı göster, onay al, sonra otonom çalış"
-  - label: "Tam otonom"
-    description: "Doğrudan yap, sadece sonuç bildir"
-```
-
-**S4 (calisma modu):**
-
-`AskUserQuestion` tool'unu şu parametrelerle çağır:
-
-```yaml
-question: "Projede tek mi çalışıyorsun, ekip mi?"
-header: "Ekip"
-multiSelect: false
-options:
-  - label: "Solo"
-    description: "Tek geliştirici"
-  - label: "Küçük ekip"
-    description: "2–4 kişi"
-  - label: "Büyük ekip"
-    description: "5+ kişi"
-```
-
-→ Manifest: `project.team_size` alanina yaz (`solo`, `small-team`, `large-team`).
 → WORKFLOWS.md review surecini etkiler (solo: opsiyonel, kucuk ekip: onerilen, buyuk ekip: zorunlu PR).
 
 ### Faz 4 — Domain Kurallari
@@ -1270,26 +1258,52 @@ S1: Yasaklanması gereken komut veya pattern var mı?
 >
 ```
 
-**S2 (design system — sadece UI framework tespit edildiyse sor):**
+**S2+S4+S5 (tek batch çağrısı — 3 element: design system + güvenlik + CLI hedefleri):**
 
-`AskUserQuestion` tool'unu şu parametrelerle çağır. Diğer component kütüphaneleri için kullanıcı "Other" seçip yazsın. Tespit edilen varsa soru metnine parantez içinde ekle:
+Bu üç soru subjektif çoktan seçmelidir; tek `AskUserQuestion` çağrısında batch olarak sorulur. **S2 skip:** `manifest.detected.design_system.confidence == "high"` ise S2 elementi questions array'inden çıkarılır (batch 2 element olur). UI framework hiç tespit edilmediyse de S2 atlanabilir (mevcut davranış — TASK-209/T5 değiştirebilir).
 
 ```yaml
-question: "Kullandığınız tasarım sistemi / component kütüphanesi? [Tespit edilen: ...]"
-header: "Design sys"
-multiSelect: false
-options:
-  - label: "MUI"
-    description: "Material UI / MUI"
-  - label: "Shadcn/ui"
-    description: "Radix UI + Tailwind"
-  - label: "Tailwind UI"
-    description: "Tailwind CSS tabanlı"
-  - label: "Yok"
-    description: "Belirli bir şey kullanmıyorum"
+questions:
+  - question: "Kullandığınız tasarım sistemi / component kütüphanesi? [Tespit edilen: {detected.design_system.value}]"
+    header: "Design sys"
+    multiSelect: false
+    options:
+      - label: "MUI"
+        description: "Material UI / MUI"
+      - label: "Shadcn/ui"
+        description: "Radix UI + Tailwind"
+      - label: "Tailwind UI"
+        description: "Tailwind CSS tabanlı"
+      - label: "Yok"
+        description: "Belirli bir şey kullanmıyorum"
+  - question: "Projenin güvenlik öncelik seviyesi nedir?"
+    header: "Güvenlik"
+    multiSelect: false
+    options:
+      - label: "Standart"
+        description: "Genel web uygulaması"
+      - label: "Yüksek"
+        description: "Finans, sağlık, kişisel veri (KVKK/GDPR)"
+      - label: "Kritik"
+        description: "Ödeme işleme, devlet sistemleri"
+  - question: "Claude Code dışında hangi CLI araçlarını kullanıyorsunuz? (Agentbase bu araçlara da komut/skill üretecek — hiçbiri seçilmezse sadece Claude hedef alınır)"
+    header: "CLI hedefler"
+    multiSelect: true
+    options:
+      - label: "Gemini"
+        description: "Gemini CLI"
+      - label: "Codex"
+        description: "Codex CLI"
+      - label: "Kimi"
+        description: "Kimi CLI"
+      - label: "OpenCode"
+        description: "OpenCode CLI"
 ```
 
-Not: Ant Design, React Native Paper, özel kütüphane vb. için kullanıcı "Other" seçer.
+**Cevap eşleme:**
+- Soru 1 (design system) → `manifest.rules.design_system`. "Other" seçilirse serbest metin (Ant Design, React Native Paper, özel kütüphane vb.); "Yok" seçilirse `"none"`.
+- Soru 2 (güvenlik) → `manifest.project.security_level` (`standard|high|critical`). task-hunter Dual-Pass modifier `high|critical` ise AKTIF.
+- Soru 3 (CLI hedefler) → `manifest.targets`. Her zaman `claude` dahil; örnek: Gemini+Kimi seçilirse `[claude, gemini, kimi]`. Hiçbiri seçilmezse `[claude]`. "Other" ile başka CLI eklenebilir.
 
 **S3 (domain kurallari — free text):**
 
@@ -1303,51 +1317,6 @@ S3: Projeye özel kurallar var mı?
     Her kuralı ayrı satırda yazın veya "yok" deyin:
 >
 ```
-
-**S4 (guvenlik oncelik seviyesi):**
-
-`AskUserQuestion` tool'unu şu parametrelerle çağır:
-
-```yaml
-question: "Projenin güvenlik öncelik seviyesi nedir?"
-header: "Güvenlik"
-multiSelect: false
-options:
-  - label: "Standart"
-    description: "Genel web uygulaması"
-  - label: "Yüksek"
-    description: "Finans, sağlık, kişisel veri (KVKK/GDPR)"
-  - label: "Kritik"
-    description: "Ödeme işleme, devlet sistemleri"
-```
-
-→ Manifest: `project.security_level` alanina yaz (`standard`, `high`, `critical`).
-→ task-hunter Dual-Pass modifier'i etkiler (high/critical = AKTIF).
-→ Guvenlik hook'lari ve pre-commit taramasi seviyesini belirler.
-
-**S5 (hedef CLI araclari):**
-
-`AskUserQuestion` tool'unu `multiSelect: true` ile şu parametrelerle çağır. Hiçbirini seçmezse `targets: [claude]`:
-
-```yaml
-question: "Claude Code dışında hangi CLI araçlarını kullanıyorsunuz? (Agentbase bu araçlara da komut/skill üretecek — hiçbiri seçilmezse sadece Claude hedef alınır)"
-header: "CLI hedefler"
-multiSelect: true
-options:
-  - label: "Gemini"
-    description: "Gemini CLI"
-  - label: "Codex"
-    description: "Codex CLI"
-  - label: "Kimi"
-    description: "Kimi CLI"
-  - label: "OpenCode"
-    description: "OpenCode CLI"
-```
-
-→ Manifest: `targets` alanına yaz. Her zaman `claude` dahil edilir.
-→ Örnek: Gemini + Kimi seçilirse → `targets: [claude, gemini, kimi]`
-→ Hiçbiri seçilmezse → `targets: [claude]`
-→ Kullanıcı "Other" ile başka bir CLI yazarsa manifest'e onu da ekle.
 
 **S6 (ek notlar — free text):**
 
@@ -1369,6 +1338,8 @@ Roportaj tamamlaninca:
    Simdi manifest olusturuyorum...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
+
+> **Etkileşim sayısı (T2 sonrası):** Brownfield proje (tüm `manifest.detected.*` confidence:high) için ADIM 3 etkileşim sayısı: ~7-8 (önceki ~20'den düşüş). Faz 1: 1 batch + 1 free-text + opsiyonel S0 stack; Faz 2: çoğu skip (ADIM 2.7 onayı kapsadığı alanlar); Faz 3: 1 batch (4 soru tek call); Faz 4: 1 batch (3 soru tek call) + 3 free-text. Greenfield veya düşük-tespit projelerde sayı doğal olarak artar (skip kapsama düştüğü için).
 
 ---
 

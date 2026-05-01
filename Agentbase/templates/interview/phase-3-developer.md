@@ -14,7 +14,7 @@ Bu phase'de otomatik tespit yoktur. Tum sorular her zaman sorulur.
 ## Questions
 
 ### Q1 — Deneyim Seviyesi
-- **Text:** `"Deneyim seviyeniz? (Agent'larin aciklama derinligini belirler)"`
+- **Text:** `"Deneyim seviyeniz? (Agent'ların açıklama derinliğini belirler)"`
 - **Options:**
   - `a)` Junior — detayli aciklama ve rehberlik isterim
   - `b)` Mid — baglami anliyorum, sadece karar noktalarini goster
@@ -78,7 +78,7 @@ Bu phase'de otomatik tespit yoktur. Tum sorular her zaman sorulur.
     - Plan onaylaninca otonom calisir
     - Dengeli guvenlik/hiz
     - Hook: confirmation_required = plan-phase-only
-    - Enforce: task-hunter.skeleton.md ADIM 2.3 "Plani kullaniciya goster ve onay bekle"
+    - Enforce: task-hunter.skeleton.md ADIM 2.3 "Planı kullanıcıya göster ve onay bekle"
   - **c → full-autonomous:**
     - task-hunter plani gosterip direkt calisir
     - Sadece hata veya belirsizlikte durur
@@ -108,6 +108,12 @@ Bu phase'de otomatik tespit yoktur. Tum sorular her zaman sorulur.
     - Code ownership dosyasi (CODEOWNERS) onerisi
     - Her PR'da en az 1 review zorunlu
     - `WORKFLOWS.md` review sureci: zorunlu
+
+---
+
+## Batch Delivery
+
+Tüm 4 soru subjektiftir ve birbirinden bağımsızdır. Bootstrap, ADIM 3'te bu phase'i **tek `AskUserQuestion` çağrısında 4 element olarak** sorar (questions array). Bireysel sırayla sormaz. Bkz: `bootstrap.md` ADIM 3 KURAL 1 ve Faz 3 batch tanımı.
 
 ---
 
