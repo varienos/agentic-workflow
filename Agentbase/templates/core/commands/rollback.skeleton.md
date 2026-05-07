@@ -163,15 +163,19 @@ cd ../Codebase && git reset --hard <secilen-ref>
 
 ### 5.2 — Revert
 
-Tek commit revert:
+> **ONEMLI:** Checkpoint, kotu commit'ten ONCEKI saglam HEAD'dir. Revert etmek istedigimiz checkpoint SHA'si DEGIL, checkpoint sonrasi gelen commit'lerdir. Bu yuzden range syntax kullanilir.
+
+Checkpoint sonrasi tek commit varsa (HEAD = kotu commit):
 ```bash
-cd ../Codebase && git revert --no-edit <secilen-commit-sha>
+cd ../Codebase && git revert --no-edit HEAD
 ```
 
-Birden fazla commit revert (range):
+Checkpoint sonrasi birden fazla commit varsa (range — checkpoint dahil DEGIL, HEAD dahil):
 ```bash
-cd ../Codebase && git revert --no-edit <eski-sha>..HEAD
+cd ../Codebase && git revert --no-edit <secilen-ref>..HEAD
 ```
+
+> **DIKKAT:** `git revert --no-edit <secilen-ref>` (range YOK) YANLIS — bu checkpoint'in kendisini geri alir, kotu commit'i degil.
 
 ### 5.3 — Soft Reset
 

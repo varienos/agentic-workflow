@@ -68,20 +68,34 @@ function createCheckpoint(cwd, ref) {
   return sha;
 }
 
+function logSilently(message) {
+  try { process.stderr.write(`[git-checkpoint] ${message}\n`); } catch { /* stderr fail bile yutulur */ }
+}
+
 async function main() {
+  let parsed;
   try {
     const input = await readStdin();
-    const parsed = JSON.parse(input);
-    const command = parsed?.tool_input?.command || '';
+    parsed = JSON.parse(input);
+  } catch {
+    return;
+  }
 
-    if (!isCommitCommand(command)) return;
+  const command = parsed?.tool_input?.command || '';
+  if (!isCommitCommand(command)) return;
 
-    const cwd = findGitCwd(command);
-    if (!cwd) return;
+  const cwd = findGitCwd(command);
+  if (!cwd) {
+    logSilently('git repo tespit edilemedi, checkpoint atlandi');
+    return;
+  }
 
+  try {
     const ref = buildCheckpointRef(detectTaskId());
     createCheckpoint(cwd, ref);
-  } catch { /* Hook hatalari sessizce yutulur — commit ASLA bloklanmaz */ }
+  } catch (err) {
+    logSilently(`checkpoint olusturulamadi: ${err && err.message ? err.message : err}`);
+  }
 }
 
 if (typeof module !== 'undefined' && module.exports) {
