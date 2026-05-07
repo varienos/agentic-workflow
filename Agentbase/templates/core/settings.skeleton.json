@@ -98,6 +98,12 @@
         "matcher": "Bash",
         "hooks": [
           {
+            "__doc__": "Shadow Git Checkpointing — git commit oncesi gizli ref kaydeder (refs/checkpoints/agent/<id>-<ts>). /rollback komutu icin. ASLA bloklamaz.",
+            "type": "command",
+            "command": "node .claude/hooks/git-checkpoint.js",
+            "timeout": 10
+          },
+          {
             "__doc__": "Commit format validator — git commit -m mesaji conventional prefix ile eslesmezse blocklar",
             "type": "command",
             "command": "node .claude/hooks/commit-format-guard.js",

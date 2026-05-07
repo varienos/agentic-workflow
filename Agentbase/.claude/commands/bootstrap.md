@@ -74,9 +74,9 @@ Kurduktan sonra /bootstrap komutunu tekrar calistirin.
 
 `../Codebase/` dizinini kontrol et (Agentbase'e gore goreceli yol).
 
-Bash ile calistir: `ls ../Codebase/ 2>/dev/null | head -5`
+Bash ile calistir: `if [ ! -d ../Codebase ]; then echo "__CODEBASE_MISSING__"; else find ../Codebase -mindepth 1 -maxdepth 1 ! -name '.gitkeep' ! -name '.DS_Store' -print 2>/dev/null | head -5; fi`
 
-- **Dizin yoksa** → Kullaniciya su mesaji goster ve KOMPLE DUR:
+- **Cikti `__CODEBASE_MISSING__` ise** → Kullaniciya su mesaji goster ve KOMPLE DUR:
 
 ```
 ❌ Codebase/ dizini bulunamadi.
@@ -87,7 +87,7 @@ Projenizi bu dizine koyun veya sembolik link olusturun:
 Ardindan /bootstrap komutunu tekrar calistirin.
 ```
 
-- **Dizin var ama bos** → Greenfield moduna gec. Kullaniciya `AskUserQuestion` ile sor (plain text prompt kullanma):
+- **Dizin var ama bos** (`.gitkeep` ve `.DS_Store` placeholder kabul edilir) → Greenfield moduna gec. Kullaniciya `AskUserQuestion` ile sor (plain text prompt kullanma):
 
 ```yaml
 AskUserQuestion cagrisi:
@@ -104,7 +104,7 @@ AskUserQuestion cagrisi:
   - **"Evet, greenfield"** → `GREENFIELD_MODE = true` olarak kaydet. `✅ Greenfield modu aktif` yazdir ve devam et.
   - **"Hayır, duracağım"** → KOMPLE DUR (mevcut davranis).
 
-- **Dosyalar varsa** → `GREENFIELD_MODE = false`. `✅ Codebase bulundu` yazdir, bulunan ust-duzey dosya/klasorleri listele ve devam et.
+- **Gercek dosyalar varsa** → `GREENFIELD_MODE = false`. `✅ Codebase bulundu` yazdir, bulunan ust-duzey dosya/klasorleri listele ve devam et.
 
 ### 1.2.5 Codebase AI Varlik Import
 
@@ -1528,6 +1528,7 @@ Teammate'ler skeleton dosyalarini islerken hangi GENERATE bloklarinin hangi dosy
 | codex-verify.skeleton.md | SELF_REFRESH |
 | deep-audit.skeleton.md | CODEBASE_CONTEXT, MODULE_MAPPING, SUBPROJECT_LAYERS, REVIEW_AGENTS, VERIFICATION_COMMANDS, IDOR_CHECKLIST |
 | deadcode.skeleton.md | CODEBASE_CONTEXT, DEADCODE_TOOLS, COMMIT_CONVENTION |
+| rollback.skeleton.md | CODEBASE_CONTEXT, COMMIT_CONVENTION |
 | memorize.skeleton.md | MEMORY_PATH |
 | code-review.skeleton.md (agent) | CODEBASE_CONTEXT, PROJECT_CHECKLIST |
 | regression-analyzer.skeleton.md (agent) | CODEBASE_CONTEXT, PROJECT_PATHS |
