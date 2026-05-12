@@ -515,9 +515,84 @@ function getMigrationCommands(manifest, ormType) {
       ['Migration geri al', `cd "${ormPath}" && npx typeorm migration:revert`],
       ['Schema senkronize', `cd "${ormPath}" && npx typeorm schema:sync`],
     ],
+    knex: [
+      ['Migration olustur', `cd "${ormPath}" && npx knex migrate:make <aciklama>`],
+      ['Migration calistir', `cd "${ormPath}" && npx knex migrate:latest`],
+      ['Migration durumu', `cd "${ormPath}" && npx knex migrate:status`],
+      ['Migration geri al', `cd "${ormPath}" && npx knex migrate:rollback`],
+    ],
+    sequelize: [
+      ['Migration olustur', `cd "${ormPath}" && npx sequelize-cli migration:generate --name <aciklama>`],
+      ['Migration calistir', `cd "${ormPath}" && npx sequelize-cli db:migrate`],
+      ['Migration durumu', `cd "${ormPath}" && npx sequelize-cli db:migrate:status`],
+      ['Migration geri al', `cd "${ormPath}" && npx sequelize-cli db:migrate:undo`],
+    ],
+    supabase: [
+      ['Migration olustur', `cd "${ormPath}" && supabase migration new <aciklama>`],
+      ['Migration farkini al', `cd "${ormPath}" && supabase db diff --schema public`],
+      ['Migration uygula', `cd "${ormPath}" && supabase db push`],
+      ['Migration listele', `cd "${ormPath}" && supabase migration list`],
+    ],
   };
 
   return commands[ormType] || [];
+}
+
+function getDetectedOrm(manifest) {
+  const detectedValue = manifest?.detected?.orm?.value;
+  const stackValue = manifest?.stack?.orm;
+  const value = detectedValue !== undefined ? detectedValue : stackValue;
+
+  if (!value || value === 'none' || value === 'null') return null;
+  return value;
+}
+
+function getDetectedDatabase(manifest) {
+  return manifest?.detected?.database?.value
+    || manifest?.project?.detected?.database
+    || manifest?.stack?.database
+    || null;
+}
+
+function getRawSqlMigrationRows(manifest) {
+  const codebasePath = getCodebasePath(manifest);
+  return [
+    ['Migration dosyasi olustur', `mkdir -p "${codebasePath}/db/migrations" && touch "${codebasePath}/db/migrations/<timestamp>_<aciklama>.up.sql" "${codebasePath}/db/migrations/<timestamp>_<aciklama>.down.sql"`],
+    ['Migration uygula', `cd "${codebasePath}" && psql "$DATABASE_URL" -f db/migrations/<timestamp>_<aciklama>.up.sql`],
+    ['Rollback uygula', `cd "${codebasePath}" && psql "$DATABASE_URL" -f db/migrations/<timestamp>_<aciklama>.down.sql`],
+  ];
+}
+
+function getDryRunCommand(manifest) {
+  const orm = getDetectedOrm(manifest);
+  const codebasePath = getCodebasePath(manifest);
+  const commands = {
+    prisma: 'npx prisma migrate dev --create-only --name <aciklama>',
+    typeorm: 'npx typeorm migration:show',
+    eloquent: 'php artisan migrate --pretend',
+    'django-orm': 'python manage.py sqlmigrate <app> <migration>',
+    knex: 'npx knex migrate:latest --debug',
+    sequelize: 'npx sequelize-cli db:migrate:status',
+    supabase: 'supabase db diff --schema public',
+  };
+
+  return `cd "${codebasePath}" && ${commands[orm] || 'EXPLAIN < db/migrations/<timestamp>_<aciklama>.up.sql'}`;
+}
+
+function getRollbackCommand(manifest) {
+  const orm = getDetectedOrm(manifest);
+  const codebasePath = getCodebasePath(manifest);
+  const commands = {
+    prisma: 'npx prisma migrate resolve --rolled-back <migration_name>',
+    typeorm: 'npx typeorm migration:revert',
+    eloquent: 'php artisan migrate:rollback --step=1',
+    'django-orm': 'python manage.py migrate <app> <onceki_migration>',
+    knex: 'npx knex migrate:rollback',
+    sequelize: 'npx sequelize-cli db:migrate:undo',
+    supabase: 'psql "$DATABASE_URL" -f supabase/migrations/<timestamp>_<aciklama>.down.sql',
+  };
+
+  return `cd "${codebasePath}" && ${commands[orm] || 'psql "$DATABASE_URL" -f db/migrations/<timestamp>_<aciklama>.down.sql'}`;
 }
 
 // ─────────────────────────────────────────────────────
@@ -642,9 +717,40 @@ const SIMPLE_GENERATORS = {
 
   // --- KOMUT TABLOLARI ---
 
+  DETECTED_ORM(manifest) {
+    const orm = getDetectedOrm(manifest);
+    const database = getDetectedDatabase(manifest);
+    const confidence = manifest?.detected?.orm?.confidence || (orm ? 'stack.orm' : 'none');
+    const source = manifest?.detected?.orm?.source || (orm ? 'stack.orm' : 'tespit yok');
+
+    return [
+      '## ORM / Database Tespiti',
+      '',
+      `- **ORM:** \`${orm || 'yok'}\``,
+      `- **Güven:** \`${confidence}\``,
+      `- **Kaynak:** \`${source}\``,
+      `- **Database:** \`${database || 'bilinmiyor'}\``,
+      '',
+      orm
+        ? 'ORM tespit edildigi icin migration, dry-run ve rollback komutlari bu teknolojiye gore uygulanir.'
+        : 'ORM tespit edilmezse raw SQL disiplini uygulanir: her degisiklik icin eslesmis `up.sql` ve `down.sql` dosyasi gerekir.',
+    ].join('\n');
+  },
+
   MIGRATION_COMMANDS(manifest) {
-    const orm = manifest?.stack?.orm;
-    if (!orm) return '## Migration Komutlari\n\nORM tespit edilemedi.';
+    const orm = getDetectedOrm(manifest);
+    if (!orm) {
+      const rows = getRawSqlMigrationRows(manifest).map(([label, cmd]) => `| ${label} | \`${cmd}\` |`);
+      return [
+        '## Migration Komutlari',
+        '',
+        'ORM tespit edilemedi. Raw SQL fallback kullanilir; `up.sql` ve `down.sql` birlikte olusturulur.',
+        '',
+        '| Islem | Komut |',
+        '|---|---|',
+        ...rows,
+      ].join('\n');
+    }
 
     const commands = getMigrationCommands(manifest, orm);
     if (commands.length === 0) return `## Migration Komutlari\n\n${orm} icin komut tanimlanmadi.`;
@@ -658,6 +764,30 @@ const SIMPLE_GENERATORS = {
       ...rows,
       '',
       '> **UYARI:** Sifirla/reset komutlari SADECE gelistirme ortaminda kullanilir.',
+    ].join('\n');
+  },
+
+  DRY_RUN_COMMAND(manifest) {
+    return [
+      '## Dry-run / Preview Komutu',
+      '',
+      'Migration production veya paylasimli ortama uygulanmadan once preview/dry-run komutu calistirilir.',
+      '',
+      '```bash',
+      getDryRunCommand(manifest),
+      '```',
+    ].join('\n');
+  },
+
+  ROLLBACK_COMMAND(manifest) {
+    return [
+      '## Rollback / Down Komutu',
+      '',
+      'Her schema degisikligi uygulanmadan once geri alma komutu veya down SQL dosyasi hazir olmalidir.',
+      '',
+      '```bash',
+      getRollbackCommand(manifest),
+      '```',
     ].join('\n');
   },
 

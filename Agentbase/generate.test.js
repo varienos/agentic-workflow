@@ -850,6 +850,63 @@ describe('SIMPLE_GENERATORS', () => {
     assert.ok(result.includes('UYARI'));
   });
 
+  it('db migration discipline skeleton Prisma dry-run ve rollback bloklarini uretir', () => {
+    const { processSkeletonFile } = require('./generate.js');
+    const skeletonPath = path.join(
+      TEMPLATES_DIR,
+      'core',
+      'rules',
+      'db-migration-discipline.skeleton.md'
+    );
+    const manifest = {
+      ...testManifest,
+      detected: {
+        orm: { value: 'prisma', confidence: 'high', source: 'prisma/schema.prisma' },
+      },
+    };
+
+    const { outputContent, filled } = processSkeletonFile(skeletonPath, manifest);
+
+    assert.ok(filled.includes('DETECTED_ORM'));
+    assert.ok(filled.includes('MIGRATION_COMMANDS'));
+    assert.ok(filled.includes('DRY_RUN_COMMAND'));
+    assert.ok(filled.includes('ROLLBACK_COMMAND'));
+    assert.ok(outputContent.includes('npx prisma migrate dev --name <aciklama>'));
+    assert.ok(outputContent.includes('npx prisma migrate dev --create-only --name <aciklama>'));
+    assert.ok(outputContent.includes('npx prisma migrate resolve --rolled-back <migration_name>'));
+  });
+
+  it('db migration discipline skeleton no-ORM raw SQL fallback uretir', () => {
+    const { processSkeletonFile } = require('./generate.js');
+    const skeletonPath = path.join(
+      TEMPLATES_DIR,
+      'core',
+      'rules',
+      'db-migration-discipline.skeleton.md'
+    );
+    const manifest = {
+      project: {
+        structure: '../Codebase',
+        detected: { database: 'postgresql' },
+        scripts: { test: 'npm test' },
+      },
+      detected: {
+        orm: { value: null, confidence: 'high', source: 'no orm dependency' },
+      },
+      stack: { database: 'postgresql' },
+    };
+
+    const { outputContent, filled } = processSkeletonFile(skeletonPath, manifest);
+
+    assert.ok(filled.includes('DETECTED_ORM'));
+    assert.ok(filled.includes('MIGRATION_COMMANDS'));
+    assert.ok(filled.includes('DRY_RUN_COMMAND'));
+    assert.ok(filled.includes('ROLLBACK_COMMAND'));
+    assert.ok(outputContent.includes('Raw SQL fallback kullanilir'));
+    assert.ok(outputContent.includes('EXPLAIN < db/migrations/<timestamp>_<aciklama>.up.sql'));
+    assert.ok(outputContent.includes('psql "$DATABASE_URL" -f db/migrations/<timestamp>_<aciklama>.down.sql'));
+  });
+
   it('FILE_EXTENSIONS JS formatinda dogru uretir', () => {
     const result = SIMPLE_GENERATORS.FILE_EXTENSIONS(testManifest, 'js');
     assert.ok(result.includes("'.ts'"));

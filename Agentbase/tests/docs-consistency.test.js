@@ -14,6 +14,8 @@ function readRepoFile(relativePath) {
 const readmeTr = readRepoFile('README.md');
 const readmeEn = readRepoFile('README.en.md');
 const bootstrapCommand = readRepoFile('Agentbase/.claude/commands/bootstrap.md');
+const coreClaude = readRepoFile('Agentbase/templates/core/CLAUDE.md.skeleton');
+const dbMigrationRule = readRepoFile('Agentbase/templates/core/rules/db-migration-discipline.skeleton.md');
 
 describe('README docs consistency', () => {
   it('documents Agentbase backlog location consistently in Turkish and English READMEs', () => {
@@ -137,5 +139,27 @@ describe('bootstrap docs consistency', () => {
     assert.match(bootstrapCommand, /Codex icin ikinci bootstrap CALISTIRILMAZ/);
     assert.match(bootstrapCommand, /\/codex-verify/);
     assert.match(bootstrapCommand, /Sadece `targets: \[claude\]` varsa hem transform hem Codex verify\/adapt atlanir/);
+  });
+
+  it('keeps db migration discipline rule references consistent', () => {
+    assert.match(bootstrapCommand, /db-migration-discipline\.skeleton\.md/);
+    assert.match(bootstrapCommand, /\.claude\/rules\/db-migration-discipline\.md/);
+    assert.match(bootstrapCommand, /rules\.db_migration_required/);
+    assert.match(dbMigrationRule, /GENERATE: DETECTED_ORM/);
+    assert.match(dbMigrationRule, /GENERATE: MIGRATION_COMMANDS/);
+    assert.match(dbMigrationRule, /GENERATE: DRY_RUN_COMMAND/);
+    assert.match(dbMigrationRule, /GENERATE: ROLLBACK_COMMAND/);
+
+    const readmeReferenceCount = [readmeTr, readmeEn]
+      .filter(content => content.includes('db-migration-discipline'))
+      .length;
+    assert.ok(
+      readmeReferenceCount === 0 || readmeReferenceCount === 2,
+      'README db-migration-discipline referansi varsa TR/EN birlikte guncellenmeli'
+    );
+
+    if (coreClaude.includes('db-migration-discipline')) {
+      assert.match(bootstrapCommand, /db-migration-discipline\.skeleton\.md/);
+    }
   });
 });

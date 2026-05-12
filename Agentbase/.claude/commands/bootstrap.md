@@ -857,6 +857,7 @@ options:
 - `detected.design_system.value` → `rules.design_system`
 - `detected.deploy_platform.value` → `environments[*].deploy_platform`
 - `detected.commit_convention.value` → `workflows.commit_convention`
+- `rules.db_migration_required` → `true` default yazilir. Kullanici ADIM 3 veya domain kurallari sirasinda DB migration disiplinini acikca istemedigini soylerse `false` yapilir; aksi halde true kalir.
 
 ADIM 3'te bu alanlara karşılık gelen sorular atlanır; sadece subjektif sorular (proje tanımı, geliştirici profili, domain kuralları, ek notlar) sorulur.
 
@@ -1150,6 +1151,7 @@ modules:
     api-docs: ["[eslesmemis leaf'ler]"]             # ornek: [graphql]
 
 rules:
+  db_migration_required: true                         # Default true; kullanici acikca hayir derse false
   forbidden:
     - command: "[yasakli komut]"
       reason: "[sebep]"
@@ -1268,6 +1270,8 @@ Once hedef dizinlerin var oldugundan emin ol:
 mkdir -p .claude/{commands,agents,hooks,rules,reports/deploys,tracking/errors} .claude/custom/{commands,agents,hooks,rules,_rescued} git-hooks
 ```
 
+`templates/core/rules/db-migration-discipline.skeleton.md` HER ZAMAN islenir ve `.claude/rules/db-migration-discipline.md` olarak kopyalanir. Bu rule evrenseldir; ORM modulu aktif olmasa bile uretilir.
+
 ### 5.1 Teammate Spawn Plani
 
 Manifest verisini ve aktif modul listesini hazirla. Sonra asagidaki 5 teammate'i PARALEL olarak spawn et. Her teammate'e manifest verisinin TAMAMI + ilgili skeleton dosya yollarini ver.
@@ -1285,7 +1289,7 @@ Lead (sen)
   │                     + templates/core/rules/*.md (sabit) ve *.skeleton.md
   │    Cikti: .claude/commands/ (15 core command dosyasi)
   │           .claude/agents/ (7 core + uzman agent'lar)
-  │           .claude/rules/ (2 dosya)
+  │           .claude/rules/ (core rule dosyalari; db-migration-discipline.md her zaman dahil)
   │    UZMAN AGENT URETIMI (bkz. 5.1.2):
   │
   ├──► Teammate 2: module-generator (Agent tool)
@@ -1422,7 +1426,7 @@ Transform raporu ciktisini kullaniciya goster. Bu adim `.claude/` ciktisini dige
 Bu pass manifesti ve uretilen Codex hedef yuzeyini denetler; bootstrap, manifest veya backlog'u yeniden baslatmaz. Sadece `targets: [claude]` varsa hem transform hem Codex verify/adapt atlanir.
 
 **Script tarafindan doldurulan basit bloklar:**
-`COMMIT_CONVENTION`, `VERIFICATION_COMMANDS`, `TEST_COMMANDS`, `COMPILE_COMMANDS`, `BUILD_COMMANDS`, `MIGRATION_COMMANDS`, `FILE_EXTENSIONS`, `CODE_EXTENSIONS`, `MEMORY_PATH`, `PRISMA_PATH`, `LARAVEL_PATHS`, `DJANGO_PATHS`, `TYPEORM_PATHS`, `SECURITY_PATTERNS`, `LAYER_TESTS`, `SUBPROJECT_CONFIGS`, `STACK_SPECIFIC_IGNORES`, `DEPLOY_LOG_PATH`, `HEALTH_CHECK_URL`, `SMOKE_TEST_ENDPOINTS`, `API_SMOKE_SCRIPT`, `API_SMOKE_NODE_TESTS`, `TASK_ROUTING_CONFIG`, `GIT_PRECOMMIT_COMPILE`, `GIT_PRECOMMIT_TEST`, `GIT_PRECOMMIT_LINT`, `GIT_PRECOMMIT_FORMAT`, `GIT_PREPUSH_LOCALHOST`, `GIT_PREPUSH_MIGRATION`, `GIT_PREPUSH_ENV`, `GIT_PREPUSH_DESTRUCTIVE`
+`COMMIT_CONVENTION`, `VERIFICATION_COMMANDS`, `TEST_COMMANDS`, `COMPILE_COMMANDS`, `BUILD_COMMANDS`, `DETECTED_ORM`, `MIGRATION_COMMANDS`, `DRY_RUN_COMMAND`, `ROLLBACK_COMMAND`, `FILE_EXTENSIONS`, `CODE_EXTENSIONS`, `MEMORY_PATH`, `PRISMA_PATH`, `LARAVEL_PATHS`, `DJANGO_PATHS`, `TYPEORM_PATHS`, `SECURITY_PATTERNS`, `LAYER_TESTS`, `SUBPROJECT_CONFIGS`, `STACK_SPECIFIC_IGNORES`, `DEPLOY_LOG_PATH`, `HEALTH_CHECK_URL`, `SMOKE_TEST_ENDPOINTS`, `API_SMOKE_SCRIPT`, `API_SMOKE_NODE_TESTS`, `TASK_ROUTING_CONFIG`, `GIT_PRECOMMIT_COMPILE`, `GIT_PRECOMMIT_TEST`, `GIT_PRECOMMIT_LINT`, `GIT_PRECOMMIT_FORMAT`, `GIT_PREPUSH_LOCALHOST`, `GIT_PREPUSH_MIGRATION`, `GIT_PREPUSH_ENV`, `GIT_PREPUSH_DESTRUCTIVE`
 
 **Claude'a birakilacak karmasik bloklar (CLAUDE_FILL ile isaretlenir):**
 `CODEBASE_CONTEXT`, `PROJECT_CHECKLIST`, `IMPLEMENTATION_RULES`, `PROJECT_SPECIFIC_RULES`, `REVIEW_CHECKLIST`, `FILE_DISCOVERY_HINTS`, `FILE_DETECTION_PATTERNS`, `AC_TEMPLATES`, `DEPLOY_TOPOLOGY`, `DEPLOY_STEPS`, `ENVIRONMENT_DIFFERENCES`, `HOOK_BEHAVIORS`, `CRITICAL_RULES`, `PROJECT_CONVENTIONS`, `STYLING_APPROACH`, `ROUTER_TYPE`, `STATE_MANAGEMENT` ve diger bağlam-yoğun bloklar.
@@ -1535,6 +1539,7 @@ Teammate'ler skeleton dosyalarini islerken hangi GENERATE bloklarinin hangi dosy
 | service-documentation.skeleton.md (agent) | CODEBASE_CONTEXT |
 | devils-advocate.skeleton.md (agent) | CODEBASE_CONTEXT |
 | workflow-lifecycle.skeleton.md (rule) | COMMIT_CONVENTION, DEPLOY_TOPOLOGY, DEPLOY_STEPS, ROLLBACK_PLATFORM_STEPS, ENVIRONMENT_DIFFERENCES, TEAM_REVIEW_POLICY, HOOK_BEHAVIORS, CRITICAL_RULES |
+| db-migration-discipline.skeleton.md (rule) | DETECTED_ORM, MIGRATION_COMMANDS, DRY_RUN_COMMAND, ROLLBACK_COMMAND |
 | code-review-check.skeleton.js (hook — JS format) | SECURITY_PATTERNS, FILE_EXTENSIONS |
 | test-enforcer.skeleton.js (hook — JS format) | TEST_FILE_MAPPING, CODE_EXTENSIONS |
 | auto-test-runner.skeleton.js (hook — JS format) | LAYER_TESTS, CODE_EXTENSIONS |
