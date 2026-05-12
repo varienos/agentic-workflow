@@ -29,7 +29,7 @@ You can integrate it into an existing project or start a brand new one from scra
 - **Live session monitoring** — Track multiple Claude Code sessions from a single terminal screen.
 - **Worktree-friendly architecture** — Agentbase/Codebase separation enables single config, multiple worktrees, parallel development.
 - **Multi-CLI support** — Claude Code outputs can be transformed to Gemini CLI, Codex CLI, Kimi CLI, and OpenCode formats via `transform.js`. The Codex target produces a skill/context surface; it does not imply a second bootstrap or automatic hook parity.
-- **Documentation sync** — Service-documentation agent suggests updating PROJECT.md, ARCHITECTURE.md after code changes.
+- **Documentation sync** — In the Claude Code runtime, the `doc-drift-check` hook warns about README/CHANGELOG/OpenAPI staleness after code changes and points to the service-documentation agent for analysis.
 - **Extension recommendations** — Built-in registry scan suggests relevant third-party skills and plugins after bootstrap completes.
 - **Automatic CHANGELOG** — Conventional Commit pushes on the `main` branch trigger the auto-release flow; the resulting `v*` tag triggers a separate GitHub Action that regenerates `CHANGELOG.md` and writes it back to `main`.
 - **CI security scanning** — Gitleaks secret scanning and `npm audit` dependency checks run on every push and PR. Dependabot proposes weekly npm and GitHub Actions updates.

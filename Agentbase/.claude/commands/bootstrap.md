@@ -1541,6 +1541,7 @@ Teammate'ler skeleton dosyalarini islerken hangi GENERATE bloklarinin hangi dosy
 | workflow-lifecycle.skeleton.md (rule) | COMMIT_CONVENTION, DEPLOY_TOPOLOGY, DEPLOY_STEPS, ROLLBACK_PLATFORM_STEPS, ENVIRONMENT_DIFFERENCES, TEAM_REVIEW_POLICY, HOOK_BEHAVIORS, CRITICAL_RULES |
 | db-migration-discipline.skeleton.md (rule) | DETECTED_ORM, MIGRATION_COMMANDS, DRY_RUN_COMMAND, ROLLBACK_COMMAND |
 | code-review-check.skeleton.js (hook — JS format) | SECURITY_PATTERNS, FILE_EXTENSIONS |
+| doc-drift-check.skeleton.js (hook — JS format) | DOC_TARGET_PATHS, CODE_PATH_PATTERNS, CODE_EXTENSIONS |
 | test-enforcer.skeleton.js (hook — JS format) | TEST_FILE_MAPPING, CODE_EXTENSIONS |
 | auto-test-runner.skeleton.js (hook — JS format) | LAYER_TESTS, CODE_EXTENSIONS |
 | team-trigger.skeleton.js (hook — JS format) | LAYER_TESTS |

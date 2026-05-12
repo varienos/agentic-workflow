@@ -160,6 +160,12 @@
             "type": "command",
             "command": "node .claude/hooks/turkish-diacritic-guard.js",
             "timeout": 10
+          },
+          {
+            "__doc__": "Documentation drift check — kod degisikligi sonrasi README/CHANGELOG/OpenAPI staleness uyarisi (blocking yok)",
+            "type": "command",
+            "command": "node .claude/hooks/doc-drift-check.js",
+            "timeout": 50
           }
         ],
         "__GENERATE__POSTTOOLUSE_EDITWRITE_HOOKS__": {

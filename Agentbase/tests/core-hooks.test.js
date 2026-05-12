@@ -477,6 +477,79 @@ describe('openapi-sync-check hook', () => {
   });
 });
 
+describe('doc-drift-check hook', () => {
+  function materializeDocDriftHook(projectRoot) {
+    return materializeHook(projectRoot, 'core/hooks/doc-drift-check.skeleton.js', {
+      arrayReplacements: [
+        {
+          name: 'DOC_TARGET_PATHS',
+          elements: ["'README.md'"],
+        },
+        {
+          name: 'CODE_PATH_PATTERNS',
+          elements: ['/^src\\//'],
+        },
+        {
+          name: 'CODE_EXTENSIONS',
+          elements: ["'.ts'", "'.js'"],
+        },
+      ],
+    });
+  }
+
+  it('warns with systemMessage when code is newer than a target doc', t => {
+    const projectRoot = createTempProject(t);
+    const hookPath = materializeDocDriftHook(projectRoot);
+    const codeFile = writeCodebaseFile(projectRoot, 'src/service.ts', 'export const ok = true;\n');
+    const docFile = writeCodebaseFile(projectRoot, 'README.md', '# Project\n');
+    fs.utimesSync(docFile, new Date('2026-03-20T10:00:00Z'), new Date('2026-03-20T10:00:00Z'));
+    fs.utimesSync(codeFile, new Date('2026-03-20T11:00:00Z'), new Date('2026-03-20T11:00:00Z'));
+
+    const input = makeHookInput(codeFile);
+    const result = runHook(hookPath, input);
+
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, '');
+    const output = JSON.parse(result.stdout);
+    assert.equal(output.tool_input.file_path, codeFile);
+    assert.match(output.systemMessage, /README\.md/);
+    assert.match(output.systemMessage, /service-documentation/);
+  });
+
+  it('suppresses repeated warnings for the same doc inside cooldown', t => {
+    const projectRoot = createTempProject(t);
+    const hookPath = materializeDocDriftHook(projectRoot);
+    const codeFile = writeCodebaseFile(projectRoot, 'src/service.ts', 'export const ok = true;\n');
+    const docFile = writeCodebaseFile(projectRoot, 'README.md', '# Project\n');
+    fs.utimesSync(docFile, new Date('2026-03-20T10:00:00Z'), new Date('2026-03-20T10:00:00Z'));
+    fs.utimesSync(codeFile, new Date('2026-03-20T11:00:00Z'), new Date('2026-03-20T11:00:00Z'));
+
+    const input = makeHookInput(codeFile);
+    const first = runHook(hookPath, input, { env: { DOC_DRIFT_COOLDOWN_MS: '999999999' } });
+    const second = runHook(hookPath, input, { env: { DOC_DRIFT_COOLDOWN_MS: '999999999' } });
+
+    assert.match(JSON.parse(first.stdout).systemMessage, /README\.md/);
+    assert.equal(second.stdout.trim(), input);
+    assert.equal(second.stderr, '');
+  });
+
+  it('stays pass-through for non-code files', t => {
+    const projectRoot = createTempProject(t);
+    const hookPath = materializeDocDriftHook(projectRoot);
+    const docFile = writeCodebaseFile(projectRoot, 'README.md', '# Project\n');
+    const nonCodeFile = writeCodebaseFile(projectRoot, 'docs/notes.md', '# Notes\n');
+    fs.utimesSync(docFile, new Date('2026-03-20T10:00:00Z'), new Date('2026-03-20T10:00:00Z'));
+    fs.utimesSync(nonCodeFile, new Date('2026-03-20T11:00:00Z'), new Date('2026-03-20T11:00:00Z'));
+
+    const input = makeHookInput(nonCodeFile);
+    const result = runHook(hookPath, input);
+
+    assert.equal(result.status, 0);
+    assert.equal(result.stdout.trim(), input);
+    assert.equal(result.stderr, '');
+  });
+});
+
 // ─────────────────────────────────────────────────────
 // TEAM-TRIGGER HOOK TESTLERI
 // ─────────────────────────────────────────────────────

@@ -428,8 +428,70 @@ function getFileExtensions(manifest) {
  */
 function getCodeExtensions(manifest) {
   const allExts = getFileExtensions(manifest);
-  const configExts = new Set(['.json', '.yaml', '.yml', '.env', '.toml', '.xml', '.ini', '.cfg']);
+  const configExts = new Set(['.json', '.yaml', '.yml', '.env', '.toml', '.xml', '.ini', '.cfg', '.md', '.mdx', '.rst', '.txt']);
   return allExts.filter(e => !configExts.has(e));
+}
+
+function normalizeCodebaseRelativePath(value) {
+  if (typeof value !== 'string') return null;
+  let normalized = value.trim().replace(/\\/g, '/');
+  if (!normalized) return null;
+  normalized = normalized.replace(/^\.\//, '');
+  normalized = normalized.replace(/^\.\.\/Codebase\//, '');
+  normalized = normalized.replace(/^Codebase\//, '');
+  if (normalized.startsWith('../') || path.isAbsolute(normalized)) return null;
+  return normalized;
+}
+
+function uniqueNormalizedPaths(paths) {
+  const seen = new Set();
+  const result = [];
+  for (const item of paths) {
+    const normalized = normalizeCodebaseRelativePath(item);
+    if (normalized && !seen.has(normalized)) {
+      seen.add(normalized);
+      result.push(normalized);
+    }
+  }
+  return result;
+}
+
+function getDocTargetPaths(manifest) {
+  const structure = manifest?.project?.structure;
+  const structureDocs = structure && typeof structure === 'object' && Array.isArray(structure.documents)
+    ? structure.documents
+    : null;
+  const baseDocs = Array.isArray(manifest?.project?.documents)
+    ? manifest.project.documents
+    : structureDocs || ['README.md', 'CHANGELOG.md'];
+
+  const activeModules = getActiveModules(manifest);
+  const openApiActive = activeModules.has('openapi') || activeModules.has('api-docs/openapi') || activeModules.has('api-docs');
+  const apiSpecPaths = openApiActive && Array.isArray(manifest?.project?.api_docs?.spec_paths)
+    ? manifest.project.api_docs.spec_paths
+    : [];
+
+  return uniqueNormalizedPaths([...baseDocs, ...apiSpecPaths]);
+}
+
+function regexLiteralForPathPrefix(prefix) {
+  const normalized = normalizeCodebaseRelativePath(prefix);
+  if (!normalized || normalized === '.') return '/.*/';
+  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\//g, '\\/');
+  return `/^${escaped}(?:\\/|$)/`;
+}
+
+function getDocCodePathPatterns(manifest) {
+  const subprojects = manifest?.project?.subprojects || [];
+  const paths = subprojects
+    .map(sp => normalizeCodebaseRelativePath(sp?.path || sp?.name))
+    .filter(Boolean);
+
+  if (paths.length === 0) {
+    return ['/^(src|app|apps|packages|lib)\\//'];
+  }
+
+  return [...new Set(paths)].map(regexLiteralForPathPrefix);
 }
 
 /**
@@ -958,6 +1020,22 @@ const SIMPLE_GENERATORS = {
       return exts.map(e => `'${e}'`).join(', ');
     }
     return exts.map(e => `\`${e}\``).join(', ');
+  },
+
+  DOC_TARGET_PATHS(manifest, fileType) {
+    const paths = getDocTargetPaths(manifest);
+    if (fileType === 'js') {
+      return paths.map(p => JSON.stringify(p)).join(',\n  ');
+    }
+    return paths.map(p => `\`${p}\``).join('\n');
+  },
+
+  CODE_PATH_PATTERNS(manifest, fileType) {
+    const patterns = getDocCodePathPatterns(manifest);
+    if (fileType === 'js') {
+      return patterns.join(',\n  ');
+    }
+    return patterns.map(p => `\`${p}\``).join('\n');
   },
 
   STACK_SPECIFIC_IGNORES(manifest) {

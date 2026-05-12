@@ -29,7 +29,7 @@ Mevcut bir projeye entegre edebilir veya sıfırdan yeni bir proje başlatabilir
 - **Canlı oturum izleme** — Birden fazla Claude Code oturumunu tek terminal ekranından takip edin.
 - **Worktree-dostu mimari** — Agentbase/Codebase ayrımı worktree kullanımını mimari olarak destekler (bkz. Worktree Avantajı bölümü).
 - **Çoklu CLI desteği** — Claude Code çıktıları `transform.js` ile Gemini CLI, Codex CLI, Kimi CLI ve OpenCode formatlarına dönüştürülebilir. Codex hedefi skill/context yüzeyi üretir; ikinci bootstrap veya otomatik hook parity iddiası taşımaz.
-- **Dokümantasyon senkronizasyonu** — Kod değişikliği sonrası PROJECT.md, ARCHITECTURE.md gibi dokümanların güncellenmesini öneren service-documentation agent'ı.
+- **Dokümantasyon senkronizasyonu** — Claude Code runtime'ında `doc-drift-check` hook'u kod değişikliği sonrası README/CHANGELOG/OpenAPI staleness uyarısı verir; detaylı analiz için service-documentation agent'ını önerir.
 - **Eklenti öneri sistemi** — Bootstrap tamamlandığında projenize uygun üçüncü parti skill ve plugin'leri öneren dahili registry taraması.
 - **Otomatik CHANGELOG** — Conventional Commit push'ları `main` branch'inde auto-release akışını tetikler; oluşan `v*` tag'i ayrı GitHub Action ile `CHANGELOG.md` dosyasını üretip `main` branch'ine geri yazar.
 - **CI güvenlik taraması** — Her push ve PR'da gitleaks ile secret scanning, `npm audit` ile dependency güvenlik kontrolü. Dependabot haftalık npm ve GitHub Actions güncellemesi önerir.
