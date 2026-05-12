@@ -58,6 +58,6 @@
 | **Ultrathink / Megathink** | Extended thinking ile derin analiz — max 31.999 token düşünme bütçesi |
 | **Compact Pattern** | %70 context dolulukta proaktif sıkıştırma — otomatik (%90) yerine manuel |
 | **Context Engineering** | Modele giden tüm bilgi akışını sistematik tasarlama (RAG, hafıza, sıkıştırma) |
-| **Decision Journal (ADR)** | Her mimari karar kayıt altına alınır |
+| **Decision Journal (ADR)** | Her mimari karar `backlog/decisions/README.md` sozlesmesine gore kayit altina alinir |
 | **Waterfall in 15 Minutes** | Kodlamadan önce hızlı ama yapısal planlama: beyin fırtınası → spec → plan |
 | **Shadow Git Checkpointing** | Her değişiklikte gizli checkpoint — hata olursa anında geri dönüş (implement: `templates/core/hooks/git-checkpoint.js` + `/rollback` komutu) |

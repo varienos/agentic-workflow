@@ -22,6 +22,11 @@ const taskPlanCommand = readRepoFile('Agentbase/templates/core/commands/task-pla
 const deepAuditCommand = readRepoFile('Agentbase/templates/core/commands/deep-audit.skeleton.md');
 const regressionAnalyzerAgent = readRepoFile('Agentbase/templates/core/agents/regression-analyzer.skeleton.md');
 const backendExpertAgent = readRepoFile('Agentbase/templates/core/agents/backend-expert.skeleton.md');
+const workflowLifecycleRule = readRepoFile('Agentbase/templates/core/rules/workflow-lifecycle.skeleton.md');
+const serviceDocumentationAgent = readRepoFile('Agentbase/templates/core/agents/service-documentation.skeleton.md');
+const methodsReference = readRepoFile('Agentbase/templates/reference/methods.md');
+const adrReadme = readRepoFile('backlog/decisions/README.md');
+const adrTemplate = readRepoFile('backlog/decisions/0000-adr-template.md');
 
 describe('README docs consistency', () => {
   it('documents Agentbase backlog location consistently in Turkish and English READMEs', () => {
@@ -188,5 +193,27 @@ describe('bootstrap docs consistency', () => {
     assert.match(regressionAnalyzerAgent, /rollback\/down script dosya yolu/);
     assert.match(readmeTr, /\| `db-migration-discipline` \|/);
     assert.match(readmeEn, /\| `db-migration-discipline` \|/);
+  });
+});
+
+describe('ADR docs consistency', () => {
+  it('keeps architecture decision triggers connected to workflow surfaces', () => {
+    assert.match(adrReadme, /YYYYMMDD-kebab-case-karar-basligi\.md/);
+    assert.match(adrReadme, /Minimum Alanlar/);
+    assert.match(adrReadme, /Katman siniri, modul sahipligi veya public API kontrati/);
+    assert.match(adrReadme, /Rollback \/ Revisit Trigger/);
+
+    assert.match(adrTemplate, /## Context/);
+    assert.match(adrTemplate, /## Decision/);
+    assert.match(adrTemplate, /## Alternatives Considered/);
+    assert.match(adrTemplate, /## Consequences/);
+    assert.match(adrTemplate, /## Rollback \/ Revisit Trigger/);
+
+    assert.match(methodsReference, /backlog\/decisions\/README\.md/);
+    assert.match(taskPlanCommand, /Mimari Karar \/ ADR Kontrolu/);
+    assert.match(taskHunterCommand, /backlog\/decisions\//);
+    assert.match(workflowLifecycleRule, /Mimari Karar \(ADR\) Kapisi/);
+    assert.match(workflowLifecycleRule, /backlog\/decisions\/0000-adr-template\.md/);
+    assert.match(serviceDocumentationAgent, /backlog\/decisions\/\*\.md/);
   });
 });

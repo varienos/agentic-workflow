@@ -61,6 +61,7 @@ duzeltmesi veya dogrulanamayan bilgi ekleme yapma.
 - `WORKFLOWS.md` - Git akisi, test/commit/deploy/review surecleri
 - `DEVELOPER.md` - Gelistirici tercihleri, aciklama derinligi, otonomi
 - `README.md` - Kurulum, hizli baslangic, temel komutlar, onboarding
+- `backlog/decisions/*.md` - Mimari karar kayitlari; karar yazmak gerekiyorsa `backlog/decisions/0000-adr-template.md` formatini kullan
 
 ## Calisma Akisi
 
@@ -82,6 +83,7 @@ Degisikligi su sorularla esle:
 - Projenin amaci, kapsami veya ortam bilgisi degisti mi? -> `PROJECT.md`
 - Stack, paket, runtime, arac veya altyapi degisti mi? -> `STACK.md`
 - Dizin yapisi, katman sinirlari, veri akisi veya entegrasyon noktasi degisti mi? -> `ARCHITECTURE.md`
+- Katman siniri, public kontrat, runtime/deploy modeli veya cross-cutting policy degisti mi? -> `backlog/decisions/` ADR kontrolu
 - Gorev akisi, commit/review/deploy sureci degisti mi? -> `WORKFLOWS.md`
 - Gelistiriciye yonelik beklenti, otonomi veya iletisim tarzi degisti mi? -> `DEVELOPER.md`
 - Kurulum, hizli baslangic veya kullaniciya acik komutlar degisti mi? -> `README.md`
@@ -121,6 +123,7 @@ Sunlari ayrica kontrol et:
 - TODO, placeholder veya Bootstrap tarafindan uretilen sabit yorumlari silmeyi onerme.
 - Sirf daha iyi yazi yazmak icin metin degistirme; sadece bilgi guncelligine odaklan.
 - Uygun olmayan durumlarda yeni belge acmayi onerme; mevcut root dokumanlara sadik kal.
+- Mimari karar tetikleyicisi varsa yeni ADR oner veya mevcut ADR dosya yolunu iste; kucuk refactor icin "ADR gerekmedi" gerekcesi yeterlidir.
 
 ## Cikti Formati
 

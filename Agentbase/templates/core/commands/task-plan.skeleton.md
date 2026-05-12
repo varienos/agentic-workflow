@@ -168,6 +168,19 @@ Degisikligin etkili oldugu alanlari belirle:
 | 7-8 | **Karmasik** | 6-10 dosya, yeni modul, entegrasyon, migration |
 | 9-10 | **Cok Karmasik** | 10+ dosya, mimari degisiklik, birden fazla alt proje |
 
+### 3.1b — Mimari Karar / ADR Kontrolu
+
+Task metninde `architecture`, `mimari`, `katman`, `boundary`, `veri akisi`, `runtime`, `deploy`, `framework`, `entegrasyon`, `auth`, `security`, `observability` kelimeleri geciyorsa veya plan mevcut katman siniri / public kontrat / cross-cutting policy degistiriyorsa ADR kontrolu ekle.
+
+ADR yeni dosya olabilir veya mevcut ADR'ye referans olabilir. Kucuk refactor, typo, test ekleme ve mevcut karari uygulayan dar bug fix icin yeni ADR acma; task notunda "ADR gerekmedi" gerekcesi yeterlidir.
+
+```
+## Kabul Kriterleri
+- [ ] Mimari karar etkisi degerlendirildi; ADR gerekiyor mu/gerekmiyor mu gerekcesi task notunda yazildi
+- [ ] Gerekliyse `backlog/decisions/YYYYMMDD-kebab-case-karar-basligi.md` ADR dosyasi yazildi veya mevcut ADR dosyasina referans verildi
+- [ ] ADR minimum alanlari tamamlandi: context, decision, alternatives, consequences, rollback/revisit trigger, related tasks
+```
+
 ### 3.2 — Model Oneri Matrisi
 
 Karmasikliga gore hangi agent modeli kullanilmali:

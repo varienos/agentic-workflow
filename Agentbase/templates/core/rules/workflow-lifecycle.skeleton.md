@@ -12,6 +12,7 @@ kullanici → /task-hunter <task-no>
   ├─ 1. Backlog'dan task detayini oku
   ├─ 2. Ilgili dosyalari analiz et
   ├─ 3. Implementasyon planini olustur
+  ├─ 3b. Mimari karar varsa ADR kapisini uygula
   ├─ 4. Kodu yaz/duzenle
   │     └─ [auto-test-runner hook: erken test sinyali — opsiyonel]
   ├─ 4b. FINAL VERIFICATION — testleri calistir (ZORUNLU)
@@ -30,6 +31,26 @@ kullanici → /task-hunter <task-no>
 | **pre-push hook** | git push sirasinda | EVET | Push oncesi son engel |
 
 > **KURAL:** auto-test-runner sinyali final verification'in YERINI ALMAZ. Hook basarisiz olsa bile Step 5 tum testleri calistirir.
+
+---
+
+## Mimari Karar (ADR) Kapisi
+
+Mimari davranis degisikligi iceren task'larda uygulama baslamadan once ADR kapisi calisir.
+
+ADR gerektiren tetikleyiciler:
+
+- Katman siniri, modul sahipligi veya public API kontrati degisiyor
+- Veri akisi, kalicilik modeli, migration stratejisi veya entegrasyon kontrati degisiyor
+- Runtime, deploy modeli, framework, package manager veya ana teknoloji secimi degisiyor
+- Guvenlik, auth, yetki, loglama, hata yonetimi veya observability gibi cross-cutting policy degisiyor
+- Birden fazla alt projeyi etkileyen yeni workflow veya otomasyon ekleniyor
+
+Zorunlu cikti:
+
+- Yeni karar icin `backlog/decisions/YYYYMMDD-kebab-case-karar-basligi.md` dosyasi yazilir; format icin `backlog/decisions/0000-adr-template.md` kullanilir.
+- Daha once alinmis karar uygulanacaksa task notu ve final summary mevcut ADR dosya yolunu referans verir.
+- ADR gerekmiyorsa task notunda kisa gerekce yazilir: kucuk refactor, typo, test ekleme veya mevcut karari uygulayan dar fix.
 
 ---
 

@@ -740,6 +740,7 @@ Tamamlanan task'in baglami ve backlog analizi bazinda:
 14. **Codebase yolu** — Tum proje dosyalarina `../Codebase/` uzerinden eris.
 15. **Guvenlik** — `.env` dosyalari, credential'lar, secret'lar ASLA commit'e dahil edilmez, log'a yazilmaz, ciktida gosterilmez.
 16. **DB schema disiplini** — DB schema/model/migration degisikligi yaptiysan `.claude/rules/db-migration-discipline.md` checklist'ini uygula: migration dosyasi, dry-run/preview, rollback/down ve destructive flag taramasi.
+17. **ADR disiplini** — Mimari davranis degisikligi yaptiysan `backlog/decisions/` altinda ADR yaz veya mevcut ADR dosyasina referans ver. Katman siniri, veri akisi, entegrasyon kontrati, runtime/deploy modeli veya cross-cutting policy degisiyorsa ADR kontrolu zorunludur.
 
 <!-- GENERATE: PROJECT_SPECIFIC_RULES
 Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
@@ -747,10 +748,10 @@ Gerekli manifest alanlari: project.rules, project.forbidden_patterns, project.do
 Ornek cikti:
 ### Proje-Spesifik Kurallar
 
-17. **API versiyonlama** — Tum endpointler `/api/v1/` prefix'i altinda olmali.
-18. **Tema kullanimi** — React Native'de hardcoded renk YASAK, `useTheme()` kullan.
-19. **DTO validasyon** — Her API endpoint'i input icin DTO + class-validator kullanmali.
-20. **Error response format** — API hatalari `{ error: string, code: string, details?: any }` formatinda donmeli.
+18. **API versiyonlama** — Tum endpointler `/api/v1/` prefix'i altinda olmali.
+19. **Tema kullanimi** — React Native'de hardcoded renk YASAK, `useTheme()` kullan.
+20. **DTO validasyon** — Her API endpoint'i input icin DTO + class-validator kullanmali.
+21. **Error response format** — API hatalari `{ error: string, code: string, details?: any }` formatinda donmeli.
 -->
 
 <!-- GENERATE: SELF_REFRESH
