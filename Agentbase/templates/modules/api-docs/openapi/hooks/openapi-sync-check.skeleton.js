@@ -13,9 +13,10 @@
 
 const path = require('path');
 const fs = require('fs');
+const { resolveCodebaseRoot } = require(path.join(__dirname, 'shared-hook-utils.js'));
 
-// Symlink li kurulumda gercek yolu cozer (startsWith icin gerekli)
-const CODEBASE_ROOT = (() => { const p = path.resolve(__dirname, '../../../Codebase'); try { return fs.realpathSync(p); } catch { return p; } })();
+// Hedef kok: env (AGENTIC_CODEBASE_DIR) > manifest fallback. Symlink'lerde realpath ile cozulur.
+const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
 // ─── GENERATE BOLUMU BASLANGIC ───
 

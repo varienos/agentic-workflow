@@ -2113,10 +2113,27 @@ backlog task create "Ilk feature'i planla ve implement et" \
    Not: Codex icin ikinci bootstrap calistirma; mevcut manifest canonical kaynaktir.
    [manifest.targets sadece claude ise bu blogu ATLA]
 
+🎯 Hedef Codebase:
+   Yol:      [manifest.project.structure mutlak yolu — abs(Agentbase/../{manifest.project.structure})]
+   Kaynak:   Docbase/agentic/project-manifest.yaml → project.structure
+   Hook'lar: shared-hook-utils.js → resolveCodebaseRoot(__dirname, "[manifest.project.structure]")
+
+   Hedefi degistirmek icin (uc yontem, oncelik sirasiyla):
+     1. Runtime override (tek oturum/terminal icin):
+          export AGENTIC_CODEBASE_DIR="/mutlak/yol/Codebase-wt-feat-auth"
+          claude
+     2. Worktree symlink rotasyonu (kalici, manifest sabit kalir):
+          rm Codebase && ln -s /yeni/yol Codebase
+     3. Manifest guncellemesi (kalici, regenerate gerekir):
+          Docbase/agentic/project-manifest.yaml'da project.structure'i duzenleyin,
+          ardindan /workflow-update calistirin.
+
+   Resolution sirasi: env AGENTIC_CODEBASE_DIR > manifest.project.structure fallback.
+
 🔒 Git Hook Kurulumu:
    Codebase'de commit/push kontrollerini aktif etmek icin:
 
-   cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"
+   cd [manifest.project.structure] && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"
 
    Bu komut pre-commit (test, lint, guvenlik) ve pre-push (migration,
    env sync, localhost leak) kontrollerini devreye sokar.
@@ -2178,11 +2195,27 @@ Asagidaki sablonu manifest bilgileriyle doldurarak `.claude/onboarding.md` olara
 ```markdown
 # Onboarding — [manifest.project.name]
 
+## Hedef Codebase
+
+- **Yol:** `[manifest.project.structure]` (Agentbase'den relatif)
+- **Mutlak:** `[abs(Agentbase/../{manifest.project.structure})]`
+- **Tek sozlesme:** `Agentbase/.claude/hooks/shared-hook-utils.js` → `resolveCodebaseRoot()` tum hook'lar tarafindan cagrilir.
+
+### Hedefi Degistirme
+
+| Yontem | Komut | Kapsam |
+| --- | --- | --- |
+| Runtime override | `export AGENTIC_CODEBASE_DIR=/yeni/yol && claude` | Tek terminal/oturum |
+| Worktree symlink | `rm Codebase && ln -s /yeni/yol Codebase` | Kalici, manifest sabit |
+| Manifest update | `Docbase/agentic/project-manifest.yaml` → `project.structure` + `/workflow-update` | Kalici, regenerate gerekir |
+
+**Resolution sirasi:** `env AGENTIC_CODEBASE_DIR` > `manifest.project.structure` fallback. Hook'lar her runtime cagrisinda bu zinciri takip eder.
+
 ## Ilk Adimlar
 
 1. **Git hook'larini etkinlestir:**
    ```bash
-   cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"
+   cd [manifest.project.structure] && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"
    ```
 
 2. **Backlog'u kontrol et:**

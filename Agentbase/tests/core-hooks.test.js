@@ -17,8 +17,9 @@ const { loadModuleExports } = require('./helpers/module-loader.js');
 
 // shared-hook-utils.js core/hooks'ta yaşıyor; module testleri kendi __dirname'ini kullanır.
 // VM bağlamında require yolunu doğru dosyaya yönlendirir.
+// Hem eski `require(require('path').join(...))` hem yeni `require(path.join(...))` formunu yakalar.
 const sharedHookUtilsReplacement = {
-  find: /require\(require\('path'\)\.join\(__dirname,\s*'shared-hook-utils\.js'\)\)/g,
+  find: /require\((?:require\('path'\)|path)\.join\(__dirname,\s*'shared-hook-utils\.js'\)\)/g,
   replace: `require(${JSON.stringify(
     path.join(__dirname, '..', 'templates', 'core', 'hooks', 'shared-hook-utils.js')
   )})`,

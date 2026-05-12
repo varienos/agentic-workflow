@@ -1543,11 +1543,11 @@ describe('processSkeletonFile — CODEBASE_ROOT yol destegi', () => {
 
     // JSON.stringify ile embed edilmeli — tek tirnak icinde apostrof syntax error yapmaz
     assert.ok(result.outputContent.includes("O'Brien"), 'apostrof iceren path korunmali');
-    // Uretilen JS gecerli olmali
+    // Uretilen JS sentaks olarak gecerli olmali — parse-only kontrol (eval yok)
+    const vm = require('vm');
     assert.doesNotThrow(() => {
-      // CODEBASE_ROOT satirini cikar ve eval et
       const match = result.outputContent.match(/const CODEBASE_ROOT = (.+);/);
-      if (match) new Function('path', '__dirname', 'fs', `return ${match[1]}`)({ resolve: (...a) => a.join('/') }, '/tmp', { realpathSync: (p) => p });
+      if (match) new vm.Script(`const CODEBASE_ROOT = ${match[1]};`);
     }, 'uretilen JS syntax error vermemeli');
   });
 });

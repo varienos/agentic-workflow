@@ -14,9 +14,9 @@ const path = require('path');
 const fs = require('fs');
 const { execFileSync } = require('child_process');
 
-const CODEBASE_ROOT = path.resolve(__dirname, '../../../Codebase');
+const { readStdin, resolveCodebaseRoot } = require(path.join(__dirname, 'shared-hook-utils.js'));
 
-const { readStdin } = require(require('path').join(__dirname, 'shared-hook-utils.js'));
+const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
 /**
  * Codebase icinde prisma/schema.prisma dosyasini arar.

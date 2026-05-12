@@ -54,13 +54,14 @@ Note: This template repo keeps its own development backlog in the root-level `ba
 
 ### Worktree Advantage
 
-The Agentbase/Codebase separation architecturally targets parallel development with git worktrees. Currently commands use a fixed `../Codebase` path; cross-worktree switching is not yet implemented:
+The Agentbase/Codebase separation supports parallel development with git worktrees. The target Codebase path is resolved through **a single contract**: `Agentbase/.claude/hooks/shared-hook-utils.js` exposes a `resolveCodebaseRoot()` helper called by every hook. The resolution order is `process.env.AGENTIC_CODEBASE_DIR` > `manifest.project.structure` > `../Codebase` fallback.
 
 ```
 Agentbase/                  ← FIXED — all worktrees share the same config
 │
 ├── .claude/commands/       ← Rules, hooks, agents in ONE place
 ├── .claude/hooks/
+│   └── shared-hook-utils.js  ← resolveCodebaseRoot(): env > manifest > fallback
 ├── .claude/rules/
 │
 Codebase/ → project (main)    ← Main worktree
@@ -73,6 +74,18 @@ In a traditional setup, `.claude/` lives in the project root; creating a worktre
 - **Single config, multiple worktrees** — Hooks, rules, agents always the same
 - **Isolated git history** — Agentbase files don't leak into project commits
 - **Parallel sessions** — 4 terminals, 4 worktrees, 4 Claude Code sessions, one Agentbase
+
+#### Selecting the Target Worktree
+
+Three methods, in priority order:
+
+| Method | Command | Scope |
+| --- | --- | --- |
+| **Runtime override** | `export AGENTIC_CODEBASE_DIR=/abs/path/Codebase-wt-feat-auth && claude` | Single terminal/session — the Claude Code session inheriting the env targets that path |
+| **Worktree symlink** | `rm Codebase && ln -s /new/path Codebase` | Permanent, manifest unchanged — pins a single active Codebase at the repo root |
+| **Manifest update** | Edit `Docbase/agentic/project-manifest.yaml` → `project.structure` + run `/workflow-update` | Permanent, regenerate required — generated hook fallbacks point at the new path |
+
+**In practice:** to work on four worktrees simultaneously, export a different `AGENTIC_CODEBASE_DIR` in each terminal. One Agentbase, every hook targets the correct worktree.
 
 ## What's in the Repo?
 
@@ -127,6 +140,7 @@ git clone https://github.com/varienos/agentic-workflow
 cd agentic-workflow
 
 # Leave Codebase empty — Bootstrap will switch to greenfield mode
+rm -f Codebase/.gitkeep
 cd Agentbase
 npm install
 claude
@@ -138,7 +152,7 @@ Inside Claude Code:
 /bootstrap
 ```
 
-When Bootstrap detects an empty Codebase, it switches to greenfield mode: asks for stack selection, generates workflow files, and shows scaffold setup commands. The directory must be completely empty — if files like README or .gitkeep exist, bootstrap starts in existing project mode instead.
+When Bootstrap detects an empty Codebase, it switches to greenfield mode: asks for stack selection, generates workflow files, and shows scaffold setup commands. The directory must not contain real project files; `.gitkeep` and `.DS_Store` are ignored as placeholders, while files like README or package manifests make bootstrap start in existing-project mode.
 
 ## Bootstrap Flow
 
@@ -153,6 +167,33 @@ The `/bootstrap` command works through these high-level steps:
 7. **Completion report.** Onboarding guide (`onboarding.md`), extension suggestions, and the git hook activation command are shown: `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
 
 Re-runs support `overwrite`, `merge`, and `incremental` scenarios.
+
+### Migration Guide (1.10.x -> 1.11.x)
+
+Version 1.11.x introduced a Bootstrap **breaking change**: `templates/interview/phase-{1-4}-*.md` files are now required sources (TASK-214). The old "use defaults if missing" fallback was removed; Bootstrap now **fails fast** when any phase file is missing.
+
+**Standard installs cloned at 1.11.x or later:** No manual action is required; the phase files are already present.
+
+**If you are upgrading from a partial or customized install:**
+
+1. Verify that `Agentbase/templates/interview/` exists and contains 4 files:
+   ```bash
+   ls Agentbase/templates/interview/
+   # Expected: phase-1-project.md  phase-2-technical.md  phase-3-developer.md  phase-4-rules.md
+   ```
+2. If any file is missing, copy the current version from `main`:
+   ```bash
+   git checkout main -- Agentbase/templates/interview/
+   ```
+3. To upgrade your manifest to the 1.11.x format, set `manifest.template_version` to `"1.1.0"` (or rerun Bootstrap in `overwrite` mode; it bumps the manifest automatically).
+4. Older manifests may contain `manifest.rules.design_system: null`. The new behavior uses the `"none"` string; downstream consumers treat both values as equivalent for backwards compatibility.
+
+**Validation:**
+```bash
+cd Agentbase && npm test  # tests/interview-phase-validation.test.js should pass
+```
+
+For more detail, see `CHANGELOG.md` -> `[2.0.0]`.
 
 ## Commands
 
@@ -370,7 +411,7 @@ For these stacks, Bootstrap generates framework-specific hooks, rules, and prote
 - **Backend:** Express, Fastify, NestJS, Laravel, CodeIgniter 4, Django, FastAPI
 - **Frontend:** Next.js, React SPA, plain HTML/CSS/JS
 - **Mobile:** Expo, React Native, Flutter
-- **Additional:** Monorepo, security scanning, CI/CD, monitoring, API documentation
+- **Additional:** Monorepo, security scanning, CI/CD, monitoring, API documentation (OpenAPI, GraphQL)
 
 ### Generic Bootstrap Support
 

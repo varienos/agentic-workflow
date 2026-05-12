@@ -1436,7 +1436,6 @@ const SIMPLE_GENERATORS = {
 
   GIT_PRECOMMIT_COMPILE(manifest) {
     const stack = manifest?.stack || {};
-    const codebasePath = getCodebasePath(manifest);
     const lines = [];
 
     if (hasTypeScript(manifest)) {
@@ -1477,7 +1476,6 @@ const SIMPLE_GENERATORS = {
 
   GIT_PRECOMMIT_TEST(manifest) {
     const stack = manifest?.stack || {};
-    const codebasePath = getCodebasePath(manifest);
     const testCmd = manifest?.project?.scripts?.test;
     const lines = [];
 
@@ -1634,12 +1632,6 @@ const SIMPLE_GENERATORS = {
   },
 
   GIT_PREPUSH_LOCALHOST(manifest) {
-    const stack = manifest?.stack || {};
-    const codeExts = getCodeExtensions(manifest);
-    const extPattern = codeExts.length > 0
-      ? codeExts.map(e => e.replace('.', '\\.')).join('|')
-      : '\\.(ts|js|py|php|go|rs|java)';
-
     return [
       '  # Localhost/127.0.0.1 leak taramasi',
       '  PUSH_DIFF=$(git diff "$RANGE" -- . 2>/dev/null || true)',
@@ -1661,7 +1653,6 @@ const SIMPLE_GENERATORS = {
   GIT_PREPUSH_MIGRATION(manifest) {
     const stack = manifest?.stack || {};
     const orm = (stack.orm || '').toLowerCase();
-    const codebasePath = getCodebasePath(manifest);
     const lines = [];
 
     if (orm === 'prisma') {
@@ -1904,19 +1895,16 @@ function processSkeletonFile(filePath, manifest) {
 
   const result = fillBlocks(content, fileType, manifest);
 
-  // Hook dosyalarindaki hardcoded CODEBASE_ROOT yolunu manifest ile degistir
+  // Hook dosyalarinda CODEBASE_ROOT cozumlemesi:
+  //   const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '<fallback>');
+  // Skeleton'larda <fallback> '../Codebase' default'u olur; bootstrap zamani
+  // manifest.project.structure'tan turetilen yolu (Agentbase-relative) buraya yaziyoruz.
+  // Runtime'da hook helper'i (shared-hook-utils.resolveCodebaseRoot) once
+  // process.env.AGENTIC_CODEBASE_DIR'i, yoksa bu fallback'i kullanir.
   const codebasePath = getCodebasePath(manifest);
-  const codebaseReplacement = () => `const CODEBASE_ROOT = (() => { const p = path.resolve(__dirname, '../..', ${JSON.stringify(codebasePath)}); try { return fs.realpathSync(p); } catch { return p; } })();`;
-
-  // Basit format: path.resolve(__dirname, '../../../Codebase');
-  let outputContent = result.content.replace(
-    /const CODEBASE_ROOT = path\.resolve\(__dirname, '\.\.\/\.\.\/\.\.\/Codebase'\);/,
-    codebaseReplacement
-  );
-  // IIFE format: (() => { ... '../../../Codebase' ... })();
-  outputContent = outputContent.replace(
-    /const CODEBASE_ROOT = \(\(\) => \{ const p = path\.resolve\(__dirname, '\.\.\/\.\.\/\.\.\/Codebase'\); try \{ return fs\.realpathSync\(p\); \} catch \{ return p; \} \}\)\(\);/,
-    codebaseReplacement
+  const outputContent = result.content.replace(
+    /const CODEBASE_ROOT = resolveCodebaseRoot\(__dirname,\s*'[^']*'\);/g,
+    `const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, ${JSON.stringify(codebasePath)});`
   );
 
   return { outputContent, filled: result.filled, marked: result.marked };
@@ -2277,6 +2265,7 @@ module.exports = {
   getCodeExtensions,
   getSubprojectPath,
   getCodebasePath,
+  normalizeCodebaseRelativePath,
   getForbiddenRules,
   getMigrationCommands,
   SIMPLE_GENERATORS,

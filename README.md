@@ -54,13 +54,14 @@ Not: Bu template repo kendi geliştirme backlog'unu kökteki `backlog/` dizinind
 
 ### Worktree Avantajı
 
-Agentbase/Codebase ayrımı git worktree ile paralel geliştirmeyi mimari olarak hedefler. Şu anda komutlar sabit `../Codebase` yolunu kullanır; farklı worktree'ler arası geçiş mekanizması henüz mevcut değildir:
+Agentbase/Codebase ayrımı git worktree ile paralel geliştirmeyi destekler. Hedef Codebase yolu **tek sözleşmeden** çözülür: `Agentbase/.claude/hooks/shared-hook-utils.js` içindeki `resolveCodebaseRoot()` helper'ı tüm hook'lar tarafından çağrılır ve şu zinciri takip eder — `process.env.AGENTIC_CODEBASE_DIR` > `manifest.project.structure` > `../Codebase` fallback.
 
 ```
 Agentbase/                  ← SABIT — tüm worktree'ler aynı config'i kullanır
 │
 ├── .claude/commands/       ← Kurallar, hook'lar, agent'lar TEK yerde
 ├── .claude/hooks/
+│   └── shared-hook-utils.js  ← resolveCodebaseRoot(): env > manifest > fallback
 ├── .claude/rules/
 │
 Codebase/ → proje (main)    ← Ana worktree
@@ -73,6 +74,18 @@ Geleneksel yapıda `.claude/` proje kökünde yaşar; worktree oluştururken her
 - **Tek config, çok worktree** — Hook'lar, kurallar, agent'lar hep aynı
 - **İzole git tarihçesi** — Agentbase dosyaları proje commit'lerine karışmaz
 - **Paralel oturum** — 4 terminal, 4 worktree, 4 Claude Code oturumu, tek Agentbase
+
+#### Hedef Worktree'yi Seçme
+
+Üç yöntem, öncelik sırasına göre:
+
+| Yöntem | Komut | Kapsam |
+| --- | --- | --- |
+| **Runtime override** | `export AGENTIC_CODEBASE_DIR=/abs/path/Codebase-wt-feat-auth && claude` | Tek terminal/oturum — env'i set eden Claude Code oturumu o yolu hedefler |
+| **Worktree symlink** | `rm Codebase && ln -s /yeni/yol Codebase` | Kalıcı, manifest sabit kalır — repo köküne tek bir aktif Codebase bağlar |
+| **Manifest güncelleme** | `Docbase/agentic/project-manifest.yaml` → `project.structure` + `/workflow-update` | Kalıcı, regenerate gerekir — üretilen hook fallback'leri yeni yolu işaret eder |
+
+**Pratik:** Aynı anda 4 worktree'de paralel çalışmak için her terminalde farklı bir `AGENTIC_CODEBASE_DIR` set edin. Tek bir Agentbase üzerinden tüm hook'lar doğru worktree'yi hedefler.
 
 ## Depoda Neler Var?
 
@@ -127,6 +140,7 @@ git clone https://github.com/varienos/agentic-workflow
 cd agentic-workflow
 
 # Codebase klasörünü boş bırakın — Bootstrap greenfield moduna geçer
+rm -f Codebase/.gitkeep
 cd Agentbase
 npm install
 claude
@@ -138,7 +152,7 @@ Claude Code içinde:
 /bootstrap
 ```
 
-Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçimini sorar, workflow dosyalarını üretir ve scaffold kurulum komutlarını gösterir. Dizin tamamen boş olmalıdır — README veya .gitkeep gibi dosyalar varsa bootstrap mevcut proje modu ile başlar.
+Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçimini sorar, workflow dosyalarını üretir ve scaffold kurulum komutlarını gösterir. Dizin gerçek proje dosyası içermemelidir; `.gitkeep` ve `.DS_Store` placeholder olarak yok sayılır, README veya package dosyası gibi gerçek içerik varsa bootstrap mevcut proje modu ile başlar.
 
 ## Bootstrap Akışı
 
@@ -179,7 +193,7 @@ Sürüm 1.11.x ile birlikte Bootstrap **breaking change** içerir: `templates/in
 cd Agentbase && npm test  # tests/interview-phase-validation.test.js geçmeli
 ```
 
-Daha fazla detay için: `CHANGELOG.md` → `[Unreleased]` bölümü.
+Daha fazla detay için: `CHANGELOG.md` → `[2.0.0]` bölümü.
 
 ## Komutlar
 

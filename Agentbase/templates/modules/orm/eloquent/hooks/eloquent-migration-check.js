@@ -13,7 +13,9 @@
 const path = require('path');
 const fs = require('fs');
 
-const CODEBASE_ROOT = path.resolve(__dirname, '../../../Codebase');
+const { readStdin, resolveCodebaseRoot } = require(path.join(__dirname, 'shared-hook-utils.js'));
+
+const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
 /**
  * Laravel migration dosyasindaki yikici PHP ifadeleri ve ciddiyet seviyeleri
@@ -33,8 +35,6 @@ const DESTRUCTIVE_PATTERNS = [
   { pattern: /Schema::rename\s*\(/g, label: 'Schema::rename()', severity: 'YUKSEK' },
   { pattern: /->renameColumn\s*\(/g, label: '$table->renameColumn()', severity: 'YUKSEK' },
 ];
-
-const { readStdin } = require(require('path').join(__dirname, 'shared-hook-utils.js'));
 
 /**
  * Dosyanin Laravel migration dosyasi olup olmadigini kontrol eder.

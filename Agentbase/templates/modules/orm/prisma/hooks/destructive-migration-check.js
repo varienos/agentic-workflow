@@ -13,7 +13,9 @@
 const path = require('path');
 const fs = require('fs');
 
-const CODEBASE_ROOT = path.resolve(__dirname, '../../../Codebase');
+const { readStdin, resolveCodebaseRoot } = require(path.join(__dirname, 'shared-hook-utils.js'));
+
+const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
 /**
  * Yikici SQL ifadeleri ve ciddiyet seviyeleri
@@ -26,8 +28,6 @@ const DESTRUCTIVE_PATTERNS = [
   { pattern: /RENAME\s+COLUMN/gi, label: 'RENAME COLUMN', severity: 'ORTA' },
   { pattern: /DROP\s+INDEX/gi, label: 'DROP INDEX', severity: 'ORTA' },
 ];
-
-const { readStdin } = require(require('path').join(__dirname, 'shared-hook-utils.js'));
 
 /**
  * Codebase icinde prisma/migrations dizinini arar.

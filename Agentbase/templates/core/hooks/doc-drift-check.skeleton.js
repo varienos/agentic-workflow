@@ -12,19 +12,13 @@
 
 const fs = require('fs');
 const path = require('path');
+const { resolveCodebaseRoot } = require(path.join(__dirname, 'shared-hook-utils.js'));
 
 const STATE_FILE = path.join(__dirname, '.doc-drift-state.json');
 const DEFAULT_COOLDOWN_MS = 6 * 60 * 60 * 1000;
 const COOLDOWN_MS = Number(process.env.DOC_DRIFT_COOLDOWN_MS) || DEFAULT_COOLDOWN_MS;
 
-const CODEBASE_ROOT = (() => {
-  const root = path.resolve(__dirname, '../../../Codebase');
-  try {
-    return fs.realpathSync(root);
-  } catch {
-    return root;
-  }
-})();
+const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
 // ─── GENERATE BOLUMU BASLANGIC ───
 

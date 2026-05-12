@@ -27,6 +27,9 @@ const serviceDocumentationAgent = readRepoFile('Agentbase/templates/core/agents/
 const methodsReference = readRepoFile('Agentbase/templates/reference/methods.md');
 const adrReadme = readRepoFile('backlog/decisions/README.md');
 const adrTemplate = readRepoFile('backlog/decisions/0000-adr-template.md');
+const contributing = readRepoFile('CONTRIBUTING.md');
+const extensionsRegistryMd = readRepoFile('Agentbase/templates/extensions-registry.md');
+const referenceNotes = readRepoFile('Agentbase/templates/reference/notes.md');
 
 describe('README docs consistency', () => {
   it('documents Agentbase backlog location consistently in Turkish and English READMEs', () => {
@@ -111,6 +114,89 @@ describe('README docs consistency', () => {
     assert.ok(!readmeEn.includes('Bootstrap Flow step 9'), 'English README must not reference obsolete bootstrap step number');
   });
 
+  it('keeps the 1.10.x to 1.11.x migration guide mirrored in both READMEs', () => {
+    assert.ok(
+      readmeTr.includes('### Geçiş Rehberi (1.10.x → 1.11.x)'),
+      'Turkce README 1.10.x -> 1.11.x gecis rehberini icermeli'
+    );
+    assert.ok(
+      readmeEn.includes('### Migration Guide (1.10.x -> 1.11.x)'),
+      'English README must include the 1.10.x -> 1.11.x migration guide'
+    );
+    assert.ok(
+      readmeTr.includes('templates/interview/phase-{1-4}-*.md'),
+      'Turkce README interview phase breaking change kaynagini anlatmali'
+    );
+    assert.ok(
+      readmeEn.includes('templates/interview/phase-{1-4}-*.md'),
+      'English README must describe the interview phase breaking change source'
+    );
+    assert.ok(
+      readmeTr.includes('`CHANGELOG.md` → `[2.0.0]`'),
+      'Turkce README migration rehberi yayinlanmis changelog bolumune baglanmali'
+    );
+    assert.ok(
+      readmeEn.includes('`CHANGELOG.md` -> `[2.0.0]`'),
+      'English README migration guide must link to the released changelog section'
+    );
+    assert.ok(!readmeTr.includes('`CHANGELOG.md` → `[Unreleased]`'));
+    assert.ok(!readmeEn.includes('`CHANGELOG.md` -> `[Unreleased]`'));
+  });
+
+  it('documents greenfield placeholder handling consistently', () => {
+    assert.ok(
+      readmeTr.includes('rm -f Codebase/.gitkeep'),
+      'Turkce README greenfield kurulumunda repo placeholder temizligini gostermeli'
+    );
+    assert.ok(
+      readmeEn.includes('rm -f Codebase/.gitkeep'),
+      'English README must show cleanup for the repo placeholder in greenfield setup'
+    );
+    assert.ok(
+      readmeTr.includes('`.gitkeep` ve `.DS_Store` placeholder olarak yok sayılır'),
+      'Turkce README placeholder dosyalarin bos Codebase sayildigini anlatmali'
+    );
+    assert.ok(
+      readmeEn.includes('`.gitkeep` and `.DS_Store` are ignored as placeholders'),
+      'English README must state placeholder files are ignored'
+    );
+    assert.ok(
+      bootstrapCommand.includes("! -name '.gitkeep' ! -name '.DS_Store'"),
+      'Bootstrap kontrolu .gitkeep ve .DS_Store placeholder dosyalarini yok saymali'
+    );
+    assert.ok(
+      bootstrapCommand.includes('__CODEBASE_MISSING__'),
+      'Bootstrap kontrolu eksik Codebase ile bos Codebase durumunu ayirmali'
+    );
+    assert.ok(
+      contributing.includes('`.gitkeep` ve `.DS_Store` placeholder kabul edilir'),
+      'CONTRIBUTING Codebase placeholder sozlesmesini anlatmali'
+    );
+  });
+
+  it('documents extensions-registry.yaml as the bootstrap recommendation source', () => {
+    assert.ok(
+      bootstrapCommand.includes('templates/extensions-registry.yaml'),
+      'Bootstrap komutu yapilandirilmis eklenti kaynagi olarak YAML registry kullanmali'
+    );
+    assert.ok(
+      contributing.includes('`Agentbase/templates/extensions-registry.yaml` Bootstrap eklenti oneri sisteminin yapilandirilmis kaynagidir'),
+      'CONTRIBUTING YAML registry kaynak rolunu anlatmali'
+    );
+    assert.ok(
+      extensionsRegistryMd.includes('Bootstrap eklenti öneri sistemi yapılandırılmış kaynak olarak `extensions-registry.yaml` dosyasını okur'),
+      'Markdown registry insan referansi, YAML ise bootstrap kaynagi olarak ayrilmali'
+    );
+    assert.ok(
+      referenceNotes.includes("extensions-registry.yaml'dan sadece gerekli olanları seçmeli"),
+      'Referans notlari bootstrap icin YAML registry kaynagini gostermeli'
+    );
+    assert.ok(
+      !contributing.includes('Bootstrap sirasinda Opus bu listeden proje ihtiyacina uygun eklentileri onerir'),
+      'CONTRIBUTING Markdown registry dosyasini bootstrap oneri kaynagi gibi sunmamali'
+    );
+  });
+
   it('describes automatic changelog generation as tag-driven after auto-release', () => {
     assert.ok(
       readmeTr.includes("Conventional Commit push'ları `main` branch'inde auto-release akışını tetikler; oluşan `v*` tag'i ayrı GitHub Action ile `CHANGELOG.md` dosyasını üretip `main` branch'ine geri yazar."),
@@ -122,6 +208,77 @@ describe('README docs consistency', () => {
     );
     assert.ok(!readmeTr.includes("sadece `main` branch'ine yapılan push'larda"), 'Eski yaniltici main-only ifade kaldirilmali');
     assert.ok(!readmeEn.includes('only on pushes to the `main` branch'), 'Old misleading main-only wording must be removed');
+  });
+
+  it('aligns the worktree section with the resolveCodebaseRoot single contract', () => {
+    // Turkce README hedef worktree secme tablosunu icermeli
+    assert.ok(
+      readmeTr.includes('### Worktree Avantajı'),
+      'Turkce README Worktree Avantaji bolumunu korumali'
+    );
+    assert.ok(
+      readmeTr.includes('`resolveCodebaseRoot()`'),
+      'Turkce README tek sozlesme helper\'ini referans almali'
+    );
+    assert.ok(
+      readmeTr.includes('AGENTIC_CODEBASE_DIR'),
+      'Turkce README env override yontemini gostermeli'
+    );
+    assert.ok(
+      readmeTr.includes('#### Hedef Worktree\'yi Seçme'),
+      'Turkce README hedef worktree secme bolumunu icermeli'
+    );
+    // Eski "geçiş mekanizması mevcut değildir" iddiasi kaldirilmali
+    assert.ok(
+      !readmeTr.includes('geçiş mekanizması henüz mevcut değildir'),
+      'Turkce README eski "gecis yok" iddiasini tasimamali'
+    );
+
+    // English README
+    assert.ok(
+      readmeEn.includes('### Worktree Advantage'),
+      'English README must keep Worktree Advantage section'
+    );
+    assert.ok(
+      readmeEn.includes('`resolveCodebaseRoot()`'),
+      'English README must reference the single-contract helper'
+    );
+    assert.ok(
+      readmeEn.includes('AGENTIC_CODEBASE_DIR'),
+      'English README must show env override method'
+    );
+    assert.ok(
+      readmeEn.includes('#### Selecting the Target Worktree'),
+      'English README must include target worktree selection section'
+    );
+    assert.ok(
+      !readmeEn.includes('cross-worktree switching is not yet implemented'),
+      'English README must not carry the old "not yet implemented" claim'
+    );
+  });
+
+  it('bootstrap completion report surfaces the target Codebase and override methods', () => {
+    assert.ok(
+      bootstrapCommand.includes('🎯 Hedef Codebase:'),
+      'Bootstrap tamamlanma raporu hedef Codebase blok\'unu icermeli'
+    );
+    assert.ok(
+      bootstrapCommand.includes('AGENTIC_CODEBASE_DIR'),
+      'Tamamlanma raporu env override yontemini gostermeli'
+    );
+    assert.ok(
+      bootstrapCommand.includes('Worktree symlink rotasyonu'),
+      'Tamamlanma raporu symlink rotation yontemini gostermeli'
+    );
+    assert.ok(
+      bootstrapCommand.includes('Manifest guncellemesi') || bootstrapCommand.includes('Manifest güncellemesi'),
+      'Tamamlanma raporu manifest guncellemesi yontemini gostermeli'
+    );
+    // Onboarding sablonunda da ayni blok mevcut olmali
+    assert.ok(
+      bootstrapCommand.includes('## Hedef Codebase'),
+      'Onboarding sablonu hedef Codebase bolumunu icermeli'
+    );
   });
 
   it('keeps generated deploy command naming consistent with prefixed command model', () => {
