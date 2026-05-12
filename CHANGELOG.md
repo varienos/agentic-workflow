@@ -30,6 +30,10 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 - extensions registry'yi netleştir ve registry/placeholder kurallarını yay (`118ffd2`)
 
+### Sürüm
+
+- v2.1.0 (`2951fc1`)
+
 ## [2.0.0] - 2026-05-01
 
 ### Eklenen
