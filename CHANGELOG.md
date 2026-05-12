@@ -3,6 +3,33 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [2.1.0] - 2026-05-12
+
+### Eklenen
+
+- **TASK-223:** worktree-aware hedef Codebase yolunu tek sözleşmeye bağla (`2b70fa3`)
+- dokumantasyon drift hooku ekle (`1ca9722`)
+- db migration discipline rule ekle (`fe9cd8a`)
+- **#220:** shadow git checkpointing hook + /rollback komutu (`4a6b768`)
+
+### Düzeltilen
+
+- **#220:** codex review bulgulari duzeltildi (`75dd177`)
+
+### Dokümantasyon
+
+- adr karar sozlesmesini workflowa bagla (`53a8c22`)
+- db migration discipline referanslarini yay (`37ac99e`)
+- CHANGELOG otomatik güncellendi [skip ci] (`a598d9a`)
+
+### Test
+
+- stabil core hook redos testi (`edfcefb`)
+
+### Bakım
+
+- extensions registry'yi netleştir ve registry/placeholder kurallarını yay (`118ffd2`)
+
 ## [2.0.0] - 2026-05-01
 
 ### Eklenen
