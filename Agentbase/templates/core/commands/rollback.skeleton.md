@@ -18,7 +18,11 @@ Ornek cikti:
 - **Codebase yolu:** `../Codebase/`
 
 Kutsal Kurallar:
-- Git islemleri SADECE Codebase icinde
+- Codebase e config YAZMA — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` SADECE Agentbase icinde olusturulur.
+- Config dosyalari SADECE Agentbase icinde yasar
+- Codebase icinde `.claude/` OLUSTURULMAZ
+- Git sadece Codebase de calisir
+- Codebase OKUNUR, config YAZILMAZ — rollback git state okur/degistirir, Codebase config dosyasi yazmaz.
 - Agentbase git'siz — Agentbase'de rollback YOK
 - Checkpoint ref'leri `refs/checkpoints/agent/<id>-<ts>` formatinda
 -->

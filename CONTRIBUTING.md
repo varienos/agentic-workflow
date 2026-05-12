@@ -98,7 +98,7 @@ Her modul, o modulun projeye uygulanip uygulanmayacagini belirleyen bir `detect.
 
 ### Onemli Dizin Aciklamalari
 
-- **`Codebase/`** — Uzerinde calisilan gercek proje kodunu temsil eder. Bu dizin depoda yer tutucudur; kullanici kendi projesini symlink ile baglar (`ln -s /path/to/project Codebase`). Greenfield modunda bos birakilir ve bootstrap sifirdan olusturur.
+- **`Codebase/`** — Uzerinde calisilan gercek proje kodunu temsil eder. Bu dizin depoda yer tutucudur; kullanici kendi projesini symlink ile baglar (`ln -s /path/to/project Codebase`). Greenfield modunda gercek proje dosyasi icermemelidir; `.gitkeep` ve `.DS_Store` placeholder kabul edilir.
 - **`Docbase/agentic/project-manifest.yaml`** — Bootstrap tarafindan uretilen manifest dosyasi. Depoda bastan YOKTUR — ilk `/bootstrap` calistirmasinda olusturulur. `generate.js` ve `transform.js` bu dosyayi girdi olarak kullanir.
 
 ### Bootstrap Roportaj Sablonlari
@@ -157,7 +157,7 @@ Yeni eklenen her JS dosyasi icin test dosyasi ZORUNLUDUR.
 
 ### Eklenti Referanslari
 
-`Agentbase/templates/extensions-registry.md` 3. parti eklenti referanslarini icerir. Bootstrap sirasinda Opus bu listeden proje ihtiyacina uygun eklentileri onerir. Bu dosya generate.js tarafindan ISLENMEZ — bootstrap komutunun baglam olarak okudugu bir referanstir. Yeni eklenti eklemek icin dosyadaki tablo formatini takip edin.
+`Agentbase/templates/extensions-registry.yaml` Bootstrap eklenti oneri sisteminin yapilandirilmis kaynagidir. `Agentbase/templates/extensions-registry.md` ise insanlar icin okunabilir referans katalogdur ve generate.js tarafindan ISLENMEZ. Yeni bir kaynagi sadece dokumantasyon referansi olarak ekliyorsaniz Markdown tablosunu, Bootstrap onerisi olarak calismasini istiyorsaniz YAML formatini da guncelleyin.
 
 ## Iletisim
 

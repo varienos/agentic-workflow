@@ -136,6 +136,19 @@ extensions:
       - condition: "project.subprojects.length >= 3"
     conflicts: []
 
+  - name: "RTK (Rust Token Killer)"
+    repo: "rtk-ai/rtk"
+    url: "https://github.com/rtk-ai/rtk"
+    agent: all
+    category: memory
+    install: "Repo'daki kurulum talimatini takip edin (Rust binary). Hook tabanli — Claude Code bash cagrilarini otomatik rewrite eder."
+    description: "Bash komutlarini (git, ls, cat vb.) hook ile rewrite ederek dev islemlerinde %60-90 token tasarrufu saglayan CLI proxy"
+    triggers:
+      - condition: "project.team_size == large-team"
+      - condition: "project.type == monorepo"
+      - condition: "project.subprojects.length >= 3"
+    conflicts: []
+
   # ─── WORKFLOW ───
 
   - name: "Claude CodePro"

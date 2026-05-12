@@ -1,12 +1,14 @@
 # 3. Parti Eklenti Referansları
 
-Bootstrap sırasında Opus, proje ihtiyacına göre bu listeden uygun eklentileri önerir.
+Bu Markdown dosyası insanlar için okunabilir hızlı referans kataloğudur.
+Bootstrap eklenti öneri sistemi yapılandırılmış kaynak olarak `extensions-registry.yaml` dosyasını okur.
 
 ---
 
 ## Ekleme Şablonu
 
-Yeni eklenti eklerken bu formatı kullan:
+Yeni referans eklerken bu Markdown tablo formatını kullan.
+Bootstrap öneri sistemine girmesi gereken eklentiler için `extensions-registry.yaml` dosyasını da güncelle:
 
 ```markdown
 | Ad | Repo | Agent | Kategori | Açıklama |
@@ -64,6 +66,7 @@ Yeni eklenti eklerken bu formatı kullan:
 | **Context Mode** | [mksglu/context-mode](https://github.com/mksglu/context-mode) | Claude | Tool çıktılarını sandbox'ta işleyip context'e sadece gerekli kısmı gönderiyor — %98 context tasarrufu (315KB → 5.4KB). Session state de koruyor |
 | **Gemini Beads** | [thoreinstein/gemini-beads](https://github.com/thoreinstein/gemini-beads) | Gemini | Git destekli bellek sistemi |
 | **Graphify** | [safishamsi/graphify](https://github.com/safishamsi/graphify) | Hepsi | Herhangi bir klasörü (kod, dokümanlar, makaleler, görseller, videolar) sorgulanabilir knowledge graph'a dönüştürme |
+| **RTK** (Rust Token Killer) | [rtk-ai/rtk](https://github.com/rtk-ai/rtk) | Hepsi | Bash komutlarını (git, ls, cat vb.) hook ile rewrite ederek dev işlemlerinde %60–90 token tasarrufu sağlayan CLI proxy |
 
 ## Code Quality / Review
 
@@ -107,3 +110,4 @@ Yeni eklenti eklerken bu formatı kullan:
 | **awesome-claude-code-toolkit** | [rohitg00/awesome-claude-code-toolkit](https://github.com/rohitg00/awesome-claude-code-toolkit) | Claude | 135 agent, 35 skill, 42 komut, 120 eklenti |
 | **awesome-gemini-cli** | [Piebald-AI/awesome-gemini-cli](https://github.com/Piebald-AI/awesome-gemini-cli) | Gemini | Gemini CLI araçları ve uzantıları |
 | **awesome-mcp-servers** | [punkpeye/awesome-mcp-servers](https://github.com/punkpeye/awesome-mcp-servers) | Hepsi | 1200+ MCP sunucusu |
+| **public-apis** | [public-apis/public-apis](https://github.com/public-apis/public-apis) | Hepsi | 1400+ ücretsiz public API kataloğu — integrasyon, prototip ve greenfield projelerde API seçimi referansı |
