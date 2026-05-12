@@ -12,6 +12,7 @@ const {
   runHook,
   writeCodebaseFile,
 } = require('./helpers/hook-runner.js');
+const { isJqRegexSafe } = require('../generate.js');
 const { loadModuleExports } = require('./helpers/module-loader.js');
 
 // shared-hook-utils.js core/hooks'ta yaşıyor; module testleri kendi __dirname'ini kullanır.
@@ -24,6 +25,24 @@ const sharedHookUtilsReplacement = {
 };
 
 describe('code-review-check hook', () => {
+  const codeReviewHookPath = path.join(
+    __dirname,
+    '..',
+    'templates',
+    'core',
+    'hooks',
+    'code-review-check.skeleton.js'
+  );
+
+  function loadCodeReviewFunctions(hookPath = codeReviewHookPath) {
+    return loadModuleExports(hookPath, {
+      exports: [
+        'SECURITY_PATTERNS',
+        'collectIssues',
+      ],
+    });
+  }
+
   it('reports critical findings and preserves the original payload on stdout', t => {
     const projectRoot = createTempProject(t);
     const hookPath = materializeHook(projectRoot, 'core/hooks/code-review-check.skeleton.js');
@@ -91,16 +110,23 @@ describe('code-review-check hook', () => {
     assert.match(result.stderr, /CRITICAL/);
   });
 
-  it('handles long suspicious input without regex slowdowns', t => {
+  it('handles long suspicious input without process startup timing', t => {
     const projectRoot = createTempProject(t);
     const hookPath = materializeHook(projectRoot, 'core/hooks/code-review-check.skeleton.js');
+    const {
+      SECURITY_PATTERNS,
+      collectIssues,
+    } = loadCodeReviewFunctions(hookPath);
     const longLine = `"${'a'.repeat(20000)}"`;
-    const filePath = writeCodebaseFile(projectRoot, 'apps/api/src/large.js', `${longLine}\n`);
+    const secretLine = 'const apiKey = "sk-secretvalue";';
+    const longLineIssues = collectIssues(`${longLine}\n`);
+    const secretIssues = collectIssues(`${secretLine}\n`);
+    const unsafePatterns = SECURITY_PATTERNS.filter(({ pattern }) => !isJqRegexSafe(pattern.source));
 
-    const result = runHook(hookPath, makeHookInput(filePath), { timeout: 1000 });
-
-    assert.equal(result.status, 0);
-    assert.ok(result.durationMs < 100);
+    assert.equal(unsafePatterns.length, 0);
+    assert.equal(isJqRegexSafe('(a+)+$'), false);
+    assert.equal(longLineIssues.length, 0);
+    assert.equal(secretIssues[0].severity, 'CRITICAL');
   });
 });
 

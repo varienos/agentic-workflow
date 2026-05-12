@@ -96,6 +96,41 @@ const FILE_EXTENSIONS = [
 
 // === FIXED LOGIC (degismez) ===
 
+function isIgnoredCommentLine(trimmedLine) {
+  return (
+    trimmedLine.startsWith('//') &&
+    !trimmedLine.includes('TODO') &&
+    !trimmedLine.includes('FIXME') &&
+    !trimmedLine.includes('HACK')
+  );
+}
+
+function scanLine(line, lineNumber, patterns = SECURITY_PATTERNS) {
+  const trimmed = line.trim();
+  if (isIgnoredCommentLine(trimmed)) return [];
+
+  const issues = [];
+  patterns.forEach(({ pattern, severity, message }) => {
+    pattern.lastIndex = 0;
+    if (pattern.test(line)) {
+      issues.push({
+        line: lineNumber,
+        severity,
+        message,
+        code: trimmed.substring(0, 60)
+      });
+    }
+  });
+
+  return issues;
+}
+
+function collectIssues(content, patterns = SECURITY_PATTERNS) {
+  return content
+    .split('\n')
+    .flatMap((line, index) => scanLine(line, index + 1, patterns));
+}
+
 /**
  * Ana hook fonksiyonu.
  * stdin'den tool input JSON'u okur, dosyayi tarar, uyari varsa stderr'e yazar,
@@ -138,27 +173,7 @@ async function main() {
 
       // Dosya icerigini tara
       const content = fs.readFileSync(filePath, 'utf8');
-      const lines = content.split('\n');
-      const issues = [];
-
-      lines.forEach((line, index) => {
-        // Yorum satirlarini atla (basit heuristic)
-        const trimmed = line.trim();
-        if (trimmed.startsWith('//') && !trimmed.includes('TODO') && !trimmed.includes('FIXME') && !trimmed.includes('HACK')) {
-          return;
-        }
-
-        SECURITY_PATTERNS.forEach(({ pattern, severity, message }) => {
-          if (pattern.test(line)) {
-            issues.push({
-              line: index + 1,
-              severity,
-              message,
-              code: line.trim().substring(0, 60)
-            });
-          }
-        });
-      });
+      const issues = collectIssues(content);
 
       // Onemli issue'lari stderr'e yaz
       const criticalIssues = issues.filter(i => i.severity === 'CRITICAL');
