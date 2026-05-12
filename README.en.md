@@ -414,6 +414,7 @@ Every rule in this template was born from a production experience:
 | Phase-based orchestration | Controlled processing instead of chaotic parallel work |
 | Failure cascade table | Preventing 10+ retry loops on the same error |
 | Destructive migration detection | DROP TABLE going to production unnoticed |
+| `db-migration-discipline` | Making migration files, dry-run, rollback/down, and destructive scanning mandatory for schema changes |
 | Pre-existing finding rule | Preventing security gaps from being dismissed as "out of scope" |
 
 ## Development and Validation

@@ -273,6 +273,18 @@ Gorev turune gore AC sablonu kullan:
 - [ ] [Varsa yeni testler]
 ```
 
+**DB Schema Degisikligi:**
+
+Task metninde `schema`, `migration`, `model`, `kolon`, `tablo`, `column`, `table`, `database` kelimeleri geciyorsa veya manifest'te ORM/database tespiti bu taskla iliskiliyse asagidaki AC'leri otomatik ekle. Detay kural: `.claude/rules/db-migration-discipline.md`.
+
+```
+## Kabul Kriterleri
+- [ ] Migration dosyasi olusturuldu ve schema/model degisikligiyle birlikte commitlenecek
+- [ ] Dry-run/preview komutu calisti ve sonucu task notuna yazildi
+- [ ] Rollback/down script veya dosya yolu hazir
+- [ ] Destructive flag taramasi yapildi; risk varsa backup/geri donus plani yazildi
+```
+
 <!-- GENERATE: AC_TEMPLATES
 Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
 Gerekli manifest alanlari: stack.primary, project.conventions, project.subprojects
@@ -420,4 +432,3 @@ Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
 isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
 task-i olarak rapor edilir.
 -->
-

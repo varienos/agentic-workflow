@@ -110,7 +110,7 @@ Example output (Express + Prisma):
 - `$queryRaw` ve `$executeRaw` kullanma — type-safe query builder kullan
 - Her relation icin `include` veya `select` acikca belirt
 - Transaction gerektiren islemlerde `prisma.$transaction()` kullan
-- Schema degisikligi → `prisma migrate dev` zorunlu
+- Schema/model/kolon/tablo degisikligi → `.claude/rules/db-migration-discipline.md` zorunlu: migration dosyasi, dry-run/preview, rollback/down ve destructive flag taramasi
 
 **API Standartlari:**
 - Tum endpoint'ler Zod schema ile validate edilmeli
@@ -161,6 +161,6 @@ Gorev tamamlandiginda:
 ## Sinirlar
 
 - Sadece backend dosyalari uzerinde calisir (frontend/mobile dosyalarina DOKUNMA)
-- Veritabani schema degisikligi gerekiyorsa migration olusturmadan ONCE kullaniciya danIS
+- Veritabani schema degisikligi gerekiyorsa `.claude/rules/db-migration-discipline.md` checklist'ini uygula; migration, dry-run ve rollback/down hazir olmadan tamamlandi deme
 - `.env` dosyalarini DUZENLEME — env degiskeni gerekiyorsa `.env.example`'a ekle ve bildir
 - Mevcut API contract'ini (endpoint URL, request/response format) degistirme — breaking change gerekiyorsa bildir

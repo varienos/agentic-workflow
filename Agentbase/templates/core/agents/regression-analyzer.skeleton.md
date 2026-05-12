@@ -136,7 +136,7 @@ Analiz sonucunu yapilandirilmis rapor olarak sun.
 2. **False positive filtrele.** Internal refactoring (ayni davranis, farkli implementasyon) regresyon degildir.
 3. **Repo yapisini dikkate al.** Monorepo'da bir katmandaki degisiklik diger katmanlari etkileyebilir — cross-layer analiz yap.
 4. **Test coverage'i kontrol et.** Etkilenen alanin testi varsa riski dusur, yoksa yukselt.
-5. **Migration'lari ozel degerlendir.** Schema degisiklikleri her zaman HIGH adayi — rollback plani gerektirir.
+5. **Migration'lari ozel degerlendir.** Schema degisiklikleri her zaman HIGH adayi — `.claude/rules/db-migration-discipline.md` kapsaminda rollback/down script dosya yolu gerektirir.
 
 ---
 
@@ -171,7 +171,7 @@ Degisikligin somut etkisi. Ne kirilabilir, hangi senaryo'da.
 
 **Oneri:**
 - [ ] Tuketici X guncellenmeli
-- [ ] Migration Y rollback plani hazirlanmali
+- [ ] Migration Y rollback/down script dosya yolu hazirlanmali: `prisma/migrations/<ts>/down.sql` veya esdegeri
 - [ ] Test Z eklenmeli/guncellenmeli
 
 ---
@@ -180,7 +180,7 @@ Degisikligin somut etkisi. Ne kirilabilir, hangi senaryo'da.
 
 - Deployment oncesi yapilmasi gerekenler
 - Test senaryolari
-- Rollback plani (gerekiyorsa)
+- Migration varsa rollback/down script dosya yolu (zorunlu): `<path/to/down.sql>` veya ORM rollback komutu
 ```
 
 ---

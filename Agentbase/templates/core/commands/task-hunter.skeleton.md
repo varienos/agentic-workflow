@@ -739,6 +739,7 @@ Tamamlanan task'in baglami ve backlog analizi bazinda:
 13. **Hata dongusune girme** — Ayni hatayi 3'ten fazla deneme ile cozmeye calisma. 3 denemede cozulmediyse kullaniciya bildir.
 14. **Codebase yolu** — Tum proje dosyalarina `../Codebase/` uzerinden eris.
 15. **Guvenlik** — `.env` dosyalari, credential'lar, secret'lar ASLA commit'e dahil edilmez, log'a yazilmaz, ciktida gosterilmez.
+16. **DB schema disiplini** — DB schema/model/migration degisikligi yaptiysan `.claude/rules/db-migration-discipline.md` checklist'ini uygula: migration dosyasi, dry-run/preview, rollback/down ve destructive flag taramasi.
 
 <!-- GENERATE: PROJECT_SPECIFIC_RULES
 Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
@@ -746,7 +747,6 @@ Gerekli manifest alanlari: project.rules, project.forbidden_patterns, project.do
 Ornek cikti:
 ### Proje-Spesifik Kurallar
 
-16. **Prisma migration** — Schema degisikligi yapildiysa `npx prisma migrate dev --name <isim>` calistir.
 17. **API versiyonlama** — Tum endpointler `/api/v1/` prefix'i altinda olmali.
 18. **Tema kullanimi** — React Native'de hardcoded renk YASAK, `useTheme()` kullan.
 19. **DTO validasyon** — Her API endpoint'i input icin DTO + class-validator kullanmali.

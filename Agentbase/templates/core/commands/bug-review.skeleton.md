@@ -67,7 +67,7 @@ Gerekli manifest alanlari: stack.primary, stack.conventions, project.rules
 Ornek cikti:
 **Stack-Spesifik Kontroller:**
 
-- [ ] **Prisma:** Schema degisikligi varsa migration olusturulmus mu?
+- [ ] **DB schema:** Schema/model/kolon/tablo degisikligi varsa migration dosyasi var mi, dry-run gecti mi, rollback/down script hazir mi? Detay: `.claude/rules/db-migration-discipline.md`
 - [ ] **Prisma:** Transaction kullanilmasi gereken yerde kullanilmis mi?
 - [ ] **NestJS:** Exception filter dogru uygulanmis mi? HttpException turleri dogru mu?
 - [ ] **NestJS:** DTO validasyonu hala dogru calisiyor mu?

@@ -16,6 +16,12 @@ const readmeEn = readRepoFile('README.en.md');
 const bootstrapCommand = readRepoFile('Agentbase/.claude/commands/bootstrap.md');
 const coreClaude = readRepoFile('Agentbase/templates/core/CLAUDE.md.skeleton');
 const dbMigrationRule = readRepoFile('Agentbase/templates/core/rules/db-migration-discipline.skeleton.md');
+const taskHunterCommand = readRepoFile('Agentbase/templates/core/commands/task-hunter.skeleton.md');
+const bugReviewCommand = readRepoFile('Agentbase/templates/core/commands/bug-review.skeleton.md');
+const taskPlanCommand = readRepoFile('Agentbase/templates/core/commands/task-plan.skeleton.md');
+const deepAuditCommand = readRepoFile('Agentbase/templates/core/commands/deep-audit.skeleton.md');
+const regressionAnalyzerAgent = readRepoFile('Agentbase/templates/core/agents/regression-analyzer.skeleton.md');
+const backendExpertAgent = readRepoFile('Agentbase/templates/core/agents/backend-expert.skeleton.md');
 
 describe('README docs consistency', () => {
   it('documents Agentbase backlog location consistently in Turkish and English READMEs', () => {
@@ -161,5 +167,26 @@ describe('bootstrap docs consistency', () => {
     if (coreClaude.includes('db-migration-discipline')) {
       assert.match(bootstrapCommand, /db-migration-discipline\.skeleton\.md/);
     }
+  });
+
+  it('references db migration discipline from consumer skeletons and readmes', () => {
+    const consumerSurfaces = [
+      taskHunterCommand,
+      bugReviewCommand,
+      taskPlanCommand,
+      deepAuditCommand,
+      regressionAnalyzerAgent,
+      backendExpertAgent,
+    ];
+
+    for (const content of consumerSurfaces) {
+      assert.match(content, /\.claude\/rules\/db-migration-discipline\.md/);
+    }
+
+    assert.match(taskPlanCommand, /Migration dosyasi olusturuldu/);
+    assert.match(taskPlanCommand, /Rollback\/down script veya dosya yolu hazir/);
+    assert.match(regressionAnalyzerAgent, /rollback\/down script dosya yolu/);
+    assert.match(readmeTr, /\| `db-migration-discipline` \|/);
+    assert.match(readmeEn, /\| `db-migration-discipline` \|/);
   });
 });

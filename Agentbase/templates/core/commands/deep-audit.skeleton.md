@@ -87,7 +87,8 @@ Client fix yapildi
   └─ State degisti mi? → Diger ekranlar/sayfalar stale data gorur mu?
 
 DB schema degisti
-  ├─ Migration gerektiriyor mu? → Production DB'ye etkisi ne?
+  ├─ `.claude/rules/db-migration-discipline.md` checklist'i uygulandi mi?
+  ├─ Migration gerektiriyor mu? → Dry-run gecti mi, rollback/down hazir mi, production DB'ye etkisi ne?
   ├─ Ilgili controller query'leri guncel mi?
   └─ Client'ta bu alani kullanan ekran/sayfa var mi?
 ```
@@ -509,7 +510,7 @@ Bulgu tespit edildi
   │       ├─ Evet → BACKLOG TASK AC
   │       └─ Hayir (bagimsiz fixler) → DOGRUDAN FIX ET
   └─ Migration / DB sema degisikligi gerekiyor mu?
-      ├─ Evet → BACKLOG TASK AC (her zaman)
+      ├─ Evet → BACKLOG TASK AC (her zaman) + `.claude/rules/db-migration-discipline.md` dry-run/rollback kriterlerini ekle
       └─ Hayir → Yukaridaki agaci takip et
 ```
 
@@ -520,7 +521,7 @@ Bulgu tespit edildi
 3. **Yan etki kontrolu** — fix'in baska bir akisi kirip kirmadığını kontrol et (Grep ile consumer'lari tara)
 4. **Her fix'e seviye ata**: KRITIK, MAJOR, MINOR
 5. **ASLA YAPMA**:
-   - ORM migration veya DB sema degisikligi
+   - ORM migration veya DB sema degisikligi (`.claude/rules/db-migration-discipline.md` olmadan dry-run ve rollback kontrolu eksik kalir)
    - Route/middleware konfigürasyon degisikligi
    - Dosya silme (dead code bile olsa — backlog'a gonder)
    - Varsayilan deger TAHMIN etme (net degilse backlog'a gonder)

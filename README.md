@@ -441,6 +441,7 @@ Bu template'deki her kural bir production deneyiminden doğmuştur:
 | Faz bazlı orkestrasyon | Kaotik paralel çalışma yerine kontrollü işlem |
 | Failure cascade tablosu | Aynı hatada 10+ retry döngüsünün önlenmesi |
 | Destructive migration tespiti | DROP TABLE'in production'a fark edilmeden gitmesi |
+| `db-migration-discipline` | Schema değişikliklerinde migration, dry-run, rollback/down ve destructive taramanın zorunlu hale gelmesi |
 | Pre-existing bulgu kuralı | "Scope dışı" diyerek güvenlik açığının atlanması |
 
 ## Geliştirme ve Doğrulama
