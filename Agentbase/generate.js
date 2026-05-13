@@ -55,6 +55,12 @@ function createJsGenerateRe() {
   return /\/\* GENERATE: (\w+)\n[\s\S]*?\*\/\s*\n?\s*\/\* END GENERATE \*\//g;
 }
 
+// Python: hash-comment delimitli blok. "# GENERATE: NAME\n...\n# END GENERATE"
+// Python parser HTML/C tarzi yorumlari kabul etmedigi icin py-spesifik bir form gerekli.
+function createPyGenerateRe() {
+  return /# GENERATE: (\w+)\n[\s\S]*?# END GENERATE/g;
+}
+
 
 /**
  * Bir icerikten tum GENERATE blok isimlerini cikarir.
@@ -63,7 +69,10 @@ function createJsGenerateRe() {
  * @returns {string[]} Blok isimleri
  */
 function extractBlockNames(content, fileType) {
-  const re = fileType === 'js' ? createJsGenerateRe() : createMdGenerateRe();
+  let re;
+  if (fileType === 'js') re = createJsGenerateRe();
+  else if (fileType === 'py') re = createPyGenerateRe();
+  else re = createMdGenerateRe();
   const names = [];
   let match;
   while ((match = re.exec(content)) !== null) {
@@ -80,7 +89,10 @@ function extractBlockNames(content, fileType) {
  * @returns {{ content: string, filled: string[], marked: string[] }}
  */
 function fillBlocks(content, fileType, manifest) {
-  const re = fileType === 'js' ? createJsGenerateRe() : createMdGenerateRe();
+  let re;
+  if (fileType === 'js') re = createJsGenerateRe();
+  else if (fileType === 'py') re = createPyGenerateRe();
+  else re = createMdGenerateRe();
   const filled = [];
   const marked = [];
 
@@ -94,6 +106,9 @@ function fillBlocks(content, fileType, manifest) {
     marked.push(blockName);
     if (fileType === 'js') {
       return `/* CLAUDE_FILL: ${blockName} — Bu blok Claude tarafindan doldurulacak */`;
+    }
+    if (fileType === 'py') {
+      return `# CLAUDE_FILL: ${blockName} — Bu blok Claude tarafindan doldurulacak`;
     }
     return `<!-- CLAUDE_FILL: ${blockName} — Bu blok Claude tarafindan doldurulacak -->`;
   });
@@ -1844,7 +1859,75 @@ const SIMPLE_GENERATORS = {
       'Kullanici diff-te gorecek, kendisi karar verecek.',
     ].join('\n');
   },
+
+  GRAPHIFY_UPDATE_COMMAND(manifest) {
+    // graphify modulu icin RAW (calistirilabilir) update komut zinciri.
+    // Kullanim: rules ve install.md icinde dogrudan kopyala-yapistir komut olarak.
+    // Monorepo aktif + subprojects varsa multi-layer komut, degilse tek-katman.
+    const updates = collectGraphifyUpdateSteps(manifest);
+    return updates.join(' && \\\n');
+  },
+
+  GRAPHIFY_UPDATE_COMMAND_ECHO(manifest) {
+    // /g health icinde graph yoksa kullaniciya gosterilen Bash satirlari.
+    // Her adim `echo "   <komut> && \"` formatinda, son satir `\` suz.
+    // Boylece komut CALISTIRILMAZ — sadece kullaniciya rehber olarak yazdirilir.
+    const updates = collectGraphifyUpdateSteps(manifest);
+    return updates
+      .map((cmd, idx) => {
+        const trailing = idx < updates.length - 1 ? ' && \\\\' : '';
+        return `  echo "   ${cmd}${trailing}"`;
+      })
+      .join('\n');
+  },
+
+  GRAPHIFY_LAYERS_PY(manifest) {
+    // graphify-merge-layers.py icindeki LAYERS tuple listesini doldurur.
+    // Sadece monorepo aktif + subprojects varsa anlamlidir; aksi halde yorum dondurur.
+    const activeModules = getActiveModules(manifest);
+    const monorepoActive = activeModules.has('monorepo');
+    const subprojects = Array.isArray(manifest?.project?.subprojects) ? manifest.project.subprojects : [];
+
+    if (!monorepoActive || subprojects.length === 0) {
+      return [
+        '    # NOT: Bu script SADECE monorepo (multi-layer) icin gereklidir.',
+        '    # Mevcut manifest tek-katman; UYARLAMA GEREKLI: kendi monorepo yapina gore listele.',
+      ].join('\n');
+    }
+
+    const lines = [];
+    for (const sp of subprojects) {
+      const spPath = getSubprojectPath(manifest, sp);
+      const name = (sp?.name || 'layer').toString();
+      // ROOT __file__'in iki ust dizini — script'i Codebase/scripts/ icinden calistirir.
+      // spPath '../Codebase/<sub>' formatinda; Codebase relative segmenti cikar.
+      const relUnderCodebase = spPath.replace(/^\.\.\/[^/]+\//, '');
+      lines.push(`    (${JSON.stringify(name)}, ROOT / ${JSON.stringify(relUnderCodebase + '/graphify-out/graph.json')}),`);
+    }
+    return lines.join('\n');
+  },
 };
+
+// graphify update adimlarini manifest'ten cikarir (raw + echo generator'larinin ortak yardimcisi).
+function collectGraphifyUpdateSteps(manifest) {
+  const codebasePath = getCodebasePath(manifest);
+  const activeModules = getActiveModules(manifest);
+  const monorepoActive = activeModules.has('monorepo');
+  const subprojects = Array.isArray(manifest?.project?.subprojects) ? manifest.project.subprojects : [];
+
+  if (monorepoActive && subprojects.length > 0) {
+    const subpaths = subprojects
+      .map(sp => getSubprojectPath(manifest, sp))
+      .filter(Boolean);
+    if (subpaths.length > 0) {
+      return [
+        ...subpaths.map(p => `graphify update ${p}`),
+        'python3 scripts/graphify-merge-layers.py',
+      ];
+    }
+  }
+  return [`graphify update ${codebasePath}`];
+}
 
 // ─────────────────────────────────────────────────────
 // DOSYA ISLEMCILERI
@@ -1858,6 +1941,7 @@ const SIMPLE_GENERATORS = {
 function detectFileType(filePath) {
   if (filePath.endsWith('.json')) return 'json';
   if (filePath.endsWith('.js')) return 'js';
+  if (filePath.endsWith('.py')) return 'py';
   return 'md';
 }
 
@@ -1938,9 +2022,11 @@ function resolveOutputPath(skeletonPath, outputDir) {
   // modules/* mapping
   if (parts[0] === 'modules') {
     // modules/{kategori}/{...}/{varyant}/{tip}/dosya
-    const tip = parts[parts.length - 2]; // commands, agents, hooks, rules
-    const leafVariant = parts[parts.length - 3]; // docker, prisma, express, monorepo
-    const targetDir = `.claude/${tip}`;
+    const tip = parts[parts.length - 2]; // commands, agents, hooks, rules, scripts
+    const leafVariant = parts[parts.length - 3]; // docker, prisma, express, monorepo, graphify
+    // 'scripts/' tipi `.claude/` altina degil, hedef projenin kok 'scripts/' dizinine yazilir.
+    // Bu graphify gibi runtime tooling script'leri icin gerekli (Python merge, vb.).
+    const targetDir = tip === 'scripts' ? 'scripts' : `.claude/${tip}`;
 
     // Collision onleme: dosya adi zaten modul adini icermiyorsa prefix ekle
     // docker/commands/pre-deploy → docker-pre-deploy (collision onlendi)
@@ -1964,7 +2050,7 @@ function resolveOutputPath(skeletonPath, outputDir) {
 function scanSkeletonFiles(manifest) {
   const files = [];
   const activeModules = getActiveModules(manifest);
-  const CONTENT_DIRS = new Set(['rules', 'hooks', 'commands', 'agents']);
+  const CONTENT_DIRS = new Set(['rules', 'hooks', 'commands', 'agents', 'scripts']);
   const SKIP_DIRS = new Set(['interview', 'reference']);
 
   function isTemplateFile(entry, fullPath) {
@@ -2031,7 +2117,7 @@ function scanSkeletonFiles(manifest) {
  */
 function filterByModules(skeletonFiles, onlyModules) {
   const moduleSet = new Set(onlyModules);
-  const CONTENT_DIRS = new Set(['rules', 'hooks', 'commands', 'agents']);
+  const CONTENT_DIRS = new Set(['rules', 'hooks', 'commands', 'agents', 'scripts']);
 
   return skeletonFiles.filter(filePath => {
     const relPath = path.relative(TEMPLATES_DIR, filePath);

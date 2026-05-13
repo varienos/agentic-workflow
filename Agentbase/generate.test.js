@@ -20,6 +20,7 @@ const {
   findManifestArg,
   hasTypeScript,
   processJsonGenerateKeys,
+  processSkeletonFile,
   resolveOutputPath,
   scanSkeletonFiles,
   filterByModules,
@@ -783,6 +784,19 @@ describe('resolveOutputPath', () => {
     assert.ok(dockerResult.includes('docker-pre-deploy'), 'docker prefix olmali');
     assert.ok(coolifyResult.includes('coolify-pre-deploy'), 'coolify prefix olmali');
   });
+
+  it('modules/.../scripts/foo.skeleton.py → kok scripts/ dizinine yazilir (.claude/scripts altina degil)', () => {
+    const skeleton = path.join(TEMPLATES_DIR, 'modules', 'knowledge-graph', 'graphify', 'scripts', 'graphify-merge-layers.skeleton.py');
+    const result = resolveOutputPath(skeleton, outputDir);
+    assert.strictEqual(result, path.join(outputDir, 'scripts', 'graphify-merge-layers.py'));
+  });
+
+  it('modules scripts/ prefix collision korumasi calisir (graphify-* dosyasi prefix-suz kalir)', () => {
+    const skeleton = path.join(TEMPLATES_DIR, 'modules', 'knowledge-graph', 'graphify', 'scripts', 'graphify-merge-layers.skeleton.py');
+    const result = resolveOutputPath(skeleton, outputDir);
+    assert.ok(!result.includes('graphify-graphify-'), 'çift prefix yazilmamali');
+    assert.ok(result.endsWith(path.join('scripts', 'graphify-merge-layers.py')));
+  });
 });
 
 describe('detectFileType', () => {
@@ -791,6 +805,135 @@ describe('detectFileType', () => {
     assert.strictEqual(detectFileType('hook.skeleton.js'), 'js');
     assert.strictEqual(detectFileType('settings.skeleton.json'), 'json');
     assert.strictEqual(detectFileType('CLAUDE.md.skeleton'), 'md');
+    assert.strictEqual(detectFileType('merge.skeleton.py'), 'py');
+  });
+});
+
+// ─────────────────────────────────────────────────────
+// GRAPHIFY MODUL GENERATE AKISI (knowledge-graph/graphify)
+// ─────────────────────────────────────────────────────
+
+describe('Graphify modulu generate akisi', () => {
+  const fs = require('fs');
+  const FIXTURES_DIR = path.join(TEMPLATES_DIR, 'modules', 'knowledge-graph', 'graphify');
+
+  // Knowledge-graph modulu aktif + monorepo aktif simulasyonu
+  const multiLayerManifest = {
+    project: {
+      structure: '../Codebase',
+      subprojects: [
+        { name: 'backend', path: '../Codebase/backend' },
+        { name: 'kurye',   path: '../Codebase/kurye' },
+        { name: 'musteri', path: '../Codebase/musteri' },
+      ],
+    },
+    modules: { active: { 'knowledge-graph': ['graphify'], monorepo: true } },
+  };
+
+  // Tek-katman simulasyonu
+  const singleLayerManifest = {
+    project: { structure: '../Codebase' },
+    modules: { active: { 'knowledge-graph': ['graphify'] } },
+  };
+
+  describe('SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND (raw)', () => {
+    it('tek-katman icin tek graphify update komutu uretir', () => {
+      const out = SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND(singleLayerManifest);
+      assert.strictEqual(out, 'graphify update ../Codebase');
+    });
+
+    it('monorepo aktif + subprojects ile multi-layer komut zinciri uretir + python merge ekler', () => {
+      const out = SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND(multiLayerManifest);
+      assert.match(out, /graphify update \.\.\/Codebase\/backend/);
+      assert.match(out, /graphify update \.\.\/Codebase\/kurye/);
+      assert.match(out, /graphify update \.\.\/Codebase\/musteri/);
+      assert.match(out, /python3 scripts\/graphify-merge-layers\.py/);
+      assert.match(out, / && \\\n/);
+    });
+  });
+
+  describe('SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND_ECHO (Bash echo satirlari)', () => {
+    it('her satir echo "   <cmd>..." formatinda, son satir trailing && yok', () => {
+      const out = SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND_ECHO(multiLayerManifest);
+      const lines = out.split('\n');
+      // Tum satirlar `  echo "   ` ile baslar (komut calistirilmaz, sadece yazdirilir)
+      for (const l of lines) {
+        assert.match(l, /^  echo "   /, `satir echo formatinda olmali: ${l}`);
+      }
+      // Son satir trailing ' && \\' olmadan biter — sadece kapanis quote
+      assert.match(lines[lines.length - 1], /python3 scripts\/graphify-merge-layers\.py"$/);
+      // Diger satirlar trailing ' && \\' ile biter
+      assert.match(lines[0], /&& \\\\"$/);
+    });
+
+    it('tek-katman icin tek echo satiri, trailing && yok', () => {
+      const out = SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND_ECHO(singleLayerManifest);
+      assert.strictEqual(out, '  echo "   graphify update ../Codebase"');
+    });
+  });
+
+  describe('SIMPLE_GENERATORS.GRAPHIFY_LAYERS_PY (Python tuple satirlari)', () => {
+    it('monorepo aktif + subprojects ile Python tuple satirlari uretir', () => {
+      const out = SIMPLE_GENERATORS.GRAPHIFY_LAYERS_PY(multiLayerManifest);
+      assert.match(out, /\("backend", ROOT \/ "backend\/graphify-out\/graph\.json"\)/);
+      assert.match(out, /\("kurye", ROOT \/ "kurye\/graphify-out\/graph\.json"\)/);
+      assert.match(out, /\("musteri", ROOT \/ "musteri\/graphify-out\/graph\.json"\)/);
+    });
+
+    it('monorepo yokken uyarlama gerekli yorumu doner', () => {
+      const out = SIMPLE_GENERATORS.GRAPHIFY_LAYERS_PY(singleLayerManifest);
+      assert.match(out, /UYARLAMA GEREKLI/);
+      assert.match(out, /SADECE monorepo/);
+    });
+  });
+
+  describe('scanSkeletonFiles knowledge-graph/graphify aktif modulu', () => {
+    it('scripts/.skeleton.py dahil tum modul dosyalarini secer', () => {
+      const files = scanSkeletonFiles(multiLayerManifest).map(f => path.relative(TEMPLATES_DIR, f));
+
+      const expected = [
+        'modules/knowledge-graph/graphify/hooks/graphify-first-guard-v2.js',
+        'modules/knowledge-graph/graphify/commands/g.skeleton.md',
+        'modules/knowledge-graph/graphify/rules/graphify-rules.skeleton.md',
+        'modules/knowledge-graph/graphify/scripts/graphify-merge-layers.skeleton.py',
+      ];
+      for (const exp of expected) {
+        const found = files.some(f => f.split(path.sep).join('/') === exp);
+        assert.ok(found, `scanSkeletonFiles secimi eksik: ${exp}`);
+      }
+    });
+  });
+
+  describe('processSkeletonFile entegrasyon — graphify modulu dosyalari', () => {
+    it('g.skeleton.md GRAPHIFY_UPDATE_COMMAND_ECHO ile health bloguna echo satirlari yazar (komut calistirilmaz)', () => {
+      const file = path.join(FIXTURES_DIR, 'commands', 'g.skeleton.md');
+      const { outputContent, filled } = processSkeletonFile(file, multiLayerManifest);
+      assert.ok(filled.includes('GRAPHIFY_UPDATE_COMMAND_ECHO'));
+      // Cikti dogrudan `graphify update` calistirmamali — echo ile sarilmali
+      assert.match(outputContent, /  echo "   graphify update \.\.\/Codebase\/backend && \\\\"/);
+      // Raw `graphify update` satir basinda (echo'suz) bulunmamali
+      const rawMatches = outputContent.match(/^graphify update /gm) || [];
+      assert.strictEqual(rawMatches.length, 0, 'echo disinda raw graphify update satiri olmamali');
+    });
+
+    it('graphify-merge-layers.skeleton.py LAYERS bloguna Python tuple satirlari yazar', () => {
+      const file = path.join(FIXTURES_DIR, 'scripts', 'graphify-merge-layers.skeleton.py');
+      const { outputContent, filled } = processSkeletonFile(file, multiLayerManifest);
+      assert.ok(filled.includes('GRAPHIFY_LAYERS_PY'));
+      assert.match(outputContent, /\("backend", ROOT \/ "backend\/graphify-out\/graph\.json"\)/);
+      assert.match(outputContent, /\("kurye", ROOT \/ "kurye\/graphify-out\/graph\.json"\)/);
+      // Python yorumu bozulmamali — HTML comment delimitleri Python parse'i kirardi
+      assert.doesNotMatch(outputContent, /<!--/);
+      assert.doesNotMatch(outputContent, /-->/);
+    });
+
+    it('graphify-rules.skeleton.md GRAPHIFY_UPDATE_COMMAND raw manuel-update bloguna yazar', () => {
+      const file = path.join(FIXTURES_DIR, 'rules', 'graphify-rules.skeleton.md');
+      const { outputContent, filled } = processSkeletonFile(file, multiLayerManifest);
+      assert.ok(filled.includes('GRAPHIFY_UPDATE_COMMAND'));
+      // Rules dosyasinda raw komut bekleniyor (kullanici kopya-yapistir yapsin)
+      assert.match(outputContent, /graphify update \.\.\/Codebase\/backend && \\\ngraphify update \.\.\/Codebase\/kurye/);
+    });
   });
 });
 
