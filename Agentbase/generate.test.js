@@ -837,47 +837,94 @@ describe('Graphify modulu generate akisi', () => {
   };
 
   describe('SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND (raw)', () => {
-    it('tek-katman icin tek graphify update komutu uretir', () => {
+    it('tek-katman icin Codebase-root-relative "." komutu uretir (komut Codebase icinden calisir)', () => {
       const out = SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND(singleLayerManifest);
-      assert.strictEqual(out, 'graphify update ../Codebase');
+      assert.strictEqual(out, 'graphify update .');
     });
 
-    it('monorepo aktif + subprojects ile multi-layer komut zinciri uretir + python merge ekler', () => {
+    it('monorepo aktif + subprojects ile shell-quoted multi-layer komut zinciri uretir', () => {
       const out = SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND(multiLayerManifest);
-      assert.match(out, /graphify update \.\.\/Codebase\/backend/);
-      assert.match(out, /graphify update \.\.\/Codebase\/kurye/);
-      assert.match(out, /graphify update \.\.\/Codebase\/musteri/);
+      // Path'ler Codebase-root-relative + shell double-quote ile sarmalanmis
+      assert.match(out, /graphify update "backend"/);
+      assert.match(out, /graphify update "kurye"/);
+      assert.match(out, /graphify update "musteri"/);
+      // '../Codebase/' prefix sizmamali (yanlis path semantigi)
+      assert.doesNotMatch(out, /\.\.\/Codebase/);
       assert.match(out, /python3 scripts\/graphify-merge-layers\.py/);
       assert.match(out, / && \\\n/);
     });
   });
 
   describe('SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND_ECHO (Bash echo satirlari)', () => {
-    it('her satir echo "   <cmd>..." formatinda, son satir trailing && yok', () => {
+    it('her satir echo "   <cmd>..." formatinda, son satir trailing && yok, path tirnaksiz', () => {
       const out = SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND_ECHO(multiLayerManifest);
       const lines = out.split('\n');
       // Tum satirlar `  echo "   ` ile baslar (komut calistirilmaz, sadece yazdirilir)
       for (const l of lines) {
         assert.match(l, /^  echo "   /, `satir echo formatinda olmali: ${l}`);
       }
-      // Son satir trailing ' && \\' olmadan biter — sadece kapanis quote
+      // ECHO icinde nested double-quote olmamali (Bash syntax bozulur)
+      // Path'ler tirnaksiz olmali — sadece dis echo "..." quotelari
+      for (const l of lines) {
+        const innerQuotes = (l.match(/"/g) || []).length;
+        assert.strictEqual(innerQuotes, 2, `echo satirinda sadece 2 dis quote olmali: ${l}`);
+      }
+      // Son satir trailing ' && \\' olmadan biter
       assert.match(lines[lines.length - 1], /python3 scripts\/graphify-merge-layers\.py"$/);
       // Diger satirlar trailing ' && \\' ile biter
       assert.match(lines[0], /&& \\\\"$/);
     });
 
-    it('tek-katman icin tek echo satiri, trailing && yok', () => {
+    it('tek-katman icin tek echo satiri, "." path argumani, trailing && yok', () => {
       const out = SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND_ECHO(singleLayerManifest);
-      assert.strictEqual(out, '  echo "   graphify update ../Codebase"');
+      assert.strictEqual(out, '  echo "   graphify update ."');
+    });
+  });
+
+  describe('collectGraphifyUpdateSteps path normalize (path traversal/absolute reddi)', () => {
+    it('absolute path subproject reddedilir, sonuc tek-katman fallback', () => {
+      const m = {
+        project: { structure: '../Codebase', subprojects: [{ name: 'x', path: '/etc/passwd' }] },
+        modules: { active: { monorepo: true } },
+      };
+      const out = SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND(m);
+      // subprojects'in tamami reddedildiyse fallback tek-katman komutu
+      assert.strictEqual(out, 'graphify update .');
+    });
+
+    it('traversal iceren subproject reddedilir', () => {
+      const m = {
+        project: { structure: '../Codebase', subprojects: [{ name: 'x', path: '../../../etc' }] },
+        modules: { active: { monorepo: true } },
+      };
+      const out = SIMPLE_GENERATORS.GRAPHIFY_UPDATE_COMMAND(m);
+      assert.doesNotMatch(out, /etc/);
+      assert.strictEqual(out, 'graphify update .');
     });
   });
 
   describe('SIMPLE_GENERATORS.GRAPHIFY_LAYERS_PY (Python tuple satirlari)', () => {
-    it('monorepo aktif + subprojects ile Python tuple satirlari uretir', () => {
+    it('monorepo aktif + subprojects ile Python tuple satirlari uretir, traversal/absolute reddedilir', () => {
       const out = SIMPLE_GENERATORS.GRAPHIFY_LAYERS_PY(multiLayerManifest);
       assert.match(out, /\("backend", ROOT \/ "backend\/graphify-out\/graph\.json"\)/);
       assert.match(out, /\("kurye", ROOT \/ "kurye\/graphify-out\/graph\.json"\)/);
       assert.match(out, /\("musteri", ROOT \/ "musteri\/graphify-out\/graph\.json"\)/);
+      assert.doesNotMatch(out, /\.\.\/Codebase/);
+    });
+
+    it('absolute/traversal path iceren subprojects reddedilir, uyarlama yorumu doner', () => {
+      const m = {
+        project: {
+          structure: '../Codebase',
+          subprojects: [
+            { name: 'evil', path: '/etc/passwd' },
+            { name: 'esc', path: '../../../bin' },
+          ],
+        },
+        modules: { active: { monorepo: true } },
+      };
+      const out = SIMPLE_GENERATORS.GRAPHIFY_LAYERS_PY(m);
+      assert.match(out, /UYARLAMA GEREKLI/);
     });
 
     it('monorepo yokken uyarlama gerekli yorumu doner', () => {
@@ -909,11 +956,13 @@ describe('Graphify modulu generate akisi', () => {
       const file = path.join(FIXTURES_DIR, 'commands', 'g.skeleton.md');
       const { outputContent, filled } = processSkeletonFile(file, multiLayerManifest);
       assert.ok(filled.includes('GRAPHIFY_UPDATE_COMMAND_ECHO'));
-      // Cikti dogrudan `graphify update` calistirmamali — echo ile sarilmali
-      assert.match(outputContent, /  echo "   graphify update \.\.\/Codebase\/backend && \\\\"/);
+      // Cikti echo ile sarilmali, path Codebase-root-relative ve tirnaksiz
+      assert.match(outputContent, /  echo "   graphify update backend && \\\\"/);
       // Raw `graphify update` satir basinda (echo'suz) bulunmamali
       const rawMatches = outputContent.match(/^graphify update /gm) || [];
       assert.strictEqual(rawMatches.length, 0, 'echo disinda raw graphify update satiri olmamali');
+      // '../Codebase/' prefix sizmamali
+      assert.doesNotMatch(outputContent.match(/echo .* graphify update [^\n]*/)[0], /\.\.\/Codebase/);
     });
 
     it('graphify-merge-layers.skeleton.py LAYERS bloguna Python tuple satirlari yazar', () => {
@@ -927,12 +976,13 @@ describe('Graphify modulu generate akisi', () => {
       assert.doesNotMatch(outputContent, /-->/);
     });
 
-    it('graphify-rules.skeleton.md GRAPHIFY_UPDATE_COMMAND raw manuel-update bloguna yazar', () => {
+    it('graphify-rules.skeleton.md GRAPHIFY_UPDATE_COMMAND raw, shell-quoted, Codebase-root-relative', () => {
       const file = path.join(FIXTURES_DIR, 'rules', 'graphify-rules.skeleton.md');
       const { outputContent, filled } = processSkeletonFile(file, multiLayerManifest);
       assert.ok(filled.includes('GRAPHIFY_UPDATE_COMMAND'));
-      // Rules dosyasinda raw komut bekleniyor (kullanici kopya-yapistir yapsin)
-      assert.match(outputContent, /graphify update \.\.\/Codebase\/backend && \\\ngraphify update \.\.\/Codebase\/kurye/);
+      // Rules dosyasinda raw komut bekleniyor — shell-quoted path, '../Codebase/' onek YOK
+      assert.match(outputContent, /graphify update "backend" && \\\ngraphify update "kurye"/);
+      assert.doesNotMatch(outputContent.match(/graphify update [^\n]*/)[0], /\.\.\/Codebase/);
     });
   });
 });

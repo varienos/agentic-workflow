@@ -1862,17 +1862,19 @@ const SIMPLE_GENERATORS = {
 
   GRAPHIFY_UPDATE_COMMAND(manifest) {
     // graphify modulu icin RAW (calistirilabilir) update komut zinciri.
-    // Kullanim: rules ve install.md icinde dogrudan kopyala-yapistir komut olarak.
-    // Monorepo aktif + subprojects varsa multi-layer komut, degilse tek-katman.
-    const updates = collectGraphifyUpdateSteps(manifest);
+    // Kullanim: rules ve install.md icinde dogrudan kopya-yapistir komut olarak.
+    // Path argumanlari shell-safe double-quote ile sarilir.
+    const updates = collectGraphifyUpdateSteps(manifest, { quote: true });
     return updates.join(' && \\\n');
   },
 
   GRAPHIFY_UPDATE_COMMAND_ECHO(manifest) {
     // /g health icinde graph yoksa kullaniciya gosterilen Bash satirlari.
-    // Her adim `echo "   <komut> && \"` formatinda, son satir `\` suz.
-    // Boylece komut CALISTIRILMAZ — sadece kullaniciya rehber olarak yazdirilir.
-    const updates = collectGraphifyUpdateSteps(manifest);
+    // Komut CALISTIRILMAZ — echo ile yazdirilir.
+    // Path argumanlari tirnaksiz (echo'nun dis double-quote'unun icinde nested
+    // tirnak Bash syntax'ini kirardi; path'ler zaten toCodebaseRelative ile
+    // traversal/absolute reddedilerek sanitize edildi).
+    const updates = collectGraphifyUpdateSteps(manifest, { quote: false });
     return updates
       .map((cmd, idx) => {
         const trailing = idx < updates.length - 1 ? ' && \\\\' : '';
@@ -1884,6 +1886,7 @@ const SIMPLE_GENERATORS = {
   GRAPHIFY_LAYERS_PY(manifest) {
     // graphify-merge-layers.py icindeki LAYERS tuple listesini doldurur.
     // Sadece monorepo aktif + subprojects varsa anlamlidir; aksi halde yorum dondurur.
+    // Path normalize: subproject yolu Codebase-root-relative (traversal/absolute reddedilir).
     const activeModules = getActiveModules(manifest);
     const monorepoActive = activeModules.has('monorepo');
     const subprojects = Array.isArray(manifest?.project?.subprojects) ? manifest.project.subprojects : [];
@@ -1895,38 +1898,73 @@ const SIMPLE_GENERATORS = {
       ].join('\n');
     }
 
+    const toCodebaseRelative = (spPath) => {
+      if (typeof spPath !== 'string' || !spPath) return null;
+      const stripped = spPath.replace(/^\.\.\/[^/]+\/?/, '');
+      if (!stripped || stripped === spPath) return null;
+      if (stripped.startsWith('/') || stripped.startsWith('../') || stripped.includes('/../')) return null;
+      return stripped;
+    };
+
     const lines = [];
     for (const sp of subprojects) {
-      const spPath = getSubprojectPath(manifest, sp);
+      const relUnderCodebase = toCodebaseRelative(getSubprojectPath(manifest, sp));
+      if (!relUnderCodebase) continue;
       const name = (sp?.name || 'layer').toString();
-      // ROOT __file__'in iki ust dizini — script'i Codebase/scripts/ icinden calistirir.
-      // spPath '../Codebase/<sub>' formatinda; Codebase relative segmenti cikar.
-      const relUnderCodebase = spPath.replace(/^\.\.\/[^/]+\//, '');
       lines.push(`    (${JSON.stringify(name)}, ROOT / ${JSON.stringify(relUnderCodebase + '/graphify-out/graph.json')}),`);
+    }
+    if (lines.length === 0) {
+      return [
+        '    # NOT: Bu script SADECE monorepo (multi-layer) icin gereklidir.',
+        '    # Mevcut manifest tek-katman; UYARLAMA GEREKLI: kendi monorepo yapina gore listele.',
+      ].join('\n');
     }
     return lines.join('\n');
   },
 };
 
 // graphify update adimlarini manifest'ten cikarir (raw + echo generator'larinin ortak yardimcisi).
-function collectGraphifyUpdateSteps(manifest) {
-  const codebasePath = getCodebasePath(manifest);
+//
+// PATH SEMANTIGI: Uretilen komutlar HEDEF PROJENIN (Codebase) KOK DIZININDEN calistirilir
+// (kullanici `cd <Codebase>` sonrasi). getSubprojectPath manifest'ten Agentbase-relative
+// '../Codebase/<sub>' dondurur; biz '../Codebase/' onekini kirpip Codebase-root-relative
+// path'i kullaniriz. Tek-katmanda hedef Codebase kokunun kendisi → 'graphify update .'.
+//
+// GUVENLIK: Path argumanlari double-quote ile sarilir (boslukli/ozel karakterli yollar icin).
+// Path traversal (segment basinda '..') veya absolute path (segment basinda '/') reddedilir —
+// generator bu durumda yolu pas etmek yerine ham hata mesaji ureti.
+function collectGraphifyUpdateSteps(manifest, opts = {}) {
+  const quote = opts.quote === true;
   const activeModules = getActiveModules(manifest);
   const monorepoActive = activeModules.has('monorepo');
   const subprojects = Array.isArray(manifest?.project?.subprojects) ? manifest.project.subprojects : [];
 
+  const toCodebaseRelative = (spPath) => {
+    if (typeof spPath !== 'string' || !spPath) return null;
+    // getSubprojectPath '../Codebase/<sub>' veya '../<custom>/<sub>' dondurebilir.
+    // '../<ust>/' onekini kirp; geriye Codebase-root-relative segment kalir.
+    const stripped = spPath.replace(/^\.\.\/[^/]+\/?/, '');
+    if (!stripped || stripped === spPath) return null;
+    // Guvenlik: traversal/absolute path reddedilir.
+    if (stripped.startsWith('/') || stripped.startsWith('../') || stripped.includes('/../')) return null;
+    return stripped;
+  };
+
+  const fmt = (p) => (quote ? `"${String(p).replace(/"/g, '\\"')}"` : p);
+
   if (monorepoActive && subprojects.length > 0) {
     const subpaths = subprojects
-      .map(sp => getSubprojectPath(manifest, sp))
+      .map(sp => toCodebaseRelative(getSubprojectPath(manifest, sp)))
       .filter(Boolean);
     if (subpaths.length > 0) {
       return [
-        ...subpaths.map(p => `graphify update ${p}`),
+        ...subpaths.map(p => `graphify update ${fmt(p)}`),
         'python3 scripts/graphify-merge-layers.py',
       ];
     }
   }
-  return [`graphify update ${codebasePath}`];
+  // Tek-katman: hedef Codebase kokunun kendisi (komut Codebase icinde calisir → '.').
+  return ['graphify update .'];
 }
 
 // ─────────────────────────────────────────────────────
