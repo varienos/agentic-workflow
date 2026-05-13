@@ -2137,7 +2137,7 @@ Ilk graphify update'i simdi calistirayim mi? Bu komut codebase'i tarar ve knowle
 
 Komut basarisiz olursa hatayi raporla, bootstrap'i durdurma — kullanici elle uyarlasin.
 
-### Adim 6.5.4 — Opsiyonel Pre-Push Hook Kurulumu
+### Adim 6.5.4 — Opsiyonel Pre-Push Hook Kurulumu (Idempotent + Mevcut Hook Korumali)
 
 Kullaniciya sor:
 
@@ -2145,29 +2145,51 @@ Kullaniciya sor:
 Pre-push hook kurulsun mu? Her `git push` oncesi graph otomatik guncellenir. (Bypass: git push --no-verify)
 ```
 
-**Evet** secilirse `<Codebase>/.git/hooks/pre-push` dosyasini yaz:
+**Evet** secilirse `<Codebase>/.git/hooks/pre-push` hedef dosya icin:
+
+1. `core.hooksPath` yapilandirmasini kontrol et — bos degilse `.git/hooks/` kullanilmiyor demektir; kullaniciya bunu raporla ve hedef yolu ona gore degistir:
+   ```bash
+   HOOKS_DIR="$(git -C <Codebase> config --get core.hooksPath || echo .git/hooks)"
+   ```
+2. Hedef dosya `${HOOKS_DIR}/pre-push` zaten varsa:
+   - Icerik `# Graphify auto-update` marker'ini iceriyor mu kontrol et.
+     - **Iceriyorsa:** Idempotent — atla, "Graphify pre-push hook zaten kurulu" raporla.
+     - **Icermiyorsa:** Kullaniciya soru sun: `[append | backup-and-replace | skip]`.
+       - `append`: Mevcut hook'un sonuna marker'li blok ekle (mevcut komutlari koru).
+       - `backup-and-replace`: Mevcut hook'u `pre-push.bak-<timestamp>` olarak yedekle, sonra yeni hook yaz.
+       - `skip`: Hicbir sey yapma.
+3. Hedef dosya yoksa: Yeni hook'u sifirdan yaz (shebang + marker'li blok).
+
+Marker'li blok format (append veya yeni yazimda eklenen):
 
 ```sh
-#!/bin/sh
-# Graphify auto-update — pre-push tetikleyici
+# Graphify auto-update — pre-push tetikleyici (modul: knowledge-graph/graphify)
 # Bypass: git push --no-verify
-
-set -e
+# Sessiz fail YOK — hata mesaji stderr'e yazilir, push BLOKLANMAZ.
 
 # Tek-katman:
-graphify update . 2>/dev/null || true
+if ! graphify update . ; then
+  echo "WARN: graphify update . basarisiz; manuel olarak 'graphify update .' calistirin (push devam ediyor)" >&2
+fi
 
 # Multi-layer monorepo (yukaridaki yerine kullanin):
-# graphify update "<sub1>" 2>/dev/null && \
-# graphify update "<sub2>" 2>/dev/null && \
-# python3 scripts/graphify-merge-layers.py 2>/dev/null || true
+# if ! ( graphify update "<sub1>" && graphify update "<sub2>" && python3 scripts/graphify-merge-layers.py ); then
+#   echo "WARN: graphify multi-layer update basarisiz; manuel update gerekli (push devam ediyor)" >&2
+# fi
 
 exit 0
 ```
 
-`chmod +x .git/hooks/pre-push` ile calistirilabilir yap.
+Son olarak `chmod +x ${HOOKS_DIR}/pre-push`.
 
 **Hayir** secilirse atla — `templates/modules/knowledge-graph/graphify/install.md` referansi ile kullaniciya manuel kurulum yonergesi ver.
+
+**Tasarim kararlari:**
+- `2>/dev/null` YASAK — graphify hatalari **kaybedilmez**, stderr'e gorunur uyari yazilir
+- `|| true` yerine `if ! cmd ; then ... ; fi` — hata bildirimi acik, push yine bloklanmaz
+- `core.hooksPath` desteklenir — projenin custom hooks dizini varsa ona yaz
+- Idempotent: marker satiri (`# Graphify auto-update`) yeniden calistirma sirasinda duplicate kurulumu onler
+- Mevcut hook ezilmesi: append/backup-and-replace/skip secimi kullaniciya birakilir
 
 ### Adim 6.5.5 — Tamamlanma Bildirimi
 

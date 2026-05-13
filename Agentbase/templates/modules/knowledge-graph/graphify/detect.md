@@ -2,15 +2,16 @@
 
 ## Checks
 
-- cli_available: `graphify --version` PATH'te calisiyor
-- skill_installed: `~/.claude/skills/graphify/.graphify_version` dosyasi mevcut
-- file_pattern: `graphify-out/graph.json` veya `graphify-out/manifest.json` (mevcut entegrasyon kaniti)
+- file_exists: ~/.claude/skills/graphify/.graphify_version
+- file_pattern: graphify-out/graph.json | graphify-out/manifest.json
 
 ## Minimum Match
 
-1/3
+1/2
 
-> Tek bir kanit yeterli — CLI kurulu olmayan kullanıcı skill veya mevcut graphify-out artifact'i uzerinden hala modulu secebilir. Bootstrap kurulum adimi eksik bilesenleri yonlendirir.
+> Tek bir kanıt yeterli — kullanıcı Claude Code skill'i kurmuşsa veya hedef projede zaten graphify-out artifact'ı varsa modül aday olarak işaretlenir. Aksi durumda röportajda manuel seçilebilir (CLI bootstrap ADIM 6.5.1 sırasında kontrol edilir, gerekirse kullanıcı yönlendirilir).
+>
+> NOT: graphify CLI'nın PATH'te bulunmasi `file_exists` ve `file_pattern` ile dolayli tespit edilir — CLI doğrudan bir `cli_available` check tipi resmen desteklenmiyor; bootstrap ADIM 6.5.1 runtime kontrolünü yapar.
 
 ## Activates
 

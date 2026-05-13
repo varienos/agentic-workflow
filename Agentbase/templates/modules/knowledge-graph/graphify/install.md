@@ -79,28 +79,39 @@ Pre-push hook her `git push` öncesi graph'ı otomatik günceller. Kullanıcıya
 
 > "Pre-push hook kurulsun mu? Her push öncesi graph otomatik güncellenir."
 
-Onay → `.git/hooks/pre-push` script'i yazılır. Örnek içerik:
+Onay → hedef hook dosyası **idempotent** yazılır. `core.hooksPath` ayarı kontrol edilir:
+
+```bash
+HOOKS_DIR="$(git -C <Codebase> config --get core.hooksPath || echo .git/hooks)"
+TARGET="${HOOKS_DIR}/pre-push"
+```
+
+Marker'li blok (yeni hook veya mevcut hook'a append edilebilir):
 
 ```sh
 #!/bin/sh
-# Graphify auto-update — pre-push tetikleyici
+# Graphify auto-update — pre-push tetikleyici (modül: knowledge-graph/graphify)
 # Bypass: git push --no-verify
+# Sessiz fail YOK — hata mesajı stderr'e yazılır, push bloklanmaz.
 
-set -e
+# Tek-katmanlı proje için:
+if ! graphify update . ; then
+  echo "WARN: graphify update . başarısız; manuel olarak 'graphify update .' çalıştırın (push devam ediyor)" >&2
+fi
 
-# Tek-katmanli proje icin:
-graphify update . 2>/dev/null || true
-
-# Multi-layer monorepo icin (yukaridaki yerine):
-# graphify update backend/ 2>/dev/null && \
-# graphify update frontend/ 2>/dev/null && \
-# python3 scripts/graphify-merge-layers.py 2>/dev/null || true
+# Multi-layer monorepo için (yukarıdaki yerine):
+# if ! ( graphify update backend/ && graphify update frontend/ && python3 scripts/graphify-merge-layers.py ); then
+#   echo "WARN: graphify multi-layer update başarısız; manuel update gerekli (push devam ediyor)" >&2
+# fi
 
 exit 0
 ```
 
 **Önemli:**
-- Hook çıktıyı `2>/dev/null` ile susturur ve `|| true` ile başarısızlığı yok sayar → CI/push asla hook yüzünden engellenmesin
+- `2>/dev/null` KULLANMAYIN — graphify hataları stderr'e görünür şekilde yazılır, push yine bloklanmaz (`exit 0`)
+- Bootstrap kurulumu idempotent: marker satırı (`# Graphify auto-update`) varsa yeniden ekleme atlanır
+- Mevcut pre-push hook varsa kullanıcıya `append | backup-and-replace | skip` seçimi sunulur
+- `core.hooksPath` desteklenir — custom hooks dizini varsa ona yazılır
 - Script `chmod +x` ile çalıştırılabilir yapılır
 - Hook `.git/hooks/` altındadır → klonlamada gelmez, her geliştirici kendi makinesinde manuel kurar
 
