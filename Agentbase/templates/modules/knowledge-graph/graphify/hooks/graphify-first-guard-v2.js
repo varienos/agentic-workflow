@@ -134,13 +134,43 @@ function isSingleFileTarget(command) {
 }
 
 /**
- * Cache okuma/yazma.
+ * Cache okuma — bozuk cache veya izin problemi durumunda recovery uygular:
+ *   - ENOENT (ilk calistirma): sessizce bos cache dondurur
+ *   - Diger hatalar (parse, EACCES, vb.): stderr'e tek satir uyari yazar
+ *     ve bozuk cache dosyasini siler (sonraki writeCache fresh yazsin)
+ * Hook akisini bloklamaz — her durumda {} dondurur.
  */
 function readCache() {
-  try { return JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8')); } catch { return {}; }
+  try {
+    return JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'));
+  } catch (err) {
+    if (err && err.code !== 'ENOENT') {
+      try {
+        process.stderr.write(
+          `[graphify-first-guard-v2] cache read error (recovery: removing cache): ${String(err.message || err).slice(0, 120)}\n`,
+        );
+      } catch {}
+      try { fs.unlinkSync(CACHE_PATH); } catch {}
+    }
+    return {};
+  }
 }
+
+/**
+ * Cache yazma — hata durumunda DEBUG bagimsiz tek satir stderr uyarisi.
+ * Hook akisini bloklamaz; cache hit'i basarisiz olur, sonraki query yine
+ * graphify CLI'yi cagirir (yavas ama dogru).
+ */
 function writeCache(cache) {
-  try { fs.writeFileSync(CACHE_PATH, JSON.stringify(cache)); } catch {}
+  try {
+    fs.writeFileSync(CACHE_PATH, JSON.stringify(cache));
+  } catch (err) {
+    try {
+      process.stderr.write(
+        `[graphify-first-guard-v2] cache write error: ${String(err.message || err).slice(0, 120)}\n`,
+      );
+    } catch {}
+  }
 }
 
 /**
