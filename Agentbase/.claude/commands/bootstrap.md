@@ -420,7 +420,7 @@ Sonucu tablo olarak goster:
 
 Moduller kategori bazli organize edilmistir. Tespit recursive yapilir:
 
-1. **Kategori seviyesi:** `templates/modules/*/detect.md` — kategori aktif mi? (orm, deploy, backend, mobile, frontend)
+1. **Kategori seviyesi:** `templates/modules/*/detect.md` — kategori aktif mi? (orm, deploy, backend, mobile, frontend, knowledge-graph)
 2. **Ara dugum / aile seviyesi:** `templates/modules/*/*/detect.md` — gerekiyorsa aile veya runtime secimi (ornegin `backend/nodejs`)
 3. **Leaf seviyesi:** `templates/modules/**/*/detect.md` — nihai teknoloji secimi (ornegin `backend/nodejs/express`)
 
@@ -2070,6 +2070,118 @@ backlog task create "Ilk feature'i planla ve implement et" \
 
 ```
 ✅ Backlog hazir — [2|3] baslangic gorevi olusturuldu.
+```
+
+---
+
+## ADIM 6.5 — KNOWLEDGE-GRAPH MODULU ILK KURULUM (Opsiyonel)
+
+Bu adim **sadece `knowledge-graph` kategorisi aktifse** calisir. Aksi halde tamamen atlanir.
+
+### Bootstrap Istisnasi — Aciklama
+
+Bootstrap normalde paket kurmaz ve harici komut tetiklemez — sadece dosya kopyalar/uretir. **Knowledge-graph modulu bilincli bir istisnadir:** graphify CLI'nin varligini kontrol eder ve hedef projeye ilk graph'i olusturmak icin `graphify update` calistirma onerisi gosterir. Bu istisnanin gerekcesi: modulun degeri (BFS query ile 150-540x token tasarrufu) ilk graph artifact'i (`graphify-out/graph.json`) olmadan ortaya cikmaz.
+
+### Adim 6.5.1 — graphify CLI Varlik Kontrolu
+
+```bash
+which graphify || echo "graphify CLI kurulu degil"
+```
+
+**CLI kuruluysa:** Adim 6.5.2'ye gec.
+
+**CLI kurulu degilse:** Kullaniciya secenek sun:
+
+```
+graphify CLI bulunamadi. Uc kurulum yolu var:
+
+1. Claude Code skill (en kolay): `~/.claude/skills/graphify/SKILL.md` (kuruluysa zaten kullanilabilir)
+2. pipx (onerilen): pipx install graphifyy && graphify install
+3. pip: pip install graphifyy && graphify install
+
+Kurulumu sonra elle yapmak isterseniz, asagidaki adimlari atlayip bootstrap'i bitirebilirsiniz. Modul iskeleti zaten uretildi (`.claude/commands/g.md`, `.claude/hooks/graphify-first-guard-v2.js`, `.claude/rules/graphify-rules.md`).
+```
+
+Kullanici "atla" derse Adim 6.5'in kalanini atla.
+
+### Adim 6.5.2 — `.gitignore` Patch (Idempotent)
+
+`<Codebase>/.gitignore` dosyasina sirayla:
+
+1. Dosya yoksa olustur.
+2. `graphify-out/` satiri zaten varsa atla.
+3. Yoksa dosya sonuna append et:
+   ```
+   # Graphify knowledge graph artifact'i — her gelistirici kendi makinesinde uretir
+   graphify-out/
+   ```
+
+### Adim 6.5.3 — Ilk `graphify update` Onerisi
+
+Kullaniciya sor:
+
+```
+Ilk graphify update'i simdi calistirayim mi? Bu komut codebase'i tarar ve knowledge graph'i olusturur (~5-10 saniye).
+- Evet: graphify update simdi tetiklensin
+- Hayir: bootstrap'i bitir, manuel olarak sonra calistirayim
+```
+
+**Evet** secilirse:
+
+- **Tek-katman:** `cd <Codebase> && graphify update .`
+- **Monorepo (monorepo modulu de aktif):** `cd <Codebase> && graphify update "<sub1>" && graphify update "<sub2>" && ... && python3 scripts/graphify-merge-layers.py`
+  - Subproject yollari manifest `project.subprojects` listesinden alinir
+  - Yollar Codebase-root-relative (`'../Codebase/' onek YOK`) ve shell-quote'lu uretilir
+  - `scripts/graphify-merge-layers.py` zaten generate.js tarafindan kok `scripts/` dizinine kopyalanmis olmalidir
+  - **LAYERS uyarisi:** Python script uretildikten sonra kullanicinin `scripts/graphify-merge-layers.py` icindeki LAYERS listesini kendi monorepo yapisina gore dogrulamasini hatirlat (generate.js manifest'ten ilk dolumu yapar, kullanici son uyarlamayi yapar)
+
+Komut basarisiz olursa hatayi raporla, bootstrap'i durdurma — kullanici elle uyarlasin.
+
+### Adim 6.5.4 — Opsiyonel Pre-Push Hook Kurulumu
+
+Kullaniciya sor:
+
+```
+Pre-push hook kurulsun mu? Her `git push` oncesi graph otomatik guncellenir. (Bypass: git push --no-verify)
+```
+
+**Evet** secilirse `<Codebase>/.git/hooks/pre-push` dosyasini yaz:
+
+```sh
+#!/bin/sh
+# Graphify auto-update — pre-push tetikleyici
+# Bypass: git push --no-verify
+
+set -e
+
+# Tek-katman:
+graphify update . 2>/dev/null || true
+
+# Multi-layer monorepo (yukaridaki yerine kullanin):
+# graphify update "<sub1>" 2>/dev/null && \
+# graphify update "<sub2>" 2>/dev/null && \
+# python3 scripts/graphify-merge-layers.py 2>/dev/null || true
+
+exit 0
+```
+
+`chmod +x .git/hooks/pre-push` ile calistirilabilir yap.
+
+**Hayir** secilirse atla — `templates/modules/knowledge-graph/graphify/install.md` referansi ile kullaniciya manuel kurulum yonergesi ver.
+
+### Adim 6.5.5 — Tamamlanma Bildirimi
+
+```
+🧠 Knowledge-Graph Modulu Hazir
+   ✅ Hook kuruldu: .claude/hooks/graphify-first-guard-v2.js (PreToolUse Bash|Grep|Glob)
+   ✅ Slash komut: /g (query/explain/path/report/health)
+   ✅ Kural dosyasi: .claude/rules/graphify-rules.md (CLAUDE.md'den referansli)
+   [optional] ✅ .gitignore patch: graphify-out/
+   [optional] ✅ Ilk graphify update: <node_count> node, <edge_count> edge
+   [optional] ✅ Pre-push hook etkinlestirildi
+
+   Ilk sorgu: /g query "<simdilik aklindaki sey>"
+   Sagligi kontrol et: /g health
 ```
 
 ---

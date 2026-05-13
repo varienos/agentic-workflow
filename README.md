@@ -411,6 +411,7 @@ Bu stack'ler için framework-spesifik hook'lar, kurallar ve koruma mekanizmalar�
 - **Backend:** Express, Fastify, NestJS, Laravel, CodeIgniter 4, Django, FastAPI
 - **Frontend:** Next.js, React SPA, yalın HTML/CSS/JS
 - **Mobile:** Expo, React Native, Flutter
+- **Knowledge Graph:** Graphify (`/g` slash komutu, BFS query, PreToolUse hook ile akıllı yönlendirme — grep yerine `graphify query` önerisi)
 - **Ek alanlar:** Monorepo, güvenlik taramaları, CI/CD (GitHub Actions, GitLab CI), izleme (Sentry, Datadog), API dokümantasyonu (OpenAPI, GraphQL)
 
 ### Generic Bootstrap Desteği
