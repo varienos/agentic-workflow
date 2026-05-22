@@ -76,6 +76,36 @@ describe('basic-memory MCP integration (TASK-236)', () => {
       );
     });
 
+    it('Python 3.12+ kontrolu ayrica yapilir (AC #1a)', () => {
+      assert.ok(
+        bootstrap.includes('__PY_312_MISSING__'),
+        'Python 3.12+ kontrol marker (__PY_312_MISSING__) bulunmali'
+      );
+      assert.ok(
+        bootstrap.includes('uv python install 3.12'),
+        'Python 3.12 kurulum komutu bulunmali'
+      );
+    });
+
+    it('basic-memory kontrolu deterministik (uv tool list) + runtime hata ayrimi yapar', () => {
+      assert.ok(
+        bootstrap.includes('uv tool list'),
+        'Deterministik kurulu paket check (uv tool list) bulunmali'
+      );
+      assert.ok(
+        bootstrap.includes('__BM_RUNTIME_ERROR__'),
+        'Runtime hata marker (network/SSL ayrimi icin) bulunmali'
+      );
+      assert.ok(
+        bootstrap.includes('__BM_OK__'),
+        'Basari marker (__BM_OK__) bulunmali'
+      );
+      assert.ok(
+        !bootstrap.includes('uvx basic-memory --version 2>/dev/null'),
+        'Eski silent-failure pattern (2>/dev/null direct) kalmamali — stderr yutmak yasak'
+      );
+    });
+
     it('mcp.skeleton.json kaynagina referans verir (Teammate 5 alani)', () => {
       assert.ok(
         bootstrap.includes('templates/core/mcp.skeleton.json'),

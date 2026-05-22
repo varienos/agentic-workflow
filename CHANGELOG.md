@@ -18,6 +18,11 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - **bootstrap:** KUTSAL KURAL 2 üretim sorumluluğu matrisinde `.mcp.json` artık "zorunlu" olarak işaretli (önceden "gerekirse"). Skeleton kaynağı `templates/core/mcp.skeleton.json` belirtildi.
 - **bootstrap:** Teammate 5 root-generator talimatına vault init adımı (`mkdir -p ../Docbase/memory && uvx basic-memory project add`) eklendi.
 
+### Düzeltilen
+
+- **bootstrap (codex review):** ADIM 1.1.5'e Python 3.12+ kontrol alt-adımı (`uv python find 3.12 || uv python install 3.12`) eklendi — AC #1(a) gereksinimini explicit karşılar (önceden `uv` kurulu olunca Python kontrolü atlanıyordu).
+- **bootstrap (codex review):** `uvx basic-memory --version 2>/dev/null` silent-failure pattern'i kaldırıldı — ağ/proxy/SSL hatalarını "kurulu değil" diye yanlış yorumluyordu. Yerine deterministik `uv tool list | grep basic-memory` kurulu paket kontrolü + ayrı runtime hata yakalama (`__BM_RUNTIME_ERROR__` marker) eklendi.
+
 ## [2.2.0] - 2026-05-22
 
 ### Eklenen

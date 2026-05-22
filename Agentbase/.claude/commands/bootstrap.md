@@ -19,11 +19,11 @@ Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
 - Bootstrap Codebase'i OKUR → Agentbase'i YAPILANDIRIR.
 - Codebase'deki hiçbir dosya degistirilmez, eklenmez veya silinmez.
 - Tum uretilen dosyalar **Agentbase/ icine** gider — alt dagilim:
-  - **Agentbase ROOT** (yani `Agentbase/` direkt) — **Bootstrap'in DOĞRUDAN urettigi (6+1 root dokuman + 1 mcp config)**: `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md` (root context), `onboarding.md` (yeni gelistirici rehberi), `.claude-ignore`, `.mcp.json` (zorunlu — `templates/core/mcp.skeleton.json` kaynagindan). **Bootstrap'in cagirdigi araclarin urettigi**: `backlog/` (Backlog.md CLI), `../Docbase/memory/` (basic-memory vault). **Repo'da hazir gelen**: `bin/`, `templates/`, `tests/`, `generate.js`, `transform.js`, `package.json`.
+  - **Agentbase ROOT** (yani `Agentbase/` direkt) — **Bootstrap'in DOĞRUDAN urettigi (6+1 root dokuman + 1 mcp config)**: `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md` (root context), `onboarding.md` (yeni gelistirici rehberi), `.claude-ignore`, `.mcp.json` (zorunlu — `templates/core/mcp.skeleton.json` kaynagindan). **Bootstrap'in cagirdigi araclarin urettigi**: `backlog/` (Backlog.md CLI), `../Docbase/memory/` (basic-memory vault). **Repo'da hazir gelen (statik root dokumanlar — Bootstrap doldurmaz, @ import zincirine dahil edilir)**: `ORCHESTRATION.md` (ortak ajan davranis felsefesi — tum modeller icin), `LESSONS.md` (oz-gelisim dersleri), `BACKLOG.md` (Backlog CLI hizli referans). **Repo'da hazir gelen (kod ve template altyapisi)**: `bin/`, `templates/`, `tests/`, `generate.js`, `transform.js`, `package.json`.
   - **Agentbase/.claude/** altinda: `commands/`, `agents/`, `hooks/`, `rules/`, `reports/`, `tracking/`, `custom/`, `settings.json`, `CLAUDE.md` (agent-icin dahili runtime config — root `CLAUDE.md`'den AYRI bir dosya, son kullaniciya degil agent'a yoneliktir).
   - **Manifest:** `../Docbase/agentic/project-manifest.yaml` (Agentbase **disinda**, Docbase altinda).
   - **Transform.js opsiyonel ciktilari** (`manifest.targets` icinde `claude` disinda hedef varsa): `GEMINI.md` (gemini hedefi → Agentbase root), `AGENTS.md` + `.codex/skills/*/SKILL.md` (codex hedefi → Agentbase root + `.codex/`), `.kimi/skills/`, `.kimi/agents/` (kimi hedefi), `.opencode/AGENTS.md` + `.opencode/skills/` + `.opencode/agents/` (opencode hedefi). Bu dosyalar root `CLAUDE.md` icerigini hedef CLI formatina cevirir — enjeksiyon zinciri otomatik korunur.
-  - **YASAK:** Root dokumanlari (PROJECT.md, STACK.md, DEVELOPER.md, ARCHITECTURE.md, WORKFLOWS.md, root CLAUDE.md, onboarding.md) `.claude/` altina YAZMA. `.claude/` agent runtime konfiguudur, dokumantasyon degil. Bu dosyalar gercek Agentbase root'unda kalir ki **tum modeller (Claude, Gemini, Codex, Kimi, OpenCode) ayni context'i okuyabilsin**.
+  - **YASAK:** Root dokumanlari (PROJECT.md, STACK.md, DEVELOPER.md, ARCHITECTURE.md, WORKFLOWS.md, ORCHESTRATION.md, LESSONS.md, BACKLOG.md, root CLAUDE.md, onboarding.md) `.claude/` altina YAZMA veya KOPYALAMA. `.claude/` agent runtime konfiguudur, dokumantasyon degil. Bu dosyalar gercek Agentbase root'unda kalir ki **tum modeller (Claude, Gemini, Codex, Kimi, OpenCode) ayni context'i okuyabilsin**.
 - Manifest `../Docbase/agentic/` altina gider (Codebase disinda).
 - Projenin mevcut .gitignore, package.json, CI config dosyalari korunur.
 
@@ -184,9 +184,38 @@ Kurduktan sonra /bootstrap komutunu tekrar calistirin.
 
 - **Varsa** → `✅ uv bulundu (<version>)` yazdir.
 
+**1.1.5.a.2 — Python 3.12+ Kontrolu**
+
+basic-memory Python 3.12+ gerektirir. `uv` Python'i otomatik yonetir, ayri sistem Python'ina gerek yoktur.
+
+Bash: `uv python find 3.12 >/dev/null 2>&1 || echo "__PY_312_MISSING__"`
+
+- **`__PY_312_MISSING__`** → Otomatik kurulum dene: `uv python install 3.12`
+  - Kurulum basariliysa → `✅ Python 3.12 kuruldu (uv-managed)` yazdir ve devam et.
+  - Kurulum hata verirse → stderr ciktisini kullaniciya goster ve KOMPLE DUR.
+
+- **Varsa** → `✅ Python 3.12+ bulundu (uv-managed)` yazdir.
+
 **1.1.5.b — basic-memory Kurulum Kontrolu**
 
-Bash: `uvx basic-memory --version 2>/dev/null || echo "__BM_MISSING__"`
+`uvx --version`'in stderr'ini yutmak yerine deterministik **kurulu paket** kontrolu yapilir. Bu, ag/registry/SSL hatalarini "kurulu degil" diye yanlis yorumlamaktan kacinir (silent failure korumasi).
+
+```bash
+# 1) Kurulu mu? (deterministik, ag erisimi gerekmez)
+if uv tool list 2>/dev/null | grep -q "^basic-memory "; then
+  # 2) Kurulu — calistirma testi (gercek runtime hatalarini yakala)
+  if BM_VER=$(uvx basic-memory --version 2>/tmp/bm-stderr); then
+    echo "__BM_OK__:$BM_VER"
+  else
+    echo "__BM_RUNTIME_ERROR__"
+    cat /tmp/bm-stderr  # Hata detayini kullaniciya goster
+  fi
+else
+  echo "__BM_MISSING__"
+fi
+```
+
+- **`__BM_OK__:<version>`** → `✅ basic-memory bulundu (<version>)` yazdir ve devam et.
 
 - **`__BM_MISSING__`** → Otomatik kurulum dene: `uv tool install basic-memory`
   - Kurulum basariliysa → `✅ basic-memory kuruldu` yazdir ve devam et.
@@ -201,7 +230,18 @@ Manuel kurulum dene:
 Hata detaylari yukarida. Cozdukten sonra /bootstrap komutunu tekrar calistirin.
 ```
 
-- **Kuruluysa** → `✅ basic-memory bulundu` yazdir ve devam et.
+- **`__BM_RUNTIME_ERROR__`** → basic-memory kurulu **ama calistirilamiyor** (yaygin sebepler: ag/proxy/SSL, bozulmus install, izin sorunu). Stderr detaylarini kullaniciya goster ve KOMPLE DUR. ASLA "kurulu degil" diye yorumlama — yeniden kurulum bu hatayi cozmez.
+
+```
+❌ basic-memory kurulu ama calistirilamiyor.
+
+Yukaridaki stderr ciktisini kontrol edin. Sik nedenler:
+  - Ag/proxy/SSL hatasi (firma agi, VPN)
+  - Bozulmus kurulum (cozum: uv tool uninstall basic-memory && uv tool install basic-memory)
+  - Izin sorunu (uv tool dizinindeki dosyalar)
+
+Sorunu cozdukten sonra /bootstrap komutunu tekrar calistirin.
+```
 
 **Not:** Vault dizini (`../Docbase/memory/`) olusturma ve project register islemi ADIM 5'te Teammate 5 root-generator tarafindan yapilir — bu adim sadece bagimliligin varligini dogrular.
 
@@ -2060,11 +2100,14 @@ Bu proje agentic workflow kullanir. Tum yapilandirma Agentbase dizinindedir.
 @ import DEVELOPER.md
 @ import ARCHITECTURE.md
 @ import WORKFLOWS.md
+@ import ORCHESTRATION.md
+@ import LESSONS.md
 @ import onboarding.md
 ```
 
 > **NOT — Enjeksiyon zinciri:** Root `CLAUDE.md` yukaridaki `@ import` satirlariyla **TUM** root dokumanlarini context'e dahil eder. Bu sayede:
-> - Claude Code root `CLAUDE.md`'yi okudugunda PROJECT, STACK, DEVELOPER, ARCHITECTURE, WORKFLOWS, onboarding tamami otomatik yuklenir.
+> - Claude Code root `CLAUDE.md`'yi okudugunda PROJECT, STACK, DEVELOPER, ARCHITECTURE, WORKFLOWS, ORCHESTRATION, LESSONS, onboarding tamami otomatik yuklenir.
+> - ORCHESTRATION.md tum ajanlarin ortak davranis felsefesini, LESSONS.md gecmis hatalardan turetilmis kurallari tasir — bu iki dosya repo'da statik gelir, Bootstrap doldurmaz.
 > - `transform.js` calistirildiginda root `CLAUDE.md` icerigi GEMINI.md, AGENTS.md, .kimi/..., .opencode/... hedeflerine kopyalanir — enjeksiyon zinciri TUM modeller icin korunur.
 > - Sadece root `CLAUDE.md` icine import satirlarini eklemek yeterli; her hedef dosyaya ayri ayri yazmaya gerek yok (transform.js otomatik adapte eder).
 >
@@ -2622,16 +2665,17 @@ Bu adım ADIM 0'da tanımlanan **machine-checkable completion condition**'ı uyg
 test -f ../Docbase/agentic/project-manifest.yaml && echo "✅ A1: manifest yazildi" || echo "❌ A1: manifest YOK"
 
 # === GATE B: Root dokümanlar DOĞRU konumda (Agentbase ROOT, .claude/ DEĞİL) ===
-# 7 root doküman: 6 Bootstrap-direct + onboarding.md
-for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md onboarding.md; do
+# 10 root doküman: 6 Bootstrap-direct + onboarding.md + 3 statik (ORCHESTRATION.md, LESSONS.md, BACKLOG.md)
+for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md onboarding.md ORCHESTRATION.md LESSONS.md BACKLOG.md; do
   test -f "./$f" && echo "✅ B-root: $f Agentbase root'unda" || echo "❌ B-root: $f EKSIK (Agentbase root)"
   test -f "./.claude/$f" && echo "❌ B-claude: $f YANLIŞ KONUMDA (.claude/ altında olmamalı)" || echo "✅ B-claude: .claude/$f yok (doğru)"
 done
 
 # === GATE B2: Root CLAUDE.md TÜM root dokümanlarını @ import ediyor mu? ===
 # Enjeksiyon zinciri kontrolü — root CLAUDE.md eksik import varsa diğer modeller (Gemini, Codex, Kimi, OpenCode) context'i alamaz
+# ORCHESTRATION.md ve LESSONS.md statik root dokümanlardır; @ import zincirine MUTLAKA dahil edilmeli
 if [ -f ./CLAUDE.md ]; then
-  for doc in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md onboarding.md; do
+  for doc in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md ORCHESTRATION.md LESSONS.md onboarding.md; do
     if grep -q "@ import $doc" ./CLAUDE.md 2>/dev/null; then
       echo "✅ B2-import: root CLAUDE.md → @ import $doc"
     else
@@ -2658,7 +2702,8 @@ if [ -z "$remaining" ]; then echo "✅ E1: CLAUDE_FILL marker kalmadı"; else ec
 test -f ./backlog/config.yml && echo "✅ F1: backlog/config.yml var" || echo "❌ F1: backlog init edilmemiş"
 
 # === GATE G: Hiçbir root doküman boş değil ===
-for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md; do
+# Statik dokümanlar (ORCHESTRATION.md, LESSONS.md, BACKLOG.md) repo'dan gelir; yine de boş olmamalı
+for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md ORCHESTRATION.md LESSONS.md BACKLOG.md; do
   if [ -f "./$f" ]; then
     size=$(wc -c < "./$f")
     if [ "$size" -gt 100 ]; then echo "✅ G: $f dolu ($size byte)"; else echo "❌ G: $f çok küçük ($size byte) — içerik eksik"; fi
@@ -2669,7 +2714,7 @@ done
 # AI Import dışında Codebase'de bootstrap-üretimi dosya olmamalı
 if [ -f /tmp/bootstrap-start ]; then
   echo "✅ H0: /tmp/bootstrap-start sentinel var"
-  leak=$(find ../Codebase -maxdepth 2 \( -name 'PROJECT.md' -o -name 'STACK.md' -o -name 'DEVELOPER.md' -o -name 'ARCHITECTURE.md' -o -name 'WORKFLOWS.md' -o -name 'CLAUDE.md' -o -name 'onboarding.md' -o -name 'project-manifest.yaml' \) -newer /tmp/bootstrap-start 2>/dev/null | head -5)
+  leak=$(find ../Codebase -maxdepth 2 \( -name 'PROJECT.md' -o -name 'STACK.md' -o -name 'DEVELOPER.md' -o -name 'ARCHITECTURE.md' -o -name 'WORKFLOWS.md' -o -name 'CLAUDE.md' -o -name 'onboarding.md' -o -name 'ORCHESTRATION.md' -o -name 'LESSONS.md' -o -name 'BACKLOG.md' -o -name 'project-manifest.yaml' \) -newer /tmp/bootstrap-start 2>/dev/null | head -5)
   if [ -z "$leak" ]; then echo "✅ H1: Codebase'e sızıntı yok"; else echo "❌ H1: Codebase'e SIZINTI: $leak"; fi
 else
   echo "❌ H0: /tmp/bootstrap-start sentinel YOK — Codebase sızıntı kontrolü güvenilir değil"
