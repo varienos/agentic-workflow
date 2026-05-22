@@ -19,7 +19,7 @@ Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
 - Bootstrap Codebase'i OKUR → Agentbase'i YAPILANDIRIR.
 - Codebase'deki hiçbir dosya degistirilmez, eklenmez veya silinmez.
 - Tum uretilen dosyalar **Agentbase/ icine** gider — alt dagilim:
-  - **Agentbase ROOT** (yani `Agentbase/` direkt) — **Bootstrap'in DOĞRUDAN urettigi (6+1 root dokuman + 1 mcp config)**: `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md` (root context), `onboarding.md` (yeni gelistirici rehberi), `.claude-ignore`, `.mcp.json` (zorunlu — `templates/core/mcp.skeleton.json` kaynagindan). **Bootstrap'in cagirdigi araclarin urettigi**: `backlog/` (Backlog.md CLI), `../Docbase/memory/` (basic-memory vault). **Repo'da hazir gelen (statik root dokumanlar — Bootstrap doldurmaz, @ import zincirine dahil edilir)**: `ORCHESTRATION.md` (ortak ajan davranis felsefesi — tum modeller icin), `LESSONS.md` (oz-gelisim dersleri), `BACKLOG.md` (Backlog CLI hizli referans). **Repo'da hazir gelen (kod ve template altyapisi)**: `bin/`, `templates/`, `tests/`, `generate.js`, `transform.js`, `package.json`.
+  - **Agentbase ROOT** (yani `Agentbase/` direkt) — **Bootstrap'in DOĞRUDAN urettigi (6+1 root dokuman + 1 mcp config)**: `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md` (root context), `onboarding.md` (yeni gelistirici rehberi), `.claude-ignore`, `.mcp.json` (zorunlu — `templates/core/mcp.skeleton.json` kaynagindan). **Bootstrap'in cagirdigi araclarin urettigi**: `backlog/` (Backlog.md CLI), `../Docbase/memory/` (basic-memory vault). **Repo'da hazir gelen (statik root dokumanlar — Bootstrap doldurmaz, root `CLAUDE.md`'deki `@<dosya>` zincirine dahil edilir)**: `ORCHESTRATION.md` (ortak ajan davranis felsefesi — tum modeller icin), `LESSONS.md` (oz-gelisim dersleri), `BACKLOG.md` (Backlog CLI hizli referans). **Repo'da hazir gelen (kod ve template altyapisi)**: `bin/`, `templates/`, `tests/`, `generate.js`, `transform.js`, `package.json`.
   - **Agentbase/.claude/** altinda: `commands/`, `agents/`, `hooks/`, `rules/`, `reports/`, `tracking/`, `custom/`, `settings.json`, `CLAUDE.md` (agent-icin dahili runtime config — root `CLAUDE.md`'den AYRI bir dosya, son kullaniciya degil agent'a yoneliktir).
   - **Manifest:** `../Docbase/agentic/project-manifest.yaml` (Agentbase **disinda**, Docbase altinda).
   - **Transform.js opsiyonel ciktilari** (`manifest.targets` icinde `claude` disinda hedef varsa): `GEMINI.md` (gemini hedefi → Agentbase root), `AGENTS.md` + `.codex/skills/*/SKILL.md` (codex hedefi → Agentbase root + `.codex/`), `.kimi/skills/`, `.kimi/agents/` (kimi hedefi), `.opencode/AGENTS.md` + `.opencode/skills/` + `.opencode/agents/` (opencode hedefi). Bu dosyalar root `CLAUDE.md` icerigini hedef CLI formatina cevirir — enjeksiyon zinciri otomatik korunur.
@@ -2096,17 +2096,17 @@ Bu proje agentic workflow kullanir. Tum yapilandirma Agentbase dizinindedir.
 ## Kullanilabilir Komutlar
 [.claude/commands/ altindaki tum komutlari listele]
 
-@ import PROJECT.md
-@ import STACK.md
-@ import DEVELOPER.md
-@ import ARCHITECTURE.md
-@ import WORKFLOWS.md
-@ import ORCHESTRATION.md
-@ import LESSONS.md
-@ import onboarding.md
+@PROJECT.md
+@STACK.md
+@DEVELOPER.md
+@ARCHITECTURE.md
+@WORKFLOWS.md
+@ORCHESTRATION.md
+@LESSONS.md
+@onboarding.md
 ```
 
-> **NOT — Enjeksiyon zinciri:** Root `CLAUDE.md` yukaridaki `@ import` satirlariyla **TUM** root dokumanlarini context'e dahil eder. Bu sayede:
+> **NOT — Enjeksiyon zinciri:** Root `CLAUDE.md` yukaridaki `@<dosya>` satirlariyla (Claude Code resmi import syntax'i — bosluksuz, tek token) **TUM** root dokumanlarini context'e dahil eder. Bu sayede:
 > - Claude Code root `CLAUDE.md`'yi okudugunda PROJECT, STACK, DEVELOPER, ARCHITECTURE, WORKFLOWS, ORCHESTRATION, LESSONS, onboarding tamami otomatik yuklenir.
 > - ORCHESTRATION.md tum ajanlarin ortak davranis felsefesini, LESSONS.md gecmis hatalardan turetilmis kurallari tasir — bu iki dosya repo'da statik gelir, Bootstrap doldurmaz.
 > - `transform.js` calistirildiginda root `CLAUDE.md` icerigi GEMINI.md, AGENTS.md, .kimi/..., .opencode/... hedeflerine kopyalanir — enjeksiyon zinciri TUM modeller icin korunur.
@@ -2522,7 +2522,7 @@ Tamamlanma raporundan hemen sonra Agentbase root'unda `./onboarding.md` dosyasin
 
 > **KUTSAL KURAL 2 — KONUM:** `onboarding.md` Agentbase ROOT'una yazilir, `.claude/` altina degil. Sebep:
 > - Tum modeller (Claude, Gemini, Codex, Kimi, OpenCode) root context'i okur.
-> - Root `CLAUDE.md` icindeki `@ import onboarding.md` satiri sayesinde tum modellerin context'ine otomatik enjekte edilir.
+> - Root `CLAUDE.md` icindeki `@onboarding.md` satiri sayesinde tum modellerin context'ine otomatik enjekte edilir.
 > - `.claude/` altinda sadece **agent runtime** dosyalari (commands, agents, hooks, rules, settings.json, agent-icin CLAUDE.md) yasar — son kullaniciya yonelik dokuman degil.
 
 Asagidaki sablonu manifest bilgileriyle doldurarak `./onboarding.md` olarak yaz:
@@ -2672,15 +2672,17 @@ for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md
   test -f "./.claude/$f" && echo "❌ B-claude: $f YANLIŞ KONUMDA (.claude/ altında olmamalı)" || echo "✅ B-claude: .claude/$f yok (doğru)"
 done
 
-# === GATE B2: Root CLAUDE.md TÜM root dokümanlarını @ import ediyor mu? ===
+# === GATE B2: Root CLAUDE.md TÜM root dokümanlarını @ ile import ediyor mu? ===
 # Enjeksiyon zinciri kontrolü — root CLAUDE.md eksik import varsa diğer modeller (Gemini, Codex, Kimi, OpenCode) context'i alamaz
-# ORCHESTRATION.md ve LESSONS.md statik root dokümanlardır; @ import zincirine MUTLAKA dahil edilmeli
+# ORCHESTRATION.md ve LESSONS.md statik root dokümanlardır; @ zincirine MUTLAKA dahil edilmeli
+# Claude Code resmi syntax: @<dosya> (boşluksuz, tek token). "@ import X" formu plain text olarak görülür — FAIL.
 if [ -f ./CLAUDE.md ]; then
   for doc in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md ORCHESTRATION.md LESSONS.md onboarding.md; do
-    if grep -q "@ import $doc" ./CLAUDE.md 2>/dev/null; then
-      echo "✅ B2-import: root CLAUDE.md → @ import $doc"
+    # Satır başında veya boşluk sonrasında @<doc> ara; "@ import" gibi boşluklu yanlış formu yakalama
+    if grep -Eq "(^|[[:space:]])@${doc//./\\.}([[:space:]]|$)" ./CLAUDE.md 2>/dev/null; then
+      echo "✅ B2-import: root CLAUDE.md → @$doc"
     else
-      echo "❌ B2-import: root CLAUDE.md → @ import $doc EKSIK (enjeksiyon zinciri kırık)"
+      echo "❌ B2-import: root CLAUDE.md → @$doc EKSIK (enjeksiyon zinciri kırık)"
     fi
   done
 fi

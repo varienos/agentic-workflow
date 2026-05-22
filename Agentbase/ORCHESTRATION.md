@@ -1,7 +1,7 @@
 # Workflow Orchestration
 
 > Bu dosya tüm ajanların (Claude, Gemini, Codex, Kimi, OpenCode) ortak çalışma felsefesini tanımlar.
-> Root `CLAUDE.md` üzerinden `@ import ORCHESTRATION.md` ile context'e enjekte edilir;
+> Root `CLAUDE.md` üzerinden `@ORCHESTRATION.md` satırı (Claude Code resmi import syntax'ı — boşluksuz) ile context'e enjekte edilir;
 > `transform.js` aynı içeriği `GEMINI.md`, `AGENTS.md`, `.kimi/`, `.opencode/` hedeflerine taşır.
 
 ---

@@ -2,7 +2,7 @@
 
 > Bu dosya ajanların **öz-gelişim döngüsünü** taşır. `ORCHESTRATION.md` "Bölüm 3 — Öz-Gelişim Döngüsü"
 > kurallarına göre her düzeltmeden sonra burada bir ders kaydı tutulur.
-> Root `CLAUDE.md` üzerinden `@ import LESSONS.md` ile context'e enjekte edilir.
+> Root `CLAUDE.md` üzerinden `@LESSONS.md` satırı (Claude Code resmi import syntax'ı — boşluksuz) ile context'e enjekte edilir.
 
 <!-- Bu dosya zamanla ajanlar tarafindan doldurulur. -->
 <!-- Icerik: Kullanicidan gelen duzeltmelerin kalibi, tekrar etmemesi icin yazilan kurallar -->
