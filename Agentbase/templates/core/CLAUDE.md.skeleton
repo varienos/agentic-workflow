@@ -4,9 +4,11 @@ Bu proje agentic workflow kullanir. Tum yapilandirma Agentbase dizinindedir.
 
 ---
 
-## Bolum 1: Backlog.md Referansi
+## Bolum 1: Ortak Davranis Felsefesi ve Backlog Referansi
 
-> Backlog CLI kullanim kurallari icin `BACKLOG.md` dosyasina bakin.
+> **Tum ajanlar icin ortak felsefe:** `ORCHESTRATION.md` (plan modu, alt-ajan stratejisi, oz-gelisim dongusu, dogrulama, otonom hata giderme).
+> **Oz-gelisim dersleri:** `LESSONS.md` — kullanici duzeltmelerinden turetilmis kurallar; oturum basinda gozden gecirilir.
+> **Backlog CLI kullanim kurallari** icin `BACKLOG.md` dosyasina bakin.
 > Gorev yonetiminde tek kaynak `backlog/` dizinidir; gorev dosyalarini elle duzenlemeyin, her zaman `backlog` CLI kullanin.
 
 ---
@@ -217,6 +219,8 @@ Agentbase/        # Sen buradasin — tum agent yapilandirmasi
 | `DEVELOPER.md` | Gelistirici profili ve tercihler | Agent davranisini belirler |
 | `ARCHITECTURE.md` | Mimari, dizin yapisi, veri akisi | Feature-dev ve planlama sirasinda |
 | `WORKFLOWS.md` | Git flow, deploy, review surecleri | Commit ve deploy sirasinda |
+| `ORCHESTRATION.md` | Tum ajanlarin ortak davranis felsefesi | Plan modu, alt-ajan, dogrulama kararlarinda |
+| `LESSONS.md` | Oz-gelisim dersleri (duzeltmelerden turetilmis) | Oturum basinda + her duzeltmeden sonra |
 | `BACKLOG.md` | Backlog CLI hizli referans | Gorev yonetimi sirasinda |
 
 ### Yasakli Islemler

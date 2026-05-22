@@ -368,6 +368,7 @@ onay olmadan ASLA verilmez.
      - generate.js ciktilari: `.claude/settings.json`, `.claude/CLAUDE.md`, `.claude-ignore`, `git-hooks/`
      - Bootstrap-direct dosyalar (Claude dogrudan yazar, generate.js uretmez): `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`
      - NOT: Root `CLAUDE.md` generate.js tarafindan URETILMEZ — `.claude/CLAUDE.md` uretilir. `.mcp.json` `templates/core/mcp.skeleton.json` kaynagindan zorunlu olarak uretilir (codex + basic-memory MCP entry'leri).
+     - **YONETIM DISI (statik root dokumanlar):** `ORCHESTRATION.md`, `LESSONS.md`, `BACKLOG.md` Bootstrap-yonetimli **DEGILDIR**. Repo'da statik gelir, kullanici editler (ozellikle `LESSONS.md` zamanla derslerle dolar). Hicbir modda (`overwrite`/`merge`/`incremental`) bu dosyalara checksum karsilastirmasi yapilmaz, `_rescued/` altina kopyalanmaz, uzerine yazilmaz. Sadece varliklari ADIM 8 GATE B/G ile dogrulanir.
   5. Her yonetilen dosya icin manifestteki checksum ile mevcut dosyayi karsilastir:
      - eslesiyorsa → Bootstrap-yonetimli ve temiz
      - eslesmiyorsa → kullanici customization'i olarak isaretle
@@ -2665,7 +2666,7 @@ Bu adım ADIM 0'da tanımlanan **machine-checkable completion condition**'ı uyg
 test -f ../Docbase/agentic/project-manifest.yaml && echo "✅ A1: manifest yazildi" || echo "❌ A1: manifest YOK"
 
 # === GATE B: Root dokümanlar DOĞRU konumda (Agentbase ROOT, .claude/ DEĞİL) ===
-# 10 root doküman: 6 Bootstrap-direct + onboarding.md + 3 statik (ORCHESTRATION.md, LESSONS.md, BACKLOG.md)
+# 10 root doküman: 7 Bootstrap-yonetimli (6 doldurulan + onboarding) + 3 statik (ORCHESTRATION.md, LESSONS.md, BACKLOG.md)
 for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md onboarding.md ORCHESTRATION.md LESSONS.md BACKLOG.md; do
   test -f "./$f" && echo "✅ B-root: $f Agentbase root'unda" || echo "❌ B-root: $f EKSIK (Agentbase root)"
   test -f "./.claude/$f" && echo "❌ B-claude: $f YANLIŞ KONUMDA (.claude/ altında olmamalı)" || echo "✅ B-claude: .claude/$f yok (doğru)"
