@@ -8,7 +8,11 @@
 > **[Türkçe versiyon (README.md)](README.md)**
 
 > [!IMPORTANT]
-> This system is built on **[Backlog.md](https://github.com/MrLesk/Backlog.md)**. The entire task lifecycle — creation, prioritization, implementation, review, and closure — is managed through the Backlog.md CLI. Bootstrap will not run without Backlog.md installed.
+> This system requires two mandatory dependencies:
+> - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — the entire task lifecycle (creation, prioritization, implementation, review, closure) is managed through the Backlog.md CLI.
+> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. All CLI agents (Claude, Codex, Gemini, Kimi, OpenCode) connect to the same `Docbase/memory/` vault via MCP. Requires `uv` (Python package manager) and Python 3.12+.
+>
+> Bootstrap will not run without both installed.
 
 > [!NOTE]
 > Autonomous task management, parallel agent spawning, and multi-step workflow pipelines require high token consumption. **Claude Max** plan is recommended for efficient usage.
@@ -23,6 +27,7 @@ You can integrate it into an existing project or start a brand new one from scra
 - **Automatic code review** — 3+1 agents review every change: code quality, silent failures, regression risk. Conditional Devils Advocate perspective for security changes.
 - **Smart bug fix** — Root cause analysis, max 3 hypotheses, minimal fix, regression test. Doesn't dive into endless depth.
 - **Deploy safety net** — Two layers: (1) pre-push git hooks for localhost leak, migration consistency, and env sync checks, (2) `/{variant}-pre-deploy` and `/{variant}-post-deploy` slash commands for platform-specific controls (for example `/docker-pre-deploy`, `/coolify-post-deploy`, plus rollback guidance). Requires git hook activation (see the Bootstrap completion report).
+- **Shared agent memory layer** — Via `basic-memory` MCP, all CLI agents (Claude, Codex, Gemini, Kimi, OpenCode) connect to a shared Markdown knowledge graph in the `Docbase/memory/` vault. Persistent memory across sessions and CLIs — a note written by one agent is instantly visible to the others.
 - **Codebase config protection** — In the Claude Code runtime, the `codebase-guard` hook automatically blocks writing `.claude/`, `CLAUDE.md`, `.mcp.json` inside Codebase. Agent config lives exclusively in Agentbase.
 - **Test enforcement** — In the Claude Code runtime, the `test-enforcer` hook reminds you to run related tests when source files change. Pre-push hook prevents pushing without passing tests.
 - **Project-specific rules** — Hooks, framework rules, and protection mechanisms are auto-generated based on your stack.

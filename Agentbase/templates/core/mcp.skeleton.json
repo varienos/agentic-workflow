@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "codex": {
+      "type": "stdio",
+      "command": "codex",
+      "args": ["mcp-server"],
+      "env": {}
+    },
+    "basic-memory": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["basic-memory", "mcp"],
+      "env": {}
+    }
+  }
+}

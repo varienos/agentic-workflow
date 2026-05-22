@@ -3,6 +3,21 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [Unreleased]
+
+### Eklenen
+
+- **bootstrap:** `basic-memory` MCP zorunlu bağımlılık olarak entegre edildi (shared agent memory layer). Tüm CLI ajanları (Claude, Codex, Gemini, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak Markdown knowledge graph'ına bağlanır. Backlog.md ile aynı zorunluluk seviyesinde — `uv` veya basic-memory yoksa bootstrap çalışmaz.
+- **bootstrap:** ADIM 1.1.5 eklendi — `uv` (Python paket yöneticisi) ve basic-memory varlık/kurulum kontrolü, eksikse net kurulum komutu gösterilir ve KOMPLE DUR.
+- **templates:** `templates/core/mcp.skeleton.json` eklendi — `.mcp.json` artık zorunlu olarak skeleton'dan üretilir (codex + basic-memory MCP entry'leri). Önceden "gerekirse Claude doğrudan oluşturur" idi.
+- **PROJECT.md skeleton:** Yeni "Bağımlılıklar" bölümü — basic-memory (AGPL-3.0, MCP subprocess), codex, backlog.md lisans bilgisi ve AGPL'in proje lisansını etkilemediği vurgulanır. Vault gizliliği için opt-in `.gitignore` notu.
+- **README.md / README.en.md:** IMPORTANT callout iki zorunlu bağımlılığı (Backlog.md + basic-memory) listeler. "Ne Sağlar?" bölümüne `Shared agent memory layer` maddesi eklendi.
+
+### Değişen
+
+- **bootstrap:** KUTSAL KURAL 2 üretim sorumluluğu matrisinde `.mcp.json` artık "zorunlu" olarak işaretli (önceden "gerekirse"). Skeleton kaynağı `templates/core/mcp.skeleton.json` belirtildi.
+- **bootstrap:** Teammate 5 root-generator talimatına vault init adımı (`mkdir -p ../Docbase/memory && uvx basic-memory project add`) eklendi.
+
 ## [2.2.0] - 2026-05-22
 
 ### Eklenen

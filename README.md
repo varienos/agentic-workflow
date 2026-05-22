@@ -8,7 +8,11 @@
 > **[English version (README.en.md)](README.en.md)**
 
 > [!IMPORTANT]
-> Bu sistem **[Backlog.md](https://github.com/MrLesk/Backlog.md)** üzerine kuruludur. Tüm görev yaşam döngüsü — oluşturma, önceliklendirme, implementasyon, review ve kapatma — Backlog.md CLI ile yönetilir. Bootstrap, Backlog.md kurulu değilse çalışmaz.
+> Bu sistem iki zorunlu bağımlılığa dayanır:
+> - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — tüm görev yaşam döngüsü (oluşturma, önceliklendirme, implementasyon, review, kapatma) Backlog.md CLI ile yönetilir.
+> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. Tüm CLI ajanları (Claude, Codex, Gemini, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak hafızaya bağlanır. `uv` (Python paket yöneticisi) ve Python 3.12+ gerekir.
+>
+> Her ikisi de kurulu değilse Bootstrap çalışmaz.
 
 Claude Code ile yazılım geliştirmenin yaşam döngüsünü yöneten bir workflow sistemidir. Görev planlama, uygulama, review, bug fix ve deploy kontrollerini yapılandırılmış komutlar, ajanlar ve koruma mekanizmalarıyla birleştirir.
 
@@ -20,6 +24,7 @@ Mevcut bir projeye entegre edebilir veya sıfırdan yeni bir proje başlatabilir
 - **Otomatik code review** — 3+1 agent ile her değişikliği inceler: kod kalitesi, sessiz hatalar, regresyon riski. Güvenlik değişikliklerinde koşullu Devils Advocate perspektifi.
 - **Akıllı bug fix** — Root cause analizi, maks 3 hipotez, minimal fix, regresyon testi. Sonsuz derinliğe dalmaz.
 - **Deploy güvenlik ağı** — Pre-push git hook'ları localhost leak, migration ve env sync kontrolleri yapar. `/{varyant}-pre-deploy` ve `/{varyant}-post-deploy` komutları da Docker, Coolify veya Vercel gibi hedeflere özel kontrol raporu üretir.
+- **Shared agent memory layer** — `basic-memory` MCP ile tüm CLI ajanları (Claude, Codex, Gemini, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak Markdown knowledge graph'ına bağlanır. Oturum ve CLI arası kalıcı, paylaşılan hafıza — bir ajanın yazdığı not diğerinden anında görünür.
 - **Codebase config koruması** — Claude Code runtime'ında `codebase-guard` hook'u Codebase içine `.claude/`, `CLAUDE.md`, `.mcp.json` yazmayı otomatik engeller. Agent config dosyaları yalnızca Agentbase'de yaşar.
 - **Test zorlama** — Claude Code runtime'ında `test-enforcer` hook'u kaynak dosya değişikliklerinde ilgili testlerin çalıştırılmasını hatırlatır. Pre-push hook'u ile test geçmeden push engellenir.
 - **Proje-spesifik kurallar** — Stack'inize göre hook'lar, framework kuralları ve koruma mekanizmaları otomatik üretilir.

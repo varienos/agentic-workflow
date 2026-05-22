@@ -19,7 +19,7 @@ Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
 - Bootstrap Codebase'i OKUR → Agentbase'i YAPILANDIRIR.
 - Codebase'deki hiçbir dosya degistirilmez, eklenmez veya silinmez.
 - Tum uretilen dosyalar **Agentbase/ icine** gider — alt dagilim:
-  - **Agentbase ROOT** (yani `Agentbase/` direkt) — **Bootstrap'in DOĞRUDAN urettigi (6+1 root dokuman)**: `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md` (root context), `onboarding.md` (yeni gelistirici rehberi), `.claude-ignore`, `.mcp.json` (gerekirse). **Bootstrap'in cagirdigi araclarin urettigi**: `backlog/` (Backlog.md CLI). **Repo'da hazir gelen**: `bin/`, `templates/`, `tests/`, `generate.js`, `transform.js`, `package.json`.
+  - **Agentbase ROOT** (yani `Agentbase/` direkt) — **Bootstrap'in DOĞRUDAN urettigi (6+1 root dokuman + 1 mcp config)**: `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md` (root context), `onboarding.md` (yeni gelistirici rehberi), `.claude-ignore`, `.mcp.json` (zorunlu — `templates/core/mcp.skeleton.json` kaynagindan). **Bootstrap'in cagirdigi araclarin urettigi**: `backlog/` (Backlog.md CLI), `../Docbase/memory/` (basic-memory vault). **Repo'da hazir gelen**: `bin/`, `templates/`, `tests/`, `generate.js`, `transform.js`, `package.json`.
   - **Agentbase/.claude/** altinda: `commands/`, `agents/`, `hooks/`, `rules/`, `reports/`, `tracking/`, `custom/`, `settings.json`, `CLAUDE.md` (agent-icin dahili runtime config — root `CLAUDE.md`'den AYRI bir dosya, son kullaniciya degil agent'a yoneliktir).
   - **Manifest:** `../Docbase/agentic/project-manifest.yaml` (Agentbase **disinda**, Docbase altinda).
   - **Transform.js opsiyonel ciktilari** (`manifest.targets` icinde `claude` disinda hedef varsa): `GEMINI.md` (gemini hedefi → Agentbase root), `AGENTS.md` + `.codex/skills/*/SKILL.md` (codex hedefi → Agentbase root + `.codex/`), `.kimi/skills/`, `.kimi/agents/` (kimi hedefi), `.opencode/AGENTS.md` + `.opencode/skills/` + `.opencode/agents/` (opencode hedefi). Bu dosyalar root `CLAUDE.md` icerigini hedef CLI formatina cevirir — enjeksiyon zinciri otomatik korunur.
@@ -157,6 +157,54 @@ Kurduktan sonra /bootstrap komutunu tekrar calistirin.
 
 - **Bulunursa** → `✅ Backlog CLI bulundu` yazdir ve devam et.
 
+### 1.1.5 basic-memory MCP Kontrolu (Shared Agent Memory Layer)
+
+Bu workflow `basic-memory` MCP'sini **zorunlu** olarak kullanir. Vault: `Docbase/memory/` — tum ajanlar (Claude, Codex, Gemini, Kimi, OpenCode) ayni Markdown knowledge graph'ina baglanir. Oturum/CLI arasi paylasilan hafiza icin tek kaynak.
+
+**1.1.5.a — `uv` (Python paket yoneticisi) Kontrolu**
+
+Bash ile calistir: `command -v uv >/dev/null 2>&1 && uv --version || echo "__UV_MISSING__"`
+
+- **`__UV_MISSING__`** → Kullaniciya su mesaji goster ve KOMPLE DUR:
+
+```
+❌ uv (Python paket yoneticisi) kurulu degil. basic-memory MCP bu olmadan calismaz.
+
+Kurulum (macOS / Linux):
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+
+Kurulum (Windows PowerShell):
+  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+Veya Homebrew:
+  brew install uv
+
+Kurduktan sonra /bootstrap komutunu tekrar calistirin.
+```
+
+- **Varsa** → `✅ uv bulundu (<version>)` yazdir.
+
+**1.1.5.b — basic-memory Kurulum Kontrolu**
+
+Bash: `uvx basic-memory --version 2>/dev/null || echo "__BM_MISSING__"`
+
+- **`__BM_MISSING__`** → Otomatik kurulum dene: `uv tool install basic-memory`
+  - Kurulum basariliysa → `✅ basic-memory kuruldu` yazdir ve devam et.
+  - Kurulum hata verirse → stderr ciktisini kullaniciya goster ve KOMPLE DUR:
+
+```
+❌ basic-memory kurulumu basarisiz.
+
+Manuel kurulum dene:
+  uv tool install basic-memory
+
+Hata detaylari yukarida. Cozdukten sonra /bootstrap komutunu tekrar calistirin.
+```
+
+- **Kuruluysa** → `✅ basic-memory bulundu` yazdir ve devam et.
+
+**Not:** Vault dizini (`../Docbase/memory/`) olusturma ve project register islemi ADIM 5'te Teammate 5 root-generator tarafindan yapilir — bu adim sadece bagimliligin varligini dogrular.
+
 ### 1.2 Codebase Kontrolu
 
 `../Codebase/` dizinini kontrol et (Agentbase'e gore goreceli yol).
@@ -279,7 +327,7 @@ onay olmadan ASLA verilmez.
      - `.claude/rules/`
      - generate.js ciktilari: `.claude/settings.json`, `.claude/CLAUDE.md`, `.claude-ignore`, `git-hooks/`
      - Bootstrap-direct dosyalar (Claude dogrudan yazar, generate.js uretmez): `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`
-     - NOT: Root `CLAUDE.md` generate.js tarafindan URETILMEZ — `.claude/CLAUDE.md` uretilir. `.mcp.json` icin template yoktur, gerekirse Claude dogrudan olusturur.
+     - NOT: Root `CLAUDE.md` generate.js tarafindan URETILMEZ — `.claude/CLAUDE.md` uretilir. `.mcp.json` `templates/core/mcp.skeleton.json` kaynagindan zorunlu olarak uretilir (codex + basic-memory MCP entry'leri).
   5. Her yonetilen dosya icin manifestteki checksum ile mevcut dosyayi karsilastir:
      - eslesiyorsa → Bootstrap-yonetimli ve temiz
      - eslesmiyorsa → kullanici customization'i olarak isaretle
@@ -1424,7 +1472,9 @@ Lead (sen)
   │           .claude-ignore
   │    NOT: CLAUDE.md.skeleton'daki GENERATE bloklarini manifest'ten doldur.
   │         Backlog CLI rehberi SABIT kalir, proje bilgileri GENERATE bloklarina girer.
-  │         .mcp.json icin template yoktur — gerekirse Claude dogrudan olusturur.
+  │         .mcp.json `templates/core/mcp.skeleton.json` kaynagindan ZORUNLU olarak uretilir — codex + basic-memory MCP entry'lerini icerir.
+  │         basic-memory vault: `mkdir -p ../Docbase/memory && uvx basic-memory project add <project-name> ../Docbase/memory` ile register edilir.
+  │         <project-name> manifest.project.name veya dizin adından alınır; çakışma varsa `<name>-<timestamp>` suffix eklenir.
   │
   └──► Teammate 5: root-generator (Agent tool)
        Gorev: Root dokumantasyon dosyalarini uret

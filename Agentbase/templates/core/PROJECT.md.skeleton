@@ -16,6 +16,26 @@ Aciklama: Production ve staging ortam bilgileri.
 Gerekli manifest alanlari: environments
 -->
 
+## Bağımlılıklar
+
+Bu workflow aşağıdaki dış MCP server'larını runtime'da çalıştırır. Tüm ajanlar (Claude Code, Codex CLI, Gemini CLI, Kimi CLI, OpenCode) aynı MCP'lere bağlanır → ortak hafıza ve paylaşılan context.
+
+| Bağımlılık | Lisans | Etki Alanı | Not |
+| --- | --- | --- | --- |
+| `basic-memory` | AGPL-3.0 | MCP subprocess (`uvx basic-memory mcp`) | Ayrı süreç olarak çalışır, bu projenin lisansını etkilemez. Vault: `Docbase/memory/` |
+| `codex` | MIT | MCP subprocess (`codex mcp-server`) | OpenAI Codex CLI'ın MCP server modu |
+| `backlog.md` | MIT | CLI | Görev yaşam döngüsü |
+
+### Vault Gizliliği (Opsiyonel)
+
+`Docbase/memory/` vault git'e dahildir → tüm worktree'ler aynı bilgi tabanını paylaşır, PR'larda audit-friendly. Hassas içerik için git'ten dışlamak istersen Codebase `.gitignore` dosyasına şu satırı ekle:
+
+```
+Docbase/memory/
+```
+
+> Vault'u git'ten dışlarsan farklı makinelerde aynı hafıza erişimi için cloud sync (basic-memory cloud opsiyonu) veya manuel senkronizasyon gerekir.
+
 ## Onemli Kurallar
 
 <!-- CLAUDE_FILL: DOMAIN_RULES
