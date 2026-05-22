@@ -85,13 +85,13 @@ Pre-push git hook (`.git/hooks/pre-push`) opsiyonel olarak `git push` öncesi gr
 
 ```bash
 <!-- GENERATE: GRAPHIFY_UPDATE_COMMAND
-Aciklama: Bootstrap tarafindan manifest verileriyle doldurulur. Monorepo modulu aktifse multi-layer komut zinciri (her subproject icin `graphify update <path>` + sonunda `python3 scripts/graphify-merge-layers.py`), aktif degilse tek `graphify update <codebasePath>` komutu uretir.
+Aciklama: Bootstrap tarafindan manifest verileriyle doldurulur. Monorepo modulu aktifse multi-layer komut zinciri (her subproject icin `graphify update <path>` + sonunda `python3 ../Agentbase/scripts/graphify-merge-layers.py`), aktif degilse tek `graphify update <codebasePath>` komutu uretir.
 Gerekli manifest alanlari: project.codebasePath, project.subprojects (monorepo varsa), modules.active
 Ornek cikti (monorepo aktif):
 graphify update backend.aps/app && \
 graphify update kurye.aps/src && \
 graphify update musteri.aps/src && \
-python3 scripts/graphify-merge-layers.py
+python3 ../Agentbase/scripts/graphify-merge-layers.py
 Ornek cikti (tek-katman):
 graphify update ../Codebase
 -->

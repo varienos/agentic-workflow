@@ -1,6 +1,6 @@
 # Graphify Modülü — Kurulum Referansı
 
-Bu dosya **generate edilmez** — bootstrap'in "Graphify İlk Kurulum" adımı (TASK-225'te eklenecek) ve geliştiriciler için bir referanstır. Bootstrap orchestrator bu dokümandaki adımları otomatik çalıştırır ya da kullanıcıya yönlendirir.
+Bu dosya **generate edilmez** — bootstrap'in "Graphify İlk Kurulum" adımı ve geliştiriciler için bir referanstır. Bootstrap orchestrator bu dokümandaki adımları otomatik çalıştırır ya da kullanıcıya yönlendirir.
 
 ---
 
@@ -60,10 +60,10 @@ cd <Codebase> && \
   graphify update <subproject1>/ && \
   graphify update <subproject2>/ && \
   graphify update <subproject3>/ && \
-  python3 scripts/graphify-merge-layers.py
+  python3 ../Agentbase/scripts/graphify-merge-layers.py
 ```
 
-Subproject yolları manifest `project.subprojects` listesinden alınır. Python merge script'i `scripts/graphify-merge-layers.py` altına kopyalanmış olmalı.
+Subproject yolları manifest `project.subprojects` listesinden alınır. Python merge script'i `Agentbase/scripts/graphify-merge-layers.py` altına kopyalanmış olmalı ve Codebase root'undan `../Agentbase/scripts/graphify-merge-layers.py` olarak çağrılır.
 
 Doğrulama:
 
@@ -100,7 +100,7 @@ if ! graphify update . ; then
 fi
 
 # Multi-layer monorepo için (yukarıdaki yerine):
-# if ! ( graphify update backend/ && graphify update frontend/ && python3 scripts/graphify-merge-layers.py ); then
+# if ! ( graphify update backend/ && graphify update frontend/ && python3 ../Agentbase/scripts/graphify-merge-layers.py ); then
 #   echo "WARN: graphify multi-layer update başarısız; manuel update gerekli (push devam ediyor)" >&2
 # fi
 
@@ -119,19 +119,19 @@ exit 0
 
 ## 5. CLAUDE.md Entegrasyonu
 
-Bootstrap `templates/modules/knowledge-graph/graphify/rules/graphify-rules.skeleton.md` dosyasını generate ederek `.claude/rules/graphify-rules.md` üretir ve hedef projenin `CLAUDE.md` dosyasına şu satırı ekler (idempotent):
+Bootstrap `templates/modules/knowledge-graph/graphify/rules/graphify-rules.skeleton.md` dosyasını generate ederek `Agentbase/.claude/rules/graphify-rules.md` üretir. Bu rule Agentbase runtime context'inde referanslanır; Codebase içine `CLAUDE.md` veya `.claude/` config dosyası yazılmaz.
 
 ```markdown
 @.claude/rules/graphify-rules.md
 ```
 
-veya CLAUDE.md zaten module-ref blok kullanıyorsa orada referans verilir.
+Root context gerekiyorsa mevcut Agentbase root `CLAUDE.md` import zinciri kullanılır; hedef proje Codebase root'una ayrı context dosyası yazılmaz.
 
 ---
 
 ## 6. Settings.json Hook Kaydı
 
-Bootstrap `Codebase/.claude/settings.json` PreToolUse bloğuna şu kaydı ekler:
+Bootstrap `Agentbase/.claude/settings.json` PreToolUse bloğuna şu kaydı ekler:
 
 ```json
 {
@@ -154,11 +154,11 @@ Eğer aynı `matcher` için kayıt zaten varsa `hooks` array'ine append edilir.
 
 1. graphify CLI varlık kontrolü → yok ise yönlendirme
 2. `graphify-out/` `.gitignore`'a ekle (idempotent)
-3. Hook dosyasını `Codebase/.claude/hooks/graphify-first-guard-v2.js` altına kopyala
-4. `Codebase/.claude/settings.json` PreToolUse kaydını ekle
-5. `/g` command'ını generate et (`Codebase/.claude/commands/g.md`)
+3. Hook dosyasını `Agentbase/.claude/hooks/graphify-first-guard-v2.js` altına kopyala
+4. `Agentbase/.claude/settings.json` PreToolUse kaydını ekle
+5. `/g` command'ını generate et (`Agentbase/.claude/commands/g.md`)
 6. `graphify-rules.md` üret ve CLAUDE.md'den referans ver
-7. Eğer monorepo aktifse `scripts/graphify-merge-layers.py` kopyala (kullanıcı LAYERS listesini uyarlayacak)
+7. Eğer monorepo aktifse `Agentbase/scripts/graphify-merge-layers.py` kopyala (kullanıcı LAYERS listesini uyarlayacak)
 8. İlk `graphify update` önerisi → onay → çalıştır
 9. Opsiyonel pre-push hook kurulumu → onay → yaz
 

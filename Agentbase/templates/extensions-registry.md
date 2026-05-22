@@ -3,6 +3,17 @@
 Bu Markdown dosyası insanlar için okunabilir hızlı referans kataloğudur.
 Bootstrap eklenti öneri sistemi yapılandırılmış kaynak olarak `extensions-registry.yaml` dosyasını okur.
 
+## Kapsam Farkı (YAML ↔ MD)
+
+İki dosya **farklı amaçlara** hizmet eder ve birebir senkronize olmak **zorunda değildir**:
+
+| Dosya | Amaç | Kapsam |
+|-------|------|--------|
+| `extensions-registry.yaml` | Bootstrap programatik kaynak | Otomatik önerilecek eklentiler (~15 adet, trigger kuralları + kurulum komutları ile) |
+| `extensions-registry.md` (bu dosya) | İnsan-okunabilir genişletilmiş katalog | Topluluk içinde dikkat çeken tüm eklentiler (~50 adet — manuel kurulum referansı) |
+
+**Kural:** YAML'a eklenen her eklenti MD'de de görünmelidir; ancak MD'de listelenen her eklentinin YAML'a girmesi zorunlu değildir. YAML'a eklenecek eklentilerde **otomatik tetikleme** anlamlı olmalıdır (örn. bir module/stack/kondisyon ile tutarlı şekilde eşleşmesi gerekir). Aksi halde "spam" öneriye yol açar.
+
 ---
 
 ## Ekleme Şablonu

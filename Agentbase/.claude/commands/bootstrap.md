@@ -18,7 +18,12 @@ Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
 ### 2. Bootstrap Codebase'e ASLA yazmaz (tek istisna: AI Import)
 - Bootstrap Codebase'i OKUR → Agentbase'i YAPILANDIRIR.
 - Codebase'deki hiçbir dosya degistirilmez, eklenmez veya silinmez.
-- Tum uretilen dosyalar Agentbase/.claude/ altina gider.
+- Tum uretilen dosyalar **Agentbase/ icine** gider — alt dagilim:
+  - **Agentbase ROOT** (yani `Agentbase/` direkt) — **Bootstrap'in DOĞRUDAN urettigi (6+1 root dokuman)**: `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md` (root context), `onboarding.md` (yeni gelistirici rehberi), `.claude-ignore`, `.mcp.json` (gerekirse). **Bootstrap'in cagirdigi araclarin urettigi**: `backlog/` (Backlog.md CLI). **Repo'da hazir gelen**: `bin/`, `templates/`, `tests/`, `generate.js`, `transform.js`, `package.json`.
+  - **Agentbase/.claude/** altinda: `commands/`, `agents/`, `hooks/`, `rules/`, `reports/`, `tracking/`, `custom/`, `settings.json`, `CLAUDE.md` (agent-icin dahili runtime config — root `CLAUDE.md`'den AYRI bir dosya, son kullaniciya degil agent'a yoneliktir).
+  - **Manifest:** `../Docbase/agentic/project-manifest.yaml` (Agentbase **disinda**, Docbase altinda).
+  - **Transform.js opsiyonel ciktilari** (`manifest.targets` icinde `claude` disinda hedef varsa): `GEMINI.md` (gemini hedefi → Agentbase root), `AGENTS.md` + `.codex/skills/*/SKILL.md` (codex hedefi → Agentbase root + `.codex/`), `.kimi/skills/`, `.kimi/agents/` (kimi hedefi), `.opencode/AGENTS.md` + `.opencode/skills/` + `.opencode/agents/` (opencode hedefi). Bu dosyalar root `CLAUDE.md` icerigini hedef CLI formatina cevirir — enjeksiyon zinciri otomatik korunur.
+  - **YASAK:** Root dokumanlari (PROJECT.md, STACK.md, DEVELOPER.md, ARCHITECTURE.md, WORKFLOWS.md, root CLAUDE.md, onboarding.md) `.claude/` altina YAZMA. `.claude/` agent runtime konfiguudur, dokumantasyon degil. Bu dosyalar gercek Agentbase root'unda kalir ki **tum modeller (Claude, Gemini, Codex, Kimi, OpenCode) ayni context'i okuyabilsin**.
 - Manifest `../Docbase/agentic/` altina gider (Codebase disinda).
 - Projenin mevcut .gitignore, package.json, CI config dosyalari korunur.
 
@@ -27,6 +32,77 @@ Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
 varlıklari (`.claude/`, `.claude/memory/`, `.claude/agent-memory/`, `CLAUDE.md`,
 `.mcp.json`, `backlog/*`) Agentbase'e tasinir ve kaynak Codebase'ten silinir.
 Bu tek istisna disinda Codebase'e yazma/silme ASLA yapilmaz.
+
+---
+
+## ADIM 0 — `/goal` MOD ZORUNLULUĞU (Tamamlama Garantisi)
+
+Bootstrap çok-adımlı, çok-teammate'li ve yarıda kesilmesi tehlikeli bir süreçtir. Geçmiş hatalar:
+
+- Dosyaların yanlış konuma yazılması (örn. `.claude/PROJECT.md`).
+- Sonda açık kalan konular (eksik teammate çıktıları, yarım manifest, yazılmayan root dokümanları).
+- Tek-turlu yanıtla bitirilmeye çalışılan iş.
+
+**Çözüm:** Bu komut Claude Code 2.1.139+ tarafından sunulan native `/goal` modunda çalıştırılmalıdır. `/goal` her turdan sonra evaluator model devreye sokar; ADIM 8'deki tamamlama kapısı (verification gate) TRUE dönmedikçe Claude yeni turda eksikleri tamamlamaya devam eder.
+
+### 0.1 Çağrı Şekli Kontrolü
+
+İdeal çağrı:
+
+```
+/goal /bootstrap until "ADIM 8 verification gate tüm TRUE (BOOTSTRAP_COMPLETE marker stdout'a basıldı)"
+```
+
+Mevcut session'ın `/goal` modunda olup olmadığını doğrudan tespit edemezsin (Claude Code bunu prompt'a yansıtmıyor). Bu nedenle aşağıdaki kuralı uygula:
+
+1. **Sürecin başında kullanıcıya bildir** — ilk konsol çıktısı şu olur:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 Bootstrap /goal modunda çalıştırılmalıdır.
+   Bu mod yarıda kalmayı önler ve evaluator
+   her turdan sonra tamamlanmayı doğrular.
+
+   Önerilen çağrı:
+     /goal /bootstrap until "ADIM 8 verification gate tüm TRUE"
+
+   Doğrudan /bootstrap ile başlattıysanız ve
+   ADIM 8 fail ederse, manuel olarak yukarıdaki
+   /goal çağrısıyla yeniden başlatın.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Devam etmek için Enter >
+```
+
+2. **Bu uyarıyı atlama** — `--bypass-permissions` aktif olsa bile bu mesaj gösterilmeli; kullanıcı bilinçli karar verebilsin.
+
+### 0.2 Tamamlama Koşulu (ADIM 8 İçin Referans)
+
+`/goal` modunda evaluator şu koşulu kontrol edecek (ADIM 8'de machine-checkable olarak doğrulanır):
+
+```
+BOOTSTRAP_COMPLETE = (
+  manifest_yazildi
+  AND root_dokumanlar_dogru_konumda
+  AND root_claude_import_zinciri_tam
+  AND claude_runtime_dosyalari_var
+  AND claude_ignore_rootta
+  AND claude_fill_marker_kalmadi
+  AND backlog_init_edildi
+  AND root_dokumanlar_dolu
+  AND codebase_sizintisi_yok
+)
+```
+
+Bu koşulun her bir bileşeni ADIM 8'de bash test komutlarıyla doğrulanır. FAIL durumunda Claude (veya `/goal` evaluator'ı) eksik bileşeni tamamlamak için yeni tura geçer.
+
+### 0.3 Self-Disipline Kuralları (Tek-turlu Modda)
+
+Eğer kullanıcı `/goal` olmadan başlatırsa şu disiplinleri uygula:
+
+1. **Hiçbir adımı atlama** — "burada zaten doğru" varsayımı yapma; her dosya yazımını yap.
+2. **Hiçbir adımı erken sonlandırma** — `_partial`, `TODO:`, `<!-- CLAUDE_FILL: ... -->` marker'ları **kalmamalı** (CLAUDE_FILL doldurma adımı atlanmamalı).
+3. **Konum doğrulama** — her dosya yazımından sonra path'i konsola basın: `✏️  yazildi: <abs-path>`. Bu log ADIM 8'de scan edilir.
+4. **Sonda ADIM 8 zorunlu** — atlama.
 
 ---
 
@@ -50,6 +126,17 @@ Bootstrap cok sayida dosya olusturma, dizin yaratma ve backlog islemleri yapacak
 ```
 
 > Bu bir ONERI — zorunluluk degil. Kullanıcı devam etmek isterse bypass olmadan da calisir.
+
+### 1.0.5 Bootstrap Baslangic Sentinel'i
+
+Codebase sizinti kontrolunun dogru calismasi icin bootstrap dosya yazimlari baslamadan once sentinel dosyasini olustur:
+
+```bash
+: > /tmp/bootstrap-start
+echo "✅ Bootstrap sentinel hazir: /tmp/bootstrap-start"
+```
+
+Bu dosya ADIM 8 Gate H tarafindan kullanilir. Sentinel yoksa Gate H fail eder; boylece Codebase'e yanlis konumda yazilan dosyalar sessizce kacmaz.
 
 ### 1.1 Backlog CLI Kontrolu
 
@@ -772,7 +859,7 @@ Endpoint bulunamazsa atla — smoke test fallback (health + status) kullanilir.
 
 ### 2.7 Analiz Ozeti ve Tek Onay
 
-İki bölümlü özet göster: önce genel analiz özeti, sonra `manifest.detected.*` tablosu, ardından **tek bir AskUserQuestion** ile toplu onay al. Bu yapı `feedback_bootstrap_interview.md` (2026-04-22) kuralının uygulamasıdır: kod analizinden çıkarılabilen bilgiler ADIM 3'te tek tek sorulmaz, tabloda gösterilip toplu onaylanır.
+İki bölümlü özet göster: önce genel analiz özeti, sonra `manifest.detected.*` tablosu, ardından **tek bir AskUserQuestion** ile toplu onay al. Tasarım kuralı: kod analizinden güvenle çıkarılabilen bilgiler (test framework, ORM, migration sistemi vb.) ADIM 3 röportajında tek tek sorulmaz; toplu tabloda gösterilip tek onayla geçilir. Yalnızca kodda görünmeyen subjektif sorular (proje tanımı, geliştirici profili, domain kuralları, güvenlik seviyesi) tek tek sorulur.
 
 **Bölüm 0 — Erken çıkış kontrolü (en başta yapılır):**
 
@@ -966,7 +1053,10 @@ Stdout'a kısa özet yaz:
    - **Free-text isteyen sorular** (proje tanımı, domain kuralları, ek notlar vb.) AskUserQuestion kullanma — `>` promptuyla sormaya devam et.
    - "Tespit edilen: ..." ipuçlarını `description` alanına kısaltarak taşı; gerekirse soru metnine de parantez içinde ekle.
 
-`templates/interview/phase-{N}-*.md` dosyaları **zorunludur** — ADIM 1.4'te dosya doğrulaması yapılır, eksikse Bootstrap durur. ADIM 3'te bu dosyalar okunup soru blokları oradan işlenir; bootstrap.md'de inline default sorular **yoktur** (TASK-210/T6a sonrası kaldırıldı, TASK-214/T6b sonrası fallback de kaldırıldı).
+`templates/interview/phase-{N}-*.md` dosyaları **zorunludur**:
+- ADIM 1.4'te dosya varlık + tip doğrulaması yapılır (fs.statSync + isFile); eksik veya geçersizse Bootstrap **hemen durur** ve eksikler listelenir.
+- ADIM 3'te bu dosyalar okunup soru blokları oradan işlenir.
+- Bootstrap.md içinde inline default soru tanımı **yoktur** — fallback mekanizması da yoktur. Tek kaynak phase dosyalarıdır.
 
 ### Faz 1 — Proje Temelleri
 *Bu faz `PROJECT.md` ve `ARCHITECTURE.md` icin veri toplar.*
@@ -1339,15 +1429,16 @@ Lead (sen)
   └──► Teammate 5: root-generator (Agent tool)
        Gorev: Root dokumantasyon dosyalarini uret
        Girdi: manifest + codebase analiz sonuclari (Adim 2'den)
-       Hedef dizin: Agentbase/.claude/ (Codebase'e ASLA yazma — Kutsal Kural 2)
-       Cikti: .claude/PROJECT.md
-              .claude/STACK.md
-              .claude/DEVELOPER.md
-              .claude/ARCHITECTURE.md
-              .claude/WORKFLOWS.md
+       Hedef dizin: **Agentbase ROOT** (yani `./` — `.claude/` ALTINDA DEGIL; Codebase'e ASLA yazma — Kutsal Kural 2)
+       Cikti: ./PROJECT.md
+              ./STACK.md
+              ./DEVELOPER.md
+              ./ARCHITECTURE.md
+              ./WORKFLOWS.md
        NOT: Bu dosyalar sifirdan uretilir (skeleton kullanilMAZ).
             Manifest + codebase analizindeki bilgilerle doldurulur.
-            Hedef: Agentbase/.claude/ — Codebase root'a YAZMA.
+            **KRİTİK YOL KURALI:** Çıktı yolları Agentbase root'undan başlar. `.claude/PROJECT.md` YAZMA — bu yanlış konum. Doğrusu: `Agentbase/PROJECT.md` (yani sadece `PROJECT.md` cwd Agentbase iken).
+            Hedef: Agentbase ROOT — Codebase root'a YAZMA, `.claude/` altina YAZMA.
 
 ### 5.1.2 Uzman Agent Uretimi
 
@@ -1535,6 +1626,7 @@ Teammate'ler skeleton dosyalarini islerken hangi GENERATE bloklarinin hangi dosy
 | rollback.skeleton.md | CODEBASE_CONTEXT, COMMIT_CONVENTION |
 | memorize.skeleton.md | MEMORY_PATH |
 | code-review.skeleton.md (agent) | CODEBASE_CONTEXT, PROJECT_CHECKLIST |
+| silent-failure-hunter.skeleton.md (agent) | CODEBASE_CONTEXT |
 | regression-analyzer.skeleton.md (agent) | CODEBASE_CONTEXT, PROJECT_PATHS |
 | service-documentation.skeleton.md (agent) | CODEBASE_CONTEXT |
 | devils-advocate.skeleton.md (agent) | CODEBASE_CONTEXT |
@@ -1916,7 +2008,17 @@ Bu proje agentic workflow kullanir. Tum yapilandirma Agentbase dizinindedir.
 @ import PROJECT.md
 @ import STACK.md
 @ import DEVELOPER.md
+@ import ARCHITECTURE.md
+@ import WORKFLOWS.md
+@ import onboarding.md
 ```
+
+> **NOT — Enjeksiyon zinciri:** Root `CLAUDE.md` yukaridaki `@ import` satirlariyla **TUM** root dokumanlarini context'e dahil eder. Bu sayede:
+> - Claude Code root `CLAUDE.md`'yi okudugunda PROJECT, STACK, DEVELOPER, ARCHITECTURE, WORKFLOWS, onboarding tamami otomatik yuklenir.
+> - `transform.js` calistirildiginda root `CLAUDE.md` icerigi GEMINI.md, AGENTS.md, .kimi/..., .opencode/... hedeflerine kopyalanir — enjeksiyon zinciri TUM modeller icin korunur.
+> - Sadece root `CLAUDE.md` icine import satirlarini eklemek yeterli; her hedef dosyaya ayri ayri yazmaya gerek yok (transform.js otomatik adapte eder).
+>
+> **Import satirlarinin tam listesi degisirse** (yeni root dokuman eklenirse), bu listeyi guncellemek ve `ADIM 8 GATE B` icindeki dosya listesini de paralel guncellemek **zorunludur**.
 
 **Inner CLAUDE.md (`.claude/CLAUDE.md`):**
 ```markdown
@@ -2129,11 +2231,11 @@ Ilk graphify update'i simdi calistirayim mi? Bu komut codebase'i tarar ve knowle
 **Evet** secilirse:
 
 - **Tek-katman:** `cd <Codebase> && graphify update .`
-- **Monorepo (monorepo modulu de aktif):** `cd <Codebase> && graphify update "<sub1>" && graphify update "<sub2>" && ... && python3 scripts/graphify-merge-layers.py`
+- **Monorepo (monorepo modulu de aktif):** `cd <Codebase> && graphify update "<sub1>" && graphify update "<sub2>" && ... && python3 ../Agentbase/scripts/graphify-merge-layers.py`
   - Subproject yollari manifest `project.subprojects` listesinden alinir
   - Yollar Codebase-root-relative (`'../Codebase/' onek YOK`) ve shell-quote'lu uretilir
-  - `scripts/graphify-merge-layers.py` zaten generate.js tarafindan kok `scripts/` dizinine kopyalanmis olmalidir
-  - **LAYERS uyarisi:** Python script uretildikten sonra kullanicinin `scripts/graphify-merge-layers.py` icindeki LAYERS listesini kendi monorepo yapisina gore dogrulamasini hatirlat (generate.js manifest'ten ilk dolumu yapar, kullanici son uyarlamayi yapar)
+  - `../Agentbase/scripts/graphify-merge-layers.py` zaten generate.js tarafindan Agentbase kok `scripts/` dizinine kopyalanmis olmalidir
+  - **LAYERS uyarisi:** Python script uretildikten sonra kullanicinin `../Agentbase/scripts/graphify-merge-layers.py` icindeki LAYERS listesini kendi monorepo yapisina gore dogrulamasini hatirlat (generate.js manifest'ten ilk dolumu yapar, kullanici son uyarlamayi yapar)
 
 Komut basarisiz olursa hatayi raporla, bootstrap'i durdurma — kullanici elle uyarlasin.
 
@@ -2173,7 +2275,7 @@ if ! graphify update . ; then
 fi
 
 # Multi-layer monorepo (yukaridaki yerine kullanin):
-# if ! ( graphify update "<sub1>" && graphify update "<sub2>" && python3 scripts/graphify-merge-layers.py ); then
+# if ! ( graphify update "<sub1>" && graphify update "<sub2>" && python3 ../Agentbase/scripts/graphify-merge-layers.py ); then
 #   echo "WARN: graphify multi-layer update basarisiz; manuel update gerekli (push devam ediyor)" >&2
 # fi
 
@@ -2320,11 +2422,16 @@ Son olarak `chmod +x ${HOOKS_DIR}/pre-push`.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### 7.1 Onboarding Rehberi Olustur
+### 7.1 Onboarding Rehberi Olustur (Agentbase ROOT)
 
-Tamamlanma raporundan hemen sonra `.claude/onboarding.md` dosyasini olustur. Bu dosya hedef projede yeni baslayan gelistiriciye ilk adimlari anlatir.
+Tamamlanma raporundan hemen sonra Agentbase root'unda `./onboarding.md` dosyasini olustur. Bu dosya hedef projede yeni baslayan gelistiriciye ilk adimlari anlatir.
 
-Asagidaki sablonu manifest bilgileriyle doldurarak `.claude/onboarding.md` olarak yaz:
+> **KUTSAL KURAL 2 — KONUM:** `onboarding.md` Agentbase ROOT'una yazilir, `.claude/` altina degil. Sebep:
+> - Tum modeller (Claude, Gemini, Codex, Kimi, OpenCode) root context'i okur.
+> - Root `CLAUDE.md` icindeki `@ import onboarding.md` satiri sayesinde tum modellerin context'ine otomatik enjekte edilir.
+> - `.claude/` altinda sadece **agent runtime** dosyalari (commands, agents, hooks, rules, settings.json, agent-icin CLAUDE.md) yasar — son kullaniciya yonelik dokuman degil.
+
+Asagidaki sablonu manifest bilgileriyle doldurarak `./onboarding.md` olarak yaz:
 
 ```markdown
 # Onboarding — [manifest.project.name]
@@ -2447,6 +2554,125 @@ Eslesen eklentiler varsa raporun sonuna ekle:
 ```
 
 Eslesen eklenti yoksa bu bolumu ATLA — gereksiz bos bolum gosterme.
+
+---
+
+## ADIM 8 — TAMAMLAMA DOĞRULAMA KAPISI (Verification Gate)
+
+Bu adım ADIM 0'da tanımlanan **machine-checkable completion condition**'ı uygular. `/goal` modunda evaluator bu adımın sonuçlarına bakarak Claude'u yeni bir tura sokar veya `BOOTSTRAP_COMPLETE` ile sonlandırır.
+
+**Bu adımı ASLA atlama** — Bootstrap'ın her çalıştırılışında (yeni, overwrite, merge, incremental) en sonda çalıştırılmalıdır.
+
+### 8.1 Doğrulama Bash Bloğu
+
+`cwd = Agentbase` iken aşağıdaki tüm kontrolleri SIRAYLA çalıştır. Her satırın sonucunu konsola bas. Tek bir hata bile FAIL sayılır.
+
+```bash
+# === GATE A: Manifest yazıldı mı? ===
+test -f ../Docbase/agentic/project-manifest.yaml && echo "✅ A1: manifest yazildi" || echo "❌ A1: manifest YOK"
+
+# === GATE B: Root dokümanlar DOĞRU konumda (Agentbase ROOT, .claude/ DEĞİL) ===
+# 7 root doküman: 6 Bootstrap-direct + onboarding.md
+for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md onboarding.md; do
+  test -f "./$f" && echo "✅ B-root: $f Agentbase root'unda" || echo "❌ B-root: $f EKSIK (Agentbase root)"
+  test -f "./.claude/$f" && echo "❌ B-claude: $f YANLIŞ KONUMDA (.claude/ altında olmamalı)" || echo "✅ B-claude: .claude/$f yok (doğru)"
+done
+
+# === GATE B2: Root CLAUDE.md TÜM root dokümanlarını @ import ediyor mu? ===
+# Enjeksiyon zinciri kontrolü — root CLAUDE.md eksik import varsa diğer modeller (Gemini, Codex, Kimi, OpenCode) context'i alamaz
+if [ -f ./CLAUDE.md ]; then
+  for doc in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md onboarding.md; do
+    if grep -q "@ import $doc" ./CLAUDE.md 2>/dev/null; then
+      echo "✅ B2-import: root CLAUDE.md → @ import $doc"
+    else
+      echo "❌ B2-import: root CLAUDE.md → @ import $doc EKSIK (enjeksiyon zinciri kırık)"
+    fi
+  done
+fi
+
+# === GATE C: .claude runtime dosyaları var ===
+test -f ./.claude/settings.json && echo "✅ C1: settings.json var" || echo "❌ C1: settings.json YOK"
+test -d ./.claude/commands && echo "✅ C2: commands/ var" || echo "❌ C2: commands/ YOK"
+test -d ./.claude/agents && echo "✅ C3: agents/ var" || echo "❌ C3: agents/ YOK"
+test -d ./.claude/rules && echo "✅ C4: rules/ var" || echo "❌ C4: rules/ YOK"
+
+# === GATE D: .claude-ignore root'ta ===
+test -f ./.claude-ignore && echo "✅ D1: .claude-ignore root'ta" || echo "❌ D1: .claude-ignore YOK"
+
+# === GATE E: CLAUDE_FILL marker'ları tamamlandı (yarım iş yok) ===
+# Tüm root dokümanları + .claude runtime + onboarding.md taranır
+remaining=$(grep -rln "CLAUDE_FILL:" ./.claude ./PROJECT.md ./STACK.md ./DEVELOPER.md ./ARCHITECTURE.md ./WORKFLOWS.md ./CLAUDE.md ./onboarding.md 2>/dev/null | head -20)
+if [ -z "$remaining" ]; then echo "✅ E1: CLAUDE_FILL marker kalmadı"; else echo "❌ E1: CLAUDE_FILL marker var → $remaining"; fi
+
+# === GATE F: Backlog init edildi ===
+test -f ./backlog/config.yml && echo "✅ F1: backlog/config.yml var" || echo "❌ F1: backlog init edilmemiş"
+
+# === GATE G: Hiçbir root doküman boş değil ===
+for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md; do
+  if [ -f "./$f" ]; then
+    size=$(wc -c < "./$f")
+    if [ "$size" -gt 100 ]; then echo "✅ G: $f dolu ($size byte)"; else echo "❌ G: $f çok küçük ($size byte) — içerik eksik"; fi
+  fi
+done
+
+# === GATE H: Codebase'e SIZINTI yok (Kutsal Kural 2) ===
+# AI Import dışında Codebase'de bootstrap-üretimi dosya olmamalı
+if [ -f /tmp/bootstrap-start ]; then
+  echo "✅ H0: /tmp/bootstrap-start sentinel var"
+  leak=$(find ../Codebase -maxdepth 2 \( -name 'PROJECT.md' -o -name 'STACK.md' -o -name 'DEVELOPER.md' -o -name 'ARCHITECTURE.md' -o -name 'WORKFLOWS.md' -o -name 'CLAUDE.md' -o -name 'onboarding.md' -o -name 'project-manifest.yaml' \) -newer /tmp/bootstrap-start 2>/dev/null | head -5)
+  if [ -z "$leak" ]; then echo "✅ H1: Codebase'e sızıntı yok"; else echo "❌ H1: Codebase'e SIZINTI: $leak"; fi
+else
+  echo "❌ H0: /tmp/bootstrap-start sentinel YOK — Codebase sızıntı kontrolü güvenilir değil"
+fi
+```
+
+### 8.2 Sonuç Karar Mantığı
+
+Yukarıdaki tüm satırlardaki `❌` işaretlerini say:
+
+- **0 adet ❌** → SUCCESS. Aşağıdaki marker'ı stdout'a bas:
+  ```
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✅ BOOTSTRAP_COMPLETE
+     Tüm gate'ler PASS. /goal evaluator bu marker'ı görünce session'ı sonlandırır.
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ```
+
+- **1+ adet ❌** → FAIL. Aşağıdaki marker'ı stdout'a bas ve **EKSİK ADIMLARI TAMAMLAMAYA DEVAM ET**:
+  ```
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ❌ BOOTSTRAP_INCOMPLETE
+     FAIL sayısı: <N>
+     Eksikler:
+       - <her ❌ satırını listele>
+     Sonraki tur: bu eksikleri tamamla, ADIM 8'i tekrar çalıştır.
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ```
+
+### 8.3 `/goal` Modunda Davranış
+
+`/goal /bootstrap until "BOOTSTRAP_COMPLETE"` ile çalıştırılmışsa:
+
+- Her tur sonunda ADIM 8 çalışır. Evaluator `BOOTSTRAP_COMPLETE` marker'ını arar.
+- Marker yoksa Claude yeni tura geçer ve `❌` listesindeki eksikleri kapatır.
+- Marker bulununca `/goal` sonlandırır.
+
+### 8.4 Tek-turlu Modda Davranış (Fail-Loud)
+
+`/goal` olmadan çalıştırılmışsa ve ADIM 8 FAIL ederse:
+
+```
+⚠️  Bootstrap eksik tamamlandı. Tek-turlu modda kaldığı için otomatik retry yapılmadı.
+
+   Tam tamamlama için aşağıdaki komutla yeniden çalıştırın:
+     /goal /bootstrap until "BOOTSTRAP_COMPLETE"
+
+   Bu mod evaluator devreye sokar ve eksikler kapanana kadar çalışır.
+```
+
+### 8.5 Idempotency Garantisi
+
+ADIM 8 read-only'dir; dosya yazmaz. Yalnızca `test`, `find`, `grep`, `wc` komutları kullanır. Birden fazla çalıştırma side-effect üretmez.
 
 ---
 

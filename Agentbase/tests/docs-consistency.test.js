@@ -30,6 +30,8 @@ const adrTemplate = readRepoFile('backlog/decisions/0000-adr-template.md');
 const contributing = readRepoFile('CONTRIBUTING.md');
 const extensionsRegistryMd = readRepoFile('Agentbase/templates/extensions-registry.md');
 const referenceNotes = readRepoFile('Agentbase/templates/reference/notes.md');
+const graphifyInstallReference = readRepoFile('Agentbase/templates/modules/knowledge-graph/graphify/install.md');
+const interviewPhase1 = readRepoFile('Agentbase/templates/interview/phase-1-project.md');
 
 describe('README docs consistency', () => {
   it('documents Agentbase backlog location consistently in Turkish and English READMEs', () => {
@@ -53,7 +55,7 @@ describe('README docs consistency', () => {
 
   it('documents Codex as transform target with optional verify/adapt instead of separate bootstrap', () => {
     assert.ok(
-      readmeTr.includes('Codex icin ikinci bootstrap yoktur'),
+      readmeTr.includes('Codex için ikinci bootstrap yoktur'),
       'Turkce README Codex icin ikinci bootstrap olmadigini soylemeli'
     );
     assert.ok(
@@ -114,33 +116,25 @@ describe('README docs consistency', () => {
     assert.ok(!readmeEn.includes('Bootstrap Flow step 9'), 'English README must not reference obsolete bootstrap step number');
   });
 
-  it('keeps the 1.10.x to 1.11.x migration guide mirrored in both READMEs', () => {
-    assert.ok(
-      readmeTr.includes('### Geçiş Rehberi (1.10.x → 1.11.x)'),
-      'Turkce README 1.10.x -> 1.11.x gecis rehberini icermeli'
+  it('README.md and README.en.md mirror heading structure (H2 + H3 count parity)', () => {
+    const countHeadings = (md, level) => {
+      const re = new RegExp(`^${'#'.repeat(level)} `, 'gm');
+      return (md.match(re) || []).length;
+    };
+    const trH2 = countHeadings(readmeTr, 2);
+    const enH2 = countHeadings(readmeEn, 2);
+    const trH3 = countHeadings(readmeTr, 3);
+    const enH3 = countHeadings(readmeEn, 3);
+    assert.equal(
+      trH2,
+      enH2,
+      `H2 baslik sayisi eslesmiyor: TR=${trH2}, EN=${enH2} — README mirror'i bozulmus`
     );
-    assert.ok(
-      readmeEn.includes('### Migration Guide (1.10.x -> 1.11.x)'),
-      'English README must include the 1.10.x -> 1.11.x migration guide'
+    assert.equal(
+      trH3,
+      enH3,
+      `H3 baslik sayisi eslesmiyor: TR=${trH3}, EN=${enH3} — README mirror'i bozulmus`
     );
-    assert.ok(
-      readmeTr.includes('templates/interview/phase-{1-4}-*.md'),
-      'Turkce README interview phase breaking change kaynagini anlatmali'
-    );
-    assert.ok(
-      readmeEn.includes('templates/interview/phase-{1-4}-*.md'),
-      'English README must describe the interview phase breaking change source'
-    );
-    assert.ok(
-      readmeTr.includes('`CHANGELOG.md` → `[2.0.0]`'),
-      'Turkce README migration rehberi yayinlanmis changelog bolumune baglanmali'
-    );
-    assert.ok(
-      readmeEn.includes('`CHANGELOG.md` -> `[2.0.0]`'),
-      'English README migration guide must link to the released changelog section'
-    );
-    assert.ok(!readmeTr.includes('`CHANGELOG.md` → `[Unreleased]`'));
-    assert.ok(!readmeEn.includes('`CHANGELOG.md` -> `[Unreleased]`'));
   });
 
   it('documents greenfield placeholder handling consistently', () => {
@@ -295,6 +289,37 @@ describe('README docs consistency', () => {
     assert.ok(!readmeEn.includes('`/pre-deploy`'), 'English README must not use bare /pre-deploy');
     assert.ok(!readmeEn.includes('`/post-deploy`'), 'English README must not use bare /post-deploy');
   });
+
+  it('keeps the Turkish README concise, user-facing, and typo-free', () => {
+    const forbiddenTerms = [
+      'Claude Code 2.1.139+',
+      'evaluator model',
+      'machine-checkable',
+      'enjeksiyon zinciri',
+      'canonical kaynak',
+      'post-processor',
+      ' bosta ',
+      ' yonetimi ',
+      'Son islem',
+      ' Kapali ',
+      ' Yardim ',
+      ' Cikis ',
+    ];
+
+    for (const term of forbiddenTerms) {
+      assert.ok(!readmeTr.includes(term), `Turkce README son kullanici metninde gereksiz/hatali ifade var: ${term}`);
+    }
+
+    const longLines = readmeTr
+      .split('\n')
+      .map((line, index) => ({ line, lineNumber: index + 1 }))
+      .filter(({ line }) => line.length > 360)
+      .filter(({ line }) => !line.startsWith('|'))
+      .filter(({ line }) => !line.startsWith('!['))
+      .map(({ lineNumber, line }) => `${lineNumber}:${line.length}:${line.slice(0, 80)}`);
+
+    assert.deepEqual(longLines, [], 'Turkce README aciklama satirlari kisa ve taranabilir kalmali');
+  });
 });
 
 describe('bootstrap docs consistency', () => {
@@ -350,6 +375,49 @@ describe('bootstrap docs consistency', () => {
     assert.match(regressionAnalyzerAgent, /rollback\/down script dosya yolu/);
     assert.match(readmeTr, /\| `db-migration-discipline` \|/);
     assert.match(readmeEn, /\| `db-migration-discipline` \|/);
+  });
+
+  it('keeps the bootstrap completion condition aligned with the machine gate checks', () => {
+    assert.match(bootstrapCommand, /manifest_yazildi/);
+    assert.match(bootstrapCommand, /root_claude_import_zinciri_tam/);
+    assert.match(bootstrapCommand, /claude_runtime_dosyalari_var/);
+    assert.match(bootstrapCommand, /codebase_sizintisi_yok/);
+    assert.doesNotMatch(bootstrapCommand, /tum_teammate_ciktilari_var/);
+    assert.doesNotMatch(bootstrapCommand, /knowledge_graph_kontrolu_yapildi/);
+    assert.doesNotMatch(bootstrapCommand, /tamamlanma_raporu_basildi/);
+  });
+
+  it('initializes the bootstrap leak sentinel before Gate H uses it', () => {
+    const initIndex = bootstrapCommand.indexOf(': > /tmp/bootstrap-start');
+    const gateIndex = bootstrapCommand.indexOf('-newer /tmp/bootstrap-start');
+
+    assert.ok(initIndex !== -1, 'Bootstrap /tmp/bootstrap-start sentinel dosyasini baslangicta olusturmali');
+    assert.ok(gateIndex !== -1, 'Gate H Codebase sizintisini /tmp/bootstrap-start ile karsilastirmali');
+    assert.ok(initIndex < gateIndex, 'Sentinel Gate H kullanmadan once olusturulmali');
+    assert.match(bootstrapCommand, /H0: \/tmp\/bootstrap-start sentinel/);
+  });
+
+  it('describes the bootstrap verification gate set without stale gate counts', () => {
+    assert.match(readmeTr, /Gate A-H \+ B2/);
+    assert.match(readmeEn, /Gate A-H \+ B2/);
+    assert.doesNotMatch(readmeTr, /8 ayrı gate/);
+    assert.doesNotMatch(readmeEn, /Eight separate gates/);
+  });
+
+  it('keeps the Graphify install reference inside the Agentbase config boundary', () => {
+    assert.doesNotMatch(graphifyInstallReference, /Codebase\/\.claude/);
+    assert.doesNotMatch(graphifyInstallReference, /Codebase\/CLAUDE\.md/);
+    assert.doesNotMatch(graphifyInstallReference, /TASK-225'te eklenecek/);
+    assert.match(graphifyInstallReference, /Agentbase\/\.claude\/settings\.json/);
+    assert.match(graphifyInstallReference, /Agentbase\/\.claude\/hooks\/graphify-first-guard-v2\.js/);
+    assert.match(graphifyInstallReference, /Agentbase\/\.claude\/commands\/g\.md/);
+  });
+
+  it('keeps interview phase outputs aligned with Agentbase root document placement', () => {
+    assert.doesNotMatch(interviewPhase1, /Agentbase\/\.claude\/PROJECT\.md/);
+    assert.doesNotMatch(interviewPhase1, /Agentbase\/\.claude\/ARCHITECTURE\.md/);
+    assert.match(interviewPhase1, /Agentbase\/PROJECT\.md/);
+    assert.match(interviewPhase1, /Agentbase\/ARCHITECTURE\.md/);
   });
 });
 

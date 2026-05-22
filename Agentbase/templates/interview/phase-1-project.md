@@ -98,6 +98,6 @@ Bootstrap bu phase'e baslamadan once asagidaki bilgileri codebase'den otomatik c
 When all applicable questions are answered, Bootstrap:
 
 1. Populates `manifest.project.*` and `manifest.environments[]`
-2. Generates draft `PROJECT.md` → hedef: `Agentbase/.claude/PROJECT.md`
-3. Generates draft `ARCHITECTURE.md` → hedef: `Agentbase/.claude/ARCHITECTURE.md`
+2. Generates draft `PROJECT.md` → hedef: `Agentbase/PROJECT.md`
+3. Generates draft `ARCHITECTURE.md` → hedef: `Agentbase/ARCHITECTURE.md`
 4. Proceeds to **Phase 2 — Technical Preferences**

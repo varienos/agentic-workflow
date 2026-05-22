@@ -1959,7 +1959,7 @@ function collectGraphifyUpdateSteps(manifest, opts = {}) {
     if (subpaths.length > 0) {
       return [
         ...subpaths.map(p => `graphify update ${fmt(p)}`),
-        'python3 scripts/graphify-merge-layers.py',
+        'python3 ../Agentbase/scripts/graphify-merge-layers.py',
       ];
     }
   }

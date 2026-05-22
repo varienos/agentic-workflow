@@ -3,6 +3,39 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [2.2.0] - 2026-05-22
+
+### Eklenen
+
+- **bootstrap:** `onboarding.md` artık Agentbase ROOT'una yazılır (önceden `.claude/onboarding.md`); KUTSAL KURAL 2 ile uyumlu — tüm modeller (Claude, Gemini, Codex, Kimi, OpenCode) aynı root context'i okur.
+- **bootstrap:** Root `CLAUDE.md` `@ import` zinciri 3 dosyadan 6 dosyaya genişledi (PROJECT, STACK, DEVELOPER, ARCHITECTURE, WORKFLOWS, onboarding) — tek context dosyasından tüm proje bilgisine erişim sağlanır.
+- **bootstrap:** ADIM 8'e yeni **GATE B2** eklendi — root `CLAUDE.md` içindeki `@ import` satırlarının tüm root dokümanları kapsadığı doğrulanır; eksik import varsa BOOTSTRAP_INCOMPLETE üretir ve `/goal` evaluator yeni tura geçer.
+- **bootstrap:** ADIM 8 **GATE B** (root doküman konum kontrolü) ve **GATE E** (CLAUDE_FILL marker taraması) scope'una `onboarding.md` eklendi.
+- **agents:** `silent-failure-hunter.skeleton.md` eklendi — README'de Bootstrap'in ürettiği "3+1 review agent" iddiasıyla uyumlu base review agent'ı (Code Reviewer + Silent Failure Hunter + Regression Analyzer + koşullu Devils Advocate). ADIM 5.2.1 GENERATE blok haritasına da eklendi.
+- **tests:** README mirror H2+H3 başlık sayısı paritesi testi (`docs-consistency.test.js`) — TR/EN README yapısal asimetrisini CI'da yakalar.
+- **ci:** Workflow path filter genişledi (`test.yml`) — `README.md`, `README.en.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.github/workflows/**` değişikliklerinde de testler tetiklenir.
+- **gitignore:** Python pattern'leri eklendi — `__pycache__/`, `*.py[cod]`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `venv/`, `.venv/` (graphify-merge-layers.py çalıştırıldığında kalıntı bırakmaz).
+
+### Düzeltilen
+
+- **bootstrap:** KUTSAL KURAL 2 root doküman listesinden `BACKLOG.md` ve `GEMINI.md` çıkarıldı (BACKLOG.md backlog/ dizini ile yönetilir, GEMINI.md transform.js hedef çıktısıdır — Bootstrap doğrudan üretmez).
+- **bootstrap:** KUTSAL KURAL 2 üretim sorumluluk matrisi netleştirildi — "Bootstrap doğrudan üretir" / "Bootstrap çağırdığı araçların ürettiği" / "Transform.js opsiyonel çıktıları" / "Repo'da hazır gelen" olarak 4 katmana ayrıldı.
+- **bootstrap:** ADIM 2.7'deki `feedback_bootstrap_interview.md` ölü referansı kaldırıldı (memory dosyası, bootstrap içinden referans verilmemeliydi) — kural inline olarak yazıldı.
+- **bootstrap:** ADIM 3'teki phase template zorunluluğu açıklaması net madde listesine dönüştürüldü (TASK-210/T6a, TASK-214/T6b atıfları kaldırıldı).
+- **hook:** `turkish-diacritic-guard.js` kapsamından `.md` uzantısı çıkarıldı — kapsam `.claude/rules/turkish-writing.md` ile uyumlu hale getirildi (kod dosyaları: `.tsx/.jsx/.ts/.js/.mdx`; dokümantasyon prozası UI metni değildir).
+- **README.md / README.en.md:** Bootstrap Akışı ADIM 5 onboarding.md + enjeksiyon zinciri açıklaması güncellendi.
+
+### Bakım
+
+- `firebase-debug.log`, `Agentbase/GEMINI.md` (0 byte), `Agentbase/.gemini/`, root + Agentbase + Docbase `.DS_Store` kalıntıları silindi.
+- `Agentbase/templates/reference/workspace-v1.md` fosil dosyası silindi (v1 etiketli, hiçbir yerden referans yoktu, generate.js SKIP_DIRS'te zaten işlemiyordu).
+- `Agentbase/templates/extensions-registry.md` başına YAML ↔ MD kapsam farkı açıklaması eklendi — YAML (~15 eklenti, Bootstrap programatik kaynağı) ve MD (~50 eklenti, insan-okunabilir katalog) ayrımı netleşti.
+- Outdated `1.10.x → 1.11.x migration guide` testi silindi (README'de o içerik 2.0.0'da kaldırıldı).
+
+### Dokümantasyon
+
+- Root `CLAUDE.md` enjeksiyon zincirinin tüm modellere otomatik dağılımı açıkça belgelendi — `transform.js` her hedef CLI (Gemini, Codex, Kimi, OpenCode) için root `CLAUDE.md` içeriğini kendi context dosyasına kopyalar; manuel inject gerektirmez.
+
 ## [2.1.0] - 2026-05-12
 
 ### Eklenen
@@ -350,7 +383,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 ### Dokümantasyon
 
 - guvenlik hook ve session-tracker aciklamalari README'ye eklendi (TASK-168/169) (`622ce88`)
-- CONTRIBUTING.md test tablosunu 7'den 13 dosyaya guncelle (`a604f72`)
+- CONTRIBUTING.md test tablosunu 7'den 13 dosyaya güncelle (`a604f72`)
 
 ### Bakım
 

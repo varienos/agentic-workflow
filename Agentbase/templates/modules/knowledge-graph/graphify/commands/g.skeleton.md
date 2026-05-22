@@ -63,7 +63,7 @@ Ornek cikti (monorepo aktif):
   echo "   graphify update backend.aps/app && \\"
   echo "   graphify update kurye.aps/src && \\"
   echo "   graphify update musteri.aps/src && \\"
-  echo "   python3 scripts/graphify-merge-layers.py"
+  echo "   python3 ../Agentbase/scripts/graphify-merge-layers.py"
 Ornek cikti (tek-katman):
   echo "   graphify update ../Codebase"
 -->
@@ -127,7 +127,7 @@ NODE .createOrder() [src=src/services/OrderService.ts loc=L175 community=25]
 ## Referanslar
 
 - `.claude/rules/graphify-rules.md` — Graphify-First Workflow zorunlu kuralı
-- `scripts/graphify-merge-layers.py` — multi-layer monorepo merge (sadece monorepo modülü aktifse)
+- `../Agentbase/scripts/graphify-merge-layers.py` — multi-layer monorepo merge (sadece monorepo modülü aktifse)
 - `.git/hooks/pre-push` — push tetikleyici (opsiyonel kurulum)
 
 ---

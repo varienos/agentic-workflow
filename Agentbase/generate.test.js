@@ -850,7 +850,7 @@ describe('Graphify modulu generate akisi', () => {
       assert.match(out, /graphify update "musteri"/);
       // '../Codebase/' prefix sizmamali (yanlis path semantigi)
       assert.doesNotMatch(out, /\.\.\/Codebase/);
-      assert.match(out, /python3 scripts\/graphify-merge-layers\.py/);
+      assert.match(out, /python3 \.\.\/Agentbase\/scripts\/graphify-merge-layers\.py/);
       assert.match(out, / && \\\n/);
     });
   });
@@ -870,7 +870,7 @@ describe('Graphify modulu generate akisi', () => {
         assert.strictEqual(innerQuotes, 2, `echo satirinda sadece 2 dis quote olmali: ${l}`);
       }
       // Son satir trailing ' && \\' olmadan biter
-      assert.match(lines[lines.length - 1], /python3 scripts\/graphify-merge-layers\.py"$/);
+      assert.match(lines[lines.length - 1], /python3 \.\.\/Agentbase\/scripts\/graphify-merge-layers\.py"$/);
       // Diger satirlar trailing ' && \\' ile biter
       assert.match(lines[0], /&& \\\\"$/);
     });
@@ -971,6 +971,7 @@ describe('Graphify modulu generate akisi', () => {
       assert.ok(filled.includes('GRAPHIFY_LAYERS_PY'));
       assert.match(outputContent, /\("backend", ROOT \/ "backend\/graphify-out\/graph\.json"\)/);
       assert.match(outputContent, /\("kurye", ROOT \/ "kurye\/graphify-out\/graph\.json"\)/);
+      assert.match(outputContent, /ROOT = Path\.cwd\(\)\.resolve\(\)/);
       // Python yorumu bozulmamali — HTML comment delimitleri Python parse'i kirardi
       assert.doesNotMatch(outputContent, /<!--/);
       assert.doesNotMatch(outputContent, /-->/);
@@ -982,6 +983,7 @@ describe('Graphify modulu generate akisi', () => {
       assert.ok(filled.includes('GRAPHIFY_UPDATE_COMMAND'));
       // Rules dosyasinda raw komut bekleniyor — shell-quoted path, '../Codebase/' onek YOK
       assert.match(outputContent, /graphify update "backend" && \\\ngraphify update "kurye"/);
+      assert.match(outputContent, /python3 \.\.\/Agentbase\/scripts\/graphify-merge-layers\.py/);
       assert.doesNotMatch(outputContent.match(/graphify update [^\n]*/)[0], /\.\.\/Codebase/);
     });
   });

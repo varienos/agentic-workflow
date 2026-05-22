@@ -6,6 +6,13 @@ on:
   pull_request:
     paths:
       - 'Agentbase/**'
+      - 'README.md'
+      - 'README.en.md'
+      - 'CHANGELOG.md'
+      - 'CONTRIBUTING.md'
+      - 'SECURITY.md'
+      - 'CODE_OF_CONDUCT.md'
+      - '.github/workflows/**'
   workflow_dispatch:
 
 jobs:

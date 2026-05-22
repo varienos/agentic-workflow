@@ -130,8 +130,10 @@ claude
 Inside Claude Code:
 
 ```
-/bootstrap
+/goal /bootstrap until "BOOTSTRAP_COMPLETE"
 ```
+
+> **Why with `/goal`?** Bootstrap is a multi-step, multi-teammate process. The native `/goal` command introduced in Claude Code 2.1.139+ runs an evaluator model after every turn; it automatically verifies that Bootstrap wrote all files to the correct locations and no step was left half-done. Until the `BOOTSTRAP_COMPLETE` marker is produced, it continues new turns to close gaps. Plain `/bootstrap` also works, but failures require manual retry.
 
 ### Starting a new project from scratch (greenfield)
 
@@ -149,7 +151,7 @@ claude
 Inside Claude Code:
 
 ```
-/bootstrap
+/goal /bootstrap until "BOOTSTRAP_COMPLETE"
 ```
 
 When Bootstrap detects an empty Codebase, it switches to greenfield mode: asks for stack selection, generates workflow files, and shows scaffold setup commands. The directory must not contain real project files; `.gitkeep` and `.DS_Store` are ignored as placeholders, while files like README or package manifests make bootstrap start in existing-project mode.
@@ -158,42 +160,17 @@ When Bootstrap detects an empty Codebase, it switches to greenfield mode: asks f
 
 The `/bootstrap` command works through these high-level steps:
 
+0. **`/goal` mode requirement.** Bootstrap runs in the native `/goal` mode introduced in Claude Code 2.1.139+. After every turn `/goal`'s evaluator checks the completion gate in Step 8; if anything is missing, Claude continues a new turn to close the gap. The correct invocation: `/goal /bootstrap until "BOOTSTRAP_COMPLETE"`.
 1. **Prerequisite checks.** Backlog CLI, `Codebase/` access, and any previous manifest are checked.
 2. **Codebase analysis.** Project type, directory structure, subprojects, package manager, test tools, and module candidates are extracted.
 3. **Phased interview.** Project, technical preferences, developer profile, and domain rules are clarified.
 4. **Manifest generation.** The `Docbase/agentic/project-manifest.yaml` file is created.
-5. **File generation.** Commands, agents, hooks, rules, and supporting docs are produced from the manifest. If target CLI tools were selected, `transform.js` converts the output. If Codex was selected, do not run a separate bootstrap; the optional `/codex-verify` step only checks the Codex target surface after transform.
+5. **File generation.** Commands, agents, hooks, rules, and supporting docs are produced from the manifest. Root documents (`PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md`, `onboarding.md`) are written to **Agentbase root**; writing them under `.claude/` is forbidden — the reason is that all models (Claude, Gemini, Codex, Kimi, OpenCode) must be able to read the same root context. The root `CLAUDE.md` pulls in other documents via `@ import <file>.md` lines, establishing the injection chain — Claude reaches all project knowledge by reading a single context file. If target CLI tools were selected, `transform.js` converts the root `CLAUDE.md` into `GEMINI.md` / `AGENTS.md` / `.kimi/...` / `.opencode/...` formats — the injection chain is preserved automatically for every model. If Codex was selected, do not run a separate bootstrap; the optional `/codex-verify` step only checks the Codex target surface after transform.
 6. **Backlog initialization.** The backlog is created in `Agentbase/backlog/` with starter tasks.
 7. **Completion report.** Onboarding guide (`onboarding.md`), extension suggestions, and the git hook activation command are shown: `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
+8. **Completion verification gate.** The Gate A-H + B2 set (manifest, root document paths, root `CLAUDE.md` import chain, `.claude/` runtime files, `.claude-ignore`, no remaining `CLAUDE_FILL` markers, backlog initialized, non-empty content, no Codebase leakage) is checked with bash `test`/`find`/`grep`. On PASS the `BOOTSTRAP_COMPLETE` marker is printed; on FAIL the `/goal` evaluator triggers a new turn, or — in single-turn mode — the user is shown the `/goal` retry command.
 
-Re-runs support `overwrite`, `merge`, and `incremental` scenarios.
-
-### Migration Guide (1.10.x -> 1.11.x)
-
-Version 1.11.x introduced a Bootstrap **breaking change**: `templates/interview/phase-{1-4}-*.md` files are now required sources (TASK-214). The old "use defaults if missing" fallback was removed; Bootstrap now **fails fast** when any phase file is missing.
-
-**Standard installs cloned at 1.11.x or later:** No manual action is required; the phase files are already present.
-
-**If you are upgrading from a partial or customized install:**
-
-1. Verify that `Agentbase/templates/interview/` exists and contains 4 files:
-   ```bash
-   ls Agentbase/templates/interview/
-   # Expected: phase-1-project.md  phase-2-technical.md  phase-3-developer.md  phase-4-rules.md
-   ```
-2. If any file is missing, copy the current version from `main`:
-   ```bash
-   git checkout main -- Agentbase/templates/interview/
-   ```
-3. To upgrade your manifest to the 1.11.x format, set `manifest.template_version` to `"1.1.0"` (or rerun Bootstrap in `overwrite` mode; it bumps the manifest automatically).
-4. Older manifests may contain `manifest.rules.design_system: null`. The new behavior uses the `"none"` string; downstream consumers treat both values as equivalent for backwards compatibility.
-
-**Validation:**
-```bash
-cd Agentbase && npm test  # tests/interview-phase-validation.test.js should pass
-```
-
-For more detail, see `CHANGELOG.md` -> `[2.0.0]`.
+Re-runs support `overwrite`, `merge`, and `incremental` scenarios; the Step 8 completion gate runs in every mode.
 
 ## Commands
 

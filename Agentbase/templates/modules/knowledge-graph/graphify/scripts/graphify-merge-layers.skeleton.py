@@ -25,9 +25,9 @@ Davranış:
 - VARSAYILAN: bir katman eksik/bozuksa stderr hatası + exit 1 (silent fail yok)
 - OPT-IN: --allow-missing flag ile eski SKIP davranışı (eksik katmanlar atlanır, exit 0)
 
-Kullanım:
-    python3 scripts/graphify-merge-layers.py                  # strict (eksik = hata)
-    python3 scripts/graphify-merge-layers.py --allow-missing  # SKIP + devam et
+Kullanım (Codebase root'undan):
+    python3 ../Agentbase/scripts/graphify-merge-layers.py                  # strict (eksik = hata)
+    python3 ../Agentbase/scripts/graphify-merge-layers.py --allow-missing  # SKIP + devam et
 
 Pre-push hook tarafından otomatik çağrılabilir (kurulum: bootstrap "Graphify İlk Kurulum" adımı).
 """
@@ -37,7 +37,7 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path.cwd().resolve()
 
 # Bootstrap manifest verileriyle doldurulur (monorepo subproject yollari).
 # Tek-katman projelerde liste bos kalir ve script'in main()'i erken hata firlatir.
