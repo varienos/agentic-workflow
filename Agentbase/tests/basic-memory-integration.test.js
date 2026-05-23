@@ -249,19 +249,22 @@ describe('basic-memory MCP integration (TASK-236)', () => {
 
   describe('CHANGELOG Unreleased entry', () => {
     const changelog = readRepoFile('CHANGELOG.md');
+    const unreleasedMarker = changelog.includes('## [Unreleased]')
+      ? '## [Unreleased]'
+      : '## [Yayınlanmamış]';
 
     it('Unreleased bolumu bulunmali', () => {
       assert.ok(
-        changelog.includes('## [Unreleased]'),
-        'CHANGELOG.md [Unreleased] bolumu icermeli'
+        changelog.includes(unreleasedMarker),
+        'CHANGELOG.md Unreleased/Yayinlanmamis bolumu icermeli'
       );
     });
 
     it('basic-memory entegrasyon notu bulunmali', () => {
-      const unreleasedSection = changelog.split('## [Unreleased]')[1]?.split('## [2.2.0]')[0] || '';
+      const unreleasedSection = changelog.split(unreleasedMarker)[1]?.split('## [2.2.0]')[0] || '';
       assert.ok(
         unreleasedSection.includes('basic-memory'),
-        'Unreleased section basic-memory entegrasyon notu icermeli'
+        'Unreleased/Yayinlanmamis section basic-memory entegrasyon notu icermeli'
       );
     });
   });

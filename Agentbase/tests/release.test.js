@@ -167,6 +167,11 @@ describe('validateVersionSync', () => {
     assert.equal(result, null, 'Yayinlanmamis drift olmamali');
   });
 
+  it('CHANGELOG Unreleased ile baslarsa drift degil', () => {
+    const result = validateVersionSync('1.5.0', 'v1.5.0', '## [Unreleased]\n### Eklenen\n');
+    assert.equal(result, null, 'Unreleased drift olmamali');
+  });
+
   it('tag yoksa (null) sadece CHANGELOG kontrolu', () => {
     const result = validateVersionSync('0.1.0', null, '## [0.1.0] - 2026-03-25\n');
     assert.equal(result, null, 'tag yok, CHANGELOG ve pkg eslesiyor');

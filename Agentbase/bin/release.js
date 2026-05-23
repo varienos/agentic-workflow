@@ -146,10 +146,11 @@ function validateVersionSync(pkgVersion, latestTag, changelogContent) {
     const topSection = changelogContent.match(/## \[([^\]]+)\]/);
     if (topSection) {
       const changelogVersion = topSection[1];
-      if (changelogVersion !== 'Yayınlanmamış' && tagVersion && changelogVersion !== tagVersion) {
+      const isUnreleased = changelogVersion === 'Yayınlanmamış' || changelogVersion === 'Unreleased';
+      if (!isUnreleased && tagVersion && changelogVersion !== tagVersion) {
         drifts.push(`CHANGELOG ust bolum (${changelogVersion}) != latest tag (${latestTag})`);
       }
-      if (changelogVersion !== 'Yayınlanmamış' && changelogVersion !== pkgVersion) {
+      if (!isUnreleased && changelogVersion !== pkgVersion) {
         drifts.push(`CHANGELOG ust bolum (${changelogVersion}) != package.json (${pkgVersion})`);
       }
     }

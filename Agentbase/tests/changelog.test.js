@@ -137,6 +137,23 @@ describe('releaseVersion', () => {
     fs.unlinkSync(tmpFile);
   });
 
+  it('Unreleased bolumunu versiyon ile degistiriyor', () => {
+    const tmpFile = path.join(os.tmpdir(), `changelog-release-unreleased-${Date.now()}.md`);
+    const content = HEADER + '## [Unreleased]\n\n### Eklenen\n\n- Test ozellik (`abc1234`)\n';
+    fs.writeFileSync(tmpFile, content);
+
+    const today = new Date().toISOString().slice(0, 10);
+    releaseVersion('1.0.0', { changelogPath: tmpFile });
+    const updated = fs.readFileSync(tmpFile, 'utf8');
+
+    assert.ok(updated.includes('[1.0.0]'), 'versiyon degismeli');
+    assert.ok(!updated.includes('[Unreleased]'), 'Unreleased kalmamali');
+    assert.ok(updated.includes('Test ozellik'), 'icerik korunmali');
+    assert.ok(updated.includes(`## [1.0.0] - ${today}`), 'bugunun tarihi yazilmali');
+
+    fs.unlinkSync(tmpFile);
+  });
+
   it('dry-run modunda dosyayi degistirmez ve guncel icerigi dondurur', () => {
     const tmpFile = path.join(os.tmpdir(), `changelog-release-dry-${Date.now()}.md`);
     const content = HEADER + '## [Yayınlanmamış] - 2026-03-23\n\n### Eklenen\n\n- Dry run test (`abc1234`)\n';

@@ -176,14 +176,14 @@ function releaseVersion(version, options = {}) {
   const displayVersion = version.replace(/^v/, '');
   const today = new Date().toISOString().slice(0, 10);
 
-  // [Yayınlanmamış] → [version] ve tarihi güncelle
+  // [Yayınlanmamış] / [Unreleased] → [version] ve tarihi güncelle
   const updated = content.replace(
-    /## \[Yayınlanmamış\]\s*-\s*\d{4}-\d{2}-\d{2}/,
+    /## \[(?:Yayınlanmamış|Unreleased)\](?:\s*-\s*\d{4}-\d{2}-\d{2})?/,
     `## [${displayVersion}] - ${today}`
   );
 
   if (updated === content) {
-    console.error('Hata: [Yayınlanmamış] bölümü bulunamadı.');
+    console.error('Hata: [Yayınlanmamış] veya [Unreleased] bölümü bulunamadı.');
     process.exit(1);
   }
 
@@ -193,7 +193,7 @@ function releaseVersion(version, options = {}) {
   }
 
   fs.writeFileSync(changelogPath, updated);
-  console.log(`CHANGELOG.md güncellendi: [Yayınlanmamış] → [${displayVersion}] (${today})`);
+  console.log(`CHANGELOG.md güncellendi: yayınlanmamış bölüm → [${displayVersion}] (${today})`);
   return updated;
 }
 
