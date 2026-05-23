@@ -28,10 +28,11 @@ Bu workflow aşağıdaki dış MCP server'larını runtime'da çalıştırır. T
 
 ### Vault Gizliliği (Opsiyonel)
 
-`Docbase/memory/` vault git'e dahildir → tüm worktree'ler aynı bilgi tabanını paylaşır, PR'larda audit-friendly. Hassas içerik için git'ten dışlamak istersen Codebase `.gitignore` dosyasına şu satırı ekle:
+`Docbase/memory/` vault git'e dahildir → tüm worktree'ler aynı bilgi tabanını paylaşır, PR'larda audit-friendly. Hassas içerik için git'ten dışlamak istersen Codebase'in `.gitignore` dosyasına (git Codebase tarafında çalıştığı için) Docbase yolunu ekle. Codebase ve Docbase aynı git ağacında değilse vault zaten git dışındadır.
 
 ```
-Docbase/memory/
+# Codebase/.gitignore (vault Docbase/ altında, Codebase'e göreli)
+../Docbase/memory/
 ```
 
 > Vault'u git'ten dışlarsan farklı makinelerde aynı hafıza erişimi için cloud sync (basic-memory cloud opsiyonu) veya manuel senkronizasyon gerekir.

@@ -188,13 +188,31 @@ Kurduktan sonra /bootstrap komutunu tekrar calistirin.
 
 basic-memory Python 3.12+ gerektirir. `uv` Python'i otomatik yonetir, ayri sistem Python'ina gerek yoktur.
 
-Bash: `uv python find 3.12 >/dev/null 2>&1 || echo "__PY_312_MISSING__"`
+`uv python find` registry erisimi yapabildiginden ag/SSL hatasini "kurulu degil" diye yanlis yorumlamamak icin deterministik yerel kontrol kullanilir (1.1.5.b ile ayni pattern):
 
-- **`__PY_312_MISSING__`** → Otomatik kurulum dene: `uv python install 3.12`
-  - Kurulum basariliysa → `✅ Python 3.12 kuruldu (uv-managed)` yazdir ve devam et.
-  - Kurulum hata verirse → stderr ciktisini kullaniciya goster ve KOMPLE DUR.
+```bash
+# 1) Yerelde kurulu mu? (ag erisimi gerekmez, registry hatasi etkilemez)
+if uv python list --only-installed 2>/dev/null | grep -Eq '^cpython-3\.(1[2-9]|[2-9][0-9])'; then
+  echo "__PY_312_OK__"
+else
+  # 2) Yerelde yok — install denenebilir. Ag hatasi ayri yakalanir.
+  echo "__PY_312_MISSING__"
+fi
+```
 
-- **Varsa** → `✅ Python 3.12+ bulundu (uv-managed)` yazdir.
+- **`__PY_312_OK__`** → `✅ Python 3.12+ bulundu (uv-managed)` yazdir ve devam et.
+
+- **`__PY_312_MISSING__`** → Kurulum dene (stderr yutulmaz):
+  ```bash
+  if uv python install 3.12 2>/tmp/uv-py-stderr; then
+    echo "✅ Python 3.12 kuruldu (uv-managed)"
+  else
+    cat /tmp/uv-py-stderr
+    echo "__PY_312_INSTALL_FAILED__"
+  fi
+  ```
+  - Basariliysa → devam et.
+  - `__PY_312_INSTALL_FAILED__` → Yukarida gosterilen stderr ag/proxy/SSL hatasi olabilir. Kullaniciya hata mesajini goster ve KOMPLE DUR. ASLA "Python yok, baska yerden indir" diye yorumlama — kok sebep ag olabilir.
 
 **1.1.5.b — basic-memory Kurulum Kontrolu**
 
@@ -1514,8 +1532,17 @@ Lead (sen)
   │    NOT: CLAUDE.md.skeleton'daki GENERATE bloklarini manifest'ten doldur.
   │         Backlog CLI rehberi SABIT kalir, proje bilgileri GENERATE bloklarina girer.
   │         .mcp.json `templates/core/mcp.skeleton.json` kaynagindan ZORUNLU olarak uretilir — codex + basic-memory MCP entry'lerini icerir.
-  │         basic-memory vault: `mkdir -p ../Docbase/memory && uvx basic-memory project add <project-name> ../Docbase/memory` ile register edilir.
-  │         <project-name> manifest.project.name veya dizin adından alınır; çakışma varsa `<name>-<timestamp>` suffix eklenir.
+  │         basic-memory vault init prosedürü (idempotent + fail-loud):
+  │           1) VAULT_DIR="$(cd .. && pwd -P)/Docbase/memory"  # canonical, boşluk-safe
+  │           2) PROJ_NAME=manifest.project.name (yoksa dizin adı). Reserved chars sanitize edilir.
+  │           3) mkdir -p "$VAULT_DIR" || { echo "❌ vault mkdir basarisiz"; exit 1; }
+  │           4) Çakışma tespiti: `uvx basic-memory project list --json` ile mevcut projeleri parse et.
+  │              - `$PROJ_NAME` listede yoksa: `uvx basic-memory project add "$PROJ_NAME" "$VAULT_DIR"` çağır.
+  │                Exit code 0 olmazsa stderr göster + DUR (silent overwrite riski yok).
+  │              - Listede VARSA ve aynı path'e işaret ediyorsa: idempotent — atla.
+  │              - Listede VARSA ama farklı path'e işaret ediyorsa: `${PROJ_NAME}-$(date +%s)` suffix ile yeni ad dene.
+  │           5) `--json` çıktısı yoksa (eski sürüm) fallback: `project list` çıktısında `^$PROJ_NAME ` regex'i ile kontrol.
+  │           Tüm path argümanları DAİMA tırnaklı ("$VAULT_DIR", "$PROJ_NAME") — boşluk/symlink path'lerde sessiz çatallanmayı önler.
   │
   └──► Teammate 5: root-generator (Agent tool)
        Gorev: Root dokumantasyon dosyalarini uret
@@ -2721,6 +2748,22 @@ if [ -f /tmp/bootstrap-start ]; then
   if [ -z "$leak" ]; then echo "✅ H1: Codebase'e sızıntı yok"; else echo "❌ H1: Codebase'e SIZINTI: $leak"; fi
 else
   echo "❌ H0: /tmp/bootstrap-start sentinel YOK — Codebase sızıntı kontrolü güvenilir değil"
+fi
+
+# === GATE I: basic-memory shared agent memory layer hazır (TASK-236) ===
+# Bootstrap basic-memory'yi zorunlu kıldığı için verification gate'te de doğrulanmalı —
+# sessiz başarısızlığı önler (Teammate 5 vault init talimatı yutulursa BOOTSTRAP_COMPLETE yazılmasın).
+test -f ./.mcp.json && echo "✅ I1: .mcp.json var" || echo "❌ I1: .mcp.json YOK"
+if [ -f ./.mcp.json ]; then
+  grep -q '"basic-memory"' ./.mcp.json && echo "✅ I2: .mcp.json basic-memory entry içeriyor" || echo "❌ I2: .mcp.json basic-memory entry EKSIK"
+  grep -q '"codex"' ./.mcp.json && echo "✅ I3: .mcp.json codex entry içeriyor" || echo "❌ I3: .mcp.json codex entry EKSIK"
+fi
+test -d ../Docbase/memory && echo "✅ I4: Docbase/memory vault dizini var" || echo "❌ I4: Docbase/memory vault dizini YOK"
+# basic-memory kurulum kalıcılığı (ADIM 1.1.5'te doğrulanan paket hala kurulu mu?)
+if uv tool list 2>/dev/null | grep -q "^basic-memory "; then
+  echo "✅ I5: basic-memory uv tool olarak kurulu"
+else
+  echo "❌ I5: basic-memory kuruluş kayboldu (ADIM 1.1.5'te vardı)"
 fi
 ```
 

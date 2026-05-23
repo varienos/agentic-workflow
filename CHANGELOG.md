@@ -20,8 +20,12 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 ### Düzeltilen
 
-- **bootstrap (codex review):** ADIM 1.1.5'e Python 3.12+ kontrol alt-adımı (`uv python find 3.12 || uv python install 3.12`) eklendi — AC #1(a) gereksinimini explicit karşılar (önceden `uv` kurulu olunca Python kontrolü atlanıyordu).
+- **bootstrap (codex review):** ADIM 1.1.5'e Python 3.12+ kontrol alt-adımı eklendi — AC #1(a) gereksinimini explicit karşılar (önceden `uv` kurulu olunca Python kontrolü atlanıyordu).
 - **bootstrap (codex review):** `uvx basic-memory --version 2>/dev/null` silent-failure pattern'i kaldırıldı — ağ/proxy/SSL hatalarını "kurulu değil" diye yanlış yorumluyordu. Yerine deterministik `uv tool list | grep basic-memory` kurulu paket kontrolü + ayrı runtime hata yakalama (`__BM_RUNTIME_ERROR__` marker) eklendi.
+- **bootstrap (review-2):** `uv python find 3.12 >/dev/null 2>&1` aynı silent-failure pattern tekrarı düzeltildi — `uv python list --only-installed` ile yerelde kurulu kontrol + `__PY_312_INSTALL_FAILED__` marker ağ hatasını install-fail'den ayırır.
+- **bootstrap (review-2) ADIM 8 GATE I eklendi** — basic-memory verification gate: `.mcp.json` varlığı + `basic-memory`/`codex` entry kontrolü, `Docbase/memory/` vault dizini, `basic-memory` kurulum kalıcılığı. Önceden Teammate 5 vault init sessizce başarısız olsa bile `BOOTSTRAP_COMPLETE` yazılabiliyordu (fail-loud prensibi ihlali).
+- **bootstrap (review-2) Teammate 5 vault init spec idempotent + race-safe:** `uvx basic-memory project list --json` ile çakışma deterministik tespit edilir (locale-safe), `VAULT_DIR=$(cd .. && pwd -P)/Docbase/memory` ile canonical/quoted path (boşluk/symlink koruması), aynı path'e işaret eden mevcut kayıt idempotent atlanır.
+- **PROJECT.md skeleton:** Vault `.gitignore` notu `Codebase/.gitignore` → `../Docbase/memory/` olarak düzeltildi (vault Docbase altında, Codebase'e göreli yol). Önceden yanlış dizine işaret ediyordu.
 
 ## [2.2.0] - 2026-05-22
 

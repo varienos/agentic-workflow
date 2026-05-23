@@ -106,6 +106,44 @@ describe('basic-memory MCP integration (TASK-236)', () => {
       );
     });
 
+    it('Python 3.12 kontrolu deterministik (uv python list --only-installed) + ag hatasi ayrimi', () => {
+      assert.ok(
+        bootstrap.includes('uv python list --only-installed'),
+        'Python 3.12 deterministik yerel kontrol bulunmali (registry erisimi gerekmez)'
+      );
+      assert.ok(
+        bootstrap.includes('__PY_312_OK__'),
+        'Python 3.12 basari marker (__PY_312_OK__) bulunmali'
+      );
+      assert.ok(
+        bootstrap.includes('__PY_312_INSTALL_FAILED__'),
+        'Python 3.12 install hata marker (__PY_312_INSTALL_FAILED__) — ag/registry ayrimi icin'
+      );
+      assert.ok(
+        !bootstrap.includes('uv python find 3.12 >/dev/null 2>&1'),
+        'Eski silent-failure pattern (uv python find 2>&1) kalmamali — stderr yutmak yasak'
+      );
+    });
+
+    it('Teammate 5 vault init spec: idempotent + json-based catisma tespiti + tirnakli path', () => {
+      assert.ok(
+        bootstrap.includes('project list --json'),
+        'Catisma tespiti deterministik JSON ile yapilmali (locale-safe)'
+      );
+      assert.ok(
+        bootstrap.includes('VAULT_DIR'),
+        'Canonical vault yolu degiskeni (VAULT_DIR) tanimlanmali'
+      );
+      assert.ok(
+        bootstrap.includes('"$VAULT_DIR"'),
+        'Vault path tirnaklanmis kullanilmali (bosluk/symlink koruma)'
+      );
+      assert.ok(
+        /idempotent/i.test(bootstrap),
+        'Idempotent davranis dokumante edilmeli'
+      );
+    });
+
     it('mcp.skeleton.json kaynagina referans verir (Teammate 5 alani)', () => {
       assert.ok(
         bootstrap.includes('templates/core/mcp.skeleton.json'),
@@ -224,6 +262,45 @@ describe('basic-memory MCP integration (TASK-236)', () => {
       assert.ok(
         unreleasedSection.includes('basic-memory'),
         'Unreleased section basic-memory entegrasyon notu icermeli'
+      );
+    });
+  });
+
+  describe('ADIM 8 GATE I — basic-memory verification gate', () => {
+    const bootstrap = readRepoFile('Agentbase/.claude/commands/bootstrap.md');
+
+    it('GATE I baslik icermeli', () => {
+      assert.ok(
+        bootstrap.includes('GATE I:'),
+        'ADIM 8\'de GATE I baslik bulunmali (basic-memory verification)'
+      );
+    });
+
+    it('GATE I .mcp.json varligini ve iceriksel dogrulugunu kontrol eder', () => {
+      const gateIBlock = bootstrap.split('# === GATE I:')[1]?.split('### 8.2')[0] || '';
+      assert.ok(
+        gateIBlock.includes('.mcp.json'),
+        'GATE I .mcp.json varlik kontrolu icermeli'
+      );
+      assert.ok(
+        gateIBlock.includes('"basic-memory"'),
+        'GATE I .mcp.json icinde basic-memory entry kontrolu icermeli'
+      );
+      assert.ok(
+        gateIBlock.includes('"codex"'),
+        'GATE I .mcp.json icinde codex entry kontrolu icermeli'
+      );
+    });
+
+    it('GATE I vault dizini ve basic-memory kurulumu kontrol eder', () => {
+      const gateIBlock = bootstrap.split('# === GATE I:')[1]?.split('### 8.2')[0] || '';
+      assert.ok(
+        gateIBlock.includes('Docbase/memory'),
+        'GATE I vault dizini varligi kontrolu icermeli'
+      );
+      assert.ok(
+        gateIBlock.includes('uv tool list'),
+        'GATE I basic-memory kurulum kaliciligi kontrolu icermeli'
       );
     });
   });
