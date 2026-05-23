@@ -3,62 +3,46 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [Unreleased]
+## [Yayınlanmamış] - 2026-05-23
 
 ### Eklenen
 
-- **bootstrap:** `basic-memory` MCP zorunlu bağımlılık olarak entegre edildi (shared agent memory layer). Tüm CLI ajanları (Claude, Codex, Gemini, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak Markdown knowledge graph'ına bağlanır. Backlog.md ile aynı zorunluluk seviyesinde — `uv` veya basic-memory yoksa bootstrap çalışmaz.
-- **bootstrap:** ADIM 1.1.5 eklendi — `uv` (Python paket yöneticisi) ve basic-memory varlık/kurulum kontrolü, eksikse net kurulum komutu gösterilir ve KOMPLE DUR.
-- **templates:** `templates/core/mcp.skeleton.json` eklendi — `.mcp.json` artık zorunlu olarak skeleton'dan üretilir (codex + basic-memory MCP entry'leri). Önceden "gerekirse Claude doğrudan oluşturur" idi.
-- **PROJECT.md skeleton:** Yeni "Bağımlılıklar" bölümü — basic-memory (AGPL-3.0, MCP subprocess), codex, backlog.md lisans bilgisi ve AGPL'in proje lisansını etkilemediği vurgulanır. Vault gizliliği için opt-in `.gitignore` notu.
-- **README.md / README.en.md:** IMPORTANT callout iki zorunlu bağımlılığı (Backlog.md + basic-memory) listeler. "Ne Sağlar?" bölümüne `Shared agent memory layer` maddesi eklendi.
-
-### Değişen
-
-- **bootstrap:** KUTSAL KURAL 2 üretim sorumluluğu matrisinde `.mcp.json` artık "zorunlu" olarak işaretli (önceden "gerekirse"). Skeleton kaynağı `templates/core/mcp.skeleton.json` belirtildi.
-- **bootstrap:** Teammate 5 root-generator talimatına vault init adımı (`mkdir -p ../Docbase/memory && uvx basic-memory project add`) eklendi.
+- **bootstrap:** ORCHESTRATION.md + LESSONS.md statik root dokümanları @ import zincirine bağla (`0faa00d`)
+- **#236:** basic-memory MCP zorunlu — shared agent memory layer (`548ebd8`)
 
 ### Düzeltilen
 
-- **bootstrap (codex review):** ADIM 1.1.5'e Python 3.12+ kontrol alt-adımı eklendi — AC #1(a) gereksinimini explicit karşılar (önceden `uv` kurulu olunca Python kontrolü atlanıyordu).
-- **bootstrap (codex review):** `uvx basic-memory --version 2>/dev/null` silent-failure pattern'i kaldırıldı — ağ/proxy/SSL hatalarını "kurulu değil" diye yanlış yorumluyordu. Yerine deterministik `uv tool list | grep basic-memory` kurulu paket kontrolü + ayrı runtime hata yakalama (`__BM_RUNTIME_ERROR__` marker) eklendi.
-- **bootstrap (review-2):** `uv python find 3.12 >/dev/null 2>&1` aynı silent-failure pattern tekrarı düzeltildi — `uv python list --only-installed` ile yerelde kurulu kontrol + `__PY_312_INSTALL_FAILED__` marker ağ hatasını install-fail'den ayırır.
-- **bootstrap (review-2) ADIM 8 GATE I eklendi** — basic-memory verification gate: `.mcp.json` varlığı + `basic-memory`/`codex` entry kontrolü, `Docbase/memory/` vault dizini, `basic-memory` kurulum kalıcılığı. Önceden Teammate 5 vault init sessizce başarısız olsa bile `BOOTSTRAP_COMPLETE` yazılabiliyordu (fail-loud prensibi ihlali).
-- **bootstrap (review-2) Teammate 5 vault init spec idempotent + race-safe:** `uvx basic-memory project list --json` ile çakışma deterministik tespit edilir (locale-safe), `VAULT_DIR=$(cd .. && pwd -P)/Docbase/memory` ile canonical/quoted path (boşluk/symlink koruması), aynı path'e işaret eden mevcut kayıt idempotent atlanır.
-- **PROJECT.md skeleton:** Vault `.gitignore` notu `Codebase/.gitignore` → `../Docbase/memory/` olarak düzeltildi (vault Docbase altında, Codebase'e göreli yol). Önceden yanlış dizine işaret ediyordu.
+- **bootstrap:** core command ve agent dosya sayilari tutarsizligi giderildi (`b622af8`)
+- **#236:** code-reviewer + silent-failure-hunter bulgulari duzeltildi (`ed9bd85`)
+- **bootstrap:** @ import → @<dosya> Claude Code resmi import syntax'ına geçiş (`475267e`)
+- **#236:** codex review bulgulari duzeltildi (`b8e6267`)
+
+### Bakım
+
+- release changelog marker uyumlulugu (`9c27c0b`)
 
 ## [2.2.0] - 2026-05-22
 
 ### Eklenen
 
-- **bootstrap:** `onboarding.md` artık Agentbase ROOT'una yazılır (önceden `.claude/onboarding.md`); KUTSAL KURAL 2 ile uyumlu — tüm modeller (Claude, Gemini, Codex, Kimi, OpenCode) aynı root context'i okur.
-- **bootstrap:** Root `CLAUDE.md` `@ import` zinciri 3 dosyadan 6 dosyaya genişledi (PROJECT, STACK, DEVELOPER, ARCHITECTURE, WORKFLOWS, onboarding) — tek context dosyasından tüm proje bilgisine erişim sağlanır.
-- **bootstrap:** ADIM 8'e yeni **GATE B2** eklendi — root `CLAUDE.md` içindeki `@ import` satırlarının tüm root dokümanları kapsadığı doğrulanır; eksik import varsa BOOTSTRAP_INCOMPLETE üretir ve `/goal` evaluator yeni tura geçer.
-- **bootstrap:** ADIM 8 **GATE B** (root doküman konum kontrolü) ve **GATE E** (CLAUDE_FILL marker taraması) scope'una `onboarding.md` eklendi.
-- **agents:** `silent-failure-hunter.skeleton.md` eklendi — README'de Bootstrap'in ürettiği "3+1 review agent" iddiasıyla uyumlu base review agent'ı (Code Reviewer + Silent Failure Hunter + Regression Analyzer + koşullu Devils Advocate). ADIM 5.2.1 GENERATE blok haritasına da eklendi.
-- **tests:** README mirror H2+H3 başlık sayısı paritesi testi (`docs-consistency.test.js`) — TR/EN README yapısal asimetrisini CI'da yakalar.
-- **ci:** Workflow path filter genişledi (`test.yml`) — `README.md`, `README.en.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.github/workflows/**` değişikliklerinde de testler tetiklenir.
-- **gitignore:** Python pattern'leri eklendi — `__pycache__/`, `*.py[cod]`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `venv/`, `.venv/` (graphify-merge-layers.py çalıştırıldığında kalıntı bırakmaz).
+- **graphify:** merge script node id namespace + link endpoint dönüşümü (`cbdc130`)
+- **graphify-hook:** cache hata logging + deterministic recovery (`b1bf7bb`)
+- **bootstrap:** graphify modülünü bootstrap akışına ve README'ye entegre (`124e13c`)
+- **modules:** knowledge-graph/graphify modülü dev.aps deseniyle entegre (`4b09464`)
 
 ### Düzeltilen
 
-- **bootstrap:** KUTSAL KURAL 2 root doküman listesinden `BACKLOG.md` ve `GEMINI.md` çıkarıldı (BACKLOG.md backlog/ dizini ile yönetilir, GEMINI.md transform.js hedef çıktısıdır — Bootstrap doğrudan üretmez).
-- **bootstrap:** KUTSAL KURAL 2 üretim sorumluluk matrisi netleştirildi — "Bootstrap doğrudan üretir" / "Bootstrap çağırdığı araçların ürettiği" / "Transform.js opsiyonel çıktıları" / "Repo'da hazır gelen" olarak 4 katmana ayrıldı.
-- **bootstrap:** ADIM 2.7'deki `feedback_bootstrap_interview.md` ölü referansı kaldırıldı (memory dosyası, bootstrap içinden referans verilmemeliydi) — kural inline olarak yazıldı.
-- **bootstrap:** ADIM 3'teki phase template zorunluluğu açıklaması net madde listesine dönüştürüldü (TASK-210/T6a, TASK-214/T6b atıfları kaldırıldı).
-- **hook:** `turkish-diacritic-guard.js` kapsamından `.md` uzantısı çıkarıldı — kapsam `.claude/rules/turkish-writing.md` ile uyumlu hale getirildi (kod dosyaları: `.tsx/.jsx/.ts/.js/.mdx`; dokümantasyon prozası UI metni değildir).
-- **README.md / README.en.md:** Bootstrap Akışı ADIM 5 onboarding.md + enjeksiyon zinciri açıklaması güncellendi.
-
-### Bakım
-
-- `firebase-debug.log`, `Agentbase/GEMINI.md` (0 byte), `Agentbase/.gemini/`, root + Agentbase + Docbase `.DS_Store` kalıntıları silindi.
-- `Agentbase/templates/reference/workspace-v1.md` fosil dosyası silindi (v1 etiketli, hiçbir yerden referans yoktu, generate.js SKIP_DIRS'te zaten işlemiyordu).
-- `Agentbase/templates/extensions-registry.md` başına YAML ↔ MD kapsam farkı açıklaması eklendi — YAML (~15 eklenti, Bootstrap programatik kaynağı) ve MD (~50 eklenti, insan-okunabilir katalog) ayrımı netleşti.
-- Outdated `1.10.x → 1.11.x migration guide` testi silindi (README'de o içerik 2.0.0'da kaldırıldı).
+- **graphify:** merge script eksik katmanda non-zero exit + --allow-missing flag (`0fc732e`)
+- **#225:** codex review bulgulari — detect tipleri, hook idempotency, silent fail (`8da3ff9`)
+- **#224:** codex review bulgulari — graphify path semantigi ve shell-quote (`1ef05a4`)
 
 ### Dokümantasyon
 
-- Root `CLAUDE.md` enjeksiyon zincirinin tüm modellere otomatik dağılımı açıkça belgelendi — `transform.js` her hedef CLI (Gemini, Codex, Kimi, OpenCode) için root `CLAUDE.md` içeriğini kendi context dosyasına kopyalar; manuel inject gerektirmez.
+- CHANGELOG otomatik güncellendi [skip ci] (`d130a04`)
+
+### Sürüm
+
+- v2.2.0 — onboarding root migrasyonu, silent-failure-hunter, graphify path semantiği (`85b2e74`)
 
 ## [2.1.0] - 2026-05-12
 
@@ -407,7 +391,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 ### Dokümantasyon
 
 - guvenlik hook ve session-tracker aciklamalari README'ye eklendi (TASK-168/169) (`622ce88`)
-- CONTRIBUTING.md test tablosunu 7'den 13 dosyaya güncelle (`a604f72`)
+- CONTRIBUTING.md test tablosunu 7'den 13 dosyaya guncelle (`a604f72`)
 
 ### Bakım
 
