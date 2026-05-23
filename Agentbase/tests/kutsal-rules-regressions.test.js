@@ -118,9 +118,9 @@ describe('kutsal kural regressions', () => {
     assert.match(bootstrap, /Config dosyalari SADECE Agentbase icinde yasar/);
     assert.match(bootstrap, /Codebase icinde \.claude\/ OLUSTURULMAZ/);
     assert.match(bootstrap, /Git sadece Codebase de calisir/);
-    assert.match(bootstrap, /\.claude\/commands\/ \(15 core command dosyasi\)/);
+    assert.match(bootstrap, /\.claude\/commands\/ \(16 core command dosyasi\)/);
     assert.match(bootstrap, /codex-verify\.skeleton\.md/);
-    assert.match(bootstrap, /\.claude\/agents\/ \(7 core \+ uzman agent'lar\)/);
+    assert.match(bootstrap, /\.claude\/agents\/ \(8 core \+ uzman agent'lar\)/);
     assert.match(bootstrap, /api-smoke\.skeleton\.md/);
     assert.match(bootstrap, /service-documentation\.skeleton\.md/);
     assert.match(bootstrap, /docker-pre-deploy\.skeleton\.md/);

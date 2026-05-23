@@ -1484,8 +1484,8 @@ Lead (sen)
   │    Girdi: manifest + templates/core/commands/*.skeleton.md
   │                     + templates/core/agents/*.skeleton.md
   │                     + templates/core/rules/*.md (sabit) ve *.skeleton.md
-  │    Cikti: .claude/commands/ (15 core command dosyasi)
-  │           .claude/agents/ (7 core + uzman agent'lar)
+  │    Cikti: .claude/commands/ (16 core command dosyasi)
+  │           .claude/agents/ (8 core + uzman agent'lar)
   │           .claude/rules/ (core rule dosyalari; db-migration-discipline.md her zaman dahil)
   │    UZMAN AGENT URETIMI (bkz. 5.1.2):
   │
