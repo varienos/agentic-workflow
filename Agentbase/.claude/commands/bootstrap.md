@@ -2448,13 +2448,17 @@ Bu adım, hedef projeyi **iki-repo teslimat modeline** (Şık 1 — iki ayrı re
 
 Kaynak şablon: `Agentbase/templates/core/root-gitignore.skeleton`. Hedef: **proje kökü** (`Agentbase/../.gitignore`, yani `Codebase/` ve `Docbase/` ile aynı seviye). Yazımı **Bootstrap orkestratörü doğrudan yapar** — `generate.js` bu skeleton'u işlemez (çıktısını `Agentbase/` içinde tuttuğu için üst dizine yazamaz; bu yüzden skeleton `scanSkeletonFiles` taramasından muaftır).
 
-Idempotent kural:
+Idempotent + **kendini onaran** kural — Gate J ile **birebir aynı** geçerlilik koşulunu kullanır.
+
+**Geçerlilik koşulu (GATE J ile aynı):** `../.gitignore` şu üçünü de içerir → `AGENTIC-WORKFLOW-ROOT-GITIGNORE` sentinel'i, `^/Codebase/?$` satırı VE `^/Codebase-wt-\*/$` satırı (root-anchored, baştaki `/` ile).
 
 1. `../.gitignore` yoksa → `root-gitignore.skeleton` içeriğini olduğu gibi `../.gitignore` olarak yaz.
-2. Varsa ve içinde `AGENTIC-WORKFLOW-ROOT-GITIGNORE` sentinel'i geçiyorsa → ATLA (zaten kurulu).
-3. Varsa ama sentinel yoksa → skeleton içeriğini dosya **sonuna append** et (mevcut satırlar korunur).
+2. Varsa ve geçerlilik koşulunu **zaten sağlıyorsa** → ATLA (kurulu).
+3. Varsa ama koşulu **sağlamıyorsa** (sentinel yok VEYA gerekli satır(lar) eksik — partial/stale dosya) → eksik managed bloğu dosya **sonuna append/onar** et (mevcut satırlar korunur).
 
-Bu sayede `Codebase` (symlink veya gerçek dizin), Codebase worktree dizinleri (`Codebase-wt-*/`) ve OS gürültüsü üst-kök repoda izlenmez.
+> **Önemli (deadlock önleme):** "Sentinel var" tek başına yeterli DEĞİL. Sadece sentinele bakıp atlamak; sentinelı olup gerekli ignore satırları eksik (partial/stale) bir `.gitignore`'da Gate J'nin her turda FAIL etmesine ve `/goal` döngüsünün kilitlenmesine yol açar. Bu yüzden onarım koşulu Gate J koşuluyla **aynıdır** ve eksikse onarır.
+
+Pattern'ler **root-anchored**'dır (baştaki `/`): yalnızca proje kökündeki `Codebase` (symlink veya gerçek dizin), Codebase worktree dizinleri (`/Codebase-wt-*/`) ve OS gürültüsü üst-kök repoda izlenmez. Anchorsuz `Codebase` git'te her seviyede eşleşir (örn. `Agentbase/docs/Codebase/...`) — bu istenmez.
 
 ### Adim 6.6.2 — Geliştiriciye Opsiyonel `git init` Rehberi
 
@@ -2824,9 +2828,9 @@ fi
 # grep -q "Codebase" YETERSIZ — yorumda da gecer (false pass). Sentinel + EXACT ignore satiri kontrol et.
 if [ -f ../.gitignore ] \
    && grep -q "AGENTIC-WORKFLOW-ROOT-GITIGNORE" ../.gitignore \
-   && grep -Eq "^Codebase/?$" ../.gitignore \
-   && grep -Eq "^Codebase-wt-\*/$" ../.gitignore; then
-  echo "✅ J1: proje-kökü .gitignore var; sentinel + Codebase + worktree ignore satırları mevcut"
+   && grep -Eq "^/Codebase/?$" ../.gitignore \
+   && grep -Eq "^/Codebase-wt-\*/$" ../.gitignore; then
+  echo "✅ J1: proje-kökü .gitignore var; sentinel + root-anchored Codebase + worktree ignore satırları mevcut"
 else
   echo "❌ J1: proje-kökü ../.gitignore eksik veya sentinel/Codebase/worktree ignore satırı yok (ADIM 6.6.1 yutulmuş olabilir)"
 fi

@@ -81,9 +81,9 @@ Agentbase/                  ← FIXED — all worktrees share the same config
 │   └── shared-hook-utils.js  ← resolveCodebaseRoot(): env > manifest > fallback
 ├── .claude/rules/
 │
-Codebase/ → project (main)    ← Main worktree
-Codebase/ → wt-feat-auth      ← git worktree add (feature/auth branch)
-Codebase/ → wt-feat-pay       ← git worktree add (feature/payment branch)
+Codebase/ → project (main)          ← Main worktree
+Codebase/ → Codebase-wt-feat-auth   ← git worktree add (feature/auth branch)
+Codebase/ → Codebase-wt-feat-pay    ← git worktree add (feature/payment branch)
 ```
 
 In a traditional setup, `.claude/` lives in the project root; creating a worktree copies `.claude/` into each one, and config changes don't sync. The Agentbase separation solves this fundamentally:

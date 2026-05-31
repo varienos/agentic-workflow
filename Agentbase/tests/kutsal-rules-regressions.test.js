@@ -45,8 +45,8 @@ function gitCheckIgnore(repoRoot, relativePath) {
 
 function rootGitignoreGatePasses(content) {
   return content.includes('AGENTIC-WORKFLOW-ROOT-GITIGNORE')
-    && /^Codebase\/?$/m.test(content)
-    && /^Codebase-wt-\*\/$/m.test(content);
+    && /^\/Codebase\/?$/m.test(content)
+    && /^\/Codebase-wt-\*\/$/m.test(content);
 }
 
 const CORE_COMMAND_FILES = listSkeletonFiles('templates/core/commands');
@@ -151,10 +151,12 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     const content = read('templates/core/root-gitignore.skeleton');
 
     assert.match(content, /AGENTIC-WORKFLOW-ROOT-GITIGNORE/);
-    assert.match(content, /^Codebase$/m);
-    assert.match(content, /^Codebase\/$/m);
-    assert.match(content, /^Codebase-wt-\*\/$/m);
+    assert.match(content, /^\/Codebase$/m);
+    assert.match(content, /^\/Codebase\/$/m);
+    assert.match(content, /^\/Codebase-wt-\*\/$/m);
     assert.doesNotMatch(content, /^\*-wt-\*\/$/m);
+    // ROOT-ANCHORED kilidi (Finding 2): anchorsuz bare satirlar bulunmamali
+    assert.doesNotMatch(content, /^Codebase\/?$/m);
     assert.match(content, /Codebase'i \*\*ayrica\*\* klonlar\/baglar/);
     assert.doesNotMatch(content, /her sey gelir|her şey gelir/);
   });
@@ -177,7 +179,7 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     assert.match(repoGitignore, /^Codebase\/\*$/m);
     assert.match(repoGitignore, /^!Codebase\/\.gitkeep$/m);
     assert.match(repoGitignore, /^Codebase-wt-\*\/$/m);
-    assert.match(read('templates/core/root-gitignore.skeleton'), /^Codebase\/$/m);
+    assert.match(read('templates/core/root-gitignore.skeleton'), /^\/Codebase\/$/m);
     assert.equal(gitCheckIgnore(path.join(ROOT, '..'), 'Codebase-wt-feature/file.txt'), true);
   });
 
@@ -207,6 +209,11 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
       assert.equal(gitCheckIgnore(tempRoot, 'Codebase-wt-feature/file.txt'), true);
       assert.equal(gitCheckIgnore(tempRoot, 'Agentbase/bootstrap.md'), false);
       assert.equal(gitCheckIgnore(tempRoot, 'Docbase/notes.md'), false);
+
+      // ROOT-ANCHORED kilidi (Finding 2): nested Codebase yollari ignore EDILMEMELI
+      fs.mkdirSync(path.join(tempRoot, 'Agentbase/docs/Codebase'), { recursive: true });
+      fs.writeFileSync(path.join(tempRoot, 'Agentbase/docs/Codebase/nested.md'), '');
+      assert.equal(gitCheckIgnore(tempRoot, 'Agentbase/docs/Codebase/nested.md'), false);
     } finally {
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }
@@ -225,8 +232,8 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     // GATE J
     assert.match(bootstrap, /GATE J:/);
     assert.match(bootstrap, /grep -q "AGENTIC-WORKFLOW-ROOT-GITIGNORE" \.\.\/\.gitignore/);
-    assert.match(bootstrap, /grep -Eq "\^Codebase\/\?\$" \.\.\/\.gitignore/);
-    assert.match(bootstrap, /grep -Eq "\^Codebase-wt-\\\*\/\$" \.\.\/\.gitignore/);
+    assert.match(bootstrap, /grep -Eq "\^\/Codebase\/\?\$" \.\.\/\.gitignore/);
+    assert.match(bootstrap, /grep -Eq "\^\/Codebase-wt-\\\*\/\$" \.\.\/\.gitignore/);
     // Cekirdek kutsal kural ifadesi korunuyor (regresyon guvencesi)
     assert.match(bootstrap, /Git sadece Codebase de calisir/);
     assert.doesNotMatch(bootstrap, /kloduyla/);

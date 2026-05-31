@@ -14,11 +14,13 @@
 # ============================================================================
 
 # --- Codebase: ayrı repo + müşteri teslimatı (gerçek dizin veya worktree symlink'i) ---
-Codebase
-Codebase/
+# ROOT-ANCHORED (baştaki /): yalnızca proje kökündeki Codebase hedeflenir.
+# Anchorsuz "Codebase" git'te HER seviyede eşleşir (örn. Agentbase/docs/Codebase/...) — istenmez.
+/Codebase
+/Codebase/
 
 # --- Codebase git worktree dizinleri (Codebase git'ine bağlı, üst dev repoda izlenmez) ---
-Codebase-wt-*/
+/Codebase-wt-*/
 
 # --- OS / editör gürültüsü ---
 .DS_Store

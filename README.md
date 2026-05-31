@@ -80,9 +80,9 @@ Agentbase/                  ← SABIT — tüm worktree'ler aynı config'i kulla
 │   └── shared-hook-utils.js  ← resolveCodebaseRoot(): env > manifest > fallback
 ├── .claude/rules/
 │
-Codebase/ → proje (main)    ← Ana worktree
-Codebase/ → wt-feat-auth    ← git worktree add (feature/auth branch)
-Codebase/ → wt-feat-pay     ← git worktree add (feature/payment branch)
+Codebase/ → proje (main)            ← Ana worktree
+Codebase/ → Codebase-wt-feat-auth   ← git worktree add (feature/auth branch)
+Codebase/ → Codebase-wt-feat-pay    ← git worktree add (feature/payment branch)
 ```
 
 Geleneksel yapıda `.claude/` proje kökünde yaşar; worktree oluştururken her birinde ayrı `.claude/` kopyası oluşur, config değişiklikleri senkronize olmaz. Agentbase ayrımı bu sorunu kökten çözer:
