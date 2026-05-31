@@ -2,7 +2,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const assert = require('node:assert/strict');
+const { execFileSync } = require('node:child_process');
 const { describe, it } = require('node:test');
 const { SIMPLE_GENERATORS, processSkeletonFile, scanSkeletonFiles } = require('../generate.js');
 
@@ -29,6 +31,22 @@ function listSkeletonFiles(relativeDir) {
   }
 
   return files.sort();
+}
+
+function gitCheckIgnore(repoRoot, relativePath) {
+  try {
+    execFileSync('git', ['-C', repoRoot, 'check-ignore', '--quiet', relativePath], { stdio: 'ignore' });
+    return true;
+  } catch (error) {
+    if (error.status === 1) return false;
+    throw error;
+  }
+}
+
+function rootGitignoreGatePasses(content) {
+  return content.includes('AGENTIC-WORKFLOW-ROOT-GITIGNORE')
+    && /^Codebase\/?$/m.test(content)
+    && /^Codebase-wt-\*\/$/m.test(content);
 }
 
 const CORE_COMMAND_FILES = listSkeletonFiles('templates/core/commands');
@@ -136,6 +154,7 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     assert.match(content, /^Codebase$/m);
     assert.match(content, /^Codebase\/$/m);
     assert.match(content, /^Codebase-wt-\*\/$/m);
+    assert.doesNotMatch(content, /^\*-wt-\*\/$/m);
     assert.match(content, /Codebase'i \*\*ayrica\*\* klonlar\/baglar/);
     assert.doesNotMatch(content, /her sey gelir|her şey gelir/);
   });
@@ -145,6 +164,50 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     const included = skeletonFiles.some(filePath => filePath.endsWith('root-gitignore.skeleton'));
 
     assert.equal(included, false, 'root-gitignore.skeleton generate.js tarafindan islenmemeli — Bootstrap proje kokune dogrudan yazar');
+  });
+
+  it('template repo Codebase placeholder istisnasini root-gitignore.skeleton dan ayirir', () => {
+    const repoGitignore = fs.readFileSync(path.join(ROOT, '..', '.gitignore'), 'utf8');
+    const trackedCodebaseFiles = execFileSync('git', ['-C', path.join(ROOT, '..'), 'ls-files', 'Codebase'], {
+      encoding: 'utf8',
+    }).trim().split('\n').filter(Boolean);
+
+    assert.deepEqual(trackedCodebaseFiles, ['Codebase/.gitkeep']);
+    assert.match(repoGitignore, /Template repo placeholder'i/);
+    assert.match(repoGitignore, /^Codebase\/\*$/m);
+    assert.match(repoGitignore, /^!Codebase\/\.gitkeep$/m);
+    assert.match(read('templates/core/root-gitignore.skeleton'), /^Codebase\/$/m);
+  });
+
+  it('root-gitignore.skeleton gercek git ignore semantigiyle Codebase i disarida tutar', () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aw-root-gitignore-'));
+    try {
+      fs.writeFileSync(path.join(tempRoot, '.gitignore'), read('templates/core/root-gitignore.skeleton'));
+      execFileSync('git', ['-C', tempRoot, 'init', '--quiet']);
+
+      fs.mkdirSync(path.join(tempRoot, 'Agentbase'), { recursive: true });
+      fs.mkdirSync(path.join(tempRoot, 'Docbase'), { recursive: true });
+      fs.mkdirSync(path.join(tempRoot, 'Codebase'), { recursive: true });
+      fs.mkdirSync(path.join(tempRoot, 'Codebase-wt-feature'), { recursive: true });
+      execFileSync('git', ['-C', path.join(tempRoot, 'Codebase'), 'init', '--quiet']);
+      fs.writeFileSync(path.join(tempRoot, 'Agentbase/bootstrap.md'), '');
+      fs.writeFileSync(path.join(tempRoot, 'Docbase/notes.md'), '');
+      fs.writeFileSync(path.join(tempRoot, 'Codebase/package.json'), '{}');
+      fs.writeFileSync(path.join(tempRoot, 'Codebase-wt-feature/file.txt'), '');
+
+      const codebaseTopLevel = execFileSync('git', ['-C', path.join(tempRoot, 'Codebase'), 'rev-parse', '--show-toplevel'], {
+        encoding: 'utf8',
+      }).trim();
+
+      assert.equal(fs.realpathSync(codebaseTopLevel), fs.realpathSync(path.join(tempRoot, 'Codebase')));
+      assert.equal(gitCheckIgnore(tempRoot, 'Codebase/package.json'), true);
+      assert.equal(gitCheckIgnore(tempRoot, 'Codebase/.git/config'), true);
+      assert.equal(gitCheckIgnore(tempRoot, 'Codebase-wt-feature/file.txt'), true);
+      assert.equal(gitCheckIgnore(tempRoot, 'Agentbase/bootstrap.md'), false);
+      assert.equal(gitCheckIgnore(tempRoot, 'Docbase/notes.md'), false);
+    } finally {
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it('bootstrap.md iki-repo teslimat modelini, ADIM 6.6 yi ve ust-kok ajan sinirini icerir', () => {
@@ -159,8 +222,29 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     assert.match(bootstrap, /AGENTIC-WORKFLOW-ROOT-GITIGNORE/);
     // GATE J
     assert.match(bootstrap, /GATE J:/);
+    assert.match(bootstrap, /grep -q "AGENTIC-WORKFLOW-ROOT-GITIGNORE" \.\.\/\.gitignore/);
+    assert.match(bootstrap, /grep -Eq "\^Codebase\/\?\$" \.\.\/\.gitignore/);
+    assert.match(bootstrap, /grep -Eq "\^Codebase-wt-\\\*\/\$" \.\.\/\.gitignore/);
     // Cekirdek kutsal kural ifadesi korunuyor (regresyon guvencesi)
     assert.match(bootstrap, /Git sadece Codebase de calisir/);
     assert.doesNotMatch(bootstrap, /kloduyla/);
+  });
+
+  it('Gate J kosulu sentinel-only veya yorumdaki Codebase ile false-pass vermez', () => {
+    const valid = read('templates/core/root-gitignore.skeleton');
+    const sentinelOnly = [
+      '# AGENTIC-WORKFLOW-ROOT-GITIGNORE',
+      '# Codebase yorumda geciyor ama ignore satiri degil',
+      'Agentbase/',
+    ].join('\n');
+    const missingWorktree = [
+      '# AGENTIC-WORKFLOW-ROOT-GITIGNORE',
+      'Codebase',
+      'Codebase/',
+    ].join('\n');
+
+    assert.equal(rootGitignoreGatePasses(valid), true);
+    assert.equal(rootGitignoreGatePasses(sentinelOnly), false);
+    assert.equal(rootGitignoreGatePasses(missingWorktree), false);
   });
 });

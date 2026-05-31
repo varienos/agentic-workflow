@@ -111,8 +111,9 @@ Agentbase/backlog/
 test/*
 !test/.gitkeep
 
-# Codebase icerigi (kullanici kendi projesini symlink eder)
-# Dizin ve .gitkeep tracked, icerik ignore
+# Template repo placeholder'i: Codebase/.gitkeep tracked kalir ki klonda
+# Codebase/ dizini gorunsun. Hedef proje kokune bootstrap'in yazdigi
+# root-gitignore.skeleton daha siki davranir ve Codebase/ tamamini ignore eder.
 Codebase/*
 !Codebase/.gitkeep
 

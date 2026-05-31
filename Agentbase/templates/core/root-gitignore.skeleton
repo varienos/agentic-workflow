@@ -19,7 +19,6 @@ Codebase/
 
 # --- Codebase git worktree dizinleri (Codebase git'ine bağlı, üst dev repoda izlenmez) ---
 Codebase-wt-*/
-*-wt-*/
 
 # --- OS / editör gürültüsü ---
 .DS_Store

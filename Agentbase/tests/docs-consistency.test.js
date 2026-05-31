@@ -32,6 +32,7 @@ const extensionsRegistryMd = readRepoFile('Agentbase/templates/extensions-regist
 const referenceNotes = readRepoFile('Agentbase/templates/reference/notes.md');
 const graphifyInstallReference = readRepoFile('Agentbase/templates/modules/knowledge-graph/graphify/install.md');
 const interviewPhase1 = readRepoFile('Agentbase/templates/interview/phase-1-project.md');
+const rootGitignoreSkeleton = readRepoFile('Agentbase/templates/core/root-gitignore.skeleton');
 
 describe('README docs consistency', () => {
   it('documents Agentbase backlog location consistently in Turkish and English READMEs', () => {
@@ -166,6 +167,33 @@ describe('README docs consistency', () => {
       contributing.includes('`.gitkeep` ve `.DS_Store` placeholder kabul edilir'),
       'CONTRIBUTING Codebase placeholder sozlesmesini anlatmali'
     );
+  });
+
+  it('documents the two-repo delivery contract consistently', () => {
+    assert.ok(
+      readmeTr.includes('### İki-Repo Teslimat Modeli'),
+      'Turkce README iki-repo teslimat modeli bolumunu icermeli'
+    );
+    assert.ok(
+      readmeEn.includes('### Two-Repo Delivery Model'),
+      'English README must include the two-repo delivery model section'
+    );
+    assert.ok(
+      readmeTr.includes("`Codebase`'i **ayrıca** klonlar/bağlar"),
+      'Turkce README Codebase ayri klonlama/baglama sozlesmesini anlatmali'
+    );
+    assert.ok(
+      readmeEn.includes('clones/links `Codebase` **separately**'),
+      'English README must state Codebase is cloned/linked separately'
+    );
+    assert.ok(
+      rootGitignoreSkeleton.includes("Codebase'i **ayrica** klonlar/baglar"),
+      'root-gitignore skeleton hedef .gitignore yorumunda ayri Codebase baglama sozlesmesini korumali'
+    );
+    assert.ok(!readmeTr.includes('kloduyla'), 'Turkce README eski typo tasimamali');
+    assert.ok(!bootstrapCommand.includes('kloduyla'), 'Bootstrap eski typo tasimamali');
+    assert.ok(!rootGitignoreSkeleton.includes('her şey gelir'), 'Skeleton eski her sey gelir iddiasini tasimamali');
+    assert.ok(!rootGitignoreSkeleton.includes('her sey gelir'), 'Skeleton eski her sey gelir iddiasini tasimamali');
   });
 
   it('documents extensions-registry.yaml as the bootstrap recommendation source', () => {
