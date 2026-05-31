@@ -65,7 +65,7 @@ The same `Agentbase/Codebase/Docbase` separation also enables an optional delive
 - **The top root (project root)** can be the developer's own git repo; it versions `Agentbase/` and `Docbase/` (the workflow environment + docs/memory) and ignores `Codebase/` via `.gitignore`.
 - **`Codebase/`** is its own independent git repo, delivered to the customer **separately**.
 
-Result: the developer clones the top root (everything comes along), while the customer clones only `Codebase` — a clean delivery carrying no trace of the workflow tooling.
+Result: the developer clones the top-root repo (Agentbase + Docbase come along) and clones/links `Codebase` **separately** (being gitignored, it does not come with the top-root clone), while the customer clones only the `Codebase` repo — a clean delivery carrying no trace of the workflow tooling.
 
 Bootstrap generates a ready-made `.gitignore` at the project root (excluding `Codebase` + worktree directories) and offers optional `git init` guidance; agents never touch the top-root repo (all agent git operations stay inside `../Codebase/`).
 
