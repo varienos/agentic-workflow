@@ -267,6 +267,7 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
       'Codebase',
       'Codebase/',
       'Codebase-wt-*/',
+      '*-wt-*/',            // en eski (19d3ea2) skeleton'daki generic wildcard
       '',
       'node_modules/',
     ].join('\n') + '\n';
@@ -276,6 +277,7 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     // Anchorsuz managed satirlar temizlendi, root-anchored blok + kullanici satiri korundu.
     assert.doesNotMatch(repaired, /^Codebase\/?$/m);
     assert.doesNotMatch(repaired, /^Codebase-wt-\*\/$/m);
+    assert.doesNotMatch(repaired, /^\*-wt-\*\/$/m);
     assert.match(repaired, /^\/Codebase$/m);
     assert.match(repaired, /^\/Codebase-wt-\*\/$/m);
     assert.match(repaired, /^node_modules\/$/m);
@@ -293,6 +295,9 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
       assert.equal(gitCheckIgnore(tempRoot, 'Codebase-wt-x/y'), true);
       assert.equal(gitCheckIgnore(tempRoot, 'Agentbase/docs/Codebase/nested.md'), false);
       assert.equal(gitCheckIgnore(tempRoot, 'Agentbase/docs/Codebase-wt-x/nested.md'), false);
+      // En eski generic *-wt-*/ temizlendigi icin foo-wt-bar artik (nested VE root) ignore EDILMEZ
+      assert.equal(gitCheckIgnore(tempRoot, 'Agentbase/docs/foo-wt-bar/n.md'), false);
+      assert.equal(gitCheckIgnore(tempRoot, 'foo-wt-bar/x'), false);
     } finally {
       fs.rmSync(tempRoot, { recursive: true, force: true });
     }

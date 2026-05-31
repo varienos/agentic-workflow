@@ -2206,8 +2206,8 @@ const VALUE_FLAGS = new Set(['--output-dir', '--modules']);
  */
 function repairRootGitignore(existing, skeleton) {
   const STALE_MANAGED = new Set([
-    'Codebase', 'Codebase/', 'Codebase-wt-*/',        // legacy anchorsuz managed satirlar
-    '/Codebase', '/Codebase/', '/Codebase-wt-*/',      // anchored (blok disinda kalmis kalinti)
+    'Codebase', 'Codebase/', 'Codebase-wt-*/', '*-wt-*/',  // legacy anchorsuz/wildcard managed satirlar
+    '/Codebase', '/Codebase/', '/Codebase-wt-*/',          // anchored (blok disinda kalmis kalinti)
   ]);
   const hasEndSentinel = existing.includes('END-AGENTIC-WORKFLOW-ROOT-GITIGNORE');
   const kept = [];
