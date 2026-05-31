@@ -2454,9 +2454,17 @@ Idempotent + **kendini onaran** kural — Gate J ile **birebir aynı** geçerlil
 
 1. `../.gitignore` yoksa → `root-gitignore.skeleton` içeriğini olduğu gibi `../.gitignore` olarak yaz.
 2. Varsa ve geçerlilik koşulunu **zaten sağlıyorsa** → ATLA (kurulu).
-3. Varsa ama koşulu **sağlamıyorsa** (sentinel yok VEYA gerekli satır(lar) eksik — partial/stale dosya) → eksik managed bloğu dosya **sonuna append/onar** et (mevcut satırlar korunur).
+3. Varsa ama koşulu **sağlamıyorsa** (sentinel yok VEYA gerekli satır(lar) eksik — partial/stale dosya) → managed bloğu **NORMALIZE/REPLACE** et: önceki managed bloğu (START `AGENTIC-WORKFLOW-ROOT-GITIGNORE` … END `END-AGENTIC-WORKFLOW-ROOT-GITIGNORE` arası) VE blok dışında kalmış stale/anchorsuz managed satırları (`Codebase`, `Codebase/`, `Codebase-wt-*/`) **SİL**, sonra taze skeleton bloğunu sona ekle. Managed olmayan kullanıcı satırları korunur.
+
+> **Önemli — APPEND-ONLY DEĞİL (stale upgrade kuralı):** Eski bir `.gitignore`'da anchorsuz `Codebase`/`Codebase/`/`Codebase-wt-*/` satırları varsa, yenisini sadece eklemek (append) bu eski satırları bırakır ve onlar `Agentbase/.../Codebase/...` gibi nested yolları ignore etmeye **devam eder**. Bu yüzden onarım eski managed satırları **silmeli** (normalize/replace).
 
 > **Önemli (deadlock önleme):** "Sentinel var" tek başına yeterli DEĞİL. Sadece sentinele bakıp atlamak; sentinelı olup gerekli ignore satırları eksik (partial/stale) bir `.gitignore`'da Gate J'nin her turda FAIL etmesine ve `/goal` döngüsünün kilitlenmesine yol açar. Bu yüzden onarım koşulu Gate J koşuluyla **aynıdır** ve eksikse onarır.
+
+**Deterministik yöntem (önerilen):** `generate.js`'teki saf `repairRootGitignore(existing, skeleton)` fonksiyonunu kullan — idempotenttir, eski/stale bloğu temizler, kullanıcı satırlarını korur ve yok/partial/stale/geçerli tüm durumları tek seferde doğru sonuca getirir:
+
+```bash
+node -e 'const {repairRootGitignore}=require("./generate.js");const fs=require("fs");const f="../.gitignore";const sk=fs.readFileSync("templates/core/root-gitignore.skeleton","utf8");const cur=fs.existsSync(f)?fs.readFileSync(f,"utf8"):"";fs.writeFileSync(f,repairRootGitignore(cur,sk));'
+```
 
 Pattern'ler **root-anchored**'dır (baştaki `/`): yalnızca proje kökündeki `Codebase` (symlink veya gerçek dizin), Codebase worktree dizinleri (`/Codebase-wt-*/`) ve OS gürültüsü üst-kök repoda izlenmez. Anchorsuz `Codebase` git'te her seviyede eşleşir (örn. `Agentbase/docs/Codebase/...`) — bu istenmez.
 

@@ -2194,6 +2194,49 @@ function filterByModules(skeletonFiles, onlyModules) {
 const VALUE_FLAGS = new Set(['--output-dir', '--modules']);
 
 /**
+ * Proje-kokunun ../.gitignore'ini normalize eder (iki-repo teslimat modeli, ADIM 6.6).
+ * REPLACE/normalize — append-only DEGIL: eski/stale managed blogu (START..END sentinel
+ * arasi) VE blok disinda kalmis anchorsuz/eski managed pattern satirlarini
+ * (Codebase, Codebase/, Codebase-wt-* vb.) temizler, sonra taze root-anchored skeleton
+ * blogunu sonuna ekler. Boylece stale upgrade yolunda eski anchorsuz satirlarin
+ * nested yollari (Agentbase/.../Codebase/...) ignore etmeye devam etmesi onlenir.
+ * Idempotent: gecerli bir dosyada tekrar calistirildiginda tek temiz blok birakir.
+ * Kullanici satirlari (managed olmayan) korunur. Saf fonksiyon — dosya YAZMAZ;
+ * Bootstrap ciktiyi ../.gitignore'a kendisi yazar (generate.js path-traversal guard'i disinda).
+ */
+function repairRootGitignore(existing, skeleton) {
+  const STALE_MANAGED = new Set([
+    'Codebase', 'Codebase/', 'Codebase-wt-*/',        // legacy anchorsuz managed satirlar
+    '/Codebase', '/Codebase/', '/Codebase-wt-*/',      // anchored (blok disinda kalmis kalinti)
+  ]);
+  const hasEndSentinel = existing.includes('END-AGENTIC-WORKFLOW-ROOT-GITIGNORE');
+  const kept = [];
+  let inManaged = false;
+  for (const line of existing.split('\n')) {
+    const trimmed = line.trim();
+    if (hasEndSentinel) {
+      // Yeni format: START..END sentinel arasindaki tum blogu at.
+      if (trimmed.includes('AGENTIC-WORKFLOW-ROOT-GITIGNORE') && !trimmed.includes('END-AGENTIC-WORKFLOW-ROOT-GITIGNORE')) {
+        inManaged = true;
+        continue;
+      }
+      if (inManaged) {
+        if (trimmed.includes('END-AGENTIC-WORKFLOW-ROOT-GITIGNORE')) inManaged = false;
+        continue;
+      }
+    } else if (trimmed.includes('AGENTIC-WORKFLOW-ROOT-GITIGNORE')) {
+      // Legacy format (END sentinel yok): sentinel yorum satirini at, devamini birakma.
+      continue;
+    }
+    if (STALE_MANAGED.has(trimmed)) continue; // blok disinda kalmis stale pattern satiri
+    kept.push(line);
+  }
+  const base = kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const block = skeleton.trim();
+  return (base ? base + '\n\n' : '') + block + '\n';
+}
+
+/**
  * CLI argumanlarindan manifest yolunu bulur.
  * Flag'leri ve flag degerlerini (--output-dir /tmp gibi) atlayarak
  * ilk pozisyonel argumani dondurur.
@@ -2385,6 +2428,7 @@ module.exports = {
   processSkeletonFile,
   resolveOutputPath,
   scanSkeletonFiles,
+  repairRootGitignore,
   filterByModules,
   toOutputName,
   detectFileType,

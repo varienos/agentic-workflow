@@ -118,7 +118,8 @@ Codebase/*
 !Codebase/.gitkeep
 
 # Codebase git worktree dizinleri de ust-kok gelistirici reposunda izlenmez.
-Codebase-wt-*/
+# Root-anchored (/): yalnizca repo kokundeki worktree'ler — nested Codebase-wt-* yollari degil.
+/Codebase-wt-*/
 
 # Docbase (Bootstrap uretir — proje-spesifik)
 Docbase/agentic/project-manifest.yaml

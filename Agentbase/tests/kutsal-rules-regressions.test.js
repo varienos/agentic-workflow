@@ -6,7 +6,7 @@ const os = require('os');
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const { describe, it } = require('node:test');
-const { SIMPLE_GENERATORS, processSkeletonFile, scanSkeletonFiles } = require('../generate.js');
+const { SIMPLE_GENERATORS, processSkeletonFile, scanSkeletonFiles, repairRootGitignore } = require('../generate.js');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -178,9 +178,11 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     assert.match(repoGitignore, /Template repo placeholder'i/);
     assert.match(repoGitignore, /^Codebase\/\*$/m);
     assert.match(repoGitignore, /^!Codebase\/\.gitkeep$/m);
-    assert.match(repoGitignore, /^Codebase-wt-\*\/$/m);
+    assert.match(repoGitignore, /^\/Codebase-wt-\*\/$/m);
     assert.match(read('templates/core/root-gitignore.skeleton'), /^\/Codebase\/$/m);
     assert.equal(gitCheckIgnore(path.join(ROOT, '..'), 'Codebase-wt-feature/file.txt'), true);
+    // Root-anchored: repo bakim yuzeyinde de nested worktree yollari ignore EDILMEMELI
+    assert.equal(gitCheckIgnore(path.join(ROOT, '..'), 'Agentbase/docs/Codebase-wt-feature/nested.md'), false);
   });
 
   it('root-gitignore.skeleton gercek git ignore semantigiyle Codebase i disarida tutar', () => {
@@ -255,5 +257,44 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     assert.equal(rootGitignoreGatePasses(valid), true);
     assert.equal(rootGitignoreGatePasses(sentinelOnly), false);
     assert.equal(rootGitignoreGatePasses(missingWorktree), false);
+  });
+
+  it('repairRootGitignore stale anchorsuz blogu REPLACE eder — repair sonrasi nested paths tracked', () => {
+    const skeleton = read('templates/core/root-gitignore.skeleton');
+    // Stale upgrade senaryosu: eski format (START sentinel + anchorsuz satirlar, END YOK) + kullanici satiri.
+    const staleLegacy = [
+      '# AGENTIC-WORKFLOW-ROOT-GITIGNORE (eski blok)',
+      'Codebase',
+      'Codebase/',
+      'Codebase-wt-*/',
+      '',
+      'node_modules/',
+    ].join('\n') + '\n';
+
+    const repaired = repairRootGitignore(staleLegacy, skeleton);
+
+    // Anchorsuz managed satirlar temizlendi, root-anchored blok + kullanici satiri korundu.
+    assert.doesNotMatch(repaired, /^Codebase\/?$/m);
+    assert.doesNotMatch(repaired, /^Codebase-wt-\*\/$/m);
+    assert.match(repaired, /^\/Codebase$/m);
+    assert.match(repaired, /^\/Codebase-wt-\*\/$/m);
+    assert.match(repaired, /^node_modules\/$/m);
+    assert.equal(rootGitignoreGatePasses(repaired), true);
+
+    // Idempotent: tekrar repair tek temiz blok birakir (duplicate blok yok).
+    assert.equal(repairRootGitignore(repaired, skeleton), repaired);
+
+    // Gercek git check-ignore: repair sonrasi root ignored, nested TRACKED.
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aw-repair-'));
+    try {
+      fs.writeFileSync(path.join(tempRoot, '.gitignore'), repaired);
+      execFileSync('git', ['-C', tempRoot, 'init', '--quiet']);
+      assert.equal(gitCheckIgnore(tempRoot, 'Codebase/x'), true);
+      assert.equal(gitCheckIgnore(tempRoot, 'Codebase-wt-x/y'), true);
+      assert.equal(gitCheckIgnore(tempRoot, 'Agentbase/docs/Codebase/nested.md'), false);
+      assert.equal(gitCheckIgnore(tempRoot, 'Agentbase/docs/Codebase-wt-x/nested.md'), false);
+    } finally {
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
   });
 });

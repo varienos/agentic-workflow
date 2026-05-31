@@ -30,3 +30,5 @@
 
 # --- Opsiyonel: hassas memory vault'u dev reposundan da çıkarmak isterseniz aşağıyı açın ---
 # Docbase/memory/
+
+# END-AGENTIC-WORKFLOW-ROOT-GITIGNORE (managed block sonu — repair/normalize bu satira kadar olan blogu degistirir)
