@@ -176,7 +176,9 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     assert.match(repoGitignore, /Template repo placeholder'i/);
     assert.match(repoGitignore, /^Codebase\/\*$/m);
     assert.match(repoGitignore, /^!Codebase\/\.gitkeep$/m);
+    assert.match(repoGitignore, /^Codebase-wt-\*\/$/m);
     assert.match(read('templates/core/root-gitignore.skeleton'), /^Codebase\/$/m);
+    assert.equal(gitCheckIgnore(path.join(ROOT, '..'), 'Codebase-wt-feature/file.txt'), true);
   });
 
   it('root-gitignore.skeleton gercek git ignore semantigiyle Codebase i disarida tutar', () => {

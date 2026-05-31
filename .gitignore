@@ -117,6 +117,9 @@ test/*
 Codebase/*
 !Codebase/.gitkeep
 
+# Codebase git worktree dizinleri de ust-kok gelistirici reposunda izlenmez.
+Codebase-wt-*/
+
 # Docbase (Bootstrap uretir — proje-spesifik)
 Docbase/agentic/project-manifest.yaml
 /Docbase/superpowers/
