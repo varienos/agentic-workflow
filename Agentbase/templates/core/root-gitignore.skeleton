@@ -6,8 +6,9 @@
 # Agentbase ve Docbase'i (workflow ortamı + dokümanlar/memory) versiyonlar.
 #
 # Codebase KENDİ bağımsız git reposudur ve müşteriye AYRI teslim edilir.
-# Bu yüzden burada YOK SAYILIR — geliştirici üst kökü klonlar (her şey gelir),
-# müşteri yalnızca Codebase'i klonlar (tertemiz). İki repo birbirini tanımaz.
+# Bu yüzden burada YOK SAYILIR — geliştirici üst-kök repoyu (Agentbase + Docbase)
+# klonlar ve Codebase'i **ayrica** klonlar/baglar; müşteri yalnızca Codebase'i
+# klonlar (tertemiz). İki repo birbirini tanımaz.
 #
 # Ayrıntı: bootstrap.md → ADIM 6.6 ve KUTSAL KURALLAR madde 1.
 # ============================================================================

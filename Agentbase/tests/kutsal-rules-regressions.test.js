@@ -136,6 +136,8 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     assert.match(content, /^Codebase$/m);
     assert.match(content, /^Codebase\/$/m);
     assert.match(content, /^Codebase-wt-\*\/$/m);
+    assert.match(content, /Codebase'i \*\*ayrica\*\* klonlar\/baglar/);
+    assert.doesNotMatch(content, /her sey gelir|her şey gelir/);
   });
 
   it('root-gitignore.skeleton generate.js taramasinin disinda kalir (Bootstrap dogrudan yazar)', () => {
@@ -159,5 +161,6 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     assert.match(bootstrap, /GATE J:/);
     // Cekirdek kutsal kural ifadesi korunuyor (regresyon guvencesi)
     assert.match(bootstrap, /Git sadece Codebase de calisir/);
+    assert.doesNotMatch(bootstrap, /kloduyla/);
   });
 });

@@ -2440,7 +2440,7 @@ Bu adım, hedef projeyi **iki-repo teslimat modeline** (Şık 1 — iki ayrı re
 - **Üst kök (proje kökü)** = geliştiricinin OPSIYONEL git reposu → `Agentbase/` + `Docbase/` versiyonlanır.
 - **Codebase** = kendi bağımsız git reposu → müşteriye AYRI ve tertemiz teslim edilir.
 
-İki repo birbirini tanımaz (submodule DEĞİL). Geliştirici üst-kök repoyu (Agentbase + Docbase) klonlar ve `Codebase`'i **ayrıca** klonlar/bağlar — `Codebase` gitignore'lu olduğu için üst-kök kloduyla gelmez. Müşteri yalnızca `Codebase`'i klonlar.
+İki repo birbirini tanımaz (submodule DEĞİL). Geliştirici üst-kök repoyu (Agentbase + Docbase) klonlar ve `Codebase`'i **ayrıca** klonlar/bağlar — `Codebase` gitignore'lu olduğu için üst-kök klonuyla gelmez. Müşteri yalnızca `Codebase`'i klonlar.
 
 > **Kutsal Kural 1 uyumu:** `.git` proje köküne yazılır, **Agentbase içine değil**. Ajanlar üst-kök repoya asla dokunmaz; tüm ajan/workflow git işlemleri `../Codebase/` içindedir.
 

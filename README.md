@@ -62,7 +62,7 @@ Aynı `Agentbase/Codebase/Docbase` ayrımı, isteğe bağlı bir teslimat modeli
 - **Üst kök (proje kökü)** geliştiricinin kendi git reposu olabilir; `Agentbase/` ve `Docbase/`'i (workflow ortamı + doküman/memory) versiyonlar, `Codebase/`'i `.gitignore` ile yok sayar.
 - **`Codebase/`** kendi bağımsız git reposudur ve müşteriye **ayrı** teslim edilir.
 
-Sonuç: geliştirici üst-kök repoyu klonlar (Agentbase + Docbase gelir) ve `Codebase`'i **ayrıca** klonlar/bağlar (gitignore'lu olduğu için üst-kök kloduyla gelmez); müşteri ise yalnızca `Codebase` reposunu klonlar — workflow düzeneğinden hiçbir iz taşımayan tertemiz bir teslimat.
+Sonuç: geliştirici üst-kök repoyu klonlar (Agentbase + Docbase gelir) ve `Codebase`'i **ayrıca** klonlar/bağlar (gitignore'lu olduğu için üst-kök klonuyla gelmez); müşteri ise yalnızca `Codebase` reposunu klonlar — workflow düzeneğinden hiçbir iz taşımayan tertemiz bir teslimat.
 
 Bootstrap proje köküne hazır bir `.gitignore` üretir (`Codebase` + worktree dizinleri hariç) ve isteğe bağlı `git init` rehberi sunar; ajanlar üst-kök repoya asla dokunmaz (tüm ajan git işlemleri `../Codebase/` içinde kalır).
 

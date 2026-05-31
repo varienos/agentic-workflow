@@ -37,3 +37,17 @@ Her ders aşağıdaki yapıyı izler:
 
 <!-- Yeni dersler buraya tarihten yeni → eski sırayla eklenir. -->
 <!-- İlk ders eklenene kadar bu bölüm boş kalır. -->
+
+### [2026-05-31] — Teslimat modeli ifadelerini tum yuzeylerde tara
+
+**Bağlam:** TASK-237/TASK-238 iki-repo teslimat modeli review'unde README ve bootstrap metni duzeltilmisken `root-gitignore.skeleton` ayni eski klonlama iddiasini tasimaya devam ediyordu.
+
+**Yanlış davranış:** Sadece gorunur README/bootstrap yuzeyi kontrol edilirse, kaynak skeleton yorumlarindaki kullaniciya donuk yanlis model anlatimi kacabilir.
+
+**Doğru kural:** Teslimat/repo modeli gibi kontrat ifadeleri degistiginde README, bootstrap komutu, skeleton kaynaklari ve regresyon testleri birlikte taranmalidir.
+
+**Why:** Bootstrap'in uretecegi hedef dosyalar skeleton kaynaklarindan beslendigi icin dokumantasyon duzelse bile uretilen model yanlis kalabilir.
+
+**How to apply:** `Codebase`, `iki-repo`, `submodule`, `gitignore`, `klon` veya `clone` ifadeleri degistiginde `rg` ile tum yuzeylerde stale ifade taramasi yap.
+
+**Etiketler:** `bootstrap`, `git`, `two-repo`, `skeleton`, `review`
