@@ -2821,10 +2821,14 @@ fi
 # === GATE J: Proje-kökü .gitignore (iki-repo teslimat modeli — ADIM 6.6) ===
 # Üst-kök geliştirici reposu Codebase'i yok saymalı ki müşteriye temiz teslimat mümkün olsun.
 # Dosya her zaman yazılır (git init opt-in olsa da); eksikse ADIM 6.6.1 yutulmuş demektir.
-if [ -f ../.gitignore ] && grep -q "Codebase" ../.gitignore; then
-  echo "✅ J1: proje-kökü .gitignore var ve Codebase'i ignore ediyor"
+# grep -q "Codebase" YETERSIZ — yorumda da gecer (false pass). Sentinel + EXACT ignore satiri kontrol et.
+if [ -f ../.gitignore ] \
+   && grep -q "AGENTIC-WORKFLOW-ROOT-GITIGNORE" ../.gitignore \
+   && grep -Eq "^Codebase/?$" ../.gitignore \
+   && grep -Eq "^Codebase-wt-\*/$" ../.gitignore; then
+  echo "✅ J1: proje-kökü .gitignore var; sentinel + Codebase + worktree ignore satırları mevcut"
 else
-  echo "❌ J1: proje-kökü ../.gitignore eksik veya Codebase ignore satırı yok"
+  echo "❌ J1: proje-kökü ../.gitignore eksik veya sentinel/Codebase/worktree ignore satırı yok (ADIM 6.6.1 yutulmuş olabilir)"
 fi
 ```
 
