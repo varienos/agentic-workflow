@@ -47,12 +47,24 @@ Bu repo dört ana çalışma alanı üzerine kuruludur:
 | `Codebase/` | Üzerinde çalışılacak gerçek proje kodu |
 | `Docbase/agentic/` | Bootstrap tarafından üretilen manifest dosyası (`project-manifest.yaml`) |
 
-Bu ayrımın iki önemli sonucu vardır:
+Bu ayrımın üç önemli sonucu vardır:
 
 - Git işlemleri hedef proje tarafında, yani `Codebase/` içinde yürür.
 - Bootstrap süreci `Codebase/` dizinine yazmaz; üretimi `Agentbase/` ve `Docbase/agentic/` altında yapar. Backlog da `Agentbase/backlog/` içinde oluşturulur.
+- **İki-repo teslimat (opsiyonel):** Proje kökü geliştiricinin kendi git reposu olabilir (Agentbase + Docbase'i versiyonlar); `Codebase/` ayrı, bağımsız bir repo olarak kalır ve müşteriye tertemiz teslim edilir (aşağıya bakın).
 
 Not: Bu template repo kendi geliştirme backlog'unu kökteki `backlog/` dizininde tutar; bootstrap ile hedef workspace için üretilen backlog ise `Agentbase/backlog/` altında yaşar.
+
+### İki-Repo Teslimat Modeli
+
+Aynı `Agentbase/Codebase/Docbase` ayrımı, isteğe bağlı bir teslimat modelini de mümkün kılar (iki ayrı repo — submodule değil):
+
+- **Üst kök (proje kökü)** geliştiricinin kendi git reposu olabilir; `Agentbase/` ve `Docbase/`'i (workflow ortamı + doküman/memory) versiyonlar, `Codebase/`'i `.gitignore` ile yok sayar.
+- **`Codebase/`** kendi bağımsız git reposudur ve müşteriye **ayrı** teslim edilir.
+
+Sonuç: geliştirici üst kökü klonlar (her şey gelir), müşteri yalnızca `Codebase`'i klonlar — workflow düzeneğinden hiçbir iz taşımayan tertemiz bir teslimat.
+
+Bootstrap proje köküne hazır bir `.gitignore` üretir (`Codebase` + worktree dizinleri hariç) ve isteğe bağlı `git init` rehberi sunar; ajanlar üst-kök repoya asla dokunmaz (tüm ajan git işlemleri `../Codebase/` içinde kalır).
 
 ### Worktree Avantajı
 
