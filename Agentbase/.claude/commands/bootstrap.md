@@ -14,6 +14,8 @@ Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
 - Command'lardaki git komutlari: `cd ../Codebase && git ...`
 - Worktree izolasyonu: `cd ../Codebase && git worktree add ...`
 - Bu ayrim Codebase'in guvenli worktree izolasyonunu saglar — agent ve backlog dosyalarindan bagimsiz.
+- Iki-repo teslimat modeli (opsiyonel): Proje koku (Agentbase/Codebase/Docbase'in USTU) gelistiricinin KENDI git reposu olabilir — Agentbase + Docbase'i versiyonlar, `Codebase`'i `.gitignore` ile yok sayar (bkz. ADIM 6.6). Codebase kendi bagimsiz reposudur ve musteriye AYRI teslim edilir (musteri sadece Codebase'i klonlar). Bu durumda bile `.git` proje kokune yazilir; **Agentbase icine YAZILMAZ** — yukaridaki "Agentbase'de `.git/` YOKTUR" kurali aynen korunur.
+- Ajan siniri: Ajan/workflow git islemleri (commit/push/branch/worktree) DAIMA `../Codebase/`'i hedefler; ust-kok (gelistirici) reposuna ASLA dokunmaz. Ust-kok repo gelistiricinin manuel aracidir, ajanlarin degil.
 
 ### 2. Bootstrap Codebase'e ASLA yazmaz (tek istisna: AI Import)
 - Bootstrap Codebase'i OKUR → Agentbase'i YAPILANDIRIR.
@@ -2431,6 +2433,56 @@ Son olarak `chmod +x ${HOOKS_DIR}/pre-push`.
 
 ---
 
+## ADIM 6.6 — HEDEF PROJE REPO AYRIMI: Proje-Kökü `.gitignore` + İki-Repo Teslimat Modeli
+
+Bu adım, hedef projeyi **iki-repo teslimat modeline** (Şık 1 — iki ayrı repo) hazırlar:
+
+- **Üst kök (proje kökü)** = geliştiricinin OPSIYONEL git reposu → `Agentbase/` + `Docbase/` versiyonlanır.
+- **Codebase** = kendi bağımsız git reposu → müşteriye AYRI ve tertemiz teslim edilir.
+
+İki repo birbirini tanımaz (submodule DEĞİL). Geliştirici üst kökü klonlar (her şey gelir); müşteri yalnızca `Codebase`'i klonlar.
+
+> **Kutsal Kural 1 uyumu:** `.git` proje köküne yazılır, **Agentbase içine değil**. Ajanlar üst-kök repoya asla dokunmaz; tüm ajan/workflow git işlemleri `../Codebase/` içindedir.
+
+### Adim 6.6.1 — Proje-Kökü `.gitignore` Yaz (Idempotent)
+
+Kaynak şablon: `Agentbase/templates/core/root-gitignore.skeleton`. Hedef: **proje kökü** (`Agentbase/../.gitignore`, yani `Codebase/` ve `Docbase/` ile aynı seviye). Yazımı **Bootstrap orkestratörü doğrudan yapar** — `generate.js` bu skeleton'u işlemez (çıktısını `Agentbase/` içinde tuttuğu için üst dizine yazamaz; bu yüzden skeleton `scanSkeletonFiles` taramasından muaftır).
+
+Idempotent kural:
+
+1. `../.gitignore` yoksa → `root-gitignore.skeleton` içeriğini olduğu gibi `../.gitignore` olarak yaz.
+2. Varsa ve içinde `AGENTIC-WORKFLOW-ROOT-GITIGNORE` sentinel'i geçiyorsa → ATLA (zaten kurulu).
+3. Varsa ama sentinel yoksa → skeleton içeriğini dosya **sonuna append** et (mevcut satırlar korunur).
+
+Bu sayede `Codebase` (symlink veya gerçek dizin), Codebase worktree dizinleri (`Codebase-wt-*/`) ve OS gürültüsü üst-kök repoda izlenmez.
+
+### Adim 6.6.2 — Geliştiriciye Opsiyonel `git init` Rehberi
+
+`git init` **FORCE EDİLMEZ** — sadece önerilir. Konsola şunu bas:
+
+```
+📦 İki-Repo Teslimat Modeli (opsiyonel)
+   Proje kökü .gitignore hazır → Codebase/ yok sayılıyor.
+
+   Kendi workflow ortamını (Agentbase + Docbase) versiyonlamak istersen,
+   PROJE KÖKÜNDE (Agentbase'in bir üstü) kendi reponu başlat:
+
+     cd ..            # proje köküne çık (Agentbase'in üstü)
+     git init
+     git add .        # Codebase otomatik hariç (.gitignore)
+     git commit -m "chore: workflow ortamı (Agentbase + Docbase)"
+
+   Codebase ZATEN kendi reposudur — müşteriye onu ayrı teslim edersin:
+     müşteri →  git clone <Codebase-remote>   (tertemiz, workflow izi yok)
+
+   Not: Üst-kök repo SENİN aracın. Ajanlar ona dokunmaz; tüm ajan git
+   işlemleri ../Codebase/ içinde kalır (Kutsal Kural 1).
+```
+
+Kullanıcı istemezse bu adımı atla — `../.gitignore` zaten yazıldığı için model her an hazırdır.
+
+---
+
 ## ADIM 7 — TAMAMLANMA RAPORU
 
 ```
@@ -2764,6 +2816,15 @@ if uv tool list 2>/dev/null | grep -q "^basic-memory "; then
   echo "✅ I5: basic-memory uv tool olarak kurulu"
 else
   echo "❌ I5: basic-memory kuruluş kayboldu (ADIM 1.1.5'te vardı)"
+fi
+
+# === GATE J: Proje-kökü .gitignore (iki-repo teslimat modeli — ADIM 6.6) ===
+# Üst-kök geliştirici reposu Codebase'i yok saymalı ki müşteriye temiz teslimat mümkün olsun.
+# Dosya her zaman yazılır (git init opt-in olsa da); eksikse ADIM 6.6.1 yutulmuş demektir.
+if [ -f ../.gitignore ] && grep -q "Codebase" ../.gitignore; then
+  echo "✅ J1: proje-kökü .gitignore var ve Codebase'i ignore ediyor"
+else
+  echo "❌ J1: proje-kökü ../.gitignore eksik veya Codebase ignore satırı yok"
 fi
 ```
 

@@ -69,4 +69,4 @@
 - **Önce Sadelik:** Her değişikliği mümkün olduğunca basit yap. Koda minimum düzeyde müdahale et.
 - **Tembelliğe Yer Yok:** Kök nedenleri bul. Geçici çözümlere kaçma. Kıdemli geliştirici standartlarını uygula.
 - **Minimum Etki:** Değişiklikler sadece gerekli yere dokunmalı. Yeni hatalar oluşturmaktan kaçın.
-- **Kutsal Kural Bilinci:** `Agentbase/` konfigürasyon dizinidir, git burada çalışmaz. Tüm git ve uygulama değişiklikleri `../Codebase/` içinde olur. Bootstrap dışında **Codebase'e ASLA yazma**.
+- **Kutsal Kural Bilinci:** `Agentbase/` konfigürasyon dizinidir, git burada çalışmaz. Tüm git ve uygulama değişiklikleri `../Codebase/` içinde olur. Bootstrap dışında **Codebase'e ASLA yazma**. Proje kökü (Agentbase/Codebase/Docbase'in üstü) geliştiricinin OPSIYONEL git reposu olabilir (Agentbase + Docbase'i versiyonlar, Codebase'i `.gitignore` ile yok sayar) — bu **geliştiricinin manuel aracıdır**: ajanlar üst-kök repoya ASLA dokunmaz, tüm ajan git işlemleri `../Codebase/` içinde kalır.

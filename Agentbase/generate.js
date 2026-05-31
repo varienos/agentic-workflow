@@ -2092,6 +2092,10 @@ function scanSkeletonFiles(manifest) {
   const SKIP_DIRS = new Set(['interview', 'reference']);
 
   function isTemplateFile(entry, fullPath) {
+    // root-gitignore.skeleton generate.js tarafindan ISLENMEZ — Bootstrap orkestratoru
+    // (ADIM 6.6) bunu dogrudan proje kokune (../.gitignore) yazar. generate.js ciktiyi
+    // outputDir (Agentbase) icinde tuttugu icin bu skeleton'u tarama disinda birakiriz.
+    if (entry.name === 'root-gitignore.skeleton') return false;
     if (entry.name.includes('.skeleton.') || entry.name.endsWith('.skeleton')) return true;
     // Sabit dosya: .js veya .md, content dizini (hooks/, rules/, commands/, agents/) icinde
     if (entry.name.endsWith('.js') || entry.name.endsWith('.md')) {

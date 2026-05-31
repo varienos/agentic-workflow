@@ -1,0 +1,30 @@
+# AGENTIC-WORKFLOW-ROOT-GITIGNORE (iki-repo teslimat modeli — ADIM 6.6)
+# ============================================================================
+# Proje Kökü .gitignore — Geliştiricinin workflow reposu (Şık 1: iki ayrı repo)
+# ============================================================================
+# Bu dosya, proje kökünün OPSIYONEL geliştirici git reposu içindir. Bu repo
+# Agentbase ve Docbase'i (workflow ortamı + dokümanlar/memory) versiyonlar.
+#
+# Codebase KENDİ bağımsız git reposudur ve müşteriye AYRI teslim edilir.
+# Bu yüzden burada YOK SAYILIR — geliştirici üst kökü klonlar (her şey gelir),
+# müşteri yalnızca Codebase'i klonlar (tertemiz). İki repo birbirini tanımaz.
+#
+# Ayrıntı: bootstrap.md → ADIM 6.6 ve KUTSAL KURALLAR madde 1.
+# ============================================================================
+
+# --- Codebase: ayrı repo + müşteri teslimatı (gerçek dizin veya worktree symlink'i) ---
+Codebase
+Codebase/
+
+# --- Codebase git worktree dizinleri (Codebase git'ine bağlı, üst dev repoda izlenmez) ---
+Codebase-wt-*/
+*-wt-*/
+
+# --- OS / editör gürültüsü ---
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# --- Opsiyonel: hassas memory vault'u dev reposundan da çıkarmak isterseniz aşağıyı açın ---
+# Docbase/memory/

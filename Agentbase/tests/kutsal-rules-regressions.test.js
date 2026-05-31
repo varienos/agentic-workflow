@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('node:assert/strict');
 const { describe, it } = require('node:test');
-const { SIMPLE_GENERATORS, processSkeletonFile } = require('../generate.js');
+const { SIMPLE_GENERATORS, processSkeletonFile, scanSkeletonFiles } = require('../generate.js');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -125,5 +125,39 @@ describe('kutsal kural regressions', () => {
     assert.match(bootstrap, /service-documentation\.skeleton\.md/);
     assert.match(bootstrap, /docker-pre-deploy\.skeleton\.md/);
     assert.match(bootstrap, /idor-scan\.skeleton\.md/);
+  });
+});
+
+describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
+  it('root-gitignore.skeleton sentinel + Codebase + worktree pattern icerir', () => {
+    const content = read('templates/core/root-gitignore.skeleton');
+
+    assert.match(content, /AGENTIC-WORKFLOW-ROOT-GITIGNORE/);
+    assert.match(content, /^Codebase$/m);
+    assert.match(content, /^Codebase\/$/m);
+    assert.match(content, /^Codebase-wt-\*\/$/m);
+  });
+
+  it('root-gitignore.skeleton generate.js taramasinin disinda kalir (Bootstrap dogrudan yazar)', () => {
+    const skeletonFiles = scanSkeletonFiles({});
+    const included = skeletonFiles.some(filePath => filePath.endsWith('root-gitignore.skeleton'));
+
+    assert.equal(included, false, 'root-gitignore.skeleton generate.js tarafindan islenmemeli — Bootstrap proje kokune dogrudan yazar');
+  });
+
+  it('bootstrap.md iki-repo teslimat modelini, ADIM 6.6 yi ve ust-kok ajan sinirini icerir', () => {
+    const bootstrap = read('.claude/commands/bootstrap.md');
+
+    // KUTSAL KURALLAR madde 1 ek netlestirmesi
+    assert.match(bootstrap, /Iki-repo teslimat modeli/);
+    assert.match(bootstrap, /ust-kok \(gelistirici\) reposuna ASLA dokunmaz/);
+    // ADIM 6.6 + proje-koku .gitignore mekanizmasi
+    assert.match(bootstrap, /## ADIM 6\.6/);
+    assert.match(bootstrap, /root-gitignore\.skeleton/);
+    assert.match(bootstrap, /AGENTIC-WORKFLOW-ROOT-GITIGNORE/);
+    // GATE J
+    assert.match(bootstrap, /GATE J:/);
+    // Cekirdek kutsal kural ifadesi korunuyor (regresyon guvencesi)
+    assert.match(bootstrap, /Git sadece Codebase de calisir/);
   });
 });
