@@ -225,14 +225,18 @@ Backlog'daki bir görevi uçtan uca uygular. Görevi okur, etkilenen dosyaları 
 
 ### /task-conductor
 
-Birden fazla görevi faz bazlı işler. Görevleri önceliklendirir, sırayla veya paralel uygular, faz sonunda özet ve bütünlük kontrolü yapar. Kesintiden sonra `resume` ile devam edebilir. Bir fazda art arda 3 hata oluşursa durur ve kullanıcıyı bilgilendirir.
+Birden fazla görevi faz bazlı orkestre eder. Varsayılan davranış plan üretmektir; kod yazma ve backlog güncelleme yalnızca açık `run` modunda yapılır. Paralel yazım ancak izole worktree/branch ile çalışır, `all` modu ayrıca `--confirm-all` ister. Kesintiden sonra `resume` ile devam edebilir; bir fazda art arda 3 hata oluşursa durur.
 
 ```
-/task-conductor top 5        # En yüksek öncelikli 5 görev
-/task-conductor all          # Tüm açık görevler
-/task-conductor 3,5,8        # Virgülle ayrılmış görev ID'leri
-/task-conductor keyword auth # Keyword ile görev arama
-/task-conductor resume       # Kaldığı yerden devam et
+/task-conductor plan top 5                  # En yüksek öncelikli 5 görev için plan
+/task-conductor plan all                    # Tüm açık görevler için plan
+/task-conductor plan 3,5,8                  # Belirli görevler için plan
+/task-conductor plan keyword auth           # Keyword ile plan
+/task-conductor run top 5 --max-parallel 2  # Kontrollü uygulama
+/task-conductor run all --confirm-all       # Tüm açık görevleri açık onayla uygula
+/task-conductor resume                      # Kaldığı yerden devam et
+/task-conductor status                      # State/lock durumunu oku
+/task-conductor abort                       # Aktif conductor run'ını kapat
 ```
 
 ### /task-review
@@ -454,7 +458,7 @@ Bu template'deki her kural bir production deneyiminden doğmuştur:
 | 3 hipotez sınırı | Sonsuz root cause aramasını durdurur |
 | 4D skorlama | Tutarlı, tekrarlanabilir önceliklendirme |
 | 3+1 agent paralel review | Sessiz hata ve regresyon riskini ayrı perspektiflerle yakalar |
-| Faz bazlı orkestrasyon | Paralel işi kontrollü fazlara böler |
+| Faz bazlı orkestrasyon | Plan-first çalışır, paralel işi izole worktree/branch ile kontrollü fazlara böler |
 | Failure cascade tablosu | Aynı hatada tekrar eden retry döngülerini durdurur |
 | Destructive migration tespiti | Riskli migration değişikliklerini push öncesi görünür kılar |
 | `db-migration-discipline` | Schema değişikliklerinde migration, dry-run, rollback/down ve destructive taramanın zorunlu hale gelmesi |

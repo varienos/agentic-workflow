@@ -19,6 +19,7 @@ const dbMigrationRule = readRepoFile('Agentbase/templates/core/rules/db-migratio
 const taskHunterCommand = readRepoFile('Agentbase/templates/core/commands/task-hunter.skeleton.md');
 const bugReviewCommand = readRepoFile('Agentbase/templates/core/commands/bug-review.skeleton.md');
 const taskPlanCommand = readRepoFile('Agentbase/templates/core/commands/task-plan.skeleton.md');
+const taskConductorCommand = readRepoFile('Agentbase/templates/core/commands/task-conductor.skeleton.md');
 const deepAuditCommand = readRepoFile('Agentbase/templates/core/commands/deep-audit.skeleton.md');
 const regressionAnalyzerAgent = readRepoFile('Agentbase/templates/core/agents/regression-analyzer.skeleton.md');
 const backendExpertAgent = readRepoFile('Agentbase/templates/core/agents/backend-expert.skeleton.md');
@@ -316,6 +317,37 @@ describe('README docs consistency', () => {
     assert.ok(!readmeTr.includes('`/post-deploy`'), 'Turkce README bare /post-deploy kullanmamali');
     assert.ok(!readmeEn.includes('`/pre-deploy`'), 'English README must not use bare /pre-deploy');
     assert.ok(!readmeEn.includes('`/post-deploy`'), 'English README must not use bare /post-deploy');
+  });
+
+  it('documents task-conductor as a plan-first guarded orchestrator', () => {
+    const requiredTr = [
+      '/task-conductor plan top 5',
+      '/task-conductor run top 5 --max-parallel 2',
+      '/task-conductor run all --confirm-all',
+      '/task-conductor status',
+      '/task-conductor abort',
+    ];
+    const requiredEn = [
+      '/task-conductor plan top 5',
+      '/task-conductor run top 5 --max-parallel 2',
+      '/task-conductor run all --confirm-all',
+      '/task-conductor status',
+      '/task-conductor abort',
+    ];
+
+    for (const phrase of requiredTr) {
+      assert.ok(readmeTr.includes(phrase), `Turkce README task-conductor yeni sozlesmesini anlatmali: ${phrase}`);
+    }
+    for (const phrase of requiredEn) {
+      assert.ok(readmeEn.includes(phrase), `English README must document the guarded task-conductor contract: ${phrase}`);
+    }
+
+    assert.match(taskConductorCommand, /Varsayilan mod PLAN'dir/);
+    assert.match(taskConductorCommand, /`run all` sadece `--confirm-all` ile calisir/);
+    assert.match(taskConductorCommand, /Paralel yazim sadece izole worktree\/branch ile/);
+    assert.match(taskConductorCommand, /"schema_version": 2/);
+    assert.match(taskConductorCommand, /`status`/);
+    assert.match(taskConductorCommand, /`abort`/);
   });
 
   it('keeps the Turkish README concise, user-facing, and typo-free', () => {

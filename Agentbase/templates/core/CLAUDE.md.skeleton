@@ -171,7 +171,7 @@ Ornek cikti:
 |-------|----------|
 | `/task-hunter <id>` | Backlog task'ini otonom implement et |
 | `/task-master` | Acik task'lari skorla ve onceliklendir |
-| `/task-conductor` | Coklu task'i faz bazli otonom isle |
+| `/task-conductor` | Coklu task'i plan-first faz bazli orkestre et |
 | `/task-review` | Son degisiklikleri 3 agent ile review et |
 | `/task-plan <istek>` | Istegi analiz edip backlog task olustur |
 | `/bug-hunter <tanim>` | Bug'i bul, duzelt, commit et |

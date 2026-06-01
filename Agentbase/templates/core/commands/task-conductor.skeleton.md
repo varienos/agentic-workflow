@@ -1,25 +1,61 @@
-# Task Conductor — Otonom Faz Bazli Orkestrator
+# Task Conductor — Plan-First Faz Orkestratoru
 
-> Backlog'daki gorevleri puanlar, fazlara ayirir ve sirayla/paralel olarak uygular.
-> Kullanim: `/task-conductor top 5`, `/task-conductor all`, `/task-conductor 3,5,8`, `/task-conductor keyword auth`, `/task-conductor resume`
+> Backlog'daki birden fazla gorevi once faz planina donusturur; yalnizca acik `run` modunda uygular.
+> Kullanim: `/task-conductor plan top 5`, `/task-conductor run top 5 --max-parallel 2`, `/task-conductor resume`, `/task-conductor status`, `/task-conductor abort`
+
+---
+
+## Temel Sozlesme
+
+1. **Varsayilan mod PLAN'dir.** Kullanici `run` yazmadikca kod, backlog status'u, state veya git degisikligi yapma.
+2. **`run` acik niyet ister.** Eski kullanimlar (`top 5`, `3,5,8`, `keyword auth`) geriye uyumluluk icin `plan ...` gibi yorumlanir.
+3. **`run all` sadece `--confirm-all` ile calisir.** Tum acik backlog'u otonom calistirmak yuksek risklidir; bayrak yoksa plan uret ve dur.
+4. **Paralel yazim sadece izole worktree/branch ile yapilir.** Izolasyon yoksa veya dogrulanamiyorsa ayni fazdaki gorevleri sirayla isle.
+5. **Puanlama sozlesmesi `/task-master` ile aynidir.** Formul veya agirliklar degisecekse iki komut birlikte guncellenir.
+6. **Resume sadece conductor state'inden devam eder.** State yoksa veya schema uyumsuzsa yeni run baslatma; kullaniciya rapor ver.
 
 ---
 
 ## Mod Cozumleme
 
-| Mod | Ornek | Davranis |
+| Komut | Ornek | Davranis |
 |---|---|---|
-| **Top X** | `top 5` | En yuksek puanli X gorevi sec |
-| **All** | `all` | Tum "To Do" gorevleri isle |
-| **Manuel ID** | `3,5,8` | Belirtilen gorevleri isle |
-| **Keyword** | `keyword auth` | Anahtar kelimeyle eslesen gorevleri isle |
+| **Plan Top X** | `plan top 5` | En yuksek puanli X gorev icin faz/catisma plani uret, dur |
+| **Plan All** | `plan all` | Tum acik gorevleri planla, run yapma |
+| **Plan Manuel ID** | `plan 3,5,8` | Belirtilen gorevler icin plan uret |
+| **Plan Keyword** | `plan keyword auth` | Anahtar kelimeyle eslesen gorevleri planla |
+| **Run Top X** | `run top 5 --max-parallel 2` | Planla, on kontrolleri yap, uygun fazlari uygula |
+| **Run All** | `run all --confirm-all` | Tum acik gorevleri yalnizca acik onay bayragiyla uygula |
+| **Run Manuel ID** | `run 3,5,8` | Belirtilen gorevleri faz planina gore uygula |
+| **Run Keyword** | `run keyword auth` | Eslesen gorevleri faz planina gore uygula |
 | **Resume** | `resume` | `conductor-state.json` dosyasindan kaldigi yerden devam et |
+| **Status** | `status` | State ve lock dosyalarindan mevcut durumu oku, hicbir sey degistirme |
+| **Abort** | `abort` | Aktif state'i `aborted` isaretle, lock'u kaldir, kod degistirme |
+
+### Geriye Uyumluluk
+
+```
+/task-conductor top 5        -> /task-conductor plan top 5
+/task-conductor all          -> /task-conductor plan all
+/task-conductor 3,5,8        -> /task-conductor plan 3,5,8
+/task-conductor keyword auth -> /task-conductor plan keyword auth
+```
+
+> **KURAL:** Geriye uyumlu kisa kullanimlar ASLA otomatik run'a donusmez.
 
 ---
 
-## On Kontrol — Dirty State
+## On Kontrol
 
-Devam etmeden once calisma dizininin temiz oldugunu dogrula:
+### Plan / Status
+
+`plan` ve `status` read-only'dir:
+- Git dirty state kontrolu bilgi amaclidir; dirty state varsa rapora ekle ama planlamayi durdurma.
+- Backlog status'u, state dosyasi, lock dosyasi ve Codebase dosyalari degistirilmez.
+
+### Run / Resume
+
+Kod veya backlog degistirmeden once asagidaki kontrolleri yap:
 
 ```bash
 cd ../Codebase && git status --porcelain
@@ -28,9 +64,16 @@ cd ../Codebase && git status --porcelain
 - Cikti BOSSA → devam et
 - Cikti DOLUYSA → **DUR**, kullaniciya bildir:
   ```
-  ⚠️ Calisma dizininde commit edilmemis degisiklikler var.
+  Calisma dizininde commit edilmemis degisiklikler var.
+  Task Conductor run/resume baslatilmadi.
   Once bunlari commit'leyin veya stash'leyin.
   ```
+
+Ek kontroller:
+1. `.claude/tracking/conductor.lock` varsa ve aktif run'a ait degilse DUR, `status` oner.
+2. `--max-parallel` yoksa varsayilan `1` kabul edilir.
+3. `--max-parallel > 1` ise izole worktree/branch kullanilabildigini dogrula; dogrulanamiyorsa `max_parallel=1` olarak sirayla devam et ve rapora yaz.
+4. `run all` icin `--confirm-all` yoksa run yapma; plan uret ve bayragi iste.
 
 ---
 
@@ -42,11 +85,17 @@ cd ../Codebase && git status --porcelain
 backlog task list --plain
 ```
 
-Moda gore gorevleri filtrele (yukardaki tabloya bak).
+Moda gore gorevleri filtrele:
+- `top X`: "Done" olmayan gorevleri puanla, en yuksek X gorevi sec
+- `all`: "Done" olmayan tum gorevleri sec
+- `3,5,8`: yalnizca belirtilen ID'leri sec
+- `keyword auth`: once `backlog search "auth" --type task --plain`, gerekirse `backlog task list --plain` ile baslik/aciklama eslesmesi yap
+
+> **KURAL:** "Done" gorevleri atla. "In Progress" gorevler planda `needs_decision` olarak isaretlenir; state bu gorevi sahiplenmediyse run sirasinda otomatik islenmez.
 
 ### 1.2 — 4 Boyutlu Puanlama
 
-Her gorevi 4 boyutta degerlendir (1-10 arasi):
+Her gorevi `/task-master` ile ayni 4 boyutta degerlendir (1-10 arasi):
 
 **Etki (Impact) — Agirlik: x3**
 | Puan | Anlam |
@@ -89,6 +138,8 @@ Toplam = (Etki x 3) + (Risk x 2.5) + (Bagimlilik x 2) + (Karmasiklik x 1.5)
 Maksimum = 90
 ```
 
+> **KURAL:** Bu formul `/task-master` ile drift etmeyecek. Oradaki agirliklar degisirse burasi da ayni commit'te guncellenir.
+
 ---
 
 ## Step 2 — Faz Atamasi
@@ -103,13 +154,14 @@ Maksimum = 90
 
 ### 2.2 — Cakisma Kontrolu (Conflict Graph)
 
-Ayni faza atanan gorevler arasinda dosya catismasi var mi? **Katman 1: Onleme** — conflict'i paralel calistirmadan ONCE tespit et.
+Ayni faza atanan gorevler arasinda dosya catismasi var mi? **Katman 1: Onleme** — conflict'i run'dan ONCE tespit et.
 
 #### Affected Files Okuma
 
 1. Her gorev icin `backlog task <id> --plain` ciktisindaki `## Affected Files` bolumunu oku
 2. Bu bolum yoksa: baslik + AC analizinden tahmini dosya listesi cikar
-3. Dosya listelerini gorev-dosya haritasina kaydet
+3. Tahmini liste guvenilir degilse gorevi `unknown_files=true` isaretle
+4. Dosya listelerini gorev-dosya haritasina kaydet
 
 #### Conflict Graph Olusturma
 
@@ -156,6 +208,31 @@ Bagimsiz gorevler: #22 (paralel)
 
 > **KURAL:** Conflict zincirindeki gorevler her zaman SIRAYLA islenir. Zincir icinde oncelik sirasini puanlama belirler.
 > **KURAL:** Affected files listesi olmayan gorevler MUHAFAZAKAR olarak sirayla islenir — conflict riski bilinmiyor.
+> **KURAL:** Plan ciktisinda catisma matrisi zorunludur. Run baslamadan once ayni analiz yeniden dogrulanir.
+
+### 2.3 — Plan Ciktisi
+
+`plan` modu burada durur ve asagidaki raporu verir:
+
+```
+## Task Conductor Plan
+
+Mod: plan top 5
+Secilen gorevler: #12, #8, #22
+Run onerisi: /task-conductor run top 5 --max-parallel 2
+
+### Fazlar
+| Faz | Gorevler | Mod | Gerekce |
+|---|---|---|---|
+| Faz 1 | #12, #8 | Sirayli | Kritik + ortak auth dosyalari |
+| Faz 2 | #22 | Paralel olabilir | Catisma yok |
+
+### Risk Kapilari
+- #15 In Progress: state sahiplenmiyor, run icin karar gerekir
+- #30 Affected Files yok: sirayli islenecek
+```
+
+> **KURAL:** Plan modu state yazmaz, backlog status'u degistirmez, commit atmaz.
 
 ---
 
@@ -163,31 +240,44 @@ Bagimsiz gorevler: #22 (paralel)
 
 ### 3.1 — State Dosyasi Olustur
 
-`.claude/tracking/conductor-state.json` dosyasini olustur:
+Sadece `run` veya `resume` modunda `.claude/tracking/conductor-state.json` dosyasini olustur/guncelle:
 
 ```json
 {
+  "schema_version": 2,
   "session_id": "<uuid>",
   "started_at": "<timestamp>",
-  "mode": "<top_5|all|manual|keyword|resume>",
+  "command_mode": "run",
+  "selection": {
+    "type": "<top|all|manual|keyword>",
+    "value": "<5|3,5,8|auth|null>",
+    "confirm_all": false
+  },
+  "max_parallel": 1,
+  "lock_path": ".claude/tracking/conductor.lock",
   "phases": [
     {
       "phase": 1,
       "label": "Kritik",
+      "execution_mode": "sequential",
+      "status": "pending",
+      "consecutive_errors": 0,
       "tasks": [
         {
           "id": 12,
           "title": "...",
           "score": 76.0,
+          "affected_files": ["apps/api/src/auth.controller.ts"],
+          "unknown_files": false,
           "status": "pending",
           "started_at": null,
           "completed_at": null,
           "commit_hash": null,
+          "worktree_path": null,
+          "branch": null,
           "error": null
         }
-      ],
-      "execution_mode": "sequential",
-      "status": "pending"
+      ]
     }
   ],
   "current_phase": 1,
@@ -204,21 +294,48 @@ Bagimsiz gorevler: #22 (paralel)
 Her gorev tamamlandiginda veya hata alindiginda state dosyasini guncelle.
 
 > **KURAL:** State dosyasi her zaman guncel olmali. Crash durumunda `resume` ile devam edilebilmeli.
+> **KURAL:** `schema_version` 2 degilse otomatik resume yapma; kullaniciya state migrasyonu veya yeni run secenegi sun.
+
+### 3.3 — Lock Dosyasi
+
+Run basinda `.claude/tracking/conductor.lock` olustur:
+
+```json
+{
+  "session_id": "<uuid>",
+  "pid": "<pid>",
+  "started_at": "<timestamp>",
+  "state_path": ".claude/tracking/conductor-state.json"
+}
+```
+
+- `status` lock'u okur ve raporlar.
+- `abort` state'i `aborted` yapar, lock'u kaldirir.
+- Crash sonrasi `resume`, lock stale ise bunu raporlar ve state'den devam etmeden once kullanici niyetini netlestirir.
 
 ---
 
 ## Step 4 — Faz Dongusu
 
+> **KURAL:** Bu bolum sadece `run` veya `resume` modunda calisir.
+
 ### 4.1 — Faz Baslangici
 
 Her faz icin:
 1. Fazin gorevlerini state'den oku
-2. Yurutme modunu belirle (sequential / parallel)
-3. Gorevleri isle
+2. Catisma matrisini ve dirty state'i yeniden dogrula
+3. Yurutme modunu belirle (sequential / parallel)
+4. Gorevleri isle
+5. Faz sonunda ozet + butunluk kontrolu yap
 
 ### 4.2 — Paralel Mod
 
-Catisma olmayan gorevler paralel islenebilir.
+Catisma olmayan gorevler sadece asagidaki kosullar birlikte saglanirsa paralel islenebilir:
+
+1. `--max-parallel` degeri 2 veya daha yuksek
+2. Gorevlerin `Affected Files` listeleri guvenilir ve ortak dosya yok
+3. Her gorev icin ayri izole worktree/branch acilabiliyor
+4. Teammate runtime'i dosya sinirini ve commit hash raporunu destekliyor
 
 **Dosya Haritasi:**
 ```
@@ -234,7 +351,7 @@ Task #30 → [dashboard.tsx, stats.api.ts]
 
 **Teammate Spawn:**
 
-Her paralel gorev icin bir teammate spawn et:
+Her paralel gorev icin izole branch/worktree ile bir teammate spawn et:
 
 ```
 ## Teammate: Task #<id> — <baslik>
@@ -247,12 +364,15 @@ Her paralel gorev icin bir teammate spawn et:
 
 ### Kurallar
 1. Sadece listelenen dosyalari duzenle
-2. Bitirince commit at
-3. Test sonuclarini raporla
+2. Izole branch/worktree disina cikma
+3. Bitirince commit at
+4. Test sonuclarini ve commit hash'ini raporla
 ```
 
 > **KURAL:** Paralel teammate'ler ASLA ayni dosyaya dokunemez.
+> **KURAL:** Paralel yazim sadece izole worktree/branch ile yapilir. Izolasyon yoksa `sequential` moda dus.
 > **KURAL:** Teammate bittiginde commit hash'ini state'e yaz.
+> **KURAL:** Merge/cherry-pick oncesi trial merge veya esit dogrulama yap. Conflict varsa gorevi failed isaretle, otomatik riskli conflict cozme yapma.
 
 ### 4.3 — Sirayli Mod
 
@@ -266,6 +386,17 @@ Sirayla islenen gorevlerde task-hunter mantigi inline uygulanir:
 6. Commit at
 7. `backlog task edit <id> -s "Done"` → kapat
 8. State dosyasini guncelle
+
+### 4.3.1 — Hata Davranisi
+
+Her gorev hatasinda:
+1. Gorevi `failed` isaretle, hatayi state'e ve faz raporuna yaz
+2. Fazin `consecutive_errors` sayacini artir
+3. Hata olmayan basarili gorevden sonra sayaci sifirla
+4. `consecutive_errors >= 3` ise fazi `blocked` yap, run'i durdur, kullaniciya rapor ver
+
+> **KURAL:** Bir fazda art arda 3 hata olursa DUR. Sonraki gorevlere veya faza gecme.
+> **KURAL:** Fazda hata varsa sonraki faza otomatik gecme; faz sonu raporu ver ve `resume`/devam niyeti bekle.
 
 <!-- GENERATE: CODEBASE_CONTEXT
 Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
@@ -356,11 +487,13 @@ Her faz tamamlandiginda:
 Faz sonunda:
 1. Tum commit'ler basarili mi?
 2. State dosyasi guncel mi?
-3. Sonraki faz icin hazirlik gerekiyor mu?
+3. Backlog status'lari commit'lerle tutarli mi?
+4. Paralel branch/worktree ciktilari ana hedefe temiz entegre edildi mi?
+5. Sonraki faz icin hazirlik gerekiyor mu?
 
 ### 5.3 — Sonraki Faza Gec
 
-- Basarisiz gorev varsa: kullaniciya bildir, devam etmek isteyip istemedigini sor
+- Basarisiz gorev varsa: kullaniciya bildir, state'i guncelle, `resume` ile devam secenegi sun
 - Tum gorevler basarili → sonraki faza otomatik gec
 
 ---
@@ -410,24 +543,30 @@ Tum fazlar tamamlandiginda:
 2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
 3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
 
-1. **Dirty state kontrolu** — Commit edilmemis degisiklik varsa BASLATMA.
-2. **State dosyasi zorunlu** — Her islem state'e yazilmali. Crash'te `resume` calismali.
-3. **Faz sirasi bozulmaz** — Faz 1 bitmeden Faz 2 baslamaz.
-4. **Paralel gorevler cakismaz** — Ayni dosyaya iki teammate dokunemez.
-5. **Her gorev icin dogrulama kapisi** — Test gecmeden commit atilmaz.
-6. **Basarisiz gorev sonraki fazi durdurmaz** — Hatayi logla, diger gorevlere devam et.
-7. **Teammate'lere net sinirlar** — Dosya listesi, beklenen cikti, kurallar.
-8. **Commit sadece gorev dosyalari** — `git add .` yasak.
-9. **Backlog CLI kullan** — Gorev durumlarini SADECE CLI ile guncelle.
-10. **Resume modu sadece state'den** — `conductor-state.json` yoksa resume BASARISIZ.
-11. **Catisma matrisi zorunlu** — Paralel mod oncesinde dosya catismasi analiz edilmeli.
-12. **Faz sonu inceleme** — Her faz sonunda ozet rapor olustur.
-13. **Hata limiti** — Bir fazda 3+ ardisik hata olursa DURDUR, kullaniciya bildir.
-14. **Codebase yolu** — Tum proje dosyalarina `../Codebase/` uzerinden eris.
-15. **Once oku, sonra yaz** — Bir dosyayi degistirmeden once MUTLAKA oku.
-16. **Pattern takip et** — Mevcut koddaki yapiyi takip et. Yeni convention icat etme.
-17. **Guvenlik** — `.env`, credential, secret ASLA commit'e dahil edilmez.
-18. **Otonom calis** — Belirsiz AC disinda kullaniciya soru sorma.
+1. **Varsayilan PLAN** — `run` yazilmadikca hicbir degisiklik yapma.
+2. **Run dirty state kontrolu** — Commit edilmemis Codebase degisikligi varsa run/resume BASLATMA.
+3. **`run all` kilidi** — `run all` sadece `--confirm-all` ile calisir.
+4. **State dosyasi zorunlu** — Run'daki her islem state'e yazilmali. Crash'te `resume` calismali.
+5. **Schema kontrolu** — `schema_version` uyumsuzsa otomatik resume yapma.
+6. **Faz sirasi bozulmaz** — Faz 1 bitmeden Faz 2 baslamaz.
+7. **Paralel izolasyon zorunlu** — Paralel yazim sadece izole worktree/branch ile yapilir.
+8. **Paralel gorevler cakismaz** — Ayni dosyaya iki teammate dokunemez.
+9. **Her gorev icin dogrulama kapisi** — Test gecmeden commit atilmaz.
+10. **Hata limiti** — Bir fazda 3+ ardisik hata olursa DURDUR, kullaniciya bildir.
+11. **Faz hatasi sonraki fazi kilitler** — Fazda hata varsa sonraki faza otomatik gecme; rapor + resume secenegi sun.
+12. **Teammate'lere net sinirlar** — Dosya listesi, branch/worktree, beklenen cikti, kurallar.
+13. **Commit sadece gorev dosyalari** — `git add .` yasak.
+14. **Backlog CLI kullan** — Gorev durumlarini SADECE CLI ile guncelle.
+15. **Resume modu sadece state'den** — `conductor-state.json` yoksa resume BASARISIZ.
+16. **Status read-only** — `status` hicbir dosya veya backlog status'u degistirmez.
+17. **Abort kontrollu** — `abort` state'i kapatir ve lock'u kaldirir; kod degistirmez.
+18. **Catisma matrisi zorunlu** — Paralel mod oncesinde dosya catismasi analiz edilmeli.
+19. **Faz sonu inceleme** — Her faz sonunda ozet rapor olustur.
+20. **Codebase yolu** — Tum proje dosyalarina `../Codebase/` uzerinden eris.
+21. **Once oku, sonra yaz** — Bir dosyayi degistirmeden once MUTLAKA oku.
+22. **Pattern takip et** — Mevcut koddaki yapiyi takip et. Yeni convention icat etme.
+23. **Guvenlik** — `.env`, credential, secret ASLA commit'e dahil edilmez.
+24. **Otonom calis** — Belirsiz AC, In Progress sahiplik veya hata fazi disinda kullaniciya soru sorma.
 
 <!-- GENERATE: SELF_REFRESH
 Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak

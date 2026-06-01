@@ -224,14 +224,18 @@ Autonomously implements a task from the backlog. Reads the task file, discovers 
 
 ### /task-conductor
 
-Processes multiple tasks autonomously in phases. Assigns tasks to phases using its own scoring system, implements sequentially or in parallel within each phase, performs summary and integrity checks at the end of each phase. Supports manual phases — pauses when tasks require human intervention. Resumes from where it left off using a state file. Stops after 3 consecutive errors in a phase and notifies the user.
+Orchestrates multiple tasks in phases. The default behavior is to produce a plan; code changes and backlog updates happen only in explicit `run` mode. Parallel writes require isolated worktrees/branches, and `all` mode additionally requires `--confirm-all`. It can resume from a state file and stops after 3 consecutive errors in a phase.
 
 ```
-/task-conductor top 5        # Top 5 highest priority tasks
-/task-conductor all          # All open tasks
-/task-conductor 3,5,8        # Comma-separated task IDs
-/task-conductor keyword auth # Search by keyword
-/task-conductor resume       # Resume from where it left off
+/task-conductor plan top 5                  # Plan the top 5 highest-priority tasks
+/task-conductor plan all                    # Plan all open tasks
+/task-conductor plan 3,5,8                  # Plan specific task IDs
+/task-conductor plan keyword auth           # Plan tasks matching a keyword
+/task-conductor run top 5 --max-parallel 2  # Guarded execution
+/task-conductor run all --confirm-all       # Execute all open tasks with explicit confirmation
+/task-conductor resume                      # Resume from where it left off
+/task-conductor status                      # Read state/lock status
+/task-conductor abort                       # Close the active conductor run
 ```
 
 ### /task-review
@@ -446,7 +450,7 @@ Every rule in this template was born from a production experience:
 | 3-hypothesis limit | Preventing endless root cause searching |
 | 4D scoring | Consistent, repeatable prioritization |
 | 3+1 agent parallel review | Catching silent failures a single agent misses, adversarial perspective for security changes |
-| Phase-based orchestration | Controlled processing instead of chaotic parallel work |
+| Phase-based orchestration | Plan-first processing with parallel work guarded by isolated worktrees/branches |
 | Failure cascade table | Preventing 10+ retry loops on the same error |
 | Destructive migration detection | DROP TABLE going to production unnoticed |
 | `db-migration-discipline` | Making migration files, dry-run, rollback/down, and destructive scanning mandatory for schema changes |

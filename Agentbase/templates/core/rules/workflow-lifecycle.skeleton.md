@@ -723,7 +723,8 @@ task-plan ve task-conductor seviyesinde conflict ONCE tespit edilir ve onlenir:
 1. **task-plan** her gorev icin `Affected Files` listesi uretir (dogrudan degisecek dosyalar)
 2. **task-conductor** faz planlarken conflict graph olusturur:
    - Ortak dosyasi olan gorevler → ayni fazda SIRAYLA islenir
-   - Ortak dosyasi olmayan gorevler → PARALEL islenebilir
+   - Ortak dosyasi olmayan gorevler → yalnizca izole worktree/branch varsa PARALEL islenebilir
+   - `plan` modu read-only kalir; kod/backlog degisikligi sadece acik `run` modunda yapilir
 3. **task-hunter** Orchestrator modunda teammate'lere dosya sinirlari verir:
    - Her teammate sadece kendisine atanan dosyalari duzenleyebilir
    - Iki teammate'e ayni dosya ATANMAZ
