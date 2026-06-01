@@ -3,10 +3,6 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [Yayınlanmamış]
-
-> Bağımlılık notu: `basic-memory` MCP zorunlu shared agent memory layer olarak korunur (vault: `Docbase/memory/`).
-
 ## [2.3.0] - 2026-06-01
 
 ### Eklenen
@@ -39,6 +35,10 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 ### Bakım
 
 - release changelog marker uyumlulugu (`9c27c0b`)
+
+### Sürüm
+
+- v2.3.0 (`82d1d1f`)
 
 ## [2.2.0] - 2026-05-22
 
