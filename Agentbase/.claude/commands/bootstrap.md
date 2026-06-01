@@ -24,8 +24,8 @@ Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
   - **Agentbase ROOT** (yani `Agentbase/` direkt) — **Bootstrap'in DOĞRUDAN urettigi (6+1 root dokuman + 1 mcp config)**: `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md` (root context), `onboarding.md` (yeni gelistirici rehberi), `.claude-ignore`, `.mcp.json` (zorunlu — `templates/core/mcp.skeleton.json` kaynagindan). **Bootstrap'in cagirdigi araclarin urettigi**: `backlog/` (Backlog.md CLI), `../Docbase/memory/` (basic-memory vault). **Repo'da hazir gelen (statik root dokumanlar — Bootstrap doldurmaz, root `CLAUDE.md`'deki `@<dosya>` zincirine dahil edilir)**: `ORCHESTRATION.md` (ortak ajan davranis felsefesi — tum modeller icin), `LESSONS.md` (oz-gelisim dersleri), `BACKLOG.md` (Backlog CLI hizli referans). **Repo'da hazir gelen (kod ve template altyapisi)**: `bin/`, `templates/`, `tests/`, `generate.js`, `transform.js`, `package.json`.
   - **Agentbase/.claude/** altinda: `commands/`, `agents/`, `hooks/`, `rules/`, `reports/`, `tracking/`, `custom/`, `settings.json`, `CLAUDE.md` (agent-icin dahili runtime config — root `CLAUDE.md`'den AYRI bir dosya, son kullaniciya degil agent'a yoneliktir).
   - **Manifest:** `../Docbase/agentic/project-manifest.yaml` (Agentbase **disinda**, Docbase altinda).
-  - **Transform.js opsiyonel ciktilari** (`manifest.targets` icinde `claude` disinda hedef varsa): `GEMINI.md` (gemini hedefi → Agentbase root), `AGENTS.md` + `.codex/skills/*/SKILL.md` (codex hedefi → Agentbase root + `.codex/`), `.kimi/skills/`, `.kimi/agents/` (kimi hedefi), `.opencode/AGENTS.md` + `.opencode/skills/` + `.opencode/agents/` (opencode hedefi). Bu dosyalar root `CLAUDE.md` icerigini hedef CLI formatina cevirir — enjeksiyon zinciri otomatik korunur.
-  - **YASAK:** Root dokumanlari (PROJECT.md, STACK.md, DEVELOPER.md, ARCHITECTURE.md, WORKFLOWS.md, ORCHESTRATION.md, LESSONS.md, BACKLOG.md, root CLAUDE.md, onboarding.md) `.claude/` altina YAZMA veya KOPYALAMA. `.claude/` agent runtime konfiguudur, dokumantasyon degil. Bu dosyalar gercek Agentbase root'unda kalir ki **tum modeller (Claude, Gemini, Codex, Kimi, OpenCode) ayni context'i okuyabilsin**.
+  - **Transform.js opsiyonel ciktilari** (`manifest.targets` icinde `claude` disinda hedef varsa): `GEMINI.md` (gemini/antigravity hedefi → Agentbase root), `.agents/workflows/*`, `.agents/skills/*/SKILL.md`, `.agents/rules/*` (antigravity hedefi), `AGENTS.md` + `.codex/skills/*/SKILL.md` (codex hedefi → Agentbase root + `.codex/`), `.kimi/skills/`, `.kimi/agents/` (kimi hedefi), `.opencode/AGENTS.md` + `.opencode/skills/` + `.opencode/agents/` (opencode hedefi). Bu dosyalar root `CLAUDE.md` icerigini hedef CLI formatina cevirir — enjeksiyon zinciri otomatik korunur.
+  - **YASAK:** Root dokumanlari (PROJECT.md, STACK.md, DEVELOPER.md, ARCHITECTURE.md, WORKFLOWS.md, ORCHESTRATION.md, LESSONS.md, BACKLOG.md, root CLAUDE.md, onboarding.md) `.claude/` altina YAZMA veya KOPYALAMA. `.claude/` agent runtime konfiguudur, dokumantasyon degil. Bu dosyalar gercek Agentbase root'unda kalir ki **tum modeller (Claude, Gemini, Antigravity, Codex, Kimi, OpenCode) ayni context'i okuyabilsin**.
 - Manifest `../Docbase/agentic/` altina gider (Codebase disinda).
 - Projenin mevcut .gitignore, package.json, CI config dosyalari korunur.
 
@@ -161,7 +161,7 @@ Kurduktan sonra /bootstrap komutunu tekrar calistirin.
 
 ### 1.1.5 basic-memory MCP Kontrolu (Shared Agent Memory Layer)
 
-Bu workflow `basic-memory` MCP'sini **zorunlu** olarak kullanir. Vault: `Docbase/memory/` — tum ajanlar (Claude, Codex, Gemini, Kimi, OpenCode) ayni Markdown knowledge graph'ina baglanir. Oturum/CLI arasi paylasilan hafiza icin tek kaynak.
+Bu workflow `basic-memory` MCP'sini **zorunlu** olarak kullanir. Vault: `Docbase/memory/` — tum ajanlar (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) ayni Markdown knowledge graph'ina baglanir. Oturum/CLI arasi paylasilan hafiza icin tek kaynak.
 
 **1.1.5.a — `uv` (Python paket yoneticisi) Kontrolu**
 
@@ -1297,7 +1297,7 @@ developer:
   autonomy: "[ask-every-step|plan-then-auto|full-auto]"
   communication_language: "[tr|en|other]"        # iletisim dili (Faz 3 Q2 sonucu); manifest.project.language KOD dili icin (TypeScript/Python/...) ayri alandir.
 
-targets: ["claude"]                                       # claude canonical kaynak; digerleri transform hedefidir. ornek: [claude, codex, gemini, kimi]
+targets: ["claude"]                                       # claude canonical kaynak; digerleri transform hedefidir. ornek: [claude, gemini, antigravity, codex, kimi]
 
 workflows:
   branch_model: "[direct-push|feature-pr|gitflow|trunk]"
@@ -1626,7 +1626,7 @@ cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --ver
 
 Sadece `claude` varsa veya `targets` alani yoksa bu adimi ATLA.
 
-Transform raporu ciktisini kullaniciya goster. Bu adim `.claude/` ciktisini diger CLI formatlarina (`.gemini/`, `.codex/`, `.kimi/`, `.opencode/`) donusturur.
+Transform raporu ciktisini kullaniciya goster. Bu adim `.claude/` ciktisini diger CLI formatlarina (`.gemini/`, `.agents/`, `.codex/`, `.kimi/`, `.opencode/`) donusturur.
 
 **Codex karari:** Codex icin ikinci bootstrap CALISTIRILMAZ. `manifest.targets` icindeki `codex` sadece transform hedefidir; canonical kaynak yine `claude` ciktisidir. Codex secildiyse transform `.codex/skills/*/SKILL.md` ve `AGENTS.md` uretir. Transform tamamlandiktan sonra kullaniciya opsiyonel `/codex-verify` adimini oner:
 
@@ -2138,7 +2138,7 @@ Bu proje agentic workflow kullanir. Tum yapilandirma Agentbase dizinindedir.
 > **NOT — Enjeksiyon zinciri:** Root `CLAUDE.md` yukaridaki `@<dosya>` satirlariyla (Claude Code resmi import syntax'i — bosluksuz, tek token) **TUM** root dokumanlarini context'e dahil eder. Bu sayede:
 > - Claude Code root `CLAUDE.md`'yi okudugunda PROJECT, STACK, DEVELOPER, ARCHITECTURE, WORKFLOWS, ORCHESTRATION, LESSONS, onboarding tamami otomatik yuklenir.
 > - ORCHESTRATION.md tum ajanlarin ortak davranis felsefesini, LESSONS.md gecmis hatalardan turetilmis kurallari tasir — bu iki dosya repo'da statik gelir, Bootstrap doldurmaz.
-> - `transform.js` calistirildiginda root `CLAUDE.md` icerigi GEMINI.md, AGENTS.md, .kimi/..., .opencode/... hedeflerine kopyalanir — enjeksiyon zinciri TUM modeller icin korunur.
+> - `transform.js` calistirildiginda root `CLAUDE.md` icerigi GEMINI.md, AGENTS.md, .agents/..., .kimi/..., .opencode/... hedeflerine kopyalanir — enjeksiyon zinciri TUM modeller icin korunur.
 > - Sadece root `CLAUDE.md` icine import satirlarini eklemek yeterli; her hedef dosyaya ayri ayri yazmaya gerek yok (transform.js otomatik adapte eder).
 >
 > **Import satirlarinin tam listesi degisirse** (yeni root dokuman eklenirse), bu listeyi guncellemek ve `ADIM 8 GATE B` icindeki dosya listesini de paralel guncellemek **zorunludur**.
@@ -2612,7 +2612,7 @@ Kullanıcı istemezse bu adımı atla — `../.gitignore` zaten yazıldığı i�
 Tamamlanma raporundan hemen sonra Agentbase root'unda `./onboarding.md` dosyasini olustur. Bu dosya hedef projede yeni baslayan gelistiriciye ilk adimlari anlatir.
 
 > **KUTSAL KURAL 2 — KONUM:** `onboarding.md` Agentbase ROOT'una yazilir, `.claude/` altina degil. Sebep:
-> - Tum modeller (Claude, Gemini, Codex, Kimi, OpenCode) root context'i okur.
+> - Tum modeller (Claude, Gemini, Antigravity, Codex, Kimi, OpenCode) root context'i okur.
 > - Root `CLAUDE.md` icindeki `@onboarding.md` satiri sayesinde tum modellerin context'ine otomatik enjekte edilir.
 > - `.claude/` altinda sadece **agent runtime** dosyalari (commands, agents, hooks, rules, settings.json, agent-icin CLAUDE.md) yasar — son kullaniciya yonelik dokuman degil.
 
@@ -2764,7 +2764,7 @@ for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md
 done
 
 # === GATE B2: Root CLAUDE.md TÜM root dokümanlarını @ ile import ediyor mu? ===
-# Enjeksiyon zinciri kontrolü — root CLAUDE.md eksik import varsa diğer modeller (Gemini, Codex, Kimi, OpenCode) context'i alamaz
+# Enjeksiyon zinciri kontrolü — root CLAUDE.md eksik import varsa diğer modeller (Gemini, Antigravity, Codex, Kimi, OpenCode) context'i alamaz
 # ORCHESTRATION.md ve LESSONS.md statik root dokümanlardır; @ zincirine MUTLAKA dahil edilmeli
 # Claude Code resmi syntax: @<dosya> (boşluksuz, tek token). "@ import X" formu plain text olarak görülür — FAIL.
 if [ -f ./CLAUDE.md ]; then

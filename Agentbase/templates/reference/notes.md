@@ -55,6 +55,14 @@
 | **Agent Skill** | `SKILL.md` (`.gemini/skills/`) | Lazy-loading — ihtiyaç olunca `activate_skill` ile | Ana context'e enjekte | YAML frontmatter + Markdown, otomatik taranır |
 | **Subagent** | `.gemini/agents/*.md` | Gemini tetikler | Ayrı context (deneysel) | Henüz paralel çalışamıyor, sıralı |
 
+### Antigravity 2.0
+
+| Kavram | Ne? | Tetikleyen | Context | Ne zaman? |
+|---|---|---|---|---|
+| **Workflow** | Markdown dosyası (`.agents/workflows/*.md`) | Kullanıcı `/workflow-name` ile | Ana agent trajectory | Tekrarlayan agent adımları ve SOP'ler |
+| **Agent Skill** | `SKILL.md` (`.agents/skills/*/SKILL.md`) | Lazy-loading — ihtiyaç olunca | Ana context'e enjekte | Proje-spesifik yöntem ve uzmanlık paketleri |
+| **Workspace Rule** | Markdown dosyası (`.agents/rules/*.md`) | Always-on/model/glob/manual aktivasyon | Prompt-level kalıcı kural | Proje kuralları, güvenlik ve çalışma disiplini |
+
 ### Codex CLI
 
 | Kavram | Ne? | Tetikleyen | Context | Ne zaman? |
@@ -65,16 +73,17 @@
 
 ### Eşleştirme Özeti
 
-| Claude Code | Gemini CLI | Codex CLI |
-|---|---|---|
-| `CLAUDE.md` | `GEMINI.md` | `AGENTS.md` |
-| `~/.claude/CLAUDE.md` (global) | `~/.gemini/GEMINI.md` | `~/.codex/AGENTS.md` |
-| Skill: saf `.md`, `@` ile yükle | Skill: `SKILL.md` + YAML frontmatter, lazy-load | Skill: `SKILL.md` + YAML frontmatter, progressive |
-| Agent: native paralel, production-ready | Subagent: deneysel, sıralı | Multi-agent: deneysel, CSV paralel |
+| Claude Code | Gemini CLI | Antigravity 2.0 | Codex CLI |
+|---|---|---|---|
+| `CLAUDE.md` | `GEMINI.md` | `GEMINI.md` + `.agents/rules/*.md` | `AGENTS.md` |
+| `~/.claude/CLAUDE.md` (global) | `~/.gemini/GEMINI.md` | `~/.gemini/GEMINI.md` + project `.agents/` | `~/.codex/AGENTS.md` |
+| Skill: saf `.md`, `@` ile yükle | Skill: `SKILL.md` + YAML frontmatter, lazy-load | Skill: `.agents/skills/*/SKILL.md` | Skill: `SKILL.md` + YAML frontmatter, progressive |
+| Agent: native paralel, production-ready | Subagent: deneysel, sıralı | Dynamic subagents + workflows | Multi-agent: deneysel, CSV paralel |
 
 ### Önemli Farklar
 
 - **Gemini** — En güçlü custom slash command sistemi (`.toml`, namespace, shell exec)
+- **Antigravity** — Güncel varsayılan `.agents/rules` ve `.agents/skills`; workflow'lar Markdown slash command olarak çağrılır
 - **Codex** — `$skill-creator` ile interaktif skill oluşturma, `AGENTS.override.md` ile geçici talimat değişikliği
 - **Claude** — Alt-agent'lar native paralel çalışır (diğerlerinde deneysel), skill yapısı en basit (saf `.md`)
 

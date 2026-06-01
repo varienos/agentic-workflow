@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-const { escapeRegex, extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent, toToml, toSkillMd, toKimiAgentYaml, toOpenCodeAgent, stripFrontmatter, parseClaudeOutput, formatCommand, formatAgent, transformForTarget, writeTarget, resolveTargets, mergePathMaps, validateCliCapabilities, loadExternalCapabilities, CLI_CAPABILITIES, PATH_MAPS } = require('./transform.js');
+const { escapeRegex, extractDescription, adaptInvokeSyntax, adaptPathReferences, stripClaudeOnlySections, inlineRules, adaptContent, toToml, toSkillMd, toWorkflowMd, toWorkspaceRuleMd, toKimiAgentYaml, toOpenCodeAgent, stripFrontmatter, parseClaudeOutput, formatCommand, formatAgent, formatRule, transformForTarget, writeTarget, resolveTargets, mergePathMaps, validateCliCapabilities, loadExternalCapabilities, CLI_CAPABILITIES, PATH_MAPS } = require('./transform.js');
 const yaml = require('js-yaml');
 
 describe('extractDescription', () => {
@@ -52,6 +52,10 @@ describe('adaptInvokeSyntax', () => {
 
   it('gemini — degismez', () => {
     assert.equal(adaptInvokeSyntax(input, 'gemini'), input);
+  });
+
+  it('antigravity — slash komutlari degismez', () => {
+    assert.equal(adaptInvokeSyntax(input, 'antigravity'), input);
   });
 
   it('codex — / → $', () => {
@@ -108,6 +112,15 @@ describe('adaptPathReferences', () => {
   it('CLAUDE.md → hedef context dosyasi', () => {
     const input = '`CLAUDE.md` dosyasi ana context';
     const result = adaptPathReferences(input, 'gemini');
+    assert.ok(result.includes('GEMINI.md'));
+  });
+
+  it('antigravity path referanslarini .agents yuzeyine donusturur', () => {
+    const input = 'Bkz: .claude/commands/task.md, .claude/agents/review.md, .claude/rules/workflow.md ve CLAUDE.md';
+    const result = adaptPathReferences(input, 'antigravity');
+    assert.ok(result.includes('.agents/workflows/task.md'));
+    assert.ok(result.includes('.agents/skills/review/SKILL.md'));
+    assert.ok(result.includes('.agents/rules/workflow.md'));
     assert.ok(result.includes('GEMINI.md'));
   });
 });
@@ -341,6 +354,26 @@ describe('transformForTarget', () => {
     assert.ok(fileMap['AGENTS.md'].includes('AGENTS.md'));
   });
 
+  it('antigravity — workflows + skills + workspace rules + GEMINI.md uretir', () => {
+    const source = {
+      commands: [{ name: 'task-master', content: '# Task Master — Siralayici\n\n`/task-master`' }],
+      agents: [{ name: 'code-review', content: '# Code Review\n\nIcerik' }],
+      rules: [{ name: 'workflow', content: '# Workflow — Yasam dongusu\n\nKurallar' }],
+      context: '# Context\n\n`/task-master` komutu\n\n`.claude/rules/workflow.md`',
+    };
+    const fileMap = transformForTarget(source, 'antigravity');
+
+    assert.ok('.agents/workflows/task-master.md' in fileMap);
+    assert.ok('.agents/skills/code-review/SKILL.md' in fileMap);
+    assert.ok('.agents/rules/workflow.md' in fileMap);
+    assert.ok('GEMINI.md' in fileMap);
+    assert.ok(fileMap['.agents/workflows/task-master.md'].includes('description: "Siralayici"'));
+    assert.ok(fileMap['.agents/skills/code-review/SKILL.md'].includes('name: "code-review"'));
+    assert.ok(fileMap['.agents/rules/workflow.md'].includes('trigger: always_on'));
+    assert.ok(!fileMap['GEMINI.md'].includes('# Workflow — Yasam dongusu'), 'rules context icine inline edilmemeli');
+    assert.ok(fileMap['GEMINI.md'].includes('.agents/rules/workflow.md'));
+  });
+
   it('kimi — skills + agent yaml/prompt + default context', () => {
     const source = {
       commands: [{ name: 'test', content: '# Test — Aciklama\n\nIcerik' }],
@@ -443,8 +476,8 @@ describe('resolveTargets', () => {
 
   it('manifest targets yoksa --targets dogrudan hedef listesi olur', () => {
     const manifest = {};
-    const { targets } = resolveTargets(manifest, 'gemini,codex');
-    assert.deepEqual(targets, ['gemini', 'codex']);
+    const { targets } = resolveTargets(manifest, 'gemini,antigravity,codex');
+    assert.deepEqual(targets, ['gemini', 'antigravity', 'codex']);
   });
 
   it('manifest targets yoksa --targets bilinmeyen CLI filtreler', () => {
@@ -468,6 +501,12 @@ describe('formatCommand', () => {
     const result = formatCommand('task-master', 'Backlog siralayici', '# Icerik', cap.gemini);
     assert.ok('.gemini/commands/task-master.toml' in result);
     assert.ok(result['.gemini/commands/task-master.toml'].includes('description = "Backlog siralayici"'));
+  });
+
+  it('Antigravity: workflow markdown dosyasi uretir', () => {
+    const result = formatCommand('task-master', 'Backlog siralayici', '# Icerik', cap.antigravity);
+    assert.ok('.agents/workflows/task-master.md' in result);
+    assert.ok(result['.agents/workflows/task-master.md'].includes('description: "Backlog siralayici"'));
   });
 
   it('Codex: SKILL.md dosyasi uretir', () => {
@@ -516,9 +555,29 @@ describe('formatAgent', () => {
     assert.ok(result['.codex/skills/reviewer/SKILL.md'].includes('name: "reviewer"'));
   });
 
+  it('Antigravity: agents dizini yok, skill olarak uretir', () => {
+    const result = formatAgent('reviewer', 'Inceleme', '# Icerik', cap.antigravity, 'antigravity');
+    assert.ok('.agents/skills/reviewer/SKILL.md' in result);
+    assert.ok(result['.agents/skills/reviewer/SKILL.md'].includes('name: "reviewer"'));
+  });
+
   it('ne agents ne skills yoksa bos nesne doner', () => {
     const emptyCap = { agents: null, skills: null };
     const result = formatAgent('test', 'desc', 'icerik', emptyCap, 'unknown');
+    assert.deepEqual(result, {});
+  });
+});
+
+describe('formatRule', () => {
+  it('Antigravity: workspace rule markdown dosyasi uretir', () => {
+    const result = formatRule('workflow', 'Workflow kurali', '# Rule', CLI_CAPABILITIES.antigravity);
+    assert.ok('.agents/rules/workflow.md' in result);
+    assert.ok(result['.agents/rules/workflow.md'].includes('trigger: always_on'));
+    assert.ok(result['.agents/rules/workflow.md'].includes('description: "Workflow kurali"'));
+  });
+
+  it('inline-context stratejisinde rule dosyasi uretmez', () => {
+    const result = formatRule('workflow', 'Workflow kurali', '# Rule', CLI_CAPABILITIES.gemini);
     assert.deepEqual(result, {});
   });
 });
@@ -812,6 +871,12 @@ describe('PATH_MAPS frozen snapshot — kasitli olmayan drift korunmasi', () => 
     gemini: {
       '.claude/commands/': '.gemini/commands/',
       '.claude/agents/': '.gemini/agents/',
+      'CLAUDE.md': 'GEMINI.md',
+    },
+    antigravity: {
+      '.claude/commands/': '.agents/workflows/',
+      '.claude/agents/': '.agents/skills/',
+      '.claude/rules/': '.agents/rules/',
       'CLAUDE.md': 'GEMINI.md',
     },
     codex: {

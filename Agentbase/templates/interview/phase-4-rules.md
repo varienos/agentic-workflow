@@ -113,19 +113,21 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
 - **Text:** `"Claude Code disinda hangi CLI araclarini kullaniyorsunuz? (Agentbase tek bootstrap ciktisini bu hedeflere transform edecek)"`
 - **Options:**
   - `a)` Gemini CLI
-  - `b)` Codex CLI
-  - `c)` Kimi CLI
-  - `d)` OpenCode
-  - `e)` Hicbiri — sadece Claude Code
+  - `b)` Antigravity 2.0
+  - `c)` Codex CLI
+  - `d)` Kimi CLI
+  - `e)` OpenCode
+  - `f)` Hicbiri — sadece Claude Code
 - **Multi-select:** Virgul ile birden fazla secilebilir (orn: a,b,c). `claude` her zaman dahil edilir.
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.targets`
 - **Downstream:**
   - `claude` canonical kaynak olarak her zaman manifestte kalir; diger degerler transform hedefidir
-  - `transform.js` secilen hedeflere gore `.gemini/`, `.codex/`, `.kimi/`, `.opencode/` dizinleri uretir
+  - `transform.js` secilen hedeflere gore `.gemini/`, `.agents/`, `.codex/`, `.kimi/`, `.opencode/` dizinleri uretir
+  - Antigravity secimi `.agents/workflows/*.md`, `.agents/skills/*/SKILL.md`, `.agents/rules/*.md` ve root `GEMINI.md` uretir
   - Codex secimi ikinci bootstrap baslatmaz; `.codex/skills/*/SKILL.md` ve `AGENTS.md` transform ciktisidir
   - Codex secildiyse transform sonrasi opsiyonel `/codex-verify` pass'i onerilir
-  - Sadece `e` secilirse `targets: [claude]` — transform ve Codex verify/adapt atlanir
+  - Sadece `f` secilirse `targets: [claude]` — transform ve Codex verify/adapt atlanir
 
 ### Q6 — Son Eklemeler
 - **Text:** `"Baska eklemek istedigin bir sey var mi? Bu son soru."`

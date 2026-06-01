@@ -50,7 +50,7 @@ describe('README docs consistency', () => {
   });
 
   it('uses Agentbase working directory for the multi-CLI transform example', () => {
-    const example = 'cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,codex,kimi,opencode';
+    const example = 'cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,antigravity,codex,kimi,opencode';
     assert.ok(readmeTr.includes(example), 'Turkce README transform orneginde Agentbase CWD kullanmali');
     assert.ok(readmeEn.includes(example), 'English README transform example must use Agentbase CWD');
   });

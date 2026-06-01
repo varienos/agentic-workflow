@@ -20,6 +20,14 @@ const CLI_CAPABILITIES = {
     context: { file: 'GEMINI.md', location: 'root' },
     invoke: { prefix: '/', separator: ' ' },
   },
+  antigravity: {
+    commands: { format: 'workflow-md', dir: '.agents/workflows' },
+    skills: { format: 'skill.md', dir: '.agents/skills' },
+    agents: null,
+    rules: { strategy: 'workspace-rules', dir: '.agents/rules', trigger: 'always_on' },
+    context: { file: 'GEMINI.md', location: 'root' },
+    invoke: { prefix: '/', separator: ' ' },
+  },
   codex: {
     commands: null,
     skills: { format: 'skill.md', dir: '.codex/skills' },
@@ -82,6 +90,11 @@ function validateCliCapabilities(name, cap) {
     errors.push(`${name}: agents.format ve agents.dir zorunlu`);
   }
 
+  // workspace-rules stratejisi ayrik rule dosyasi uretir, dir bilgisi zorunludur
+  if (cap.rules?.strategy === 'workspace-rules' && !cap.rules.dir) {
+    errors.push(`${name}: workspace-rules icin rules.dir zorunlu`);
+  }
+
   // context zorunlu
   if (!cap.context) {
     errors.push(`${name}: context tanimi zorunlu`);
@@ -90,6 +103,7 @@ function validateCliCapabilities(name, cap) {
   // Path-safe: dir/file/location degerleri '..' icermemeli ve absolute olmamali
   const pathFields = [
     cap.commands?.dir, cap.skills?.dir, cap.agents?.dir,
+    cap.rules?.dir,
     cap.context?.file, cap.context?.location,
   ].filter(Boolean);
   for (const p of pathFields) {
@@ -190,6 +204,12 @@ const PATH_MAPS = {
     '.claude/agents/': '.gemini/agents/',
     'CLAUDE.md': 'GEMINI.md',
   },
+  antigravity: {
+    '.claude/commands/': '.agents/workflows/',
+    '.claude/agents/': '.agents/skills/',
+    '.claude/rules/': '.agents/rules/',
+    'CLAUDE.md': 'GEMINI.md',
+  },
   codex: {
     '.claude/commands/': '.codex/skills/',
     '.claude/agents/': '.codex/skills/',
@@ -287,7 +307,12 @@ function adaptPathReferences(content, targetCli, pathMaps = PATH_MAPS, skipPaths
 
   // Rule referanslari: .claude/rules/ ayri dosya olarak uretilmiyor —
   // icerik context dosyasina inline edilir. Path referansini context yoluna cevir.
-  if (cap?.context?.file) {
+  if (cap?.rules?.strategy === 'workspace-rules' && cap.rules.dir) {
+    result = result.replace(
+      /\.claude\/rules\/([\w-]+)\.md/g,
+      `${cap.rules.dir}/$1.md`
+    );
+  } else if (cap?.context?.file) {
     const contextRef = cap.context.location === 'root'
       ? cap.context.file
       : `${cap.context.location}/${cap.context.file}`;
@@ -377,6 +402,17 @@ function toSkillMd(name, description, content) {
   return `---\nname: "${safeName}"\ndescription: "${escapedDesc}"\n---\n\n${content}`;
 }
 
+function toWorkflowMd(description, content) {
+  const escapedDesc = description.replace(/"/g, '\\"');
+  return `---\ndescription: "${escapedDesc}"\n---\n\n${content}`;
+}
+
+function toWorkspaceRuleMd(description, content, trigger = 'always_on') {
+  const escapedDesc = description.replace(/"/g, '\\"');
+  const safeTrigger = /^[a-z_]+$/i.test(trigger) ? trigger : 'always_on';
+  return `---\ntrigger: ${safeTrigger}\ndescription: "${escapedDesc}"\n---\n\n${content}`;
+}
+
 function toKimiAgentYaml(name, promptPath) {
   const obj = {
     version: 1,
@@ -452,12 +488,22 @@ function parseClaudeOutput(claudeDir) {
  */
 function formatCommand(name, desc, adapted, cap) {
   if (cap.commands) {
+    if (cap.commands.format === 'workflow-md') {
+      return { [`${cap.commands.dir}/${name}.md`]: toWorkflowMd(desc, adapted) };
+    }
     return { [`${cap.commands.dir}/${name}.toml`]: toToml(desc, adapted) };
   }
   if (cap.skills) {
     return { [`${cap.skills.dir}/${name}/SKILL.md`]: toSkillMd(name, desc, adapted) };
   }
   return {};
+}
+
+function formatRule(name, desc, adapted, cap) {
+  if (cap.rules?.strategy !== 'workspace-rules' || !cap.rules.dir) return {};
+  return {
+    [`${cap.rules.dir}/${name}.md`]: toWorkspaceRuleMd(desc, adapted, cap.rules.trigger),
+  };
 }
 
 /**
@@ -507,8 +553,17 @@ function transformForTarget(source, targetCli, pathMaps = PATH_MAPS, skipPaths =
     Object.assign(fileMap, formatAgent(agent.name, desc, adapted, cap, targetCli));
   }
 
+  if (cap.rules?.strategy === 'workspace-rules') {
+    for (const rule of source.rules) {
+      const adapted = adaptContent(rule.content, targetCli, undefined, pathMaps, skipPaths, capabilities);
+      const desc = extractDescription(adapted);
+      Object.assign(fileMap, formatRule(rule.name, desc, adapted, cap));
+    }
+  }
+
   if (cap.context.file) {
-    const contextContent = adaptContent(source.context, targetCli, source.rules, pathMaps, skipPaths, capabilities);
+    const rulesForContext = cap.rules?.strategy === 'workspace-rules' ? undefined : source.rules;
+    const contextContent = adaptContent(source.context, targetCli, rulesForContext, pathMaps, skipPaths, capabilities);
     const loc = cap.context.location === 'root'
       ? cap.context.file
       : `${cap.context.location}/${cap.context.file}`;
@@ -733,12 +788,15 @@ module.exports = {
   adaptContent,
   toToml,
   toSkillMd,
+  toWorkflowMd,
+  toWorkspaceRuleMd,
   toKimiAgentYaml,
   toOpenCodeAgent,
   stripFrontmatter,
   parseClaudeOutput,
   formatCommand,
   formatAgent,
+  formatRule,
   transformForTarget,
   writeTarget,
   resolveTargets,

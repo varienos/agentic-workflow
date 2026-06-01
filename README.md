@@ -10,7 +10,7 @@
 > [!IMPORTANT]
 > Bu sistem iki zorunlu bağımlılığa dayanır:
 > - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — tüm görev yaşam döngüsü (oluşturma, önceliklendirme, implementasyon, review, kapatma) Backlog.md CLI ile yönetilir.
-> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. Tüm CLI ajanları (Claude, Codex, Gemini, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak hafızaya bağlanır. `uv` (Python paket yöneticisi) ve Python 3.12+ gerekir.
+> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. Tüm CLI ajanları (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak hafızaya bağlanır. `uv` (Python paket yöneticisi) ve Python 3.12+ gerekir.
 >
 > Her ikisi de kurulu değilse Bootstrap çalışmaz.
 
@@ -24,13 +24,13 @@ Mevcut bir projeye entegre edebilir veya sıfırdan yeni bir proje başlatabilir
 - **Otomatik code review** — 3+1 agent ile her değişikliği inceler: kod kalitesi, sessiz hatalar, regresyon riski. Güvenlik değişikliklerinde koşullu Devils Advocate perspektifi.
 - **Akıllı bug fix** — Root cause analizi, maks 3 hipotez, minimal fix, regresyon testi. Sonsuz derinliğe dalmaz.
 - **Deploy güvenlik ağı** — Pre-push git hook'ları localhost leak, migration ve env sync kontrolleri yapar. `/{varyant}-pre-deploy` ve `/{varyant}-post-deploy` komutları da Docker, Coolify veya Vercel gibi hedeflere özel kontrol raporu üretir.
-- **Shared agent memory layer** — `basic-memory` MCP ile tüm CLI ajanları (Claude, Codex, Gemini, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak Markdown knowledge graph'ına bağlanır. Oturum ve CLI arası kalıcı, paylaşılan hafıza — bir ajanın yazdığı not diğerinden anında görünür.
+- **Shared agent memory layer** — `basic-memory` MCP ile tüm CLI ajanları (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak Markdown knowledge graph'ına bağlanır. Oturum ve CLI arası kalıcı, paylaşılan hafıza — bir ajanın yazdığı not diğerinden anında görünür.
 - **Codebase config koruması** — Claude Code runtime'ında `codebase-guard` hook'u Codebase içine `.claude/`, `CLAUDE.md`, `.mcp.json` yazmayı otomatik engeller. Agent config dosyaları yalnızca Agentbase'de yaşar.
 - **Test zorlama** — Claude Code runtime'ında `test-enforcer` hook'u kaynak dosya değişikliklerinde ilgili testlerin çalıştırılmasını hatırlatır. Pre-push hook'u ile test geçmeden push engellenir.
 - **Proje-spesifik kurallar** — Stack'inize göre hook'lar, framework kuralları ve koruma mekanizmaları otomatik üretilir.
 - **Canlı oturum izleme** — Birden fazla Claude Code oturumunu tek terminal ekranından takip edin.
 - **Worktree-dostu mimari** — Agentbase/Codebase ayrımı worktree kullanımını mimari olarak destekler (bkz. Worktree Avantajı bölümü).
-- **Çoklu CLI desteği** — Claude Code çıktıları `transform.js` ile Gemini CLI, Codex CLI, Kimi CLI ve OpenCode formatlarına dönüştürülebilir. Codex hedefi skill/context yüzeyi üretir; ikinci bootstrap veya otomatik hook parity iddiası taşımaz.
+- **Çoklu CLI desteği** — Claude Code çıktıları `transform.js` ile Gemini CLI, Antigravity, Codex CLI, Kimi CLI ve OpenCode formatlarına dönüştürülebilir. Codex hedefi skill/context yüzeyi üretir; ikinci bootstrap veya otomatik hook parity iddiası taşımaz.
 - **Dokümantasyon senkronizasyonu** — Claude Code runtime'ında `doc-drift-check` hook'u kod değişikliği sonrası README, CHANGELOG veya OpenAPI güncellemesi gerekebileceğini hatırlatır.
 - **Eklenti öneri sistemi** — Bootstrap tamamlandığında projenize uygun üçüncü parti skill ve plugin'leri öneren dahili registry taraması.
 - **Otomatik CHANGELOG** — Conventional Commit push'ları `main` branch'inde auto-release akışını tetikler; oluşan `v*` tag'i ayrı GitHub Action ile `CHANGELOG.md` dosyasını üretip `main` branch'ine geri yazar.
@@ -110,7 +110,7 @@ Bu repoda bulunan ana bileşenler:
 - `Agentbase/.claude/commands/bootstrap.md` — Kurulum akışını başlatan ana komut
 - `Agentbase/templates/` — Çekirdek şablonlar ve modül bazlı iskelet dosyaları
 - `Agentbase/generate.js` — Manifestten deterministik içerik üreten betik
-- `Agentbase/transform.js` — Claude Code çıktılarını Gemini/Codex/Kimi/OpenCode formatlarına dönüştüren pipeline
+- `Agentbase/transform.js` — Claude Code çıktılarını Gemini/Antigravity/Codex/Kimi/OpenCode formatlarına dönüştüren pipeline
 - `Agentbase/bin/session-monitor.js` — Oturum izleme aracı
 - `Agentbase/tests/` — Üretim ve hook davranışlarını doğrulayan testler
 
@@ -170,7 +170,9 @@ Claude Code içinde:
 /goal /bootstrap until "BOOTSTRAP_COMPLETE"
 ```
 
-Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçimini sorar, workflow dosyalarını üretir ve scaffold kurulum komutlarını gösterir. Dizin gerçek proje dosyası içermemelidir; `.gitkeep` ve `.DS_Store` placeholder olarak yok sayılır, README veya package dosyası gibi gerçek içerik varsa bootstrap mevcut proje modu ile başlar.
+Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçimini sorar, workflow dosyalarını üretir ve scaffold kurulum komutlarını gösterir.
+Dizin gerçek proje dosyası içermemelidir; `.gitkeep` ve `.DS_Store` placeholder olarak yok sayılır.
+README veya package dosyası gibi gerçek içerik varsa bootstrap mevcut proje modu ile başlar.
 
 ## Bootstrap Akışı
 
@@ -183,7 +185,7 @@ Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçim
 4. **Manifest üretimi.** `Docbase/agentic/project-manifest.yaml` dosyası oluşturulur.
 5. **Dosya üretimi.** Manifeste göre komutlar, ajanlar, hook'lar, kurallar ve yardımcı dokümanlar üretilir.
    Root dokümanlar (`PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md`, `onboarding.md`) **Agentbase root'una** yazılır; `.claude/` altına yazılmaz.
-   Böylece Claude, Gemini, Codex, Kimi ve OpenCode aynı kök bağlamı okuyabilir. Codex hedefi seçildiyse ayrı bootstrap çalıştırılmaz; transform sonrası opsiyonel `/codex-verify` adımı yalnızca Codex çıktı yüzeyini denetler.
+   Böylece Claude, Gemini, Antigravity, Codex, Kimi ve OpenCode aynı kök bağlamı okuyabilir. Codex hedefi seçildiyse ayrı bootstrap çalıştırılmaz; transform sonrası opsiyonel `/codex-verify` adımı yalnızca Codex çıktı yüzeyini denetler.
 6. **Backlog başlatma.** Backlog `Agentbase/backlog/` dizininde oluşturulur ve başlangıç görevleri yaratılır.
 7. **Tamamlanma raporu.** Onboarding rehberi (`onboarding.md`), eklenti önerileri ve git hook etkinleştirme komutu gösterilir: `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
 8. **Tamamlama doğrulama kapısı.** Gate A-H + B2 seti manifesti, root doküman konumunu, root `CLAUDE.md` importlarını, `.claude/` runtime dosyalarını, backlog kurulumunu ve Codebase sızıntısı olmadığını doğrular. PASS durumunda `BOOTSTRAP_COMPLETE` marker'ı basılır; FAIL durumunda `/goal` yeni turla eksikleri kapatır.
@@ -306,7 +308,9 @@ Codex hedefi seçildiyse `transform.js` çıktısını denetleyen opsiyonel adı
 
 ### /memorize
 
-Oturum içerisinde öğrenilen bilgileri kalıcı hafızaya kaydeder. Rutin işlemleri değil, sadece tekrarlama riski olan yapısal bilgileri kaydeder: beklenmedik tuzaklar, kullanıcı tercihleri, mimari kararlar, sürpriz keşifler, yeni tool/dependency notları. Her kayıt `Why` (neden önemli) ve `How to apply` (nasıl uygulanacak) alanlarıyla yapılır.
+Oturum içerisinde öğrenilen bilgileri kalıcı hafızaya kaydeder.
+Rutin işlemleri değil, sadece tekrarlama riski olan yapısal bilgileri kaydeder: beklenmedik tuzaklar, kullanıcı tercihleri, mimari kararlar, sürpriz keşifler, yeni tool/dependency notları.
+Her kayıt `Why` (neden önemli) ve `How to apply` (nasıl uygulanacak) alanlarıyla yapılır.
 
 ```
 /memorize
@@ -430,17 +434,21 @@ Listelenmeyen stack'ler için manifest elle zenginleştirilebilir.
 Claude Code çıktıları `transform.js` ile diğer CLI formatlarına dönüştürülebilir. Bootstrap röportajında hedef araçlar seçilir veya mevcut projeler `--targets` parametresiyle doğrudan çalıştırabilir:
 
 ```bash
-cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,codex,kimi,opencode
+cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,antigravity,codex,kimi,opencode
 ```
 
 | Hedef CLI | Komut Formatı | Agent Formatı | Bağlam Dosyası |
 |-----------|--------------|---------------|----------------|
 | **Gemini CLI** | `.gemini/commands/*.toml` | `.gemini/agents/*.md` | `GEMINI.md` |
+| **Antigravity 2.0** | `.agents/workflows/*.md` | `.agents/skills/*/SKILL.md` | `GEMINI.md` + `.agents/rules/*.md` |
 | **Codex CLI** | `.codex/skills/*/SKILL.md` | — | `AGENTS.md` |
 | **Kimi CLI** | `.kimi/skills/*/SKILL.md` | `.kimi/agents/*.yaml` | Agent prompt içinde |
 | **OpenCode** | `.opencode/skills/*/SKILL.md` | `.opencode/agents/*.md` | `.opencode/AGENTS.md` |
 
 Dönüştürme süreci `.claude/` çıktısını ana kaynak olarak kullanır ve hedef CLI'ın anlayacağı formata adapte eder. Komut çağırma sözdizimi (`/` → `$`, `@` vb.), dosya yolu referansları ve TOML/YAML/Markdown çıktıları otomatik üretilir. `generate.js` değiştirilmez; transform ayrı bir dönüştürme adımıdır.
+
+Antigravity hedefi, Gemini CLI hedefinden ayrıdır: Gemini için `.gemini/commands/*.toml` üretilirken Antigravity 2.0 için komutlar `.agents/workflows/*.md`, ajanlar `.agents/skills/*/SKILL.md`, kurallar ise `.agents/rules/*.md` olarak üretilir.
+Eski `.agent/*` yapısı Antigravity tarafında geriye dönük destekli olabilir; varsayılan çıktı güncel `.agents/*` yüzeyidir.
 
 Codex hedefinde çıktı `Agentbase/.codex/skills/*/SKILL.md` ve `Agentbase/AGENTS.md` olarak üretilir.
 Codex için ikinci bootstrap yoktur: `manifest.targets` alanındaki `codex`, Claude çıktısını Codex formatına dönüştürme hedefidir.

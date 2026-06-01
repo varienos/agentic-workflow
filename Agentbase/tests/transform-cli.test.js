@@ -211,4 +211,17 @@ transform:
     assert.match(result.stdout, /gemini/);
     assert.match(result.stdout, /codex/);
   });
+
+  it('antigravity target dry-run raporuna dahil edilir', t => {
+    const { rootDir, manifestPath } = createFixture(t, {
+      manifestContent: 'project:\n  name: test\ntargets:\n  - gemini\n  - antigravity\n  - codex\n',
+    });
+
+    const result = runTransform(rootDir, [manifestPath, '--targets', 'gemini,antigravity,codex', '--dry-run']);
+
+    assert.equal(result.status, 0, `stderr: ${result.stderr}`);
+    assert.match(result.stdout, /gemini/);
+    assert.match(result.stdout, /antigravity/);
+    assert.match(result.stdout, /codex/);
+  });
 });

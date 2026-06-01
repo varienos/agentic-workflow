@@ -10,7 +10,7 @@
 > [!IMPORTANT]
 > This system requires two mandatory dependencies:
 > - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — the entire task lifecycle (creation, prioritization, implementation, review, closure) is managed through the Backlog.md CLI.
-> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. All CLI agents (Claude, Codex, Gemini, Kimi, OpenCode) connect to the same `Docbase/memory/` vault via MCP. Requires `uv` (Python package manager) and Python 3.12+.
+> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. All CLI agents (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connect to the same `Docbase/memory/` vault via MCP. Requires `uv` (Python package manager) and Python 3.12+.
 >
 > Bootstrap will not run without both installed.
 
@@ -27,13 +27,13 @@ You can integrate it into an existing project or start a brand new one from scra
 - **Automatic code review** — 3+1 agents review every change: code quality, silent failures, regression risk. Conditional Devils Advocate perspective for security changes.
 - **Smart bug fix** — Root cause analysis, max 3 hypotheses, minimal fix, regression test. Doesn't dive into endless depth.
 - **Deploy safety net** — Two layers: (1) pre-push git hooks for localhost leak, migration consistency, and env sync checks, (2) `/{variant}-pre-deploy` and `/{variant}-post-deploy` slash commands for platform-specific controls (for example `/docker-pre-deploy`, `/coolify-post-deploy`, plus rollback guidance). Requires git hook activation (see the Bootstrap completion report).
-- **Shared agent memory layer** — Via `basic-memory` MCP, all CLI agents (Claude, Codex, Gemini, Kimi, OpenCode) connect to a shared Markdown knowledge graph in the `Docbase/memory/` vault. Persistent memory across sessions and CLIs — a note written by one agent is instantly visible to the others.
+- **Shared agent memory layer** — Via `basic-memory` MCP, all CLI agents (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connect to a shared Markdown knowledge graph in the `Docbase/memory/` vault. Persistent memory across sessions and CLIs — a note written by one agent is instantly visible to the others.
 - **Codebase config protection** — In the Claude Code runtime, the `codebase-guard` hook automatically blocks writing `.claude/`, `CLAUDE.md`, `.mcp.json` inside Codebase. Agent config lives exclusively in Agentbase.
 - **Test enforcement** — In the Claude Code runtime, the `test-enforcer` hook reminds you to run related tests when source files change. Pre-push hook prevents pushing without passing tests.
 - **Project-specific rules** — Hooks, framework rules, and protection mechanisms are auto-generated based on your stack.
 - **Live session monitoring** — Track multiple Claude Code sessions from a single terminal screen.
 - **Worktree-friendly architecture** — Agentbase/Codebase separation enables single config, multiple worktrees, parallel development.
-- **Multi-CLI support** — Claude Code outputs can be transformed to Gemini CLI, Codex CLI, Kimi CLI, and OpenCode formats via `transform.js`. The Codex target produces a skill/context surface; it does not imply a second bootstrap or automatic hook parity.
+- **Multi-CLI support** — Claude Code outputs can be transformed to Gemini CLI, Antigravity, Codex CLI, Kimi CLI, and OpenCode formats via `transform.js`. The Codex target produces a skill/context surface; it does not imply a second bootstrap or automatic hook parity.
 - **Documentation sync** — In the Claude Code runtime, the `doc-drift-check` hook warns about README/CHANGELOG/OpenAPI staleness after code changes and points to the service-documentation agent for analysis.
 - **Extension recommendations** — Built-in registry scan suggests relevant third-party skills and plugins after bootstrap completes.
 - **Automatic CHANGELOG** — Conventional Commit pushes on the `main` branch trigger the auto-release flow; the resulting `v*` tag triggers a separate GitHub Action that regenerates `CHANGELOG.md` and writes it back to `main`.
@@ -111,7 +111,7 @@ Main components:
 - `Agentbase/.claude/commands/bootstrap.md` — The main command that starts the setup flow
 - `Agentbase/templates/` — Core templates and module-based skeleton files
 - `Agentbase/generate.js` — Script that produces deterministic content from the manifest
-- `Agentbase/transform.js` — Pipeline that transforms Claude Code outputs to Gemini/Codex/Kimi/OpenCode formats
+- `Agentbase/transform.js` — Pipeline that transforms Claude Code outputs to Gemini/Antigravity/Codex/Kimi/OpenCode formats
 - `Agentbase/bin/session-monitor.js` — Session monitoring tool
 - `Agentbase/tests/` — Tests validating generation and hook behaviors
 
@@ -182,7 +182,7 @@ The `/bootstrap` command works through these high-level steps:
 2. **Codebase analysis.** Project type, directory structure, subprojects, package manager, test tools, and module candidates are extracted.
 3. **Phased interview.** Project, technical preferences, developer profile, and domain rules are clarified.
 4. **Manifest generation.** The `Docbase/agentic/project-manifest.yaml` file is created.
-5. **File generation.** Commands, agents, hooks, rules, and supporting docs are produced from the manifest. Root documents (`PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md`, `onboarding.md`) are written to **Agentbase root**; writing them under `.claude/` is forbidden — the reason is that all models (Claude, Gemini, Codex, Kimi, OpenCode) must be able to read the same root context. The root `CLAUDE.md` pulls in other documents via `@ import <file>.md` lines, establishing the injection chain — Claude reaches all project knowledge by reading a single context file. If target CLI tools were selected, `transform.js` converts the root `CLAUDE.md` into `GEMINI.md` / `AGENTS.md` / `.kimi/...` / `.opencode/...` formats — the injection chain is preserved automatically for every model. If Codex was selected, do not run a separate bootstrap; the optional `/codex-verify` step only checks the Codex target surface after transform.
+5. **File generation.** Commands, agents, hooks, rules, and supporting docs are produced from the manifest. Root documents (`PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md`, `onboarding.md`) are written to **Agentbase root**; writing them under `.claude/` is forbidden — the reason is that all models (Claude, Gemini, Antigravity, Codex, Kimi, OpenCode) must be able to read the same root context. The root `CLAUDE.md` pulls in other documents via `@ import <file>.md` lines, establishing the injection chain — Claude reaches all project knowledge by reading a single context file. If target CLI tools were selected, `transform.js` converts the root `CLAUDE.md` into `GEMINI.md` / `AGENTS.md` / `.agents/...` / `.kimi/...` / `.opencode/...` formats — the injection chain is preserved automatically for every model. If Codex was selected, do not run a separate bootstrap; the optional `/codex-verify` step only checks the Codex target surface after transform.
 6. **Backlog initialization.** The backlog is created in `Agentbase/backlog/` with starter tasks.
 7. **Completion report.** Onboarding guide (`onboarding.md`), extension suggestions, and the git hook activation command are shown: `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
 8. **Completion verification gate.** The Gate A-H + B2 set (manifest, root document paths, root `CLAUDE.md` import chain, `.claude/` runtime files, `.claude-ignore`, no remaining `CLAUDE_FILL` markers, backlog initialized, non-empty content, no Codebase leakage) is checked with bash `test`/`find`/`grep`. On PASS the `BOOTSTRAP_COMPLETE` marker is printed; on FAIL the `/goal` evaluator triggers a new turn, or — in single-turn mode — the user is shown the `/goal` retry command.
@@ -426,17 +426,20 @@ Go, Rust, and Java/Kotlin are also auto-detected during existing-project analysi
 Claude Code outputs can be transformed to other CLI formats via `transform.js`. Target tools are selected during the bootstrap interview, or existing projects can run directly with the `--targets` flag:
 
 ```bash
-cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,codex,kimi,opencode
+cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,antigravity,codex,kimi,opencode
 ```
 
 | Target CLI | Command Format | Agent Format | Context File |
 |-----------|--------------|---------------|----------------|
 | **Gemini CLI** | `.gemini/commands/*.toml` | `.gemini/agents/*.md` | `GEMINI.md` |
+| **Antigravity 2.0** | `.agents/workflows/*.md` | `.agents/skills/*/SKILL.md` | `GEMINI.md` + `.agents/rules/*.md` |
 | **Codex CLI** | `.codex/skills/*/SKILL.md` | — | `AGENTS.md` |
 | **Kimi CLI** | `.kimi/skills/*/SKILL.md` | `.kimi/agents/*.yaml` | Inside agent prompt |
 | **OpenCode** | `.opencode/skills/*/SKILL.md` | `.opencode/agents/*.md` | `.opencode/AGENTS.md` |
 
 The transform process uses `.claude/` output as the canonical source and adapts it to the target CLI's format: invoke syntax (`/` to `$`, `@`, etc.), file path references, and TOML/YAML/Markdown serialization are handled automatically. `generate.js` is never modified — transform runs as a completely separate post-processor.
+
+The Antigravity target is separate from the Gemini CLI target: Gemini receives `.gemini/commands/*.toml`, while Antigravity 2.0 receives commands as `.agents/workflows/*.md`, agents as `.agents/skills/*/SKILL.md`, and rules as `.agents/rules/*.md`. Older `.agent/*` layouts may still be backward-compatible in Antigravity; the default output follows the current `.agents/*` surface.
 
 For Codex, the output is `Agentbase/.codex/skills/*/SKILL.md` and `Agentbase/AGENTS.md`. There is no second Codex bootstrap: `codex` in `manifest.targets` means "transform the Claude canonical output for Codex." The Codex target is a skill/context surface, not a command runtime; no native slash-command guarantee is made. Transform adapts in-text invocation examples to the target syntax, but actual triggering depends on Codex's skill mechanism and session context. After transform, you can optionally run `/codex-verify` to check skill frontmatter, path adaptation, and that no automatic hook parity is claimed. If only Claude Code is selected, transform and Codex verify/adapt are skipped.
 
