@@ -40,6 +40,8 @@ venv/
 # Root .claude/ — bu projeyi gelistirmek icin kullanilan CC config
 # (task-hunter.md, task-plan.md gibi proje-spesifik komutlar burada)
 /.claude/
+/.gemini/
+/.agent/
 
 # Root CLAUDE.md — bu projenin kendi CC talimat dosyasi
 /CLAUDE.md
