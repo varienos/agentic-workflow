@@ -3,19 +3,38 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [Yayınlanmamış] - 2026-05-23
+## [Yayınlanmamış]
+
+> Bağımlılık notu: `basic-memory` MCP zorunlu shared agent memory layer olarak korunur (vault: `Docbase/memory/`).
+
+## [2.3.0] - 2026-06-01
 
 ### Eklenen
 
+- **#237:** hedef projede iki-repo teslimat modeli (Sik 1) (`19d3ea2`)
 - **bootstrap:** ORCHESTRATION.md + LESSONS.md statik root dokümanları @ import zincirine bağla (`0faa00d`)
 - **#236:** basic-memory MCP zorunlu — shared agent memory layer (`548ebd8`)
 
 ### Düzeltilen
 
+- **release:** changelog.js --release Unreleased bolumunu koru (Keep a Changelog) (`e0658f3`)
+- **#237:** review — en eski generic *-wt-*/ stale satiri da temizlensin (`122db46`)
+- **#237:** review bulgulari — stale-block normalize/replace + repo gitignore anchor (`c4e6cd4`)
+- **#237:** review bulgulari — root-anchor + idempotency self-heal + worktree isim (`1a0582a`)
+- **deep-audit:** ust-kok Codebase worktree ignore kuralini koru (`a170730`)
+- **deep-audit:** iki-repo ignore kontratini kilitle (`47f2478`)
+- **#238:** iki-repo teslimat skeleton ifadesi duzeltildi (`d07b62c`)
+- **#238:** codex review bulgusu — iki-repo klon ifadesi duzeltildi (`24b294c`)
+- **#237:** codex review bulgulari duzeltildi (`1351e9a`)
 - **bootstrap:** core command ve agent dosya sayilari tutarsizligi giderildi (`b622af8`)
 - **#236:** code-reviewer + silent-failure-hunter bulgulari duzeltildi (`ed9bd85`)
 - **bootstrap:** @ import → @<dosya> Claude Code resmi import syntax'ına geçiş (`475267e`)
 - **#236:** codex review bulgulari duzeltildi (`b8e6267`)
+
+### Dokümantasyon
+
+- **#238:** hedef proje iki-repo teslimat modeli README'ye eklendi (TR+EN) (`84e2de4`)
+- CHANGELOG otomatik güncellendi [skip ci] (`bf88134`)
 
 ### Bakım
 
