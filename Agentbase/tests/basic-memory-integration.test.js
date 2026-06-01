@@ -261,7 +261,8 @@ describe('basic-memory MCP integration (TASK-236)', () => {
     });
 
     it('basic-memory entegrasyon notu bulunmali', () => {
-      const unreleasedSection = changelog.split(unreleasedMarker)[1]?.split('## [2.2.0]')[0] || '';
+      // Unreleased bolumu = marker'dan sonraki ilk "## [" basligina kadar (versiyona hard-code DEGIL).
+      const unreleasedSection = (changelog.split(unreleasedMarker)[1] || '').split(/\n## \[/)[0];
       assert.ok(
         unreleasedSection.includes('basic-memory'),
         'Unreleased/Yayinlanmamis section basic-memory entegrasyon notu icermeli'

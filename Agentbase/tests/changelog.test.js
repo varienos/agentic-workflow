@@ -130,9 +130,11 @@ describe('releaseVersion', () => {
     const updated = fs.readFileSync(tmpFile, 'utf8');
 
     assert.ok(updated.includes('[1.0.0]'), 'versiyon degismeli');
-    assert.ok(!updated.includes('[Yayınlanmamış]'), 'Yayinlanmamis kalmamali');
+    assert.ok(updated.includes('## [Yayınlanmamış]'), 'taze Unreleased bolumu korunmali (Keep a Changelog)');
     assert.ok(updated.includes('Test ozellik'), 'icerik korunmali');
     assert.ok(updated.includes(`## [1.0.0] - ${today}`), 'bugunun tarihi yazilmali');
+    // Eski icerik versiyon bolumune tasinir; taze Unreleased icinde KALMAZ
+    assert.ok(!updated.split('## [1.0.0]')[0].includes('Test ozellik'), 'eski icerik taze Unreleased icinde kalmamali');
 
     fs.unlinkSync(tmpFile);
   });
@@ -147,9 +149,11 @@ describe('releaseVersion', () => {
     const updated = fs.readFileSync(tmpFile, 'utf8');
 
     assert.ok(updated.includes('[1.0.0]'), 'versiyon degismeli');
-    assert.ok(!updated.includes('[Unreleased]'), 'Unreleased kalmamali');
+    assert.ok(updated.includes('## [Unreleased]'), 'taze Unreleased bolumu korunmali (marker-aware)');
     assert.ok(updated.includes('Test ozellik'), 'icerik korunmali');
     assert.ok(updated.includes(`## [1.0.0] - ${today}`), 'bugunun tarihi yazilmali');
+    // Eski icerik versiyon bolumune tasinir; taze Unreleased icinde KALMAZ
+    assert.ok(!updated.split('## [1.0.0]')[0].includes('Test ozellik'), 'eski icerik taze Unreleased icinde kalmamali');
 
     fs.unlinkSync(tmpFile);
   });

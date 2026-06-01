@@ -176,10 +176,16 @@ function releaseVersion(version, options = {}) {
   const displayVersion = version.replace(/^v/, '');
   const today = new Date().toISOString().slice(0, 10);
 
-  // [Yayınlanmamış] / [Unreleased] → [version] ve tarihi güncelle
+  // [Yayınlanmamış] / [Unreleased] → [version]; ardindan TAZE bir [Yayınlanmamış]
+  // bolumu (standing basic-memory bagimlilik notuyla) ust tarafa yeniden eklenir.
+  // Keep a Changelog standardi: Unreleased bolumu kalici olmalidir. Eski davranis
+  // bu bolumu TUKETIYORDU → her release sonrasi "Unreleased bolumu" testi (ve CI)
+  // kiriliyor, pre-push hook push'u bloklıyordu.
+  // Marker-aware: girdi hangi dildeyse (Yayınlanmamış / Unreleased) taze bolum de o dilde kalsin.
+  const noteLine = '> Bağımlılık notu: `basic-memory` MCP zorunlu shared agent memory layer olarak korunur (vault: `Docbase/memory/`).';
   const updated = content.replace(
-    /## \[(?:Yayınlanmamış|Unreleased)\](?:\s*-\s*\d{4}-\d{2}-\d{2})?/,
-    `## [${displayVersion}] - ${today}`
+    /## \[(Yayınlanmamış|Unreleased)\](?:\s*-\s*\d{4}-\d{2}-\d{2})?/,
+    (match, marker) => `## [${marker}]\n\n${noteLine}\n\n## [${displayVersion}] - ${today}`
   );
 
   if (updated === content) {
