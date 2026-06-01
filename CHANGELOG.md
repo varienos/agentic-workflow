@@ -7,6 +7,25 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 > Bağımlılık notu: `basic-memory` MCP zorunlu shared agent memory layer olarak korunur (vault: `Docbase/memory/`).
 
+## [2.4.0] - 2026-06-01
+
+### Eklenen
+
+- **transform:** add antigravity target (`139812a`)
+
+### Düzeltilen
+
+- **changelog:** restore unreleased marker (`5bbff11`)
+
+### Dokümantasyon
+
+- task-conductor workflow sozlesmesini sikilastir (`626aa8b`)
+- CHANGELOG otomatik güncellendi [skip ci] (`583862f`)
+
+### Bakım
+
+- **gitignore:** gemini ve agent dizinleri ignore listesine eklendi (`20d4fd9`)
+
 ## [2.3.0] - 2026-06-01
 
 ### Eklenen
