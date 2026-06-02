@@ -21,11 +21,14 @@ const bugReviewCommand = readRepoFile('Agentbase/templates/core/commands/bug-rev
 const taskPlanCommand = readRepoFile('Agentbase/templates/core/commands/task-plan.skeleton.md');
 const taskConductorCommand = readRepoFile('Agentbase/templates/core/commands/task-conductor.skeleton.md');
 const deepAuditCommand = readRepoFile('Agentbase/templates/core/commands/deep-audit.skeleton.md');
+const codexVerifyCommand = readRepoFile('Agentbase/templates/core/commands/codex-verify.skeleton.md');
 const regressionAnalyzerAgent = readRepoFile('Agentbase/templates/core/agents/regression-analyzer.skeleton.md');
 const backendExpertAgent = readRepoFile('Agentbase/templates/core/agents/backend-expert.skeleton.md');
+const workflowReference = readRepoFile('Agentbase/templates/reference/workflow.md');
 const workflowLifecycleRule = readRepoFile('Agentbase/templates/core/rules/workflow-lifecycle.skeleton.md');
 const serviceDocumentationAgent = readRepoFile('Agentbase/templates/core/agents/service-documentation.skeleton.md');
 const methodsReference = readRepoFile('Agentbase/templates/reference/methods.md');
+const modelsReference = readRepoFile('Agentbase/templates/reference/models.md');
 const adrReadme = readRepoFile('backlog/decisions/README.md');
 const adrTemplate = readRepoFile('backlog/decisions/0000-adr-template.md');
 const contributing = readRepoFile('CONTRIBUTING.md');
@@ -92,6 +95,29 @@ describe('README docs consistency', () => {
     assert.ok(!readmeEn.includes('run a separate Codex bootstrap'), 'English README must not recommend a separate Codex bootstrap');
     assert.ok(!readmeTr.includes('Claude Code hooklari Codexte otomatik calisir'), 'Turkce README Codex hook parity overclaim tasimamali');
     assert.ok(!readmeEn.includes('Claude Code hooks run automatically in Codex'), 'English README must not overclaim hook parity');
+  });
+
+  it('documents current Codex skill output path and Kimi prompt target consistently', () => {
+    const codexSkillPath = '`.agents/skills/*/SKILL.md`';
+    const oldCodexSkillPath = '`.codex/skills/*/SKILL.md`';
+    for (const [label, content] of [
+      ['Turkce README', readmeTr],
+      ['English README', readmeEn],
+      ['Codex verify command', codexVerifyCommand],
+      ['Reference notes', referenceNotes],
+    ]) {
+      assert.ok(content.includes(codexSkillPath), `${label} current Codex skill path kullanmali`);
+      assert.ok(!content.includes(oldCodexSkillPath), `${label} eski Codex skill path kullanmamali`);
+    }
+
+    assert.ok(
+      readmeTr.includes('`.kimi/agents/default-prompt.md` (`default.yaml` ile)'),
+      'Turkce README Kimi context hedefini gercek dosya yoluyla anlatmali'
+    );
+    assert.ok(
+      readmeEn.includes('`.kimi/agents/default-prompt.md` via `default.yaml`'),
+      'English README must document the concrete Kimi context prompt path'
+    );
   });
 
   it('scopes automatic hook behavior to Claude Code runtime', () => {
@@ -197,6 +223,19 @@ describe('README docs consistency', () => {
     assert.ok(!rootGitignoreSkeleton.includes('her sey gelir'), 'Skeleton eski her sey gelir iddiasini tasimamali');
   });
 
+  it('uses guarded Codebase placeholder replacement commands', () => {
+    assert.ok(!readmeTr.includes('rm -rf Codebase'), 'Turkce README Codebase icin destructive rm -rf onermemeli');
+    assert.ok(!readmeEn.includes('rm -rf Codebase'), 'English README must not recommend destructive rm -rf for Codebase');
+    assert.ok(
+      readmeTr.includes('rm -f Codebase/.gitkeep && rmdir Codebase'),
+      'Turkce README yalnizca bos placeholder Codebase dizinini kaldirmali'
+    );
+    assert.ok(
+      readmeEn.includes('rm -f Codebase/.gitkeep && rmdir Codebase'),
+      'English README must only remove an empty placeholder Codebase directory'
+    );
+  });
+
   it('documents extensions-registry.yaml as the bootstrap recommendation source', () => {
     assert.ok(
       bootstrapCommand.includes('templates/extensions-registry.yaml'),
@@ -217,6 +256,97 @@ describe('README docs consistency', () => {
     assert.ok(
       !contributing.includes('Bootstrap sirasinda Opus bu listeden proje ihtiyacina uygun eklentileri onerir'),
       'CONTRIBUTING Markdown registry dosyasini bootstrap oneri kaynagi gibi sunmamali'
+    );
+  });
+
+  it('keeps model selection guidance current across Claude, Gemini, and Codex surfaces', () => {
+    const requiredTerms = [
+      'Son kaynak kontrolü: 2026-06-02',
+      'OpenAI GPT-5.5',
+      'GPT-5.3-Codex',
+      'Claude Opus 4.x',
+      'Claude Sonnet 4.x',
+      'Claude Haiku 4.x',
+      'Gemini 3.x Pro',
+      'Gemini 3.x Flash',
+      'Gemini 2.5 Pro / Flash',
+      'Production otomasyonlarında preview/experimental alias yerine stabil veya pinned model ID kullan',
+      'Promptlarda model adını davranış garantisi gibi yazma',
+    ];
+
+    for (const term of requiredTerms) {
+      assert.ok(modelsReference.includes(term), `models.md guncel model rehberi terimini icermeli: ${term}`);
+    }
+
+    assert.match(
+      modelsReference,
+      /Son kaynak kontrolü: \d{4}-\d{2}-\d{2}/,
+      'models.md kaynak kontrol tarihini ISO formatinda tutmali'
+    );
+
+    const providerTable = modelsReference
+      .split('## Sağlayıcı Karşılaştırması')[1]
+      .split('## Seçim Kriterleri')[0]
+      .split('\n')
+      .filter(line => line.startsWith('|'));
+    const headerCells = providerTable[0].split('|').slice(1, -1).map(cell => cell.trim());
+    assert.deepEqual(
+      headerCells,
+      ['Sağlayıcı / model sınıfı', 'Güçlü yönler', 'Kullanım durumu'],
+      'models.md provider tablosu beklenen kolonlari korumali'
+    );
+
+    const dataRows = providerTable.slice(2);
+    assert.ok(dataRows.length >= 9, 'models.md provider tablosu OpenAI, Codex, Claude ve Gemini ailelerini kapsamali');
+    for (const row of dataRows) {
+      const cells = row.split('|').slice(1, -1).map(cell => cell.trim());
+      assert.equal(cells.length, 3, `models.md tablo satiri 3 kolonlu olmali: ${row}`);
+      assert.ok(cells.every(Boolean), `models.md tablo satirinda bos hucre olmamali: ${row}`);
+    }
+
+    const sourceUrls = [...modelsReference.matchAll(/https?:\/\/[^\s`]+/g)].map(match => new URL(match[0]));
+    const expectedHosts = new Set([
+      'developers.openai.com',
+      'platform.claude.com',
+      'code.claude.com',
+      'ai.google.dev',
+      'github.com',
+    ]);
+    for (const url of sourceUrls) {
+      assert.ok(expectedHosts.has(url.hostname), `models.md resmi kaynak hostu kullanmali: ${url.hostname}`);
+    }
+
+    assert.ok(
+      !modelsReference.includes('Model Karşılaştırması\n\n| Model | Güçlü Yönler | Kullanım Durumu |'),
+      'models.md eski yalnizca Claude odakli karsilastirma tablosunu tasimamali'
+    );
+    assert.doesNotMatch(
+      workflowReference,
+      /\b(?:Opus|Sonnet|Haiku)\s+\d+(?:\.\d+)+\b/,
+      'workflow.md hizli eskiyen tam Claude surum pinleri yerine model sinifi veya models.md referansi kullanmali'
+    );
+  });
+
+  it('documents memory and CLI target safety guardrails', () => {
+    assert.ok(
+      readmeTr.includes('Sırlar, tokenlar, `.env` değerleri veya PII kalıcı hafızaya yazılmaz'),
+      'Turkce README shared memory icin secret/PII yasagi koymali'
+    );
+    assert.ok(
+      readmeEn.includes('Never store secrets, tokens, `.env` values, or PII in persistent memory'),
+      'English README shared memory must forbid secrets and PII'
+    );
+    assert.ok(
+      referenceNotes.includes('agentic-workflow Codex hedefi skill/context yüzeyidir; native slash command garantisi vermez'),
+      'reference notes Codex target yuzeyini command runtime olarak overclaim etmemeli'
+    );
+    assert.ok(
+      referenceNotes.includes('Transform ile üretilen Gemini TOML prompt-only kabul edilir'),
+      'reference notes Gemini TOML shell exec guardrailini anlatmali'
+    );
+    assert.ok(
+      referenceNotes.includes('allowlist'),
+      'reference notes manuel Gemini shell exec icin allowlist guardrailini korumali'
     );
   });
 

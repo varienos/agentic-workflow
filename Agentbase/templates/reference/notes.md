@@ -55,6 +55,8 @@
 | **Agent Skill** | `SKILL.md` (`.gemini/skills/`) | Lazy-loading — ihtiyaç olunca `activate_skill` ile | Ana context'e enjekte | YAML frontmatter + Markdown, otomatik taranır |
 | **Subagent** | `.gemini/agents/*.md` | Gemini tetikler | Ayrı context (deneysel) | Henüz paralel çalışamıyor, sıralı |
 
+Transform ile üretilen Gemini TOML prompt-only kabul edilir; shell exec eklenmez. Manuel `.gemini/commands/*.toml` yazılırsa shell exec sadece allowlist'li, kullanıcı girdisiyle interpolate edilmeyen, quote edilmiş ve secret göstermeyen komutlarla kullanılmalı.
+
 ### Antigravity 2.0
 
 | Kavram | Ne? | Tetikleyen | Context | Ne zaman? |
@@ -68,8 +70,10 @@
 | Kavram | Ne? | Tetikleyen | Context | Ne zaman? |
 |---|---|---|---|---|
 | **Slash Command** | Built-in + özel prompt'lar | Kullanıcı `/` veya `$` ile | Ana context | `/skills` ile skill'lere de erişir |
-| **Agent Skill** | `SKILL.md` (`.codex/skills/`) | Progressive disclosure — otomatik | Ana context'e enjekte | `$skill-creator` ile interaktif oluşturulabilir |
+| **Agent Skill** | `SKILL.md` (`.agents/skills/`) | Progressive disclosure — otomatik | Ana context'e enjekte | `$skill-creator` ile interaktif oluşturulabilir |
 | **Multi-agent** | `/experimental` ile aktif | Codex tetikler | Ayrı context (deneysel) | CSV tabanlı paralel görev dağıtımı destekler |
+
+Codex ürün kabiliyetleri ile bu repo'nun transform çıktısı ayrı değerlendirilir: agentic-workflow Codex hedefi skill/context yüzeyidir; native slash command garantisi vermez, Claude Code hook runtime'ını otomatik taşımaz ve otomatik hook parity iddiası kurmaz.
 
 ### Eşleştirme Özeti
 
@@ -82,9 +86,9 @@
 
 ### Önemli Farklar
 
-- **Gemini** — En güçlü custom slash command sistemi (`.toml`, namespace, shell exec)
+- **Gemini** — En güçlü custom slash command sistemi (`.toml`, namespace); shell exec yalnızca allowlist'li ve güvenli komutlarda kullanılmalı
 - **Antigravity** — Güncel varsayılan `.agents/rules` ve `.agents/skills`; workflow'lar Markdown slash command olarak çağrılır
-- **Codex** — `$skill-creator` ile interaktif skill oluşturma, `AGENTS.override.md` ile geçici talimat değişikliği
+- **Codex** — `$skill-creator` ile interaktif skill oluşturma; bu repo hedefinde çıktı `.agents/skills/*/SKILL.md` + `AGENTS.md` skill/context yüzeyidir
 - **Claude** — Alt-agent'lar native paralel çalışır (diğerlerinde deneysel), skill yapısı en basit (saf `.md`)
 
 ---

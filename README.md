@@ -11,6 +11,7 @@
 > Bu sistem iki zorunlu bağımlılığa dayanır:
 > - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — tüm görev yaşam döngüsü (oluşturma, önceliklendirme, implementasyon, review, kapatma) Backlog.md CLI ile yönetilir.
 > - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. Tüm CLI ajanları (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak hafızaya bağlanır. `uv` (Python paket yöneticisi) ve Python 3.12+ gerekir.
+>   Sırlar, tokenlar, `.env` değerleri veya PII kalıcı hafızaya yazılmaz; kayıt öncesi redaction zorunludur.
 >
 > Her ikisi de kurulu değilse Bootstrap çalışmaz.
 
@@ -25,6 +26,7 @@ Mevcut bir projeye entegre edebilir veya sıfırdan yeni bir proje başlatabilir
 - **Akıllı bug fix** — Root cause analizi, maks 3 hipotez, minimal fix, regresyon testi. Sonsuz derinliğe dalmaz.
 - **Deploy güvenlik ağı** — Pre-push git hook'ları localhost leak, migration ve env sync kontrolleri yapar. `/{varyant}-pre-deploy` ve `/{varyant}-post-deploy` komutları da Docker, Coolify veya Vercel gibi hedeflere özel kontrol raporu üretir.
 - **Shared agent memory layer** — `basic-memory` MCP ile tüm CLI ajanları (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak Markdown knowledge graph'ına bağlanır. Oturum ve CLI arası kalıcı, paylaşılan hafıza — bir ajanın yazdığı not diğerinden anında görünür.
+  Sırlar, tokenlar, `.env` değerleri veya PII kalıcı hafızaya yazılmaz.
 - **Codebase config koruması** — Claude Code runtime'ında `codebase-guard` hook'u Codebase içine `.claude/`, `CLAUDE.md`, `.mcp.json` yazmayı otomatik engeller. Agent config dosyaları yalnızca Agentbase'de yaşar.
 - **Test zorlama** — Claude Code runtime'ında `test-enforcer` hook'u kaynak dosya değişikliklerinde ilgili testlerin çalıştırılmasını hatırlatır. Pre-push hook'u ile test geçmeden push engellenir.
 - **Proje-spesifik kurallar** — Stack'inize göre hook'lar, framework kuralları ve koruma mekanizmaları otomatik üretilir.
@@ -134,8 +136,8 @@ Not: Bu depodaki bazı komut dosyaları örnek veya çekirdek içerik olarak yer
 git clone https://github.com/varienos/agentic-workflow
 cd agentic-workflow
 
-# Codebase klasörünü projenizle değiştirin
-rm -rf Codebase
+# Codebase placeholder'ı yalnızca boşsa kaldırın; doluysa durur
+rm -f Codebase/.gitkeep && rmdir Codebase
 ln -s /path/to/your/project Codebase
 
 cd Agentbase
@@ -300,7 +302,7 @@ Mevcut workflow konfigürasyonunu Codebase'in güncel durumuyla karşılaştır�
 
 ### /codex-verify
 
-Codex hedefi seçildiyse `transform.js` çıktısını denetleyen opsiyonel adımdır. Codex için ikinci bootstrap yoktur; bu komut manifesti, `.codex/skills/*/SKILL.md` dosyalarını ve `AGENTS.md` dosyasını kontrol eder. Hook runtime parity iddiası taşımaz ve sadece Codex hedef yüzeyindeki küçük uyumsuzlukları raporlar.
+Codex hedefi seçildiyse `transform.js` çıktısını denetleyen opsiyonel adımdır. Codex için ikinci bootstrap yoktur; bu komut manifesti, `.agents/skills/*/SKILL.md` dosyalarını ve `AGENTS.md` dosyasını kontrol eder. Hook runtime parity iddiası taşımaz ve sadece Codex hedef yüzeyindeki küçük uyumsuzlukları raporlar.
 
 ```
 /codex-verify
@@ -311,6 +313,7 @@ Codex hedefi seçildiyse `transform.js` çıktısını denetleyen opsiyonel adı
 Oturum içerisinde öğrenilen bilgileri kalıcı hafızaya kaydeder.
 Rutin işlemleri değil, sadece tekrarlama riski olan yapısal bilgileri kaydeder: beklenmedik tuzaklar, kullanıcı tercihleri, mimari kararlar, sürpriz keşifler, yeni tool/dependency notları.
 Her kayıt `Why` (neden önemli) ve `How to apply` (nasıl uygulanacak) alanlarıyla yapılır.
+Sırlar, tokenlar, `.env` değerleri veya PII kalıcı hafızaya yazılmaz; önce redaction yapılır.
 
 ```
 /memorize
@@ -441,8 +444,8 @@ cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --tar
 |-----------|--------------|---------------|----------------|
 | **Gemini CLI** | `.gemini/commands/*.toml` | `.gemini/agents/*.md` | `GEMINI.md` |
 | **Antigravity 2.0** | `.agents/workflows/*.md` | `.agents/skills/*/SKILL.md` | `GEMINI.md` + `.agents/rules/*.md` |
-| **Codex CLI** | `.codex/skills/*/SKILL.md` | — | `AGENTS.md` |
-| **Kimi CLI** | `.kimi/skills/*/SKILL.md` | `.kimi/agents/*.yaml` | Agent prompt içinde |
+| **Codex CLI** | `.agents/skills/*/SKILL.md` | — | `AGENTS.md` |
+| **Kimi CLI** | `.kimi/skills/*/SKILL.md` | `.kimi/agents/*.yaml` | `.kimi/agents/default-prompt.md` (`default.yaml` ile) |
 | **OpenCode** | `.opencode/skills/*/SKILL.md` | `.opencode/agents/*.md` | `.opencode/AGENTS.md` |
 
 Dönüştürme süreci `.claude/` çıktısını ana kaynak olarak kullanır ve hedef CLI'ın anlayacağı formata adapte eder. Komut çağırma sözdizimi (`/` → `$`, `@` vb.), dosya yolu referansları ve TOML/YAML/Markdown çıktıları otomatik üretilir. `generate.js` değiştirilmez; transform ayrı bir dönüştürme adımıdır.
@@ -450,7 +453,7 @@ Dönüştürme süreci `.claude/` çıktısını ana kaynak olarak kullanır ve 
 Antigravity hedefi, Gemini CLI hedefinden ayrıdır: Gemini için `.gemini/commands/*.toml` üretilirken Antigravity 2.0 için komutlar `.agents/workflows/*.md`, ajanlar `.agents/skills/*/SKILL.md`, kurallar ise `.agents/rules/*.md` olarak üretilir.
 Eski `.agent/*` yapısı Antigravity tarafında geriye dönük destekli olabilir; varsayılan çıktı güncel `.agents/*` yüzeyidir.
 
-Codex hedefinde çıktı `Agentbase/.codex/skills/*/SKILL.md` ve `Agentbase/AGENTS.md` olarak üretilir.
+Codex hedefinde çıktı `Agentbase/.agents/skills/*/SKILL.md` ve `Agentbase/AGENTS.md` olarak üretilir.
 Codex için ikinci bootstrap yoktur: `manifest.targets` alanındaki `codex`, Claude çıktısını Codex formatına dönüştürme hedefidir.
 Codex tarafı komut runtime'ı değil, skill/context yüzeyidir; native slash command garantisi verilmez.
 Transform çağrı örneklerini hedef sözdizimine uyarlar; gerçek tetikleme Codex'in skill mekanizmasına ve oturum bağlamına bağlıdır.

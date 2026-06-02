@@ -84,10 +84,10 @@ describe('adaptInvokeSyntax', () => {
 });
 
 describe('adaptPathReferences', () => {
-  it('codex — .claude/commands/ → .codex/skills/', () => {
+  it('codex — .claude/commands/ → .agents/skills/', () => {
     const input = 'Bkz: `.claude/commands/task-master.md`';
     const result = adaptPathReferences(input, 'codex');
-    assert.ok(result.includes('.codex/skills/'));
+    assert.ok(result.includes('.agents/skills/'));
   });
 
   it('kimi — .claude/agents/ → .kimi/agents/', () => {
@@ -171,7 +171,7 @@ describe('adaptContent', () => {
     const input = '`.claude/commands/task-master.md` icin `/task-master` kullanin.\n\n**Source of truth:** `settings.json`';
     const result = adaptContent(input, 'codex');
     assert.ok(!result.includes('settings.json'));
-    assert.ok(result.includes('.codex/skills/'));
+    assert.ok(result.includes('.agents/skills/'));
     assert.ok(result.includes('$task-master'));
   });
 
@@ -346,11 +346,11 @@ describe('transformForTarget', () => {
     };
     const fileMap = transformForTarget(source, 'codex');
 
-    assert.ok('.codex/skills/task-master/SKILL.md' in fileMap);
-    assert.ok('.codex/skills/review/SKILL.md' in fileMap);
+    assert.ok('.agents/skills/task-master/SKILL.md' in fileMap);
+    assert.ok('.agents/skills/review/SKILL.md' in fileMap);
     assert.ok('AGENTS.md' in fileMap);
-    assert.ok(fileMap['.codex/skills/task-master/SKILL.md'].includes('name: "task-master"'));
-    assert.ok(fileMap['.codex/skills/task-master/SKILL.md'].includes('$task-master'));
+    assert.ok(fileMap['.agents/skills/task-master/SKILL.md'].includes('name: "task-master"'));
+    assert.ok(fileMap['.agents/skills/task-master/SKILL.md'].includes('$task-master'));
     assert.ok(fileMap['AGENTS.md'].includes('AGENTS.md'));
   });
 
@@ -414,7 +414,7 @@ describe('transformForTarget', () => {
       context: '',
     };
     const fileMap = transformForTarget(source, 'codex');
-    const skillContent = fileMap['.codex/skills/test-agent/SKILL.md'];
+    const skillContent = fileMap['.agents/skills/test-agent/SKILL.md'];
     const frontmatterCount = (skillContent.match(/^---$/gm) || []).length;
     assert.equal(frontmatterCount, 2);
   });
@@ -454,10 +454,13 @@ describe('resolveTargets', () => {
     assert.deepEqual(targets, ['gemini', 'kimi']);
   });
 
-  it('manifest disindaki target sessizce atlanir', () => {
+  it('manifest disindaki explicit target invalid listesinde rapor edilir', () => {
     const manifest = { targets: ['claude', 'gemini'] };
-    const { targets } = resolveTargets(manifest, 'gemini,kimi');
+    const { targets, invalid } = resolveTargets(manifest, 'gemini,kimi');
     assert.deepEqual(targets, ['gemini']);
+    assert.deepEqual(invalid, [
+      { name: 'kimi', reason: 'manifest.targets icinde yok' },
+    ]);
   });
 
   it('targets tanimsizsa bos dizi doner', () => {
@@ -511,8 +514,8 @@ describe('formatCommand', () => {
 
   it('Codex: SKILL.md dosyasi uretir', () => {
     const result = formatCommand('task-master', 'Backlog siralayici', '# Icerik', cap.codex);
-    assert.ok('.codex/skills/task-master/SKILL.md' in result);
-    assert.ok(result['.codex/skills/task-master/SKILL.md'].includes('name: "task-master"'));
+    assert.ok('.agents/skills/task-master/SKILL.md' in result);
+    assert.ok(result['.agents/skills/task-master/SKILL.md'].includes('name: "task-master"'));
   });
 
   it('Kimi: SKILL.md dosyasi uretir', () => {
@@ -551,8 +554,8 @@ describe('formatAgent', () => {
 
   it('Codex: agents dizini yok, skills olarak uretir', () => {
     const result = formatAgent('reviewer', 'Inceleme', '# Icerik', cap.codex, 'codex');
-    assert.ok('.codex/skills/reviewer/SKILL.md' in result);
-    assert.ok(result['.codex/skills/reviewer/SKILL.md'].includes('name: "reviewer"'));
+    assert.ok('.agents/skills/reviewer/SKILL.md' in result);
+    assert.ok(result['.agents/skills/reviewer/SKILL.md'].includes('name: "reviewer"'));
   });
 
   it('Antigravity: agents dizini yok, skill olarak uretir', () => {
@@ -668,6 +671,44 @@ describe('validateCliCapabilities', () => {
     assert.ok(errors.some(e => e.includes('context')));
   });
 
+  it('context.file null ise hata donduruyor', () => {
+    const errors = validateCliCapabilities('bad', {
+      skills: { format: 'md', dir: '.bad/skills' },
+      invoke: { prefix: '/', separator: ' ' },
+      context: { file: null, location: 'root' },
+    });
+    assert.ok(errors.some(e => e.includes('context.file')));
+  });
+
+  it('context.location eksikse hata donduruyor', () => {
+    const errors = validateCliCapabilities('bad', {
+      skills: { format: 'md', dir: '.bad/skills' },
+      invoke: { prefix: '/', separator: ' ' },
+      context: { file: 'BAD.md' },
+    });
+    assert.ok(errors.some(e => e.includes('context.location')));
+  });
+
+  it('agent-yaml-prompt context stratejisi agents dir gerektirir', () => {
+    const errors = validateCliCapabilities('bad', {
+      skills: { format: 'md', dir: '.bad/skills' },
+      agents: null,
+      invoke: { prefix: '/', separator: ' ' },
+      context: { strategy: 'agent-yaml-prompt' },
+    });
+    assert.ok(errors.some(e => e.includes('agent-yaml-prompt')));
+  });
+
+  it('bilinmeyen context stratejisi hata donduruyor', () => {
+    const errors = validateCliCapabilities('bad', {
+      skills: { format: 'md', dir: '.bad/skills' },
+      agents: { format: 'md', dir: '.bad/agents' },
+      invoke: { prefix: '/', separator: ' ' },
+      context: { strategy: 'unknown' },
+    });
+    assert.ok(errors.some(e => e.includes('context.strategy')));
+  });
+
   it('null capability hata donduruyor', () => {
     const errors = validateCliCapabilities('bad', null);
     assert.ok(errors.length > 0);
@@ -684,9 +725,11 @@ describe('loadExternalCapabilities', () => {
     assert.deepEqual(Object.keys(result).sort(), Object.keys(CLI_CAPABILITIES).sort());
   });
 
-  it('dosya yoksa varsayilan doner', () => {
-    const result = loadExternalCapabilities('/nonexistent/config.yaml');
-    assert.deepEqual(Object.keys(result).sort(), Object.keys(CLI_CAPABILITIES).sort());
+  it('explicit config dosyasi yoksa hata firlatir', () => {
+    assert.throws(
+      () => loadExternalCapabilities('/nonexistent/config.yaml'),
+      /CLI config bulunamadi/
+    );
   });
 
   it('YAML config ile yeni CLI ekleniyor', () => {
@@ -880,8 +923,8 @@ describe('PATH_MAPS frozen snapshot — kasitli olmayan drift korunmasi', () => 
       'CLAUDE.md': 'GEMINI.md',
     },
     codex: {
-      '.claude/commands/': '.codex/skills/',
-      '.claude/agents/': '.codex/skills/',
+      '.claude/commands/': '.agents/skills/',
+      '.claude/agents/': '.agents/skills/',
       'CLAUDE.md': 'AGENTS.md',
     },
     kimi: {

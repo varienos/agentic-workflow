@@ -15,7 +15,7 @@ Bu komut, `/bootstrap` ve `transform.js` sonrasinda Codex hedefinin kullanilabil
 
 - Manifest: `../Docbase/agentic/project-manifest.yaml`
 - Claude canonical kaynak: `.claude/`
-- Codex target ciktilari: `.codex/skills/*/SKILL.md`, `AGENTS.md`
+- Codex target ciktilari: `.agents/skills/*/SKILL.md`, `AGENTS.md`
 - Yardimci dokumanlar: README, onboarding veya bootstrap tamamlanma raporu
 
 ## Step 1 — Manifest ve Target Kontrolu
@@ -35,8 +35,8 @@ Sadece Claude Code hedefi secildiyse transform ve Codex verify/adapt calismaz.
 
 Asagidaki dosya ve dizinleri kontrol et:
 
-- `.codex/skills/`
-- `.codex/skills/*/SKILL.md`
+- `.agents/skills/`
+- `.agents/skills/*/SKILL.md`
 - `AGENTS.md`
 
 Eksikse yeniden bootstrap onerme. Kullaniciya yalnizca transform komutunu oner:
@@ -69,7 +69,7 @@ Her `SKILL.md` icin sunlari denetle:
 Karari dar tut:
 
 - **Rapor yeterli:** Eksikler davranissal degilse sadece rapor yaz.
-- **Kucuk hedef yuzey duzeltmesi:** Sadece `.codex/skills/` veya `AGENTS.md` icinde Codex'e ozel path/invoke metni duzelt.
+- **Kucuk hedef yuzey duzeltmesi:** Sadece `.agents/skills/` veya `AGENTS.md` icinde Codex'e ozel path/invoke metni duzelt.
 - **Buyuk sorun:** Transform veya template degisikligi gerekiyorsa backlog task olustur; mevcut bootstrap'i tekrar calistirma.
 
 ## Step 6 — Rapor
@@ -91,9 +91,9 @@ Raporu su formatta ver:
 
 ### Kutsal Kurallar (Her Komutta Gecerli)
 
-1. **Codebase e config YAZMA** — `.claude/`, `.codex/`, `CLAUDE.md`, `AGENTS.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` veya `.codex/` dizini olusturma, `../Codebase/CLAUDE.md` veya `../Codebase/AGENTS.md` yazma YASAK.
+1. **Codebase e config YAZMA** — `.claude/`, `.agents/`, `.codex/`, `CLAUDE.md`, `AGENTS.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/`, `.agents/` veya `.codex/` dizini olusturma, `../Codebase/CLAUDE.md` veya `../Codebase/AGENTS.md` yazma YASAK.
 2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir. Config dosyalari (`.claude/`, `.codex/`, `CLAUDE.md`, `AGENTS.md`) Codebase icinde YAZILAMAZ.
+3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir. Config dosyalari (`.claude/`, `.agents/`, `.codex/`, `CLAUDE.md`, `AGENTS.md`) Codebase icinde YAZILAMAZ.
 
 1. **Ikinci bootstrap yok** — Codex icin ayri bootstrap calistirma, manifest/backlog'u yeniden baslatma.
 2. **Canonical kaynak Claude ciktilaridir** — Codex hedefi `.claude/` kaynak ciktilarindan transform ile uretilir.

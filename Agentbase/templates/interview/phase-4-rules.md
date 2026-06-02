@@ -125,7 +125,7 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
   - `claude` canonical kaynak olarak her zaman manifestte kalir; diger degerler transform hedefidir
   - `transform.js` secilen hedeflere gore `.gemini/`, `.agents/`, `.codex/`, `.kimi/`, `.opencode/` dizinleri uretir
   - Antigravity secimi `.agents/workflows/*.md`, `.agents/skills/*/SKILL.md`, `.agents/rules/*.md` ve root `GEMINI.md` uretir
-  - Codex secimi ikinci bootstrap baslatmaz; `.codex/skills/*/SKILL.md` ve `AGENTS.md` transform ciktisidir
+  - Codex secimi ikinci bootstrap baslatmaz; `.agents/skills/*/SKILL.md` ve `AGENTS.md` transform ciktisidir
   - Codex secildiyse transform sonrasi opsiyonel `/codex-verify` pass'i onerilir
   - Sadece `f` secilirse `targets: [claude]` — transform ve Codex verify/adapt atlanir
 

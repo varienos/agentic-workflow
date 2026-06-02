@@ -18,15 +18,15 @@ Bootstrap → Planner → Hunter → Review (ops.) → Quality → Push
 
 | Adım | Kim? | Komut | Ne yapar? | Zorunlu mu? |
 |---|---|---|---|---|
-| **Bootstrap** | Opus | `/bootstrap` | Röportaj, workspace oluşturma, backlog init, eklenti seçimi | Proje başında 1 kere |
-| **Master** | Opus | `/task-master` | Backlog'u skorlayıp öncelik sıralaması çıkarır | İsteğe bağlı |
-| **Planner** | **Opus 4.6 (max)** | `/task-plan` | Task oluşturur, derin analiz, model önerisi, kapsam bölme, review kararı | Her task |
-| **Hunter** | Sonnet 4.6 | `/task-hunter` | Task'ı uygular — kod yazar, test yazar, doğrular, commit eder | Her task |
-| **Review** | Sonnet (temiz) | `/task-review` | 3+1 agent: code-reviewer + silent-failure-hunter + regression-analyzer + kosullu devils-advocate | Opsiyonel — planner karar verir |
-| **Quality** | Sonnet (temiz) | — | Standartlara uygunluk: CONVENTIONS.md, naming, docblock, lint | Review → otomatik, tek başına da tetiklenebilir |
-| **Bug Hunter** | Sonnet 4.6 | `/bug-hunter` | Root cause bul, düzelt, test yaz, commit et | Bug bildirimi geldiğinde |
-| **Bug Review** | Sonnet (temiz) | `/bug-review` | Paralel 3 agent: kalite + sessiz hata + regresyon | Bug fix sonrası |
-| **Deep Audit** | Sonnet (paralel) | `/deep-audit` | Modülü uçtan uca denetler — paralel uzman agent'lar, iki boyutlu değerlendirme, basitse fix karmaşıksa backlog | Modül olgunlaşınca veya isteğe bağlı |
+| **Bootstrap** | Opus-class | `/bootstrap` | Röportaj, workspace oluşturma, backlog init, eklenti seçimi | Proje başında 1 kere |
+| **Master** | Opus-class | `/task-master` | Backlog'u skorlayıp öncelik sıralaması çıkarır | İsteğe bağlı |
+| **Planner** | **Opus-class (yüksek reasoning)** | `/task-plan` | Task oluşturur, derin analiz, model önerisi, kapsam bölme, review kararı | Her task |
+| **Hunter** | Sonnet-class | `/task-hunter` | Task'ı uygular — kod yazar, test yazar, doğrular, commit eder | Her task |
+| **Review** | Sonnet-class (temiz) | `/task-review` | 3+1 agent: code-reviewer + silent-failure-hunter + regression-analyzer + kosullu devils-advocate | Opsiyonel — planner karar verir |
+| **Quality** | Sonnet-class (temiz) | — | Standartlara uygunluk: CONVENTIONS.md, naming, docblock, lint | Review → otomatik, tek başına da tetiklenebilir |
+| **Bug Hunter** | Sonnet-class | `/bug-hunter` | Root cause bul, düzelt, test yaz, commit et | Bug bildirimi geldiğinde |
+| **Bug Review** | Sonnet-class (temiz) | `/bug-review` | Paralel 3 agent: kalite + sessiz hata + regresyon | Bug fix sonrası |
+| **Deep Audit** | Sonnet-class (paralel) | `/deep-audit` | Modülü uçtan uca denetler — paralel uzman agent'lar, iki boyutlu değerlendirme, basitse fix karmaşıksa backlog | Modül olgunlaşınca veya isteğe bağlı |
 | **Pre-push hook** | Sistem | — | Son kapı — lint, test suite, static analysis | Her zaman zorunlu |
 
 > **Quality tetiklenme kuralları:**
@@ -119,7 +119,7 @@ Agent'ların yaptığı hatalar `shared/errors.md` dosyasında takip edilmeli. A
 ## [HATA-001] Kısa başlık
 
 - **Tarih:** 2026-03-15
-- **Agent:** Claude Sonnet 4.6
+- **Agent:** Claude Sonnet-class
 - **Görev:** Login endpoint refactoring
 - **Hata:** Service katmanında doğrudan DB query yazıldı, repository pattern atlandı
 - **Etki:** Mimari ihlal, separation of concerns bozuldu

@@ -10,7 +10,7 @@
 > [!IMPORTANT]
 > This system requires two mandatory dependencies:
 > - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — the entire task lifecycle (creation, prioritization, implementation, review, closure) is managed through the Backlog.md CLI.
-> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. All CLI agents (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connect to the same `Docbase/memory/` vault via MCP. Requires `uv` (Python package manager) and Python 3.12+.
+> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. All CLI agents (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connect to the same `Docbase/memory/` vault via MCP. Never store secrets, tokens, `.env` values, or PII in persistent memory; redact before writing memory. Requires `uv` (Python package manager) and Python 3.12+.
 >
 > Bootstrap will not run without both installed.
 
@@ -27,7 +27,7 @@ You can integrate it into an existing project or start a brand new one from scra
 - **Automatic code review** — 3+1 agents review every change: code quality, silent failures, regression risk. Conditional Devils Advocate perspective for security changes.
 - **Smart bug fix** — Root cause analysis, max 3 hypotheses, minimal fix, regression test. Doesn't dive into endless depth.
 - **Deploy safety net** — Two layers: (1) pre-push git hooks for localhost leak, migration consistency, and env sync checks, (2) `/{variant}-pre-deploy` and `/{variant}-post-deploy` slash commands for platform-specific controls (for example `/docker-pre-deploy`, `/coolify-post-deploy`, plus rollback guidance). Requires git hook activation (see the Bootstrap completion report).
-- **Shared agent memory layer** — Via `basic-memory` MCP, all CLI agents (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connect to a shared Markdown knowledge graph in the `Docbase/memory/` vault. Persistent memory across sessions and CLIs — a note written by one agent is instantly visible to the others.
+- **Shared agent memory layer** — Via `basic-memory` MCP, all CLI agents (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connect to a shared Markdown knowledge graph in the `Docbase/memory/` vault. Persistent memory across sessions and CLIs — a note written by one agent is instantly visible to the others. Never store secrets, tokens, `.env` values, or PII in persistent memory.
 - **Codebase config protection** — In the Claude Code runtime, the `codebase-guard` hook automatically blocks writing `.claude/`, `CLAUDE.md`, `.mcp.json` inside Codebase. Agent config lives exclusively in Agentbase.
 - **Test enforcement** — In the Claude Code runtime, the `test-enforcer` hook reminds you to run related tests when source files change. Pre-push hook prevents pushing without passing tests.
 - **Project-specific rules** — Hooks, framework rules, and protection mechanisms are auto-generated based on your stack.
@@ -135,8 +135,8 @@ Note: Some command files in this repo serve as examples or core content. The act
 git clone https://github.com/varienos/agentic-workflow
 cd agentic-workflow
 
-# Replace the Codebase placeholder with your project
-rm -rf Codebase
+# Remove the Codebase placeholder only if it is empty; stop if it contains files
+rm -f Codebase/.gitkeep && rmdir Codebase
 ln -s /path/to/your/project Codebase
 
 cd Agentbase
@@ -297,7 +297,7 @@ Compares current workflow configuration with the Codebase's current state. Does 
 
 ### /codex-verify
 
-Optional verify/adapt step for the Codex target after `transform.js` runs. In the Claude Code bootstrap session it runs as `/codex-verify`; in the Codex target the same content is generated as the `codex-verify` skill. There is no second Codex bootstrap; this command checks the manifest, `.codex/skills/*/SKILL.md`, and `AGENTS.md`. It does not claim hook runtime parity, and it only reports or suggests narrow adaptations for the Codex target surface.
+Optional verify/adapt step for the Codex target after `transform.js` runs. In the Claude Code bootstrap session it runs as `/codex-verify`; in the Codex target the same content is generated as the `codex-verify` skill. There is no second Codex bootstrap; this command checks the manifest, `.agents/skills/*/SKILL.md`, and `AGENTS.md`. It does not claim hook runtime parity, and it only reports or suggests narrow adaptations for the Codex target surface.
 
 ```
 /codex-verify
@@ -306,6 +306,7 @@ Optional verify/adapt step for the Codex target after `transform.js` runs. In th
 ### /memorize
 
 Records learned information from the session to persistent memory. Records only structural information with repetition risk, not routine operations: unexpected traps, user preferences, architectural decisions, surprise discoveries, new tool/dependency notes. Each record includes `Why` (why it matters) and `How to apply` (how to use it) fields.
+Never store secrets, tokens, `.env` values, or PII in persistent memory; redact before writing.
 
 ```
 /memorize
@@ -433,15 +434,15 @@ cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --tar
 |-----------|--------------|---------------|----------------|
 | **Gemini CLI** | `.gemini/commands/*.toml` | `.gemini/agents/*.md` | `GEMINI.md` |
 | **Antigravity 2.0** | `.agents/workflows/*.md` | `.agents/skills/*/SKILL.md` | `GEMINI.md` + `.agents/rules/*.md` |
-| **Codex CLI** | `.codex/skills/*/SKILL.md` | — | `AGENTS.md` |
-| **Kimi CLI** | `.kimi/skills/*/SKILL.md` | `.kimi/agents/*.yaml` | Inside agent prompt |
+| **Codex CLI** | `.agents/skills/*/SKILL.md` | — | `AGENTS.md` |
+| **Kimi CLI** | `.kimi/skills/*/SKILL.md` | `.kimi/agents/*.yaml` | `.kimi/agents/default-prompt.md` via `default.yaml` |
 | **OpenCode** | `.opencode/skills/*/SKILL.md` | `.opencode/agents/*.md` | `.opencode/AGENTS.md` |
 
 The transform process uses `.claude/` output as the canonical source and adapts it to the target CLI's format: invoke syntax (`/` to `$`, `@`, etc.), file path references, and TOML/YAML/Markdown serialization are handled automatically. `generate.js` is never modified — transform runs as a completely separate post-processor.
 
 The Antigravity target is separate from the Gemini CLI target: Gemini receives `.gemini/commands/*.toml`, while Antigravity 2.0 receives commands as `.agents/workflows/*.md`, agents as `.agents/skills/*/SKILL.md`, and rules as `.agents/rules/*.md`. Older `.agent/*` layouts may still be backward-compatible in Antigravity; the default output follows the current `.agents/*` surface.
 
-For Codex, the output is `Agentbase/.codex/skills/*/SKILL.md` and `Agentbase/AGENTS.md`. There is no second Codex bootstrap: `codex` in `manifest.targets` means "transform the Claude canonical output for Codex." The Codex target is a skill/context surface, not a command runtime; no native slash-command guarantee is made. Transform adapts in-text invocation examples to the target syntax, but actual triggering depends on Codex's skill mechanism and session context. After transform, you can optionally run `/codex-verify` to check skill frontmatter, path adaptation, and that no automatic hook parity is claimed. If only Claude Code is selected, transform and Codex verify/adapt are skipped.
+For Codex, the output is `Agentbase/.agents/skills/*/SKILL.md` and `Agentbase/AGENTS.md`. There is no second Codex bootstrap: `codex` in `manifest.targets` means "transform the Claude canonical output for Codex." The Codex target is a skill/context surface, not a command runtime; no native slash-command guarantee is made. Transform adapts in-text invocation examples to the target syntax, but actual triggering depends on Codex's skill mechanism and session context. After transform, you can optionally run `/codex-verify` to check skill frontmatter, path adaptation, and that no automatic hook parity is claimed. If only Claude Code is selected, transform and Codex verify/adapt are skipped.
 
 ## Production-Proven Patterns
 

@@ -30,7 +30,7 @@ const CLI_CAPABILITIES = {
   },
   codex: {
     commands: null,
-    skills: { format: 'skill.md', dir: '.codex/skills' },
+    skills: { format: 'skill.md', dir: '.agents/skills' },
     agents: null,
     rules: { strategy: 'inline-context' },
     context: { file: 'AGENTS.md', location: 'root' },
@@ -95,9 +95,22 @@ function validateCliCapabilities(name, cap) {
     errors.push(`${name}: workspace-rules icin rules.dir zorunlu`);
   }
 
-  // context zorunlu
   if (!cap.context) {
     errors.push(`${name}: context tanimi zorunlu`);
+  } else if (cap.context.strategy) {
+    if (cap.context.strategy !== 'agent-yaml-prompt') {
+      errors.push(`${name}: context.strategy desteklenmiyor: ${cap.context.strategy}`);
+    } else if (!cap.agents || !cap.agents.dir || !cap.agents.format) {
+      errors.push(`${name}: agent-yaml-prompt context stratejisi agents.format ve agents.dir gerektirir`);
+    }
+  } else if (typeof cap.context.file === 'string' && cap.context.file.length > 0) {
+    if (typeof cap.context.location !== 'string' || cap.context.location.length === 0) {
+      errors.push(`${name}: context.location (string) zorunlu`);
+    }
+  } else if ('file' in cap.context) {
+    errors.push(`${name}: context.file (string) zorunlu`);
+  } else {
+    errors.push(`${name}: context.file veya context.strategy zorunlu`);
   }
 
   // Path-safe: dir/file/location degerleri '..' icermemeli ve absolute olmamali
@@ -118,7 +131,10 @@ function validateCliCapabilities(name, cap) {
 function loadExternalCapabilities(configPath) {
   const merged = { ...CLI_CAPABILITIES };
 
-  if (!configPath || !fs.existsSync(configPath)) return merged;
+  if (!configPath) return merged;
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`CLI config bulunamadi: ${configPath}`);
+  }
 
   const ext = path.extname(configPath).toLowerCase();
   let external;
@@ -211,8 +227,8 @@ const PATH_MAPS = {
     'CLAUDE.md': 'GEMINI.md',
   },
   codex: {
-    '.claude/commands/': '.codex/skills/',
-    '.claude/agents/': '.codex/skills/',
+    '.claude/commands/': '.agents/skills/',
+    '.claude/agents/': '.agents/skills/',
     'CLAUDE.md': 'AGENTS.md',
   },
   kimi: {
@@ -622,8 +638,9 @@ function resolveTargets(manifest, targetsFlag, capabilities = CLI_CAPABILITIES) 
   const manifestTargets = (manifest.targets || []).filter(t => t !== 'claude');
 
   let targets;
+  let requested = null;
   if (targetsFlag) {
-    const requested = targetsFlag.split(',').map(t => t.trim()).filter(Boolean);
+    requested = targetsFlag.split(',').map(t => t.trim()).filter(Boolean);
     if (manifestTargets.length > 0) {
       // Manifest'te targets varsa → filtrele
       targets = manifestTargets.filter(t => new Set(requested).has(t));
@@ -636,6 +653,13 @@ function resolveTargets(manifest, targetsFlag, capabilities = CLI_CAPABILITIES) 
   }
 
   const invalid = [];
+  if (requested && manifestTargets.length > 0) {
+    for (const target of requested) {
+      if (validSet.has(target) && !manifestTargets.includes(target)) {
+        invalid.push({ name: target, reason: 'manifest.targets icinde yok' });
+      }
+    }
+  }
   const validTargets = targets.filter(t => {
     if (!validSet.has(t)) {
       invalid.push({ name: t, reason: `bilinmeyen CLI — gecerli degerler: ${[...validSet].join(', ')}` });
