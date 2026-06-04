@@ -69,14 +69,47 @@ test('ENVIRONMENTS: ortam tablosu', () => {
 test('COMMANDS: subproject komut bloklari', () => {
   const out = SIMPLE_GENERATORS.COMMANDS(richManifest(), 'md');
   assert.match(out, /### api \(`\.\.\/Codebase\/apps\/api`/);
-  assert.match(out, /cd \.\.\/Codebase\/apps\/api && npm test/);
+  assert.match(out, /cd "\.\.\/Codebase\/apps\/api" && npm test/);
   // komutu olmayan subproject icin pm default
-  assert.match(out, /cd \.\.\/Codebase\/apps\/web && npm run build/);
+  assert.match(out, /cd "\.\.\/Codebase\/apps\/web" && npm run build/);
+});
+
+test('COMMANDS: bosluklu path quote eder ve cd ile baslayan komutu korur', () => {
+  const manifest = {
+    project: {
+      structure: '../My Project',
+      subprojects: [
+        { name: 'api', path: 'apps/api', test_command: 'cd backend && php spark test' },
+      ],
+    },
+    stack: { package_manager: 'npm' },
+  };
+  const out = SIMPLE_GENERATORS.COMMANDS(manifest, 'md');
+  assert.match(out, /cd "\.\.\/My Project\/apps\/api" && npm run dev/);
+  assert.match(out, /cd backend && php spark test/);
+  assert.doesNotMatch(out, /cd "\.\.\/My Project\/apps\/api" && cd backend/);
 });
 
 test('COMMANDS: subproject yoksa tek blok (pm default)', () => {
   const out = SIMPLE_GENERATORS.COMMANDS({ project: {}, stack: { package_manager: 'pnpm' } }, 'md');
   assert.match(out, /pnpm test/);
+});
+
+test('COMMANDS: tek proje path quote eder ve cd ile baslayan scripti korur', () => {
+  const out = SIMPLE_GENERATORS.COMMANDS({
+    project: {
+      structure: '../My Project',
+      scripts: {
+        dev: 'pnpm dev',
+        test: 'cd app && pnpm test',
+        build: 'pnpm build',
+      },
+    },
+    stack: { package_manager: 'pnpm' },
+  }, 'md');
+  assert.match(out, /cd "\.\.\/My Project" && pnpm dev/);
+  assert.match(out, /cd app && pnpm test/);
+  assert.doesNotMatch(out, /cd "\.\.\/My Project" && cd app/);
 });
 
 test('CONVENTIONS: commit format + dil + domain', () => {

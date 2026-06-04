@@ -62,3 +62,9 @@ Varsayim: kullanici istegi genel stabilizasyon ve guncel model uyumlulugu istedi
 - `rtk node -c bin/lib/detect.js && rtk node -c bin/lib/assemble.js && rtk node -c tests/init.test.js`
 - `rtk git diff --check`
 - PAL `precommit` internal validation: ready for commit
+
+## Follow-up Review Fix: COMMANDS Generator
+
+- [x] `COMMANDS` generator icin path quote ve `cd`-prefix regresyon testlerini RED/GREEN ile ekle.
+- [x] Subproject ve tek-proje command output'larini `cd "<path>" && ...` formatina al.
+- [x] Manifest komutu zaten `cd ` ile basliyorsa tekrar sarmalamadan aynen koru.

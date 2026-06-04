@@ -885,6 +885,7 @@ const SIMPLE_GENERATORS = {
     const subprojects = Array.isArray(p.subprojects) ? p.subprojects : [];
     const pm = manifest?.stack?.package_manager || 'npm';
     const lines = ['## Geliştirme Komutları', ''];
+    const formatCommand = (dir, cmd) => cmd.startsWith('cd ') ? cmd : `cd "${dir}" && ${cmd}`;
     if (subprojects.length) {
       for (const sp of subprojects) {
         const dir = getSubprojectPath(manifest, sp);
@@ -894,7 +895,7 @@ const SIMPLE_GENERATORS = {
           [sp.build_command || `${pm} run build`, 'Build'],
         ];
         lines.push(`### ${sp.name} (\`${dir}\` dizininden)`, '```bash',
-          ...cmds.map(([c, l]) => `cd ${dir} && ${c}      # ${l}`), '```', '');
+          ...cmds.map(([c, l]) => `${formatCommand(dir, c)}      # ${l}`), '```', '');
       }
     } else {
       const dir = getCodebasePath(manifest);
@@ -905,7 +906,7 @@ const SIMPLE_GENERATORS = {
         [sc.build || `${pm} run build`, 'Build'],
       ];
       lines.push(`### ${dir} dizininden`, '```bash',
-        ...cmds.map(([c, l]) => `cd ${dir} && ${c}      # ${l}`), '```', '');
+        ...cmds.map(([c, l]) => `${formatCommand(dir, c)}      # ${l}`), '```', '');
     }
     return lines.join('\n').trimEnd();
   },
