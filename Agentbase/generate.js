@@ -792,6 +792,177 @@ const SIMPLE_GENERATORS = {
     return `## Health Check\n\n\`<PROJE_URL>/health\``;
   },
 
+  // --- CONTEXT / ROOT-DOK BLOKLARI (Faz 2: marker azaltma) ---
+  // Bu bloklar onceden CLAUDE_FILL idi; manifest'ten sadik sekilde uretilebildikleri
+  // icin deterministik generator'a tasindi. Gercek model yargisi gerektiren bloklar
+  // (ARCHITECTURE, DATA_FLOW, DIRECTORY_MAP, REVIEW_CHECKLIST, CRITICAL_RULES vb.)
+  // bilincli olarak CLAUDE_FILL kaldi.
+
+  // En sik blok (47x): proje baglami. Basliksiz uretir — skeleton'daki mevcut
+  // basligin (# Proje / # Tech Stack / ## Alt Proje Yapisi) altina oturur.
+  CODEBASE_CONTEXT(manifest) {
+    const p = manifest?.project || {};
+    const stack = manifest?.stack || {};
+    const subprojects = Array.isArray(p.subprojects) ? p.subprojects : [];
+    const detected = Array.isArray(stack.detected) ? stack.detected.filter(Boolean) : [];
+    const stackLabel = stack.primary
+      ? (detected.length ? `${stack.primary} (${detected.join(', ')})` : stack.primary)
+      : (detected.length ? detected.join(', ') : '—');
+    const lines = [];
+    if (p.description) lines.push(p.description, '');
+    lines.push(`- **Tip:** ${p.type || 'single'}`);
+    lines.push(`- **Stack:** ${stackLabel}`);
+    const exts = Array.isArray(stack.file_extensions) ? stack.file_extensions : [];
+    if (exts.length) lines.push(`- **Dosya uzantıları:** ${exts.join(', ')}`);
+    if (subprojects.length) {
+      lines.push('', '**Alt projeler:**');
+      for (const sp of subprojects) {
+        const role = sp.role ? ` — ${sp.role}` : '';
+        const spStack = sp.stack ? ` (${sp.stack})` : '';
+        lines.push(`- \`${getSubprojectPath(manifest, sp)}\` · ${sp.name}${role}${spStack}`);
+      }
+    }
+    lines.push('', "> Kutsal Kurallar: config dosyaları yalnızca Agentbase içinde yaşar; Codebase içinde `.claude/` oluşturulmaz; git yalnızca Codebase'de çalışır.");
+    return lines.join('\n');
+  },
+
+  PROFESSIONAL_STANCE(manifest) {
+    const exp = manifest?.developer?.experience || 'mid';
+    const texts = {
+      senior: "Dalkavukluk yapma. \"Harika soru!\" veya \"Güzel fikir!\" gibi ifadeler kullanma. Mühendis gibi düşün — kısa, öz, teknik. Soru sorulduğunda doğrudan cevapla. Öneri sunarken trade-off'ları belirt; kararı geliştirici verir.",
+      mid: "Net ve pragmatik ol. Karar noktalarında 2-3 alternatif sun ve trade-off'ları açıkla. Gereksiz detaydan kaçın.",
+      junior: "Detaylı açıklama yap. Her kararın nedenini anlat. Kod örnekleri ver. Adım adım rehberlik et.",
+      'new-to-stack': "Stack-spesifik kavramları açıkla. Idiomatic pattern'leri göster. Diğer stack'lerle karşılaştırarak bağlam ver.",
+    };
+    return ['## Profesyonel Duruş', '', texts[exp] || texts.mid].join('\n');
+  },
+
+  PROJECT_DEFINITION(manifest) {
+    const p = manifest?.project || {};
+    const subprojects = Array.isArray(p.subprojects) ? p.subprojects : [];
+    const typeLabel = p.type === 'monorepo' ? 'Monorepo yapısı.' : 'Tek proje yapısı.';
+    const lines = ['## Proje Tanımı', '', `**${p.name || 'Proje'}** — ${p.description || 'Açıklama tanımlı değil.'} ${typeLabel}`];
+    if (subprojects.length) {
+      lines.push('', '| Alt Proje | Yol | Rol | Stack |', '|---|---|---|---|');
+      for (const sp of subprojects) {
+        lines.push(`| ${sp.name || '—'} | \`${getSubprojectPath(manifest, sp)}\` | ${sp.role || '—'} | ${sp.stack || '—'} |`);
+      }
+    }
+    return lines.join('\n');
+  },
+
+  TECH_STACK(manifest) {
+    const s = manifest?.stack || {};
+    const rows = [];
+    const add = (k, v) => { if (v) rows.push(`| ${k} | ${v} |`); };
+    add('Runtime', s.runtime ? `${s.runtime}${s.runtime_version ? ` ${s.runtime_version}` : ''}` : null);
+    add('Dil', hasTypeScript(manifest) ? 'TypeScript' : (manifest?.project?.language || null));
+    add('ORM', s.orm);
+    add('Veritabanı', s.database);
+    add('Auth', s.auth_method && s.auth_method !== 'none' ? s.auth_method : null);
+    add('Test', s.test_framework);
+    add('Lint', s.linter);
+    add('Format', s.formatter);
+    add('Paket Yöneticisi', s.package_manager);
+    if (!rows.length) return "## Teknoloji Yığını\n\n_Stack bilgisi manifest'te tanımlı değil._";
+    return ['## Teknoloji Yığını', '', '| Katman | Teknoloji |', '|---|---|', ...rows].join('\n');
+  },
+
+  ENVIRONMENTS(manifest) {
+    const envs = Array.isArray(manifest?.environments) ? manifest.environments : [];
+    if (!envs.length) return '## Ortamlar\n\n_Ortam tanımlı değil._';
+    const rows = envs.map((e) => {
+      const url = e.url || e.api_url || '—';
+      const deploy = [e.deploy_platform, e.deploy_trigger].filter(Boolean).join(', ') || '—';
+      const name = e.name ? e.name.charAt(0).toUpperCase() + e.name.slice(1) : '—';
+      return `| ${name} | ${url} | ${deploy} |`;
+    });
+    return ['## Ortamlar', '', '| Ortam | URL | Deploy |', '|---|---|---|', ...rows].join('\n');
+  },
+
+  COMMANDS(manifest) {
+    const p = manifest?.project || {};
+    const subprojects = Array.isArray(p.subprojects) ? p.subprojects : [];
+    const pm = manifest?.stack?.package_manager || 'npm';
+    const lines = ['## Geliştirme Komutları', ''];
+    if (subprojects.length) {
+      for (const sp of subprojects) {
+        const dir = getSubprojectPath(manifest, sp);
+        const cmds = [
+          [sp.dev_command || `${pm} run dev`, 'Dev server'],
+          [sp.test_command || `${pm} test`, 'Testler'],
+          [sp.build_command || `${pm} run build`, 'Build'],
+        ];
+        lines.push(`### ${sp.name} (\`${dir}\` dizininden)`, '```bash',
+          ...cmds.map(([c, l]) => `cd ${dir} && ${c}      # ${l}`), '```', '');
+      }
+    } else {
+      const dir = getCodebasePath(manifest);
+      const sc = p.scripts || {};
+      const cmds = [
+        [sc.dev || `${pm} run dev`, 'Dev server'],
+        [sc.test || `${pm} test`, 'Testler'],
+        [sc.build || `${pm} run build`, 'Build'],
+      ];
+      lines.push(`### ${dir} dizininden`, '```bash',
+        ...cmds.map(([c, l]) => `cd ${dir} && ${c}      # ${l}`), '```', '');
+    }
+    return lines.join('\n').trimEnd();
+  },
+
+  CONVENTIONS(manifest) {
+    const wf = manifest?.workflows || {};
+    const conv = manifest?.conventions || {};
+    const domain = Array.isArray(manifest?.rules?.domain) ? manifest.rules.domain : [];
+    const lang = (conv.commit_language || manifest?.developer?.communication_language || 'tr') === 'tr' ? 'Türkçe' : 'İngilizce';
+    const lines = ['## Konvansiyonlar', '', '### Commit Formatı'];
+    const cc = wf.commit_convention || 'conventional';
+    if (cc === 'conventional') {
+      const map = wf.commit_prefix_map || {
+        feat: 'Yeni özellik', fix: 'Hata düzeltme', refactor: 'Yeniden yapılandırma',
+        docs: 'Dokümantasyon', test: 'Test', chore: 'Bakım',
+      };
+      lines.push(`Conventional Commits (${lang}):`);
+      for (const [k, v] of Object.entries(map)) lines.push(`- \`${k}: ${v} açıklaması\``);
+    } else {
+      lines.push(`Commit formatı: ${cc}.`);
+    }
+    lines.push('', '### Dil', `Tüm iletişim, commit mesajları, yorumlar ve dokümantasyon ${lang} yazılır.`);
+    if (domain.length) {
+      lines.push('', '### Domain Kuralları');
+      for (const d of domain) {
+        if (typeof d === 'string') lines.push(`- ${d}`);
+        else if (d && d.rule) lines.push(`- ${d.name ? `**${d.name}:** ` : ''}${d.rule}`);
+      }
+    }
+    return lines.join('\n');
+  },
+
+  PROJECT_CONVENTIONS(manifest) {
+    const domain = Array.isArray(manifest?.rules?.domain) ? manifest.rules.domain : [];
+    const docblock = manifest?.conventions?.docblock;
+    const lines = [];
+    for (const d of domain) {
+      if (typeof d === 'string') lines.push(`- ${d}`);
+      else if (d && d.rule) lines.push(`- ${d.name ? `**${d.name}:** ` : ''}${d.rule}`);
+    }
+    if (docblock === 'required') lines.push('- Her public fonksiyon docblock/JSDoc ile dokümante edilir.');
+    if (!lines.length) return '_Projeye özgü ek konvansiyon tanımlı değil._';
+    return lines.join('\n');
+  },
+
+  FORBIDDEN_OPERATIONS(manifest) {
+    const forbidden = Array.isArray(manifest?.rules?.forbidden) ? manifest.rules.forbidden : [];
+    if (!forbidden.length) return "_Manifest'te tanımlı yasaklı işlem yok._";
+    const rows = forbidden.map((f) => {
+      const cmd = f.command || f.pattern || '—';
+      const reason = f.reason || '—';
+      const hook = f.hook_type || f.type || 'hook';
+      return `| \`${cmd}\` | ${reason} | ${hook} |`;
+    });
+    return ['| Komut | Sebep | Koruma |', '|---|---|---|', ...rows].join('\n');
+  },
+
   // --- KOMUT TABLOLARI ---
 
   DETECTED_ORM(manifest) {

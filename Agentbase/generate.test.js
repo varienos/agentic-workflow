@@ -208,13 +208,15 @@ test desc
   });
 
   it('karmasik MD blogunu CLAUDE_FILL ile isaretler', () => {
-    const content = `<!-- GENERATE: CODEBASE_CONTEXT
+    // DATA_FLOW generator'i olmayan gercek narrative blok (ARCHITECTURE.md).
+    // (CODEBASE_CONTEXT Faz 2'de deterministik generator'a tasindi.)
+    const content = `<!-- GENERATE: DATA_FLOW
 desc
 -->`;
 
     const result = fillBlocks(content, 'md', testManifest);
-    assert.ok(result.marked.includes('CODEBASE_CONTEXT'));
-    assert.ok(result.content.includes('<!-- CLAUDE_FILL: CODEBASE_CONTEXT'));
+    assert.ok(result.marked.includes('DATA_FLOW'));
+    assert.ok(result.content.includes('<!-- CLAUDE_FILL: DATA_FLOW'));
   });
 
   it('basit JS blogunu doldurur', () => {
@@ -238,7 +240,7 @@ desc
 simple
 -->
 
-<!-- GENERATE: CODEBASE_CONTEXT
+<!-- GENERATE: DATA_FLOW
 complex
 -->
 
@@ -251,7 +253,7 @@ simple
     assert.strictEqual(result.marked.length, 1);
     assert.ok(result.filled.includes('COMMIT_CONVENTION'));
     assert.ok(result.filled.includes('VERIFICATION_COMMANDS'));
-    assert.ok(result.marked.includes('CODEBASE_CONTEXT'));
+    assert.ok(result.marked.includes('DATA_FLOW'));
   });
 });
 
@@ -1390,9 +1392,9 @@ describe('Entegrasyon: Gercek skeleton benzeri icerik', () => {
   it('karma MD icerigini dogru isler', () => {
     const content = `# Task Hunter
 
-<!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary
+<!-- GENERATE: DATA_FLOW
+Aciklama: Bu bolum proje gelistirme sirasinda Claude tarafindan doldurulur.
+Gerekli manifest alanlari: yok (narrative)
 -->
 
 ---
@@ -1412,8 +1414,8 @@ Aciklama: Commit kurallari
 -->`;
 
     const result = fillBlocks(content, 'md', testManifest);
-    // CODEBASE_CONTEXT → CLAUDE_FILL
-    assert.ok(result.content.includes('CLAUDE_FILL: CODEBASE_CONTEXT'));
+    // DATA_FLOW → CLAUDE_FILL (narrative, generator yok)
+    assert.ok(result.content.includes('CLAUDE_FILL: DATA_FLOW'));
     // VERIFICATION_COMMANDS → deterministik
     assert.ok(result.content.includes('## Dogrulama Komutlari'));
     assert.ok(result.content.includes('api'));
