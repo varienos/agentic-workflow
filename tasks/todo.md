@@ -31,3 +31,34 @@ Varsayim: kullanici istegi genel stabilizasyon ve guncel model uyumlulugu istedi
 - `rtk node -c Agentbase/generate.js`
 - `rtk rg -n "GENERATE:" Agentbase/templates/core --glob '*.md'`
 - `rtk npm test` (Agentbase, 797 test)
+
+---
+
+# Branch Review: feat/init-cli
+
+## Plan
+
+- [x] Branch diff'ini `origin/main` merge-base'e gore incele.
+- [x] Init CLI review bulgularini reproducer ve failing test ile kanitla.
+- [x] Workspace detection ve mimari not aktarimi fixlerini uygula.
+- [x] Tam test ve syntax dogrulamasini calistir.
+- [x] Review sonucunu commit olarak kaydet.
+
+## Bulgular
+
+- `package.json#workspaces` icindeki `sites/*`, `libs/*`, `client` gibi arbitrary pattern/direkt dizinler subproject'e cevrilmiyordu; monorepo manifesti bos `subprojects` ile schema'da invalid olabiliyordu.
+- `extra_architecture_notes` sorusu `project.architecture_notes` alanina aktarilmiyordu; cevap sessizce kayboluyordu.
+
+## Sonuc
+
+- Workspace detection, package.json `workspaces` array/object pattern'lerini direkt dizin ve basit trailing-star glob olarak cozer hale getirildi.
+- Direct workspace entry'lerinin gercek dizin olmasi zorunlu kilindi; dosya/absolute/traversal/negation girdileri subproject'e alinmiyor.
+- `extra_architecture_notes` cevabi `project.architecture_notes` alanina aktariliyor; legacy `architecture_notes` fallback'i korundu.
+
+## Dogrulama
+
+- `rtk node --test tests/init.test.js` (Agentbase, 14/14)
+- `rtk npm test` (Agentbase, 825/825)
+- `rtk node -c bin/lib/detect.js && rtk node -c bin/lib/assemble.js && rtk node -c tests/init.test.js`
+- `rtk git diff --check`
+- PAL `precommit` internal validation: ready for commit

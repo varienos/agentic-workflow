@@ -94,7 +94,8 @@ function assemble(detection, answers, opts = {}) {
       name: sp.name, path: sp.path, role: null, stack: null,
     }));
   }
-  if (a.architecture_notes) manifest.project.architecture_notes = a.architecture_notes;
+  const architectureNotes = a.extra_architecture_notes || a.architecture_notes;
+  if (architectureNotes) manifest.project.architecture_notes = architectureNotes;
 
   // --- detected (TASK-207 semasi, oldugu gibi tasinir) ---
   manifest.detected = detection.detected || {};

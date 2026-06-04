@@ -45,6 +45,10 @@ function exists(p) {
   try { return fs.existsSync(p); } catch { return false; }
 }
 
+function isDirectory(p) {
+  try { return fs.statSync(p).isDirectory(); } catch { return false; }
+}
+
 function det(value, confidence, source) {
   return { value, confidence, source };
 }
@@ -61,6 +65,34 @@ function firstMatch(deps, candidates) {
     if (deps[c] != null) return c;
   }
   return null;
+}
+
+function workspacePatterns(pkg) {
+  if (!pkg) return [];
+  if (Array.isArray(pkg.workspaces)) return pkg.workspaces;
+  if (pkg.workspaces && Array.isArray(pkg.workspaces.packages)) return pkg.workspaces.packages;
+  return [];
+}
+
+function normalizeRelPath(relPath) {
+  if (typeof relPath !== 'string') return null;
+  const rel = relPath.trim().replace(/\\/g, '/').replace(/\/+$/, '');
+  if (!rel || rel.startsWith('!') || path.isAbsolute(rel)) return null;
+  const normalized = path.posix.normalize(rel);
+  if (normalized === '.' || normalized.startsWith('..')) return null;
+  return normalized;
+}
+
+function listChildDirectories(root, relDir) {
+  const dirPath = path.join(root, relDir);
+  if (!exists(dirPath)) return [];
+  try {
+    return fs.readdirSync(dirPath, { withFileTypes: true })
+      .filter((e) => e.isDirectory() && e.name !== 'node_modules' && !e.name.startsWith('.'))
+      .map((e) => ({ name: e.name, path: `${relDir}/${e.name}` }));
+  } catch {
+    return [];
+  }
 }
 
 // --- runtime tespiti ---
@@ -92,21 +124,37 @@ function detectPackageManager(root) {
 // --- monorepo tespiti ---
 function detectMonorepo(root, pkg) {
   const subprojects = [];
+  const seen = new Set();
+  const addSubproject = (relPath) => {
+    const normalized = normalizeRelPath(relPath);
+    if (!normalized || seen.has(normalized) || !isDirectory(path.join(root, normalized))) return;
+    seen.add(normalized);
+    subprojects.push({ name: path.posix.basename(normalized), path: normalized });
+  };
+
   // pnpm/yarn/npm workspaces veya apps/packages dizinleri
-  const hasWorkspaces = pkg && (Array.isArray(pkg.workspaces) || (pkg.workspaces && Array.isArray(pkg.workspaces.packages)));
+  const wsPatterns = workspacePatterns(pkg);
+  const hasWorkspaces = wsPatterns.length > 0;
   const hasPnpmWs = exists(path.join(root, 'pnpm-workspace.yaml'));
+
+  for (const pattern of wsPatterns) {
+    const normalized = normalizeRelPath(pattern);
+    if (!normalized) continue;
+    const starIndex = normalized.indexOf('*');
+    if (starIndex === -1) {
+      addSubproject(normalized);
+      continue;
+    }
+
+    const base = normalized.slice(0, starIndex).replace(/\/+$/, '');
+    if (!base || normalized.slice(starIndex).replace(/\*/g, '').replace(/\//g, '') !== '') continue;
+    for (const entry of listChildDirectories(root, base)) addSubproject(entry.path);
+  }
+
   const workspaceDirs = ['apps', 'packages', 'services'];
 
   for (const dir of workspaceDirs) {
-    const dirPath = path.join(root, dir);
-    if (!exists(dirPath)) continue;
-    let entries = [];
-    try {
-      entries = fs.readdirSync(dirPath, { withFileTypes: true }).filter((e) => e.isDirectory());
-    } catch { /* yoksa atla */ }
-    for (const e of entries) {
-      subprojects.push({ name: e.name, path: `${dir}/${e.name}` });
-    }
+    for (const entry of listChildDirectories(root, dir)) addSubproject(entry.path);
   }
 
   const isMonorepo = (hasWorkspaces || hasPnpmWs || subprojects.length > 1);

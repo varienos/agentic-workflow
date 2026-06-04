@@ -62,6 +62,22 @@ test('detect: monorepo (apps/*) → subprojects', () => {
   assert.deepEqual(d.subprojects.map((s) => s.name).sort(), ['api', 'web']);
 });
 
+test('detect: workspace globs ve direkt dizinler subprojects uretir', () => {
+  const root = tmpProject(
+    {
+      'package.json': { workspaces: ['sites/*', 'libs/*', 'client', 'server', 'README.md'] },
+      'README.md': '# workspace dosyasi degil',
+    },
+    ['sites/web', 'libs/core', 'client', 'server'],
+  );
+  const d = detect(root);
+  assert.equal(d.projectType, 'monorepo');
+  assert.deepEqual(
+    d.subprojects.map((s) => s.path).sort(),
+    ['client', 'libs/core', 'server', 'sites/web'],
+  );
+});
+
 test('detect: python projesi', () => {
   const root = tmpProject({ 'pyproject.toml': '[project]\nname="x"' });
   const d = detect(root);
@@ -130,6 +146,15 @@ test('assemble: production_url environments\'a eklenir', () => {
   const prod = manifest.environments.find((e) => e.name === 'production');
   assert.ok(prod);
   assert.equal(prod.api_url, 'https://api.x.test');
+});
+
+test('assemble: extra_architecture_notes project.architecture_notes alanina eklenir', () => {
+  const detection = detect(tmpProject({ 'package.json': {} }));
+  const answers = collectDefaults(QUESTIONS, detection, {
+    extra_architecture_notes: 'Bounded context sinirlari korunacak.',
+  });
+  const manifest = assemble(detection, answers, {});
+  assert.equal(manifest.project.architecture_notes, 'Bounded context sinirlari korunacak.');
 });
 
 // --- init.js CLI smoke (--dry-run, --yes) ---
