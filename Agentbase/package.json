@@ -4,6 +4,9 @@
   "private": true,
   "description": "Agentic workflow skeleton isleme araclari",
   "scripts": {
+    "init": "node bin/init.js --codebase ../Codebase --agentbase .",
+    "init:yes": "node bin/init.js --codebase ../Codebase --agentbase . --yes",
+    "init:dry": "node bin/init.js --codebase ../Codebase --agentbase . --dry-run",
     "generate": "node generate.js",
     "transform": "node transform.js",
     "test": "node --test generate.test.js transform.test.js tests/*.test.js",

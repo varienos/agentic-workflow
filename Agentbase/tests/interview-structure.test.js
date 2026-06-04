@@ -91,10 +91,14 @@ describe('Interview SKIP_DIRS korumasi', () => {
     assert.equal(skeletons.length, 0, 'interview/ altinda skeleton dosyasi olmamali');
   });
 
-  it('interview dizininde sadece phase-*.md dosyalari var', () => {
+  it('interview dizininde sadece phase-*.md ve questions.js dosyalari var', () => {
+    // questions.js: rontgen sorularinin TEK KAYNAGI (init dikisi). phase-*.md
+    // dosyalari bundan turetilir. Baska stray/skeleton dosya beklenmez.
+    const ALLOWED_NON_PHASE = new Set(['questions.js']);
     const files = fs.readdirSync(INTERVIEW_DIR).filter(f => !f.startsWith('.'));
     for (const file of files) {
-      assert.ok(file.startsWith('phase-') && file.endsWith('.md'), `beklenmeyen dosya: ${file}`);
+      const ok = (file.startsWith('phase-') && file.endsWith('.md')) || ALLOWED_NON_PHASE.has(file);
+      assert.ok(ok, `beklenmeyen dosya: ${file}`);
     }
   });
 });

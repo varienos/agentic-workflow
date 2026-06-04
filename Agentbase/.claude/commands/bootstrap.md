@@ -375,6 +375,12 @@ onay olmadan ASLA verilmez.
 
 - **Dosya varsa**:
 
+  **🔗 SLIM PATH (init dikişi) — önce bunu kontrol et:** Manifesti oku. Eğer `manifest.init.produced_by == "init-cli"` ve `manifest.init.narrative_pending == true` ise, bu init-sonrası **İLK** bootstrap'tır (yeniden çalıştırma değil). `bin/init.js` zaten detect + röportaj + manifest + generate.js'i deterministik olarak tamamlamıştır. Şunu yap ve bu 1.3 bölümünün geri kalanını (yeniden-çalıştırma menüsü) **ATLA**:
+  - Manifesti `templates/manifest.schema.js` `validateManifest` ile doğrula. Geçersizse SLIM PATH'i bırak ve aşağıdaki normal yeniden-çalıştırma akışına düş.
+  - Geçerliyse konsola yaz: `🔗 init dikişi algılandı — detect/röportaj/manifest atlanıyor, yalnızca CLAUDE_FILL narrative doldurulacak.` Ardından **ADIM 2 (codebase analizi), ADIM 3 (röportaj) ve ADIM 4 (manifest oluşturma) TAMAMEN ATLANIR** — init bunları üretti. Doğrudan ADIM 5'e geç: generate.js deterministik çıktısı zaten mevcuttur (yeniden üretim idempotenttir), teammate'ler **yalnızca CLAUDE_FILL narrative bloklarını ve root dokümanlarını** doldurur. ADIM 8 GATE değişmeden çalışır.
+
+  Aksi halde (init imzası yoksa) bu **önceki bir bootstrap** çalıştırmasıdır; aşağıdaki yeniden-çalıştırma akışını uygula:
+
   1. Mevcut manifesti oku.
   2. `manifest.version` alanini kontrol et. Beklenen major surum `1` kabul edilir.
   3. Uyumluluk kararini ver:
@@ -458,6 +464,8 @@ Tum kontroller basarili oldugunda:
 ---
 
 ## ADIM 2 — CODEBASE ANALIZI (Otomatik)
+
+> **🔗 SLIM PATH (init dikişi) aktifse** (ADIM 1.3'te tespit edildi) bu adimin tamamini atla — `bin/init.js` codebase analizini deterministik olarak zaten yapti ve `manifest.detected.*` alanlarini doldurdu.
 
 > **GREENFIELD_MODE = true ise** bu adimin tamamini atla. Asagidaki mesaji göster ve dogrudan ADIM 3'e gec:
 >
@@ -1144,6 +1152,8 @@ Stdout'a kısa özet yaz:
 
 ## ADIM 3 — FAZLI ROPORTAJ
 
+> **🔗 SLIM PATH (init dikişi) aktifse** (ADIM 1.3) bu adimin tamamini atla — `bin/init.js` röportajı terminalde deterministik olarak yapti ve cevaplari manifest'e yazdi. Doğrudan ADIM 5'e geç.
+
 **KURALLAR:**
 1. **Soru gruplandırma:**
    - **Tespit edilebilir sorular** (test_framework, commit_convention, migration, auth, design_system vb.) ADIM 2.7'de toplu tabloda doğrulanır — ADIM 3'te tek tek sorulmaz.
@@ -1208,6 +1218,8 @@ Roportaj tamamlaninca:
 ---
 
 ## ADIM 4 — MANIFEST OLUSTURMA
+
+> **🔗 SLIM PATH (init dikişi) aktifse** (ADIM 1.3) bu adimi atla — manifest `bin/init.js` tarafindan deterministik olarak olusturulup `templates/manifest.schema.js` ile dogrulanmistir. Mevcut manifesti oldugu gibi kullan.
 
 Toplanan tum verileri birlestirerek `../Docbase/agentic/project-manifest.yaml` dosyasini olustur.
 

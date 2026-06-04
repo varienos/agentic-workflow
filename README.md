@@ -178,7 +178,25 @@ README veya package dosyası gibi gerçek içerik varsa bootstrap mevcut proje m
 
 ## Bootstrap Akışı
 
-`/bootstrap` komutu yüksek seviyede şu adımlarla çalışır:
+### İsteğe bağlı ön-adım: `npm run init` (terminal dikişi)
+
+Ağır projelerde tüm yapılandırma yükünü modele bırakmak eksik/hatalı config üretebilir. Bunu azaltmak için deterministik kısmı (codebase tespiti + röportaj + manifest + `generate.js`) terminale taşıyan bir CLI vardır:
+
+```bash
+cd Agentbase
+npm run init            # interaktif sihirbaz (gerçek terminal)
+npm run init:yes        # non-interaktif: tespit + varsayılanlar (CI/agent)
+npm run init:dry        # tespit raporu, dosya yazmaz
+# veya: node bin/init.js --answers init-answers.yaml   # replay
+```
+
+`init` manifesti `templates/manifest.schema.js` ile doğrular (fail-loud) ve `generate.js`'i çalıştırarak deterministik çıktıyı üretir.
+Ardından `/bootstrap` çalıştırıldığında **SLIM PATH** devreye girer: detect/röportaj/manifest adımları atlanır, modele yalnızca `CLAUDE_FILL` narrative blokları kalır.
+`init` çalıştırılmazsa `/bootstrap` tam akışı (legacy) tek başına yürütür — geriye uyum korunur.
+
+### `/bootstrap` adımları
+
+`/bootstrap` komutu yüksek seviyede şu adımlarla çalışır (init çalıştırıldıysa 2–4 atlanır):
 
 0. **`/goal` mod zorunluluğu.** Bootstrap `/goal` modunda çalıştırılır. ADIM 8'deki tamamlama kapısı geçmeden süreç bitmiş sayılmaz. Doğru çağrı: `/goal /bootstrap until "BOOTSTRAP_COMPLETE"`.
 1. **Ön koşul kontrolleri.** Backlog CLI, `Codebase/` erişimi ve varsa önceki manifest kontrol edilir.

@@ -175,7 +175,23 @@ When Bootstrap detects an empty Codebase, it switches to greenfield mode: asks f
 
 ## Bootstrap Flow
 
-The `/bootstrap` command works through these high-level steps:
+### Optional pre-step: `npm run init` (terminal seam)
+
+On heavy projects, leaving the entire configuration burden to the model can produce incomplete or incorrect config. To reduce this, a CLI moves the deterministic part (codebase detection + interview + manifest + `generate.js`) into the terminal:
+
+```bash
+cd Agentbase
+npm run init            # interactive wizard (real terminal)
+npm run init:yes        # non-interactive: detection + defaults (CI/agent)
+npm run init:dry        # detection report, writes nothing
+# or: node bin/init.js --answers init-answers.yaml   # replay
+```
+
+`init` validates the manifest with `templates/manifest.schema.js` (fail-loud) and runs `generate.js` to produce deterministic output. When `/bootstrap` runs afterwards the **SLIM PATH** kicks in: detect/interview/manifest steps are skipped and only the `CLAUDE_FILL` narrative blocks are left for the model. If `init` is not run, `/bootstrap` performs the full (legacy) flow on its own — backward compatibility is preserved.
+
+### `/bootstrap` steps
+
+The `/bootstrap` command works through these high-level steps (steps 2–4 are skipped if `init` ran):
 
 0. **`/goal` mode requirement.** Bootstrap runs in the native `/goal` mode introduced in Claude Code 2.1.139+. After every turn `/goal`'s evaluator checks the completion gate in Step 8; if anything is missing, Claude continues a new turn to close the gap. The correct invocation: `/goal /bootstrap until "BOOTSTRAP_COMPLETE"`.
 1. **Prerequisite checks.** Backlog CLI, `Codebase/` access, and any previous manifest are checked.
