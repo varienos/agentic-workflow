@@ -3,6 +3,11 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
+## [Yayınlanmamış]
+
+> Bağımlılık notu: `basic-memory` MCP zorunlu shared agent memory layer olarak korunur (vault: `Docbase/memory/`).
+> Bağımlılık notu: `graphify` zorunlu knowledge-graph CLI olarak korunur (bootstrap `uv tool install graphifyy` ile otomatik kurar; artifact `graphify-out/`).
+
 ## [2.5.0] - 2026-06-08
 
 ### Eklenen
