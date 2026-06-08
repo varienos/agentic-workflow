@@ -3,22 +3,22 @@
 Tüm önemli değişiklikler bu dosyada belgelenir.
 Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
 
-## [Yayınlanmamış]
-
-> Bağımlılık notu: `basic-memory` MCP zorunlu shared agent memory layer olarak korunur (vault: `Docbase/memory/`).
-
 ## [2.5.0] - 2026-06-08
 
 ### Eklenen
 
-- **bootstrap:** graphify'i zorunlu modul + otomatik CLI kurulumuna cevir (`aca8370`)
-- **generate:** Faz 2 marker azaltma — 9 CLAUDE_FILL blogunu deterministik generator'a tasi (`2439cb9`)
-- **init:** terminal-tabanlı init CLI ile bootstrap deterministik dikişi (`2b93191`)
+- **bootstrap:** graphify'i zorunlu modul + otomatik CLI kurulumuna cevir (`64c3332`)
+- **generate:** Faz 2 marker azaltma — 9 CLAUDE_FILL blogunu deterministik generator'a tasi (`04f7535`)
+- **init:** terminal-tabanlı init CLI ile bootstrap deterministik dikişi (`903603c`)
 
 ### Düzeltilen
 
-- **generate:** quote commands generator paths (`6b933a7`)
-- **init:** preserve workspace and architecture note inputs (`242115a`)
+- **generate:** quote commands generator paths (`1a87c6c`)
+- **init:** preserve workspace and architecture note inputs (`b92c32c`)
+
+### Sürüm
+
+- v2.5.0 (`29b864a`)
 
 ## [2.4.1] - 2026-06-02
 
