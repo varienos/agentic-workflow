@@ -12,6 +12,7 @@ const { assemble } = require('../bin/lib/assemble');
 const { collectDefaults, resolveDefault } = require('../bin/lib/interview');
 const { QUESTIONS } = require('../templates/interview/questions');
 const { validateManifest } = require('../templates/manifest.schema');
+const { ensureGraphify } = require('../bin/init');
 
 function tmpProject(files = {}, dirs = []) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'init-test-'));
@@ -179,4 +180,67 @@ test('init.js --help exit 0', () => {
   const res = spawnSync('node', [path.join(__dirname, '..', 'bin', 'init.js'), '--help'], { encoding: 'utf8' });
   assert.equal(res.status, 0);
   assert.match(res.stdout, /init\.js/);
+});
+
+// --- ensureGraphify (zorunlu modul CLI kurulumu) ---
+// spawn enjekte edilir; gercek `uv tool install` ASLA calismaz.
+
+function fakeSpawn(impl) {
+  const calls = [];
+  const opts = [];
+  // Gercek spawnSync imzasi (file, args, options) — options'i da impl'e ilet ki
+  // `which graphify` ({encoding}) ve `uv tool install` ({stdio}) cagri options'i
+  // dogrulanabilsin (impl uzerinden veya fn.opts ile).
+  const fn = (cmd, args = [], o = {}) => {
+    calls.push([cmd, ...args].join(' '));
+    opts.push(o);
+    return impl(cmd, args, o);
+  };
+  fn.calls = calls;
+  fn.opts = opts;
+  return fn;
+}
+
+test('ensureGraphify: graphify kuruluysa kurulum atlanir (idempotent)', () => {
+  const spawn = fakeSpawn((cmd) =>
+    cmd === 'which' ? { status: 0, stdout: '/usr/local/bin/graphify\n' } : { status: 0 });
+  const r = ensureGraphify({ spawn });
+  assert.equal(r.action, 'already-present');
+  assert.ok(!spawn.calls.some((c) => c.startsWith('uv ')), 'uv tool install cagrilmamali');
+});
+
+test('ensureGraphify: graphify yoksa uv tool install graphifyy calisir', () => {
+  const spawn = fakeSpawn((cmd) =>
+    cmd === 'which' ? { status: 1, stdout: '' } : { status: 0 });
+  const r = ensureGraphify({ spawn });
+  assert.equal(r.action, 'installed');
+  assert.ok(spawn.calls.includes('uv tool install graphifyy'), 'dogru kurulum komutu cagrilmali');
+  // options dogrulugu: which probe encoding'li, uv install stdio:inherit'li cagrilmali
+  assert.equal(spawn.opts[0].encoding, 'utf8', 'which probe encoding:utf8 ile cagrilmali');
+  assert.equal(spawn.opts[1].stdio, 'inherit', 'uv install stdio:inherit ile cagrilmali');
+});
+
+test('ensureGraphify: kurulum basarisizsa firlatir (fail-loud)', () => {
+  const spawn = fakeSpawn((cmd) =>
+    cmd === 'which' ? { status: 1, stdout: '' } : { status: 1 });
+  assert.throws(() => ensureGraphify({ spawn }), /kurulumu başarısız/);
+});
+
+test('ensureGraphify: dry-run hicbir komut calistirmaz', () => {
+  const spawn = fakeSpawn(() => { throw new Error('spawn cagrilmamaliydi'); });
+  const r = ensureGraphify({ dryRun: true, spawn });
+  assert.equal(r.action, 'skipped-dry-run');
+  assert.equal(spawn.calls.length, 0);
+});
+
+// --- zorunlu modul: assemble her zaman knowledge-graph/graphify aktive eder ---
+
+test('assemble: knowledge-graph/graphify her projede aktif (zorunlu modul)', () => {
+  const detection = detect(tmpProject({ 'package.json': {} }));
+  const answers = collectDefaults(QUESTIONS, detection, {});
+  const manifest = assemble(detection, answers, {});
+  assert.deepEqual(manifest.modules.active['knowledge-graph'], ['graphify']);
+  // manifest hala gecerli olmali
+  const { valid, errors } = validateManifest(manifest);
+  assert.equal(valid, true, JSON.stringify(errors));
 });

@@ -125,6 +125,35 @@ function runTransform(agentbase, manifestPath, targets) {
   if (res.status !== 0) fail(`transform.js başarısız (exit ${res.status}).`);
 }
 
+// --- graphify CLI kurulum garantisi (ZORUNLU modul) ---
+// knowledge-graph/graphify zorunludur (bkz. spec 2026-06-08). init birincil
+// otomasyon noktasidir — gercek terminalde `uv tool install graphifyy` calistirir.
+// Bootstrap ADIM 1.1.6 fallback olarak ayni isi yapar. Idempotent: `which graphify`
+// kuruluysa atlanir. Fail-loud: kurulum basarisizsa firlatir (main yakalar → INIT_ERROR).
+// `spawn` enjekte edilebilir (test icin); uretimde spawnSync kullanilir.
+function ensureGraphify({ dryRun = false, spawn = spawnSync } = {}) {
+  if (dryRun) {
+    process.stdout.write('\n[dry-run] graphify CLI kurulumu atlandı.\n');
+    return { action: 'skipped-dry-run' };
+  }
+  // Idempotent varlik kontrolu — `graphify --version` desteklenmez, `which` kullanilir.
+  const probe = spawn('which', ['graphify'], { encoding: 'utf8' });
+  if (probe && probe.status === 0 && String(probe.stdout || '').trim()) {
+    process.stdout.write(`\n✅ graphify bulundu: ${String(probe.stdout).trim()}\n`);
+    process.stdout.write('GRAPHIFY_READY\n');
+    return { action: 'already-present' };
+  }
+  // Kurulu degil → otomatik kur. uv zaten basic-memory icin zorunlu; PATH'i uv yonetir.
+  process.stdout.write('\n🔧 graphify CLI kurulu değil — uv tool install graphifyy çalıştırılıyor...\n');
+  const res = spawn('uv', ['tool', 'install', 'graphifyy'], { stdio: 'inherit' });
+  if (!res || res.error || res.status !== 0) {
+    throw new Error('graphify CLI kurulumu başarısız (uv tool install graphifyy). Manuel kur: uv tool install graphifyy');
+  }
+  process.stdout.write('\n✅ graphify CLI kuruldu (uv-managed).\n');
+  process.stdout.write('GRAPHIFY_READY\n');
+  return { action: 'installed' };
+}
+
 // --- ana akis ---
 async function main() {
   const args = parseArgs(process.argv);
@@ -203,10 +232,19 @@ async function main() {
   runGenerate(agentbase, manifestPath);
   runTransform(agentbase, manifestPath, targets);
 
+  // --- graphify CLI garantisi (zorunlu modul; fail-loud) ---
+  ensureGraphify({ dryRun: args.dryRun });
+
   process.stdout.write('\n✅ Deterministik yapılandırma üretildi.\n');
   process.stdout.write('   Sıradaki adım (Claude): /goal /bootstrap until "BOOTSTRAP_COMPLETE"\n');
   process.stdout.write('   (bootstrap artık yalnızca CLAUDE_FILL narrative bloklarını doldurur)\n');
   process.stdout.write('INIT_DONE\n');
 }
 
-main().catch((e) => fail(e && e.stack ? e.stack : String(e)));
+// Yalnizca dogrudan calistirilinca main() yurur — require ile import edildiginde
+// (test) yan etki olmaz. ensureGraphify birim testlerde enjekte edilen spawn ile cagrilir.
+if (require.main === module) {
+  main().catch((e) => fail(e && e.stack ? e.stack : String(e)));
+}
+
+module.exports = { ensureGraphify, main };

@@ -124,6 +124,7 @@ Not: Bu depodaki bazı komut dosyaları örnek veya çekirdek içerik olarak yer
 - [Backlog.md CLI](https://github.com/MrLesk/Backlog.md) — `npm i -g backlog.md`
 - Node.js 18+ ve npm
 - [jq](https://jqlang.github.io/jq/) — JSON işlemci, hook kuralları için gerekli (`brew install jq` veya `apt install jq`)
+- [graphify](https://pypi.org/project/graphifyy/) — **zorunlu** knowledge graph aracı; bootstrap `uv tool install graphifyy` ile otomatik kurar (paket adı çift-y `graphifyy`, komut `graphify`). Python 3.10+ gerektirir (mevcut 3.12+ ile zaten karşılanır) ve `uv` kullanır (zaten `basic-memory` için zorunlu). Ek ön koşul yoktur.
 - Git 2.38+ — pre-push hook'undaki `git merge-tree --write-tree` desteği için gerekli
 - Docker CLI — Docker veya Coolify deploy modülü aktifse gerekli (`docker build`, `docker compose` komutları için)
 - [GitHub CLI (gh)](https://cli.github.com/) — opsiyonel, `release.js` GitHub Release oluşturma için kullanır
@@ -141,7 +142,7 @@ rm -f Codebase/.gitkeep && rmdir Codebase
 ln -s /path/to/your/project Codebase
 
 cd Agentbase
-npm install
+npm install              # araçların çalışması için gereken tek küçük paketi indirir (js-yaml) — birkaç saniye sürer
 claude
 ```
 
@@ -162,7 +163,7 @@ cd agentic-workflow
 # Codebase klasörünü boş bırakın — Bootstrap greenfield moduna geçer
 rm -f Codebase/.gitkeep
 cd Agentbase
-npm install
+npm install              # araçların çalışması için gereken tek küçük paketi indirir (js-yaml) — birkaç saniye sürer
 claude
 ```
 
@@ -190,7 +191,7 @@ npm run init:dry        # tespit raporu, dosya yazmaz
 # veya: node bin/init.js --answers init-answers.yaml   # replay
 ```
 
-`init` manifesti `templates/manifest.schema.js` ile doğrular (fail-loud) ve `generate.js`'i çalıştırarak deterministik çıktıyı üretir.
+`init` manifesti `templates/manifest.schema.js` ile doğrular (fail-loud) ve `generate.js`'i çalıştırarak deterministik çıktıyı üretir. Ayrıca zorunlu graphify CLI'ı garanti eder: `which graphify` ile kontrol eder, yoksa `uv tool install graphifyy` ile otomatik kurar (idempotent; `--dry-run` kurmaz, yalnızca raporlar).
 Ardından `/bootstrap` çalıştırıldığında **SLIM PATH** devreye girer: detect/röportaj/manifest adımları atlanır, modele yalnızca `CLAUDE_FILL` narrative blokları kalır.
 `init` çalıştırılmazsa `/bootstrap` tam akışı (legacy) tek başına yürütür — geriye uyum korunur.
 
@@ -199,7 +200,7 @@ Ardından `/bootstrap` çalıştırıldığında **SLIM PATH** devreye girer: de
 `/bootstrap` komutu yüksek seviyede şu adımlarla çalışır (init çalıştırıldıysa 2–4 atlanır):
 
 0. **`/goal` mod zorunluluğu.** Bootstrap `/goal` modunda çalıştırılır. ADIM 8'deki tamamlama kapısı geçmeden süreç bitmiş sayılmaz. Doğru çağrı: `/goal /bootstrap until "BOOTSTRAP_COMPLETE"`.
-1. **Ön koşul kontrolleri.** Backlog CLI, `Codebase/` erişimi ve varsa önceki manifest kontrol edilir.
+1. **Ön koşul kontrolleri.** Backlog CLI, `Codebase/` erişimi ve varsa önceki manifest kontrol edilir. graphify CLI varlığı `which graphify` ile teyit edilir; kurulu değilse `uv tool install graphifyy` ile otomatik kurulur (ADIM 1.1.6 — graphify zorunlu modül, başarısızsa durur).
 2. **Codebase analizi.** Proje tipi, dizin yapısı, alt projeler, paket yöneticisi, test araçları ve modül adayları çıkarılır.
 3. **Fazlı röportaj.** Proje, teknik tercih, geliştirici profili ve domain kuralları netleştirilir.
 4. **Manifest üretimi.** `Docbase/agentic/project-manifest.yaml` dosyası oluşturulur.
@@ -435,7 +436,7 @@ Bu stack'ler için framework-spesifik hook'lar, kurallar ve koruma mekanizmalar�
 - **Backend:** Express, Fastify, NestJS, Laravel, CodeIgniter 4, Django, FastAPI
 - **Frontend:** Next.js, React SPA, yalın HTML/CSS/JS
 - **Mobile:** Expo, React Native, Flutter
-- **Knowledge Graph:** Graphify (`/g` slash komutu, BFS query, PreToolUse hook ile akıllı yönlendirme — grep yerine `graphify query` önerisi)
+- **Knowledge Graph:** Graphify — **zorunlu modül**, her bootstrap'ta aktif (`/g` slash komutu, BFS query, PreToolUse hook ile akıllı yönlendirme — grep yerine `graphify query` önerisi). CLI `uv tool install graphifyy` ile otomatik kurulur.
 - **Ek alanlar:** Monorepo, güvenlik taramaları, CI/CD (GitHub Actions, GitLab CI), izleme (Sentry, Datadog), API dokümantasyonu (OpenAPI, GraphQL)
 
 ### Generic Bootstrap Desteği

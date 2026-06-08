@@ -1,26 +1,35 @@
 # Graphify Modülü — Kurulum Referansı
 
-Bu dosya **generate edilmez** — bootstrap'in "Graphify İlk Kurulum" adımı ve geliştiriciler için bir referanstır. Bootstrap orchestrator bu dokümandaki adımları otomatik çalıştırır ya da kullanıcıya yönlendirir.
+Bu dosya **generate edilmez** — bootstrap'in "Graphify İlk Kurulum" adımı ve geliştiriciler için bir referanstır. Bootstrap orchestrator bu dokümandaki adımları otomatik çalıştırır.
+
+graphify **zorunlu modüldür**: her bootstrap'ta aktiftir. CLI otomatik kurulur — birincil yol init CLI (`bin/init.js`), fallback bootstrap ADIM 1.1.6'dır.
 
 ---
 
-## 1. graphify CLI Varlık Kontrolü
+## 1. graphify CLI Varlık Kontrolü ve Otomatik Kurulum
 
 ```bash
 which graphify || echo "graphify CLI kurulu degil"
 ```
 
-### CLI yoksa kullanıcı yönlendirmesi
+### Otomatik kurulum
 
-Üç kurulum yolu vardır — kullanıcı uygun olanı seçer:
+graphify CLI bootstrap tarafından **otomatik kurulur** — kullanıcı yönlendirmesi yoktur. Kurulum komutu birincil olarak `uv` tool yöneticisi ile çalışır (`uv` zaten `basic-memory` için ADIM 1.1.5.a'da zorunlu, ek ön koşul yok; paket adı çift-y `graphifyy`, komut `graphify`):
 
 | Yöntem | Komut | Not |
 |--------|-------|-----|
-| Claude Code skill | `~/.claude/skills/graphify/SKILL.md` referansı | Skill kurulumu zaten yapılmış olabilir (kontrol: `ls ~/.claude/skills/graphify/.graphify_version`) |
-| pipx (önerilen) | `pipx install graphifyy && graphify install` | Sandbox'lı, sistem Python'unu kirletmez |
-| pip | `pip install graphifyy && graphify install` | Genel kurulum |
+| uv tool (birincil) | `uv tool install graphifyy` | Bootstrap'in kullandığı varsayılan yol; izole tool kurulumu, sistem Python'unu kirletmez |
+| pipx (alternatif) | `pipx install graphifyy` | Sandbox'lı; uv yoksa kullanılabilir |
+| pip (alternatif) | `pip install graphifyy` | Genel kurulum; izolasyon yok |
 
-Bootstrap CLI'yı **kurmaz** — sadece yönlendirir. Kullanıcı kurulumu yaptıktan sonra `graphify --version` ile doğrular.
+Kurulum akışı (idempotent):
+
+- **init CLI (birincil):** `bin/init.js` `ensureGraphify()` adımı `which graphify` ile kontrol eder; yoksa `uv tool install graphifyy` çalıştırır, başarısızsa fail-loud durur.
+- **Bootstrap ADIM 1.1.6 (fallback):** init çalıştırılmadıysa veya CLI hâlâ yoksa, bootstrap `which graphify` kontrolü yapar; yoksa `uv tool install graphifyy` dener, başarısızsa **KOMPLE DURUR** (basic-memory deseni).
+
+Varlık kontrolü her zaman `which graphify` ile yapılır (`--version` bayrağı yoktur). Çıktı yoksa CLI eksiktir.
+
+> **Skill kurulumu opsiyonel — zorunlu değil.** `graphify install` / `graphify claude install` / `graphify hook install` komutları cwd'ye `CLAUDE.md` + `.claude/settings.json` PreToolUse hook yazar; bu **Kutsal Kural 2'yi ihlal eder** (Codebase'e config yazma yasağı) ve bootstrap tarafından **çalıştırılmaz**. Zorunlu kapsam yalnızca CLI + `graphify-out/` artif'ı + repo'nun Agentbase config'idir. `graphify update`/`query`/`path`/`explain` komutları skill olmadan çalışır.
 
 ---
 
@@ -39,13 +48,9 @@ Bootstrap idempotent uygulamalı: satır zaten varsa tekrar eklemez.
 
 ---
 
-## 3. İlk `graphify update` Önerisi
+## 3. İlk `graphify update`
 
-Modül seçildiğinde bootstrap kullanıcıya sorar:
-
-> "İlk graphify update'i şimdi çalıştırayım mı? (knowledge graph oluşturmak için zorunlu — ~5-10 saniye sürer)"
-
-Onay → komut çalıştırılır:
+graphify zorunlu modül olduğu için bootstrap ilk `graphify update`'i **otomatik** çalıştırır (ADIM 6.5.3) — kullanıcıya sorulmaz. Bu adım **best-effort**'tur: başarısız ya da yavaşsa stderr'e görünür uyarı yazılır, bootstrap bloklanmaz (CLI kurulumunun aksine; CLI eksikliği fail-loud durdurur).
 
 **Tek-katmanlı proje:**
 
@@ -152,14 +157,14 @@ Eğer aynı `matcher` için kayıt zaten varsa `hooks` array'ine append edilir.
 
 ## Sıra Özeti (Bootstrap "Graphify İlk Kurulum" Adımı)
 
-1. graphify CLI varlık kontrolü → yok ise yönlendirme
+1. graphify CLI varlık kontrolü (`which graphify`) → yok ise `uv tool install graphifyy` ile otomatik kur (ADIM 1.1.6 fallback; başarısızsa KOMPLE DUR)
 2. `graphify-out/` `.gitignore`'a ekle (idempotent)
 3. Hook dosyasını `Agentbase/.claude/hooks/graphify-first-guard-v2.js` altına kopyala
 4. `Agentbase/.claude/settings.json` PreToolUse kaydını ekle
 5. `/g` command'ını generate et (`Agentbase/.claude/commands/g.md`)
 6. `graphify-rules.md` üret ve CLAUDE.md'den referans ver
 7. Eğer monorepo aktifse `Agentbase/scripts/graphify-merge-layers.py` kopyala (kullanıcı LAYERS listesini uyarlayacak)
-8. İlk `graphify update` önerisi → onay → çalıştır
-9. Opsiyonel pre-push hook kurulumu → onay → yaz
+8. İlk `graphify update`'i otomatik çalıştır (best-effort; başarısızsa uyar, devam)
+9. Opsiyonel pre-push hook kurulumu → onay → yaz (kullanıcının git workflow tercihi; otomatik akışı bloklamaz)
 
-**Bootstrap İstisnası:** Adımlar 1, 8, 9 — bootstrap'in normalde yapmadığı CLI tetiklemesi ve git hook kurulumudur. Bu modülün doğası gereği zorunlu istisnadır.
+**Bootstrap İstisnası:** Adım 1 (CLI otomatik kurulumu) ve adım 8 (ilk `graphify update`) bootstrap'in normalde yapmadığı CLI tetiklemesidir; adım 9 git hook kurulumudur. graphify zorunlu modül olduğu için bu istisnalar her bootstrap'ta uygulanır.

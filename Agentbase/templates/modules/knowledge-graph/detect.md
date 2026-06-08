@@ -4,11 +4,11 @@ Bu kategori, kod tabanini knowledge graph olarak modelleyen ve "X nerede / Y'yi 
 
 ## Variants
 
-Bootstrap asagidaki varyantlari sirayla kontrol eder. Birden fazla eslesen aktive edilebilir:
+Bu kategori **zorunludur**: graphify her bootstrap'ta aktiftir. Asagidaki tespit, secim kapisi degil bir saglik teyididir — CLI ve artifact varligini dogrular.
 
 | Varyant | Tespit Dosyasi | Oncelik |
 |---------|---------------|---------|
-| Graphify | `knowledge-graph/graphify/detect.md` | 1 |
+| Graphify | `knowledge-graph/graphify/detect.md` | 1 (zorunlu) |
 
 ## Provides
 
@@ -22,8 +22,8 @@ Bootstrap asagidaki varyantlari sirayla kontrol eder. Birden fazla eslesen aktiv
 
 - code-review: Knowledge graph kapsami varsa grep oncesi graphify query onerisi eklenir
 - CLAUDE.md: "Graphify-First Workflow" zorunlu kurali ve whitelist tablosu eklenir
-- Bootstrap: Modul secildiyse "Graphify İlk Kurulum" ozel adimi calisir (CLI varlik kontrolu, ilk `graphify update`, `.gitignore` patch, opsiyonel pre-push hook)
+- Bootstrap: "Graphify İlk Kurulum" ozel adimi her zaman calisir (graphify zorunlu modul) — CLI otomatik kurulumu, ilk `graphify update`, `.gitignore` patch, opsiyonel pre-push hook
 
 ## Bootstrap Istisnasi
 
-Bootstrap normalde paket kurmaz ve harici komut tetiklemez — sadece dosya kopyalar. Bu kategori bir **istisnadir**: graphify CLI'nin varligini kontrol eder ve ilk `graphify update <root>` onerisi gosterir. Detaylar: `knowledge-graph/graphify/install.md`.
+Bootstrap normalde paket kurmaz ve harici komut tetiklemez — sadece dosya kopyalar. Bu kategori bir **istisnadir** ve graphify zorunlu oldugu icin her bootstrap'ta uygulanir: graphify CLI yoksa `uv tool install graphifyy` ile otomatik kurar (init birincil, bootstrap ADIM 1.1.6 fallback; basarisizsa KOMPLE DURUR) ve ilk `graphify update <root>`'u best-effort calistir. Detaylar: `knowledge-graph/graphify/install.md`.

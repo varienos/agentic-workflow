@@ -265,6 +265,33 @@ Sorunu cozdukten sonra /bootstrap komutunu tekrar calistirin.
 
 **Not:** Vault dizini (`../Docbase/memory/`) olusturma ve project register islemi ADIM 5'te Teammate 5 root-generator tarafindan yapilir — bu adim sadece bagimliligin varligini dogrular.
 
+### 1.1.6 graphify CLI Kontrolu (Knowledge-Graph — Zorunlu Modul)
+
+Bu workflow `knowledge-graph/graphify` modulunu **zorunlu** olarak icerir. graphify, kod-iliski kesfinde (`X nerede`, `Y'yi ne kullaniyor`) grep/find yerine BFS query ile ~150-540x token tasarrufu saglar; CLI olmadan modul calismaz.
+
+> **🔗 init dikisi:** `npm run init` calistirildiysa graphify CLI'i zaten kurmustur (`ensureGraphify`). Bu adim yalnizca `command -v graphify` ile teyit eder — kuruluysa kurulum atlanir.
+
+`uv` ve Python 3.12+ ADIM 1.1.5.a / 1.1.5.a.2'de zaten dogrulandi (graphify Python 3.10+ ister, bu kosul karsilanir). Tekrar kontrol edilmez.
+
+Bash ile calistir: `command -v graphify >/dev/null 2>&1 && echo "__GRAPHIFY_OK__" || echo "__GRAPHIFY_MISSING__"`
+
+- **`__GRAPHIFY_OK__`** → `✅ graphify bulundu` yazdir ve devam et (init kurmus olabilir).
+
+- **`__GRAPHIFY_MISSING__`** → Otomatik kurulum dene: `uv tool install graphifyy`
+  - Kurulum basariliysa → `✅ graphify kuruldu` yazdir ve devam et.
+  - Kurulum hata verirse → stderr ciktisini kullaniciya goster ve KOMPLE DUR:
+
+```
+❌ graphify CLI kurulumu basarisiz.
+
+Manuel kurulum dene:
+  uv tool install graphifyy
+
+Hata detaylari yukarida. Cozdukten sonra /bootstrap komutunu tekrar calistirin.
+```
+
+**Not:** Skill kurulumu (`graphify install` / `graphify claude install`) **ZORUNLU DEGILDIR ve calistirilMAZ** — bu komutlar cwd'ye `CLAUDE.md` + `.claude/settings.json` PreToolUse hook yazarak Kutsal Kural 2'yi (Codebase'e config yazma yasagi) ihlal eder. CLI + `graphify update`/`query` skill olmadan calisir; graphify config'i yalnizca Agentbase tarafinda generate edilir.
+
 ### 1.2 Codebase Kontrolu
 
 `../Codebase/` dizinini kontrol et (Agentbase'e gore goreceli yol).
@@ -627,6 +654,8 @@ Moduller kategori bazli organize edilmistir. Tespit recursive yapilir:
 1. **Kategori seviyesi:** `templates/modules/*/detect.md` — kategori aktif mi? (orm, deploy, backend, mobile, frontend, knowledge-graph)
 2. **Ara dugum / aile seviyesi:** `templates/modules/*/*/detect.md` — gerekiyorsa aile veya runtime secimi (ornegin `backend/nodejs`)
 3. **Leaf seviyesi:** `templates/modules/**/*/detect.md` — nihai teknoloji secimi (ornegin `backend/nodejs/express`)
+
+> **Zorunlu istisna — knowledge-graph:** `knowledge-graph/graphify` **her zaman aktiftir** (detect.md `Minimum Match: 0/2`). Tespit sonucu bu modulun aktivasyonunu DEGISTIRMEZ — tespit yalnizca saglik teyididir. SLIM PATH'te (init dikisi) `bin/lib/assemble.js` modulu zaten `modules.active['knowledge-graph'] = ['graphify']` ile aktive eder; legacy yolda orchestrator bu modulu kosulsuz aktif sayar. CLI kurulumu ADIM 1.1.6'da garanti edilir.
 
 #### detect.md Yapisal Formati
 
@@ -2311,35 +2340,24 @@ backlog task create "Ilk feature'i planla ve implement et" \
 
 ---
 
-## ADIM 6.5 — KNOWLEDGE-GRAPH MODULU ILK KURULUM (Opsiyonel)
+## ADIM 6.5 — KNOWLEDGE-GRAPH MODULU ILK KURULUM (Zorunlu)
 
-Bu adim **sadece `knowledge-graph` kategorisi aktifse** calisir. Aksi halde tamamen atlanir.
+Bu adim **her zaman calisir** — `knowledge-graph/graphify` zorunlu moduldur (ADIM 1.1.6 CLI'i garanti eder, generate.js hook/`/g`/rules dosyalarini her zaman uretir).
 
 ### Bootstrap Istisnasi — Aciklama
 
-Bootstrap normalde paket kurmaz ve harici komut tetiklemez — sadece dosya kopyalar/uretir. **Knowledge-graph modulu bilincli bir istisnadir:** graphify CLI'nin varligini kontrol eder ve hedef projeye ilk graph'i olusturmak icin `graphify update` calistirma onerisi gosterir. Bu istisnanin gerekcesi: modulun degeri (BFS query ile 150-540x token tasarrufu) ilk graph artifact'i (`graphify-out/graph.json`) olmadan ortaya cikmaz.
+Bootstrap normalde harici komut tetiklemez — sadece dosya kopyalar/uretir. **Knowledge-graph modulu bilincli bir istisnadir:** hedef projeye ilk graph'i olusturmak icin `graphify update` calistirir. Bu istisnanin gerekcesi: modulun degeri (BFS query ile 150-540x token tasarrufu) ilk graph artifact'i (`graphify-out/graph.json`) olmadan ortaya cikmaz. CLI kurulumu artik ADIM 1.1.6'da yapilir; bu adim graph uretimine odaklanir.
 
-### Adim 6.5.1 — graphify CLI Varlik Kontrolu
+### Adim 6.5.1 — graphify CLI Teyidi
+
+CLI, ADIM 1.1.6'da zorunlu olarak kuruldu (init dikisi varsa init kurmustur). Burada yalnizca teyit edilir:
 
 ```bash
-which graphify || echo "graphify CLI kurulu degil"
+command -v graphify >/dev/null 2>&1 && echo "__GRAPHIFY_OK__" || echo "__GRAPHIFY_MISSING__"
 ```
 
-**CLI kuruluysa:** Adim 6.5.2'ye gec.
-
-**CLI kurulu degilse:** Kullaniciya secenek sun:
-
-```
-graphify CLI bulunamadi. Uc kurulum yolu var:
-
-1. Claude Code skill (en kolay): `~/.claude/skills/graphify/SKILL.md` (kuruluysa zaten kullanilabilir)
-2. pipx (onerilen): pipx install graphifyy && graphify install
-3. pip: pip install graphifyy && graphify install
-
-Kurulumu sonra elle yapmak isterseniz, asagidaki adimlari atlayip bootstrap'i bitirebilirsiniz. Modul iskeleti zaten uretildi (`.claude/commands/g.md`, `.claude/hooks/graphify-first-guard-v2.js`, `.claude/rules/graphify-rules.md`).
-```
-
-Kullanici "atla" derse Adim 6.5'in kalanini atla.
+- **`__GRAPHIFY_OK__`** → Adim 6.5.2'ye gec.
+- **`__GRAPHIFY_MISSING__`** → Beklenmedik durum (ADIM 1.1.6 kurmus olmaliydi). `uv tool install graphifyy` kurulumunu tekrar dene; basarisizsa stderr'i goster ve KOMPLE DUR. Modul iskeleti (`.claude/commands/g.md`, `.claude/hooks/graphify-first-guard-v2.js`, `.claude/rules/graphify-rules.md`) zaten generate edildi; eksik olan yalnizca CLI'dir.
 
 ### Adim 6.5.2 — `.gitignore` Patch (Idempotent)
 
@@ -2353,17 +2371,11 @@ Kullanici "atla" derse Adim 6.5'in kalanini atla.
    graphify-out/
    ```
 
-### Adim 6.5.3 — Ilk `graphify update` Onerisi
+### Adim 6.5.3 — Ilk `graphify update` (Otomatik, Best-Effort)
 
-Kullaniciya sor:
+Zorunlu modul oldugu icin ilk graph **otomatik** uretilir (kullaniciya sorulmaz). Best-effort: basarisiz olursa gorunur uyari verilir ama bootstrap **bloklanmaz** (graph sonradan `/g` veya elle `graphify update .` ile uretilebilir).
 
-```
-Ilk graphify update'i simdi calistirayim mi? Bu komut codebase'i tarar ve knowledge graph'i olusturur (~5-10 saniye).
-- Evet: graphify update simdi tetiklensin
-- Hayir: bootstrap'i bitir, manuel olarak sonra calistirayim
-```
-
-**Evet** secilirse:
+`graphify update` calistir (codebase'i tarar, `graphify-out/graph.json` uretir, ~5-10 saniye):
 
 - **Tek-katman:** `cd <Codebase> && graphify update .`
 - **Monorepo (monorepo modulu de aktif):** `cd <Codebase> && graphify update "<sub1>" && graphify update "<sub2>" && ... && python3 ../Agentbase/scripts/graphify-merge-layers.py`
@@ -2435,8 +2447,8 @@ Son olarak `chmod +x ${HOOKS_DIR}/pre-push`.
    ✅ Hook kuruldu: .claude/hooks/graphify-first-guard-v2.js (PreToolUse Bash|Grep|Glob)
    ✅ Slash komut: /g (query/explain/path/report/health)
    ✅ Kural dosyasi: .claude/rules/graphify-rules.md (CLAUDE.md'den referansli)
-   [optional] ✅ .gitignore patch: graphify-out/
-   [optional] ✅ Ilk graphify update: <node_count> node, <edge_count> edge
+   ✅ .gitignore patch: graphify-out/
+   ✅ Ilk graphify update: <node_count> node, <edge_count> edge   (best-effort — basarisizsa WARN, bootstrap devam eder)
    [optional] ✅ Pre-push hook etkinlestirildi
 
    Ilk sorgu: /g query "<simdilik aklindaki sey>"

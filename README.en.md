@@ -123,6 +123,7 @@ Note: Some command files in this repo serve as examples or core content. The act
 - [Backlog.md CLI](https://github.com/MrLesk/Backlog.md) — `npm i -g backlog.md`
 - Node.js 18+ and npm
 - [jq](https://jqlang.github.io/jq/) — JSON processor, required for hook rules (`brew install jq` or `apt install jq`)
+- [graphify](https://pypi.org/project/graphifyy/) — **mandatory** knowledge graph tool; bootstrap installs it automatically via `uv tool install graphifyy` (package name is double-y `graphifyy`, command is `graphify`). Requires Python 3.10+ (already satisfied by the 3.12+ requirement) and uses `uv` (already mandatory for `basic-memory`). No additional prerequisites.
 - Git 2.38+ — required for `git merge-tree --write-tree` support in pre-push hook
 - Docker CLI — required if Docker or Coolify deploy module is active (`docker build`, `docker compose` commands)
 - [GitHub CLI (gh)](https://cli.github.com/) — optional, used by `release.js` for GitHub Release creation
@@ -187,14 +188,14 @@ npm run init:dry        # detection report, writes nothing
 # or: node bin/init.js --answers init-answers.yaml   # replay
 ```
 
-`init` validates the manifest with `templates/manifest.schema.js` (fail-loud) and runs `generate.js` to produce deterministic output. When `/bootstrap` runs afterwards the **SLIM PATH** kicks in: detect/interview/manifest steps are skipped and only the `CLAUDE_FILL` narrative blocks are left for the model. If `init` is not run, `/bootstrap` performs the full (legacy) flow on its own — backward compatibility is preserved.
+`init` validates the manifest with `templates/manifest.schema.js` (fail-loud) and runs `generate.js` to produce deterministic output. It also guarantees the mandatory graphify CLI: it checks `which graphify` and, if missing, installs it automatically via `uv tool install graphifyy` (idempotent; `--dry-run` installs nothing and only reports). When `/bootstrap` runs afterwards the **SLIM PATH** kicks in: detect/interview/manifest steps are skipped and only the `CLAUDE_FILL` narrative blocks are left for the model. If `init` is not run, `/bootstrap` performs the full (legacy) flow on its own — backward compatibility is preserved.
 
 ### `/bootstrap` steps
 
 The `/bootstrap` command works through these high-level steps (steps 2–4 are skipped if `init` ran):
 
 0. **`/goal` mode requirement.** Bootstrap runs in the native `/goal` mode introduced in Claude Code 2.1.139+. After every turn `/goal`'s evaluator checks the completion gate in Step 8; if anything is missing, Claude continues a new turn to close the gap. The correct invocation: `/goal /bootstrap until "BOOTSTRAP_COMPLETE"`.
-1. **Prerequisite checks.** Backlog CLI, `Codebase/` access, and any previous manifest are checked.
+1. **Prerequisite checks.** Backlog CLI, `Codebase/` access, and any previous manifest are checked. The graphify CLI presence is confirmed with `which graphify`; if missing, it is installed automatically via `uv tool install graphifyy` (Step 1.1.6 — graphify is a mandatory module; bootstrap stops if installation fails).
 2. **Codebase analysis.** Project type, directory structure, subprojects, package manager, test tools, and module candidates are extracted.
 3. **Phased interview.** Project, technical preferences, developer profile, and domain rules are clarified.
 4. **Manifest generation.** The `Docbase/agentic/project-manifest.yaml` file is created.
@@ -426,6 +427,7 @@ For these stacks, Bootstrap generates framework-specific hooks, rules, and prote
 - **Backend:** Express, Fastify, NestJS, Laravel, CodeIgniter 4, Django, FastAPI
 - **Frontend:** Next.js, React SPA, plain HTML/CSS/JS
 - **Mobile:** Expo, React Native, Flutter
+- **Knowledge Graph:** Graphify — **mandatory module**, active on every bootstrap (`/g` slash command, BFS query, smart redirection via a PreToolUse hook — suggests `graphify query` instead of grep). The CLI is installed automatically via `uv tool install graphifyy`.
 - **Additional:** Monorepo, security scanning, CI/CD, monitoring, API documentation (OpenAPI, GraphQL)
 
 ### Generic Bootstrap Support

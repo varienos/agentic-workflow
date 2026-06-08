@@ -7,11 +7,11 @@
 
 ## Minimum Match
 
-1/2
+0/2 (zorunlu — tespit sonucu modül aktivasyonunu değiştirmez)
 
-> Tek bir kanıt yeterli — kullanıcı Claude Code skill'i kurmuşsa veya hedef projede zaten graphify-out artifact'ı varsa modül aday olarak işaretlenir. Aksi durumda röportajda manuel seçilebilir (CLI bootstrap ADIM 6.5.1 sırasında kontrol edilir, gerekirse kullanıcı yönlendirilir).
+> graphify **zorunlu modüldür**: her bootstrap'ta aktiftir, tespit artık bir seçim kapısı değil sağlık teyididir. Yukarıdaki kanıtlar (Claude Code skill'i veya mevcut graphify-out artifact'ı) yalnızca mevcut kurulumun durumunu raporlar — eşleşme olmasa bile modül aktif kalır ve CLI bootstrap tarafından otomatik kurulur.
 >
-> NOT: graphify CLI'nın PATH'te bulunmasi `file_exists` ve `file_pattern` ile dolayli tespit edilir — CLI doğrudan bir `cli_available` check tipi resmen desteklenmiyor; bootstrap ADIM 6.5.1 runtime kontrolünü yapar.
+> NOT: graphify CLI'nın PATH'te bulunmasi `which graphify` ile teyit edilir (init `ensureGraphify` ve bootstrap ADIM 1.1.6). CLI eksikse `uv tool install graphifyy` ile otomatik kurulur; başarısızsa fail-loud durur.
 
 ## Activates
 
@@ -24,7 +24,7 @@
 
 - code-review: Code-relation discovery sorularinda grep oncesi graphify query talimati eklenir
 - CLAUDE.md: "Graphify-First Workflow" zorunlu kurali, whitelist tablosu, `/g` referansi
-- Bootstrap: "Graphify İlk Kurulum" adimi tetiklenir (CLI kontrol, ilk update, .gitignore patch, pre-push opsiyonel)
+- Bootstrap: "Graphify İlk Kurulum" adimi her bootstrap'ta tetiklenir (graphify zorunlu modul) — CLI otomatik kurulumu (`uv tool install graphifyy`), ilk update (best-effort), .gitignore patch, pre-push opsiyonel
 
 ## Notes
 

@@ -48,7 +48,11 @@ function projectLanguage(detection) {
 
 /** detected degerlerinden modules.active turet (generate.js modul secimi icin). */
 function deriveModules(detection) {
-  const active = {};
+  // knowledge-graph/graphify ZORUNLU moduldur — her projede aktif olur (bkz.
+  // docs/superpowers/specs/2026-06-08-graphify-mandatory-install-design.md).
+  // getActiveModules bu deger uzerinden 'graphify'yi aktif sayar; boylece
+  // scanSkeletonFiles hook + /g + rules dosyalarini her zaman uretir.
+  const active = { 'knowledge-graph': ['graphify'] };
   const orm = dv(detection, 'orm');
   if (orm) active.orm = orm;
   const standalone = [];
