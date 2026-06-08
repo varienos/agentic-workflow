@@ -8,12 +8,13 @@
 > **[English version (README.en.md)](README.en.md)**
 
 > [!IMPORTANT]
-> Bu sistem iki zorunlu bağımlılığa dayanır:
+> Bu sistem üç zorunlu bağımlılığa dayanır:
 > - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — tüm görev yaşam döngüsü (oluşturma, önceliklendirme, implementasyon, review, kapatma) Backlog.md CLI ile yönetilir.
 > - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. Tüm CLI ajanları (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak hafızaya bağlanır. `uv` (Python paket yöneticisi) ve Python 3.12+ gerekir.
 >   Sırlar, tokenlar, `.env` değerleri veya PII kalıcı hafızaya yazılmaz; kayıt öncesi redaction zorunludur.
+> - **[graphify](https://pypi.org/project/graphifyy/)** — knowledge graph katmanı. Kod-ilişki keşfinde (`X nerede`, `Y'yi ne kullanıyor`) grep yerine BFS query ile ~150-540x token tasarrufu sağlar. Python 3.10+ ve `uv` gerekir (basic-memory ile aynı). Skill opsiyoneldir; CLI + `graphify update` yeterlidir ve Codebase'e config yazmaz.
 >
-> Her ikisi de kurulu değilse Bootstrap çalışmaz.
+> Bootstrap, basic-memory ve graphify CLI'larını `uv` ile **otomatik kurar** (ADIM 1.1.5 / 1.1.6); Backlog.md ile `uv`'yi sizin kurmanız gerekir. Bu üçü olmadan Bootstrap çalışmaz.
 
 Claude Code ile yazılım geliştirmenin yaşam döngüsünü yöneten bir workflow sistemidir. Görev planlama, uygulama, review, bug fix ve deploy kontrollerini yapılandırılmış komutlar, ajanlar ve koruma mekanizmalarıyla birleştirir.
 

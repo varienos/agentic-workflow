@@ -8,11 +8,12 @@
 > **[Türkçe versiyon (README.md)](README.md)**
 
 > [!IMPORTANT]
-> This system requires two mandatory dependencies:
+> This system requires three mandatory dependencies:
 > - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — the entire task lifecycle (creation, prioritization, implementation, review, closure) is managed through the Backlog.md CLI.
 > - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. All CLI agents (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connect to the same `Docbase/memory/` vault via MCP. Never store secrets, tokens, `.env` values, or PII in persistent memory; redact before writing memory. Requires `uv` (Python package manager) and Python 3.12+.
+> - **[graphify](https://pypi.org/project/graphifyy/)** — knowledge graph layer. For code-relation discovery (`where is X`, `what uses Y`) it replaces grep with BFS queries, saving ~150-540x tokens. Requires Python 3.10+ and `uv` (same as basic-memory). The skill is optional; the CLI + `graphify update` suffice and write no config into the Codebase.
 >
-> Bootstrap will not run without both installed.
+> Bootstrap installs the basic-memory and graphify CLIs automatically via `uv` (Steps 1.1.5 / 1.1.6); you must install Backlog.md and `uv` yourself. Bootstrap will not run without all three.
 
 > [!NOTE]
 > Autonomous task management, parallel agent spawning, and multi-step workflow pipelines require high token consumption. **Claude Max** plan is recommended for efficient usage.
