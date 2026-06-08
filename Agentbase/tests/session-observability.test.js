@@ -1108,3 +1108,50 @@ describe('session-tracker Edit tool', () => {
     assert.equal(state.tools.by_type.Edit, 1, 'Edit olarak siniflandirilmali');
   });
 });
+
+describe('session-monitor ANSI sanitization in enrichSession', () => {
+  const monitorPath = path.join(__dirname, '..', 'bin', 'session-monitor.js');
+
+  it('enrichSession removes ANSI injection from critical fields', () => {
+    const { enrichSession } = loadModuleExports(monitorPath, {
+      exports: ['enrichSession'],
+    });
+
+    const maliciousSession = {
+      session_id: '100-2026-03-23',
+      current_focus: {
+        task_id: 'TASK-42',
+        title: 'Malicious title \x1b[2J\x1b[H\x1b[31mRed\x1b[0m',
+        status: 'In Progress \x1b[K',
+        priority: 'High \x1b[5m',
+      },
+      teammates: [{ name: 'Agent \x1b]8;;http://evil.com\x07Click\x1b]8;;\x07' }],
+      files: {
+        read: ['/tmp/read-\x1b[3A.js'],
+        written: ['/tmp/written-\x1b[1J.js'],
+      },
+      errors: {
+        count: 1,
+        history: [{ tool: 'Bash \x1b[m', snippet: 'Error snippet \x1b[r' }],
+      },
+      tools: {
+        last_tool: 'Edit \x1b[c',
+        last_tool_target: '/tmp/file-\x1b[m.js',
+      },
+    };
+
+    const enriched = enrichSession(maliciousSession, {});
+
+    assert.equal(enriched.current_focus.title, 'Malicious title \x1b[31mRed\x1b[0m');
+    assert.equal(enriched.current_focus.status, 'In Progress ');
+    assert.equal(enriched.current_focus.priority, 'High ');
+    assert.equal(enriched.teammates[0].name, 'Agent Click');
+    assert.deepEqual(enriched.files.read, ['/tmp/read-.js']);
+    assert.deepEqual(enriched.files.written, ['/tmp/written-.js']);
+    assert.equal(enriched.errors.history[0].tool, 'Bash ');
+    assert.equal(enriched.errors.history[0].snippet, 'Error snippet ');
+    assert.equal(enriched.tools.last_tool, 'Edit ');
+    assert.equal(enriched.tools.last_tool_target, '/tmp/file-.js');
+  });
+});
+

@@ -168,3 +168,31 @@ describe('state yonetimi', () => {
     assert.equal(monitor.getState().detailView, false); // diger alanlar degismedi
   });
 });
+
+describe('cleanup — listener removal', () => {
+  it('setupWatcher ve cleanup sonrasi process.stdout resize dinleyicisi temizlenir', () => {
+    const initialCount = process.stdout.listenerCount('resize');
+    monitor.setupWatcher();
+    assert.equal(process.stdout.listenerCount('resize'), initialCount + 1, 'resizer eklenmeli');
+    monitor.cleanup();
+    assert.equal(process.stdout.listenerCount('resize'), initialCount, 'resizer silinmeli');
+  });
+
+  it('setupInput ve cleanup sonrasi process.stdin data dinleyicisi temizlenir', () => {
+    const originalIsTTY = process.stdin.isTTY;
+    const originalSetRawMode = process.stdin.setRawMode;
+    process.stdin.isTTY = true;
+    process.stdin.setRawMode = () => {};
+    try {
+      const initialCount = process.stdin.listenerCount('data');
+      monitor.setupInput();
+      assert.equal(process.stdin.listenerCount('data'), initialCount + 1, 'data dinleyicisi eklenmeli');
+      monitor.cleanup();
+      assert.equal(process.stdin.listenerCount('data'), initialCount, 'data dinleyicisi silinmeli');
+    } finally {
+      process.stdin.isTTY = originalIsTTY;
+      process.stdin.setRawMode = originalSetRawMode;
+    }
+  });
+});
+

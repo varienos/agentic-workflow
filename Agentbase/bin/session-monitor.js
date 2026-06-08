@@ -57,6 +57,7 @@ let renderTimeout = null;
 let lastRender = 0;
 let watcher = null;
 let refreshInterval = null;
+let resizeHandler = null;
 let cleanedUp = false;
 
 function stripAnsi(str) {
@@ -70,7 +71,7 @@ function stripAnsi(str) {
  */
 function sanitizeForDisplay(str) {
   return String(str || '')
-    .replace(/\x1b\[[^m]*[^0-9;m]/g, '')        // Non-SGR CSI sekanslarini sil
+    .replace(/\x1b\[[^m]*?[^0-9;m]/g, '')        // Non-SGR CSI sekanslarini sil
     .replace(/\x1b\][^\x07\x1b]*(\x07|\x1b\\)/g, ''); // OSC sekanslarini sil
 }
 
@@ -556,21 +557,25 @@ function normalizeRecentEvents(session) {
 function enrichSession(session, backlogIndex = {}) {
   const currentFocus = {
     task_id: normalizeTaskId(session.current_focus?.task_id || inferLegacyTaskId(session)),
-    title: session.current_focus?.title || null,
-    status: session.current_focus?.status || null,
-    priority: session.current_focus?.priority || null,
+    title: sanitizeForDisplay(session.current_focus?.title || null),
+    status: sanitizeForDisplay(session.current_focus?.status || null),
+    priority: sanitizeForDisplay(session.current_focus?.priority || null),
   };
   const linkedTask = currentFocus.task_id ? backlogIndex[currentFocus.task_id] : null;
   const phase = derivePhase(session);
   const waitingOn = deriveWaitingOn(session, phase);
 
+  const rawTitle = linkedTask?.title || currentFocus.title;
+  const rawStatus = linkedTask?.status || currentFocus.status;
+  const rawPriority = linkedTask?.priority || currentFocus.priority;
+
   return {
     ...session,
     current_focus: {
       task_id: currentFocus.task_id,
-      title: linkedTask?.title || currentFocus.title,
-      status: linkedTask?.status || currentFocus.status,
-      priority: linkedTask?.priority || currentFocus.priority,
+      title: rawTitle ? sanitizeForDisplay(rawTitle) : null,
+      status: rawStatus ? sanitizeForDisplay(rawStatus) : null,
+      priority: rawPriority ? sanitizeForDisplay(rawPriority) : null,
     },
     phase,
     waiting_on: waitingOn,
@@ -586,22 +591,30 @@ function enrichSession(session, backlogIndex = {}) {
       path: linkedTask?.path || null,
       missing: Boolean(currentFocus.task_id) && !linkedTask,
     },
-    teammates: Array.isArray(session.teammates) ? session.teammates : [],
+    teammates: Array.isArray(session.teammates)
+      ? session.teammates.map(t => ({ ...t, name: sanitizeForDisplay(t.name) }))
+      : [],
     files: {
-      read: Array.isArray(session.files?.read) ? session.files.read : [],
-      written: Array.isArray(session.files?.written) ? session.files.written : [],
+      read: Array.isArray(session.files?.read) ? session.files.read.map(sanitizeForDisplay) : [],
+      written: Array.isArray(session.files?.written) ? session.files.written.map(sanitizeForDisplay) : [],
       read_count: session.files?.read_count || 0,
       written_count: session.files?.written_count || 0,
     },
     errors: {
       count: session.errors?.count || 0,
-      history: Array.isArray(session.errors?.history) ? session.errors.history : [],
+      history: Array.isArray(session.errors?.history)
+        ? session.errors.history.map(err => ({
+            ...err,
+            tool: sanitizeForDisplay(err.tool),
+            snippet: sanitizeForDisplay(err.snippet),
+          }))
+        : [],
     },
     tools: {
       total_calls: session.tools?.total_calls || 0,
       by_type: session.tools?.by_type || {},
-      last_tool: session.tools?.last_tool || null,
-      last_tool_target: session.tools?.last_tool_target || null,
+      last_tool: sanitizeForDisplay(session.tools?.last_tool || null),
+      last_tool_target: sanitizeForDisplay(session.tools?.last_tool_target || null),
     },
   };
 }
@@ -744,8 +757,7 @@ function summarizeTeammates(session) {
   return `${C.yellow}ajan ${session.teammates.length}${C.reset} ${C.dim}${names}${C.reset}`;
 }
 
-function renderHeader(width) {
-  const filtered = getFilteredSessions();
+function renderHeader(width, filtered) {
   const activeCount = sessions.filter(session => sessionStatus(session).label === 'aktif').length;
   const idleCount = sessions.filter(session => sessionStatus(session).label === 'bosta').length;
   const closedCount = sessions.filter(session => sessionStatus(session).label === 'kapali').length;
@@ -792,11 +804,10 @@ function renderEmptyState(width) {
   return lines;
 }
 
-function renderTimeline() {
+function renderTimeline(filtered) {
   const width = getWidth();
   const height = getHeight();
-  const lines = renderHeader(width);
-  const filtered = getFilteredSessions();
+  const lines = renderHeader(width, filtered);
 
   if (filtered.length === 0) {
     lines.push(...renderEmptyState(width));
@@ -825,8 +836,7 @@ function renderTimeline() {
   }
 
   lines.push(hLine(width, B.ml, B.mr));
-  const footerFiltered = getFilteredSessions();
-  lines.push(row(` ${C.dim}Secim:${C.reset} ${footerFiltered.length === 0 ? '—' : `${selectedIndex + 1}/${footerFiltered.length}`}  ${C.dim}Ayrisma hatasi:${C.reset} ${loadMeta?.parseErrors || 0}`, width));
+  lines.push(row(` ${C.dim}Secim:${C.reset} ${filtered.length === 0 ? '—' : `${selectedIndex + 1}/${filtered.length}`}  ${C.dim}Ayrisma hatasi:${C.reset} ${loadMeta?.parseErrors || 0}`, width));
   lines.push(hLine(width, B.ml, B.mr));
   lines.push(row(` ${joinShortcutHints([
     ['Tab', 'Sekme'],
@@ -856,11 +866,10 @@ function collectEventStream(limit = 8) {
     .slice(0, limit);
 }
 
-function renderRadar() {
+function renderRadar(filtered) {
   const width = getWidth();
   const height = getHeight();
-  const lines = renderHeader(width);
-  const filtered = getFilteredSessions();
+  const lines = renderHeader(width, filtered);
 
   if (filtered.length === 0) {
     lines.push(...renderEmptyState(width));
@@ -933,14 +942,13 @@ function renderRadar() {
   return lines.slice(0, height);
 }
 
-function renderDetail() {
+function renderDetail(filtered) {
   const width = getWidth();
   const height = getHeight();
-  const filtered = getFilteredSessions();
 
   if (filtered.length === 0) {
     detailView = false;
-    return renderTimeline();
+    return renderTimeline(filtered);
   }
 
   const session = filtered[selectedIndex];
@@ -1047,15 +1055,17 @@ function render() {
   sessions = result.sessions;
   loadMeta = result.meta;
 
+  const filtered = getFilteredSessions();
+
   let lines;
   if (showHelp) {
     lines = renderHelp();
   } else if (detailView) {
-    lines = renderDetail();
+    lines = renderDetail(filtered);
   } else if (viewMode === 'radar') {
-    lines = renderRadar();
+    lines = renderRadar(filtered);
   } else {
-    lines = renderTimeline();
+    lines = renderTimeline(filtered);
   }
 
   clearScreen();
@@ -1146,9 +1156,10 @@ function setupWatcher() {
   }
 
   refreshInterval = setInterval(render, REFRESH_INTERVAL);
-  process.stdout.on('resize', () => {
+  resizeHandler = () => {
     render();
-  });
+  };
+  process.stdout.on('resize', resizeHandler);
 }
 
 function cleanup() {
@@ -1158,11 +1169,18 @@ function cleanup() {
   if (renderTimeout) clearTimeout(renderTimeout);
   if (watcher) watcher.close();
   if (refreshInterval) clearInterval(refreshInterval);
+  if (resizeHandler) {
+    try {
+      process.stdout.off('resize', resizeHandler);
+    } catch {}
+    resizeHandler = null;
+  }
 
   exitAltScreen();
   showCursor();
   if (process.stdin.isTTY) {
     try {
+      process.stdin.removeListener('data', handleKey);
       process.stdin.setRawMode(false);
     } catch {
       // ignore
@@ -1197,7 +1215,7 @@ module.exports = {
   priorityColor, summarizeBacklog, summarizeTask, summarizeWait, summarizeErrors,
   loadSessions, derivePhase, timeAgo, inferLegacyTaskId,
   // Runtime seam — TUI test'leri icin
-  handleKey, setupWatcher, cleanup, render, main,
+  handleKey, setupWatcher, setupInput, cleanup, render, main,
   // State getter/setter — test'lerde state kontrolu icin
   getState() {
     return { viewMode, detailView, showHelp, showClosed, selectedIndex, selectedId, cleanedUp };
@@ -1219,6 +1237,7 @@ module.exports = {
     if (renderTimeout) { clearTimeout(renderTimeout); renderTimeout = null; }
     if (watcher) { try { watcher.close(); } catch {} watcher = null; }
     if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; }
+    if (resizeHandler) { try { process.stdout.off('resize', resizeHandler); } catch {} resizeHandler = null; }
   },
 };
 
