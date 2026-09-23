@@ -92,8 +92,8 @@ npm run build
 ```
 
 
-### Output Dizini
-`.next/` (Next.js) veya `dist/` (Vite/CRA)
+### Output directory
+`.next/` (Next.js) or `dist/` (Vite/CRA)
 
 ### Framework
 - **Framework:** Next.js 14 (App Router)

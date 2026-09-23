@@ -86,7 +86,7 @@ If there's an inconsistency, inform the user — not mandatory, but informative:
 >>>
 | `Dockerfile`, `docker-compose*` | `deploy/docker` |
 | `*.expo.*`, `app.json` (expo), `expo-*` | `mobile/expo` |
-| `*.swift`, `*.xcodeproj`, `Podfile` | `mobile/react-native` veya iOS |
+| `*.swift`, `*.xcodeproj`, `Podfile` | `mobile/react-native` or iOS |
 | `*.flutter.*`, `pubspec.yaml` | `mobile/flutter` |
 | `next.config.*`, `app/` (Next.js) | `frontend/nextjs` |
 | `*.module.ts` (NestJS pattern) | `backend/nodejs/nestjs` |

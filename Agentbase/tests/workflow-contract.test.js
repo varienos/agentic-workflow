@@ -90,7 +90,7 @@ describe('host-neutral workflow contract', () => {
     const settings = fs.readFileSync(path.join(first, '.claude/settings.json'), 'utf8');
     assert.equal(settings.includes('turkish-diacritic-guard'), false);
 
-    const turkishProse = /\b(Yapilandirmasi|Bolum|calistir|Gelistirme Komutlari|Yasakli Islemler|Calisma Dizinleri|Temel Dosyalar|Claude Code Yapilandirmasi)\b/;
+    const turkishProse = /\b(Yapilandirmasi|Bolum|calistir|Gelistirme Komutlari|Yasakli Islemler|Calisma Dizinleri|Temel Dosyalar|Claude Code Yapilandirmasi|dosyasi|duzenlenemez|kullanin|yasak|veya)\b/;
     const offenders = [];
     const chunks = [];
     for (const rel of filesA) {

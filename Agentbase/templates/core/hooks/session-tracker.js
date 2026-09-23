@@ -303,7 +303,7 @@ function sanitizeSnippet(text) {
     .replace(/\b(AKIA|ASIA|AROA|AIDA|ANPA|ANVA|APKA)[A-Z0-9]{16}\b/g, '[REDACTED]')
     // JWT token'lari (3 base64 segment)
     .replace(/eyJ[a-zA-Z0-9+/_-]+={0,2}\.eyJ[a-zA-Z0-9+/_-]+={0,2}\.[a-zA-Z0-9+/_-]+={0,2}/g, '[REDACTED]')
-    // Tek tirnak veya cift tirnak icinde gorece uzun token/secret degerleri
+    // Fairly long token or secret values inside single or double quotes
     // key=value / key: value bicimindeki atamalarda
     .replace(/(?:secret|token|password|passwd|api[_-]?key|auth[_-]?key|bearer)\s*[:=]\s*['"`]([^'"`\s]{8,})['"`]/gi, (match, captured) => match.replace(captured, '[REDACTED]'))
     // Bearer token'lari (Authorization header'larinda)

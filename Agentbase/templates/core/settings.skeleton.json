@@ -13,17 +13,17 @@
           {
             "__doc__": "Lock file protection — always active",
             "type": "command",
-            "command": "jq -r 'if (.tool_input.file_path // \"\" | test(\"package-lock\\\\.json$|yarn\\\\.lock$|pnpm-lock\\\\.yaml$|bun\\\\.lock$|composer\\\\.lock$|Cargo\\\\.lock$|poetry\\\\.lock$\")) then {\"decision\":\"block\",\"reason\":\"Lock dosyasi elle duzenlenemez\"} else empty end'",
+            "command": "jq -r 'if (.tool_input.file_path // \"\" | test(\"package-lock\\\\.json$|yarn\\\\.lock$|pnpm-lock\\\\.yaml$|bun\\\\.lock$|composer\\\\.lock$|Cargo\\\\.lock$|poetry\\\\.lock$\")) then {\"decision\":\"block\",\"reason\":\"Lock files must not be edited by hand\"} else empty end'",
             "timeout": 5
           },
           {
             "__doc__": "Backlog file protection — always active",
             "type": "command",
-            "command": "jq -r 'if (.tool_input.file_path // \"\" | test(\"backlog/tasks/|backlog/completed/\")) then {\"decision\":\"block\",\"reason\":\"Backlog dosyalari elle duzenlenemez. backlog task edit kullanin.\"} else empty end'",
+            "command": "jq -r 'if (.tool_input.file_path // \"\" | test(\"backlog/tasks/|backlog/completed/\")) then {\"decision\":\"block\",\"reason\":\"Backlog files must not be edited by hand. Use backlog task edit.\"} else empty end'",
             "timeout": 5
           },
           {
-            "__doc__": "Codebase config korumasi — Codebase icine .claude/, CLAUDE.md, .mcp.json yazmayi engeller",
+            "__doc__": "Codebase config guard — blocks writing .claude/, CLAUDE.md, or .mcp.json inside Codebase",
             "type": "command",
             "command": "node .claude/hooks/codebase-guard.js",
             "timeout": 5
@@ -31,7 +31,7 @@
         ],
         "__GENERATE__PRETOOLUSE_EDITWRITE_HOOKS__": {
           "prisma_active": {
-            "__doc__": "Prisma modulu aktifse: db push engelleme hook'u ekle",
+            "__doc__": "When the Prisma module is active: add the db push block hook",
             "type": "command",
             "command": "node .claude/hooks/prisma-db-push-guard.js",
             "timeout": 10
@@ -51,43 +51,43 @@
           "__doc__": "Extra PreToolUse hooks for the Bash tool. Added from active modules.",
           "matcher": "Bash",
           "prisma_active": {
-            "__doc__": "Prisma aktifse: npx prisma db push komutunu engelle",
+            "__doc__": "When Prisma is active: block the npx prisma db push command",
             "type": "command",
-            "command": "jq -r 'if (.tool_input.command // \"\" | test(\"prisma db push|prisma.*db.*push\")) then {\"decision\":\"block\",\"reason\":\"db push yasak. prisma migrate dev kullanin.\"} else empty end'",
+            "command": "jq -r 'if (.tool_input.command // \"\" | test(\"prisma db push|prisma.*db.*push\")) then {\"decision\":\"block\",\"reason\":\"db push is forbidden. Use prisma migrate dev.\"} else empty end'",
             "timeout": 5
           },
           "eloquent_active": {
-            "__doc__": "Eloquent aktifse: artisan migrate:fresh/reset/db:wipe engelle",
+            "__doc__": "When Eloquent is active: block artisan migrate:fresh, reset, and db:wipe",
             "type": "command",
             "command": "node .claude/hooks/artisan-migrate-guard.js",
             "timeout": 10
           },
           "typeorm_active": {
-            "__doc__": "TypeORM aktifse: schema:sync/drop engelle",
+            "__doc__": "When TypeORM is active: block schema:sync and schema:drop",
             "type": "command",
             "command": "node .claude/hooks/typeorm-sync-guard.js",
             "timeout": 10
           },
           "django-orm_active": {
-            "__doc__": "Django ORM aktifse: manage.py flush/reset_db engelle",
+            "__doc__": "When Django ORM is active: block manage.py flush and reset_db",
             "type": "command",
             "command": "node .claude/hooks/manage-py-guard.js",
             "timeout": 10
           },
           "laravel_active": {
-            "__doc__": "Laravel aktifse: artisan db:wipe/tinker engelle",
+            "__doc__": "When Laravel is active: block artisan db:wipe and tinker",
             "type": "command",
             "command": "node .claude/hooks/artisan-guard.js",
             "timeout": 10
           },
           "codeigniter4_active": {
-            "__doc__": "CI4 aktifse: spark migrate:refresh engelle",
+            "__doc__": "When CI4 is active: block spark migrate:refresh",
             "type": "command",
             "command": "node .claude/hooks/spark-guard.js",
             "timeout": 10
           },
           "django_active": {
-            "__doc__": "Django backend aktifse: manage.py shell/flush engelle",
+            "__doc__": "When the Django backend is active: block manage.py shell and flush",
             "type": "command",
             "command": "node .claude/hooks/django-guard.js",
             "timeout": 10
@@ -104,7 +104,7 @@
             "timeout": 10
           },
           {
-            "__doc__": "Commit format validator — git commit -m mesaji conventional prefix ile eslesmezse blocklar",
+            "__doc__": "Commit format validator — blocks git commit -m when the message lacks a conventional prefix",
             "type": "command",
             "command": "node .claude/hooks/commit-format-guard.js",
             "timeout": 10

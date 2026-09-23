@@ -95,10 +95,9 @@ Run each test. Record failed tests and proceed to the next step.
 Synchronize Vercel environment variables with local `.env.local` file:
 
  
-Note: The generated code snippet is truncated as it was not provided in the original text, only the translation of the given part.
 ```bash
-# .env.local veya .env dosyasindaki degiskenleri listele
-cd ../Codebase && grep -E '^[A-Z_]+=' .env.local 2>/dev/null | cut -d= -f1 | sort || echo ".env.local bulunamadi"
+# List variable names in .env.local or .env
+cd ../Codebase && grep -E '^[A-Z_]+=' .env.local 2>/dev/null | cut -d= -f1 | sort || echo ".env.local was not found"
 ```
 Control:
 - [ ] Are all environment variables in `.env.local` defined on the Vercel dashboard?
@@ -111,7 +110,7 @@ Control:
 
 Control Edge runtime using files:
 ```bash
-cd ../Codebase && grep -rl "runtime.*=.*'edge'" src/ app/ --include="*.ts" --include="*.tsx" 2>/dev/null || echo "Edge runtime kullanilmiyor"
+cd ../Codebase && grep -rl "runtime.*=.*'edge'" src/ app/ --include="*.ts" --include="*.tsx" 2>/dev/null || echo "Edge runtime is not used"
 ```
 Here is the translated text:
 
