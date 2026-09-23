@@ -90,14 +90,18 @@ describe('host-neutral workflow contract', () => {
     const settings = fs.readFileSync(path.join(first, '.claude/settings.json'), 'utf8');
     assert.equal(settings.includes('turkish-diacritic-guard'), false);
 
+    const turkishProse = /\b(Yapilandirmasi|Bolum|calistir|Gelistirme Komutlari|Yasakli Islemler|Calisma Dizinleri|Temel Dosyalar|Claude Code Yapilandirmasi)\b/;
     const offenders = [];
     const chunks = [];
     for (const rel of filesA) {
       if (!rel.endsWith('.md') && !rel.endsWith('.json')) continue;
       const text = fs.readFileSync(path.join(first, rel), 'utf8');
       chunks.push(text);
-      if (/[çğıöşüÇĞİÖŞÜ]/.test(text)) offenders.push(rel);
+      if (/[çğıöşüÇĞİÖŞÜ]/.test(text) || turkishProse.test(text)) offenders.push(rel);
     }
+    assert.doesNotMatch(host, /Claude Code Yapilandirmasi/);
+    assert.match(host, /Agent workflow/);
+    assert.match(host, /Claude is one host, not the product/);
     const joined = chunks.join('\n');
     assert.doesNotMatch(joined, /uv tool install graphifyy/);
     assert.doesNotMatch(joined, /Binance/);

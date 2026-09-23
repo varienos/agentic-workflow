@@ -12,8 +12,6 @@ function readRepoFile(relativePath) {
 }
 
 const readme = readRepoFile('README.md');
-const readmeTr = readme;
-const readmeEn = readme;
 const bootstrapCommand = readRepoFile('Agentbase/.claude/commands/bootstrap.md');
 const coreClaude = readRepoFile('Agentbase/templates/core/CLAUDE.md.skeleton');
 const dbMigrationRule = readRepoFile('Agentbase/templates/core/rules/db-migration-discipline.skeleton.md');
@@ -42,21 +40,21 @@ const rootGitignoreSkeleton = readRepoFile('Agentbase/templates/core/root-gitign
 describe('README docs consistency', () => {
   it('documents Agentbase backlog location consistently in Turkish and English READMEs', () => {
     assert.ok(
-      readmeTr.includes('`Agentbase/backlog/`'),
+      readme.includes('`Agentbase/backlog/`'),
       'Turkce README backlog konumunu Agentbase/backlog/ olarak anlatmali'
     );
     assert.ok(
-      readmeEn.includes('`Agentbase/backlog/`'),
+      readme.includes('`Agentbase/backlog/`'),
       'English README backlog konumunu Agentbase/backlog/ olarak anlatmali'
     );
-    assert.ok(!readmeTr.includes('(`backlog/` root dizinde)'), 'Eski root backlog ifadesi kalmamali');
-    assert.ok(!readmeEn.includes('(`backlog/` in root directory)'), 'Old root backlog wording must be removed');
+    assert.ok(!readme.includes('(`backlog/` root dizinde)'), 'Eski root backlog ifadesi kalmamali');
+    assert.ok(!readme.includes('(`backlog/` in root directory)'), 'Old root backlog wording must be removed');
   });
 
   it('uses Agentbase working directory for the multi-CLI transform example', () => {
     const example = 'cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,antigravity,codex,kimi,opencode';
-    assert.ok(readmeTr.includes(example), 'Turkce README transform orneginde Agentbase CWD kullanmali');
-    assert.ok(readmeEn.includes(example), 'English README transform example must use Agentbase CWD');
+    assert.ok(readme.includes(example), 'Turkce README transform orneginde Agentbase CWD kullanmali');
+    assert.ok(readme.includes(example), 'English README transform example must use Agentbase CWD');
   });
 
   it('documents Codex as transform target with optional verify/adapt instead of separate bootstrap', () => {
@@ -65,15 +63,15 @@ describe('README docs consistency', () => {
       'Turkce README Codex icin ikinci bootstrap olmadigini soylemeli'
     );
     assert.ok(
-      readmeEn.includes('There is no second Codex bootstrap'),
+      readme.includes('There is no second Codex bootstrap'),
       'English README must state there is no second Codex bootstrap'
     );
     assert.ok(
-      readmeTr.includes('`/codex-verify`'),
+      readme.includes('`/codex-verify`'),
       'Turkce README opsiyonel codex-verify adimini anlatmali'
     );
     assert.ok(
-      readmeEn.includes('`/codex-verify`'),
+      readme.includes('`/codex-verify`'),
       'English README must mention optional codex-verify'
     );
     assert.ok(
@@ -81,7 +79,7 @@ describe('README docs consistency', () => {
       'Turkce README Codex icin otomatik hook parity iddiasi olmadigini soylemeli'
     );
     assert.ok(
-      readmeEn.includes('no automatic hook parity is claimed'),
+      readme.includes('no automatic hook parity is claimed'),
       'English README must state automatic hook parity is not claimed'
     );
     assert.ok(
@@ -89,21 +87,20 @@ describe('README docs consistency', () => {
       'Turkce README Codex hedefini native slash command olarak sunmamali'
     );
     assert.ok(
-      readmeEn.includes('skill/context surface, not a command runtime; no native slash-command guarantee is made'),
+      readme.includes('skill/context surface, not a command runtime; no native slash-command guarantee is made'),
       'English README must not present Codex target as a native slash-command runtime'
     );
-    assert.ok(!readmeTr.includes('Codex icin ayri bootstrap calistirin'), 'Turkce README ayri Codex bootstrap onermemeli');
-    assert.ok(!readmeEn.includes('run a separate Codex bootstrap'), 'English README must not recommend a separate Codex bootstrap');
-    assert.ok(!readmeTr.includes('Claude Code hooklari Codexte otomatik calisir'), 'Turkce README Codex hook parity overclaim tasimamali');
-    assert.ok(!readmeEn.includes('Claude Code hooks run automatically in Codex'), 'English README must not overclaim hook parity');
+    assert.ok(!readme.includes('Codex icin ayri bootstrap calistirin'), 'Turkce README ayri Codex bootstrap onermemeli');
+    assert.ok(!readme.includes('run a separate Codex bootstrap'), 'English README must not recommend a separate Codex bootstrap');
+    assert.ok(!readme.includes('Claude Code hooklari Codexte otomatik calisir'), 'Turkce README Codex hook parity overclaim tasimamali');
+    assert.ok(!readme.includes('Claude Code hooks run automatically in Codex'), 'English README must not overclaim hook parity');
   });
 
   it('documents current Codex skill output path and Kimi prompt target consistently', () => {
     const codexSkillPath = '`.agents/skills/*/SKILL.md`';
     const oldCodexSkillPath = '`.codex/skills/*/SKILL.md`';
     for (const [label, content] of [
-      ['Turkce README', readmeTr],
-      ['English README', readmeEn],
+      ['README', readme],
       ['Codex verify command', codexVerifyCommand],
       ['Reference notes', referenceNotes],
     ]) {
@@ -116,7 +113,7 @@ describe('README docs consistency', () => {
       'Turkce README Kimi context hedefini gercek dosya yoluyla anlatmali'
     );
     assert.ok(
-      readmeEn.includes('`.kimi/agents/default-prompt.md` via `default.yaml`'),
+      readme.includes('`.kimi/agents/default-prompt.md` via `default.yaml`'),
       'English README must document the concrete Kimi context prompt path'
     );
   });
@@ -131,48 +128,41 @@ describe('README docs consistency', () => {
       'Turkce README test-enforcer otomasyonunu Claude Code runtime ile sinirlamali'
     );
     assert.ok(
-      readmeEn.includes('In the Claude Code runtime, the `codebase-guard` hook'),
+      readme.includes('In the Claude Code runtime, the `codebase-guard` hook'),
       'English README must scope codebase-guard automation to Claude Code runtime'
     );
     assert.ok(
-      readmeEn.includes('In the Claude Code runtime, the `test-enforcer` hook'),
+      readme.includes('In the Claude Code runtime, the `test-enforcer` hook'),
       'English README must scope test-enforcer automation to Claude Code runtime'
     );
   });
 
   it('does not reference obsolete Bootstrap Flow step numbers', () => {
-    assert.ok(!readmeTr.includes('Bootstrap Akışı adım 9'), 'Turkce README obsolete bootstrap step number kullanmamali');
-    assert.ok(!readmeEn.includes('Bootstrap Flow step 9'), 'English README must not reference obsolete bootstrap step number');
+    assert.ok(!readme.includes('Bootstrap Akışı adım 9'), 'Turkce README obsolete bootstrap step number kullanmamali');
+    assert.ok(!readme.includes('Bootstrap Flow step 9'), 'English README must not reference obsolete bootstrap step number');
   });
 
-  it('README.md and README.en.md mirror heading structure (H2 + H3 count parity)', () => {
-    const countHeadings = (md, level) => {
-      const re = new RegExp(`^${'#'.repeat(level)} `, 'gm');
-      return (md.match(re) || []).length;
-    };
-    const trH2 = countHeadings(readmeTr, 2);
-    const enH2 = countHeadings(readmeEn, 2);
-    const trH3 = countHeadings(readmeTr, 3);
-    const enH3 = countHeadings(readmeEn, 3);
-    assert.equal(
-      trH2,
-      enH2,
-      `H2 baslik sayisi eslesmiyor: TR=${trH2}, EN=${enH2} — README mirror'i bozulmus`
-    );
-    assert.equal(
-      trH3,
-      enH3,
-      `H3 baslik sayisi eslesmiyor: TR=${trH3}, EN=${enH3} — README mirror'i bozulmus`
-    );
+  it('ships one English README and an English host-neutral core skeleton', () => {
+    assert.equal(fs.existsSync(path.join(REPO_ROOT, 'README.en.md')), false);
+    assert.equal(fs.existsSync(path.join(REPO_ROOT, 'README.tr.md')), false);
+    assert.match(readme, /Claude is one host, not the product/);
+    assert.doesNotMatch(readme, /README\.en\.md|README\.tr\.md/);
+    const turkishProse = /\b(Yapilandirmasi|Bolum|calistir|Gelistirme Komutlari|Yasakli Islemler|Calisma Dizinleri|Temel Dosyalar)\b/;
+    assert.doesNotMatch(readme, turkishProse);
+    assert.doesNotMatch(coreClaude, turkishProse);
+    assert.doesNotMatch(coreClaude, /Claude Code Yapilandirmasi/);
+    assert.match(coreClaude, /Claude is one host, not the product/);
+    assert.match(coreClaude, /Other hosts do not run those hooks automatically/);
+    assert.match(coreClaude, /# \{\{ PROJECT_NAME \}\} — Agent workflow/);
   });
 
   it('documents greenfield placeholder handling consistently', () => {
     assert.ok(
-      readmeTr.includes('rm -f Codebase/.gitkeep'),
+      readme.includes('rm -f Codebase/.gitkeep'),
       'Turkce README greenfield kurulumunda repo placeholder temizligini gostermeli'
     );
     assert.ok(
-      readmeEn.includes('rm -f Codebase/.gitkeep'),
+      readme.includes('rm -f Codebase/.gitkeep'),
       'English README must show cleanup for the repo placeholder in greenfield setup'
     );
     assert.ok(
@@ -180,7 +170,7 @@ describe('README docs consistency', () => {
       'Turkce README placeholder dosyalarin bos Codebase sayildigini anlatmali'
     );
     assert.ok(
-      readmeEn.includes('`.gitkeep` and `.DS_Store` are ignored as placeholders'),
+      readme.includes('`.gitkeep` and `.DS_Store` are ignored as placeholders'),
       'English README must state placeholder files are ignored'
     );
     assert.ok(
@@ -203,7 +193,7 @@ describe('README docs consistency', () => {
       'Turkce README iki-repo teslimat modeli bolumunu icermeli'
     );
     assert.ok(
-      readmeEn.includes('### Two-Repo Delivery Model'),
+      readme.includes('### Two-Repo Delivery Model'),
       'English README must include the two-repo delivery model section'
     );
     assert.ok(
@@ -211,28 +201,28 @@ describe('README docs consistency', () => {
       'Turkce README Codebase ayri klonlama/baglama sozlesmesini anlatmali'
     );
     assert.ok(
-      readmeEn.includes('clones/links `Codebase` **separately**'),
+      readme.includes('clones/links `Codebase` **separately**'),
       'English README must state Codebase is cloned/linked separately'
     );
     assert.ok(
       rootGitignoreSkeleton.includes('clones or links Codebase **separately**'),
       'root-gitignore skeleton must keep the separate Codebase clone/link contract'
     );
-    assert.ok(!readmeTr.includes('kloduyla'), 'Turkce README eski typo tasimamali');
+    assert.ok(!readme.includes('kloduyla'), 'Turkce README eski typo tasimamali');
     assert.ok(!bootstrapCommand.includes('kloduyla'), 'Bootstrap eski typo tasimamali');
     assert.ok(!rootGitignoreSkeleton.includes('her şey gelir'), 'Skeleton eski her sey gelir iddiasini tasimamali');
     assert.ok(!rootGitignoreSkeleton.includes('her sey gelir'), 'Skeleton eski her sey gelir iddiasini tasimamali');
   });
 
   it('uses guarded Codebase placeholder replacement commands', () => {
-    assert.ok(!readmeTr.includes('rm -rf Codebase'), 'Turkce README Codebase icin destructive rm -rf onermemeli');
-    assert.ok(!readmeEn.includes('rm -rf Codebase'), 'English README must not recommend destructive rm -rf for Codebase');
+    assert.ok(!readme.includes('rm -rf Codebase'), 'Turkce README Codebase icin destructive rm -rf onermemeli');
+    assert.ok(!readme.includes('rm -rf Codebase'), 'English README must not recommend destructive rm -rf for Codebase');
     assert.ok(
-      readmeTr.includes('rm -f Codebase/.gitkeep && rmdir Codebase'),
+      readme.includes('rm -f Codebase/.gitkeep && rmdir Codebase'),
       'Turkce README yalnizca bos placeholder Codebase dizinini kaldirmali'
     );
     assert.ok(
-      readmeEn.includes('rm -f Codebase/.gitkeep && rmdir Codebase'),
+      readme.includes('rm -f Codebase/.gitkeep && rmdir Codebase'),
       'English README must only remove an empty placeholder Codebase directory'
     );
   });
@@ -334,7 +324,7 @@ describe('README docs consistency', () => {
       'Turkce README shared memory icin secret/PII yasagi koymali'
     );
     assert.ok(
-      readmeEn.includes('Never store secrets, tokens, `.env` values, or PII in persistent memory'),
+      readme.includes('Never store secrets, tokens, `.env` values, or PII in persistent memory'),
       'English README shared memory must forbid secrets and PII'
     );
     assert.ok(
@@ -357,11 +347,11 @@ describe('README docs consistency', () => {
       'Turkce README changelog akisinda tag tetigini anlatmali'
     );
     assert.ok(
-      readmeEn.includes('Conventional Commit pushes on the `main` branch trigger the auto-release flow; the resulting `v*` tag triggers a separate GitHub Action that regenerates `CHANGELOG.md` and writes it back to `main`.'),
+      readme.includes('Conventional Commit pushes on the `main` branch trigger the auto-release flow; the resulting `v*` tag triggers a separate GitHub Action that regenerates `CHANGELOG.md` and writes it back to `main`.'),
       'English README changelog flow must mention the follow-up tag trigger'
     );
-    assert.ok(!readmeTr.includes("sadece `main` branch'ine yapılan push'larda"), 'Eski yaniltici main-only ifade kaldirilmali');
-    assert.ok(!readmeEn.includes('only on pushes to the `main` branch'), 'Old misleading main-only wording must be removed');
+    assert.ok(!readme.includes("sadece `main` branch'ine yapılan push'larda"), 'Eski yaniltici main-only ifade kaldirilmali');
+    assert.ok(!readme.includes('only on pushes to the `main` branch'), 'Old misleading main-only wording must be removed');
   });
 
   it('aligns the worktree section with the resolveCodebaseRoot single contract', () => {
@@ -371,11 +361,11 @@ describe('README docs consistency', () => {
       'Turkce README Worktree Avantaji bolumunu korumali'
     );
     assert.ok(
-      readmeTr.includes('`resolveCodebaseRoot()`'),
+      readme.includes('`resolveCodebaseRoot()`'),
       'Turkce README tek sozlesme helper\'ini referans almali'
     );
     assert.ok(
-      readmeTr.includes('AGENTIC_CODEBASE_DIR'),
+      readme.includes('AGENTIC_CODEBASE_DIR'),
       'Turkce README env override yontemini gostermeli'
     );
     assert.ok(
@@ -384,29 +374,29 @@ describe('README docs consistency', () => {
     );
     // Eski "geçiş mekanizması mevcut değildir" iddiasi kaldirilmali
     assert.ok(
-      !readmeTr.includes('geçiş mekanizması henüz mevcut değildir'),
+      !readme.includes('geçiş mekanizması henüz mevcut değildir'),
       'Turkce README eski "gecis yok" iddiasini tasimamali'
     );
 
     // English README
     assert.ok(
-      readmeEn.includes('### Worktree Advantage'),
+      readme.includes('### Worktree Advantage'),
       'English README must keep Worktree Advantage section'
     );
     assert.ok(
-      readmeEn.includes('`resolveCodebaseRoot()`'),
+      readme.includes('`resolveCodebaseRoot()`'),
       'English README must reference the single-contract helper'
     );
     assert.ok(
-      readmeEn.includes('AGENTIC_CODEBASE_DIR'),
+      readme.includes('AGENTIC_CODEBASE_DIR'),
       'English README must show env override method'
     );
     assert.ok(
-      readmeEn.includes('#### Selecting the Target Worktree'),
+      readme.includes('#### Selecting the Target Worktree'),
       'English README must include target worktree selection section'
     );
     assert.ok(
-      !readmeEn.includes('cross-worktree switching is not yet implemented'),
+      !readme.includes('cross-worktree switching is not yet implemented'),
       'English README must not carry the old "not yet implemented" claim'
     );
   });
@@ -441,13 +431,13 @@ describe('README docs consistency', () => {
       'Turkce README prefixli deploy komut modelini gostermeli'
     );
     assert.ok(
-      readmeEn.includes('`/{variant}-pre-deploy` and `/{variant}-post-deploy`'),
+      readme.includes('`/{variant}-pre-deploy` and `/{variant}-post-deploy`'),
       'English README must show the prefixed deploy command model'
     );
-    assert.ok(!readmeTr.includes('`/pre-deploy`'), 'Turkce README bare /pre-deploy kullanmamali');
-    assert.ok(!readmeTr.includes('`/post-deploy`'), 'Turkce README bare /post-deploy kullanmamali');
-    assert.ok(!readmeEn.includes('`/pre-deploy`'), 'English README must not use bare /pre-deploy');
-    assert.ok(!readmeEn.includes('`/post-deploy`'), 'English README must not use bare /post-deploy');
+    assert.ok(!readme.includes('`/pre-deploy`'), 'Turkce README bare /pre-deploy kullanmamali');
+    assert.ok(!readme.includes('`/post-deploy`'), 'Turkce README bare /post-deploy kullanmamali');
+    assert.ok(!readme.includes('`/pre-deploy`'), 'English README must not use bare /pre-deploy');
+    assert.ok(!readme.includes('`/post-deploy`'), 'English README must not use bare /post-deploy');
   });
 
   it('documents task-conductor as a plan-first guarded orchestrator', () => {
@@ -467,10 +457,10 @@ describe('README docs consistency', () => {
     ];
 
     for (const phrase of requiredTr) {
-      assert.ok(readmeTr.includes(phrase), `Turkce README task-conductor yeni sozlesmesini anlatmali: ${phrase}`);
+      assert.ok(readme.includes(phrase), `Turkce README task-conductor yeni sozlesmesini anlatmali: ${phrase}`);
     }
     for (const phrase of requiredEn) {
-      assert.ok(readmeEn.includes(phrase), `English README must document the guarded task-conductor contract: ${phrase}`);
+      assert.ok(readme.includes(phrase), `English README must document the guarded task-conductor contract: ${phrase}`);
     }
 
     assert.match(taskConductorCommand, /The default mode is PLAN/);
@@ -498,10 +488,10 @@ describe('README docs consistency', () => {
     ];
 
     for (const term of forbiddenTerms) {
-      assert.ok(!readmeTr.includes(term), `Turkce README son kullanici metninde gereksiz/hatali ifade var: ${term}`);
+      assert.ok(!readme.includes(term), `Turkce README son kullanici metninde gereksiz/hatali ifade var: ${term}`);
     }
 
-    const longLines = readmeTr
+    const longLines = readme
       .split('\n')
       .map((line, index) => ({ line, lineNumber: index + 1 }))
       .filter(({ line }) => line.length > 360)
@@ -534,13 +524,7 @@ describe('bootstrap docs consistency', () => {
     assert.match(dbMigrationRule, /GENERATE: DRY_RUN_COMMAND/);
     assert.match(dbMigrationRule, /GENERATE: ROLLBACK_COMMAND/);
 
-    const readmeReferenceCount = [readmeTr, readmeEn]
-      .filter(content => content.includes('db-migration-discipline'))
-      .length;
-    assert.ok(
-      readmeReferenceCount === 0 || readmeReferenceCount === 2,
-      'README db-migration-discipline referansi varsa TR/EN birlikte guncellenmeli'
-    );
+    assert.match(readme, /\| `db-migration-discipline` \|/);
 
     if (coreClaude.includes('db-migration-discipline')) {
       assert.match(bootstrapCommand, /db-migration-discipline\.skeleton\.md/);
@@ -564,8 +548,8 @@ describe('bootstrap docs consistency', () => {
     assert.match(taskPlanCommand, /Migration file created/);
     assert.match(taskPlanCommand, /Rollback\/down script or file path is ready/);
     assert.match(regressionAnalyzerAgent, /rollback\/down script file path/);
-    assert.match(readmeTr, /\| `db-migration-discipline` \|/);
-    assert.match(readmeEn, /\| `db-migration-discipline` \|/);
+    assert.match(readme, /\| `db-migration-discipline` \|/);
+    assert.match(readme, /\| `db-migration-discipline` \|/);
   });
 
   it('keeps the bootstrap completion condition aligned with the machine gate checks', () => {
@@ -589,10 +573,10 @@ describe('bootstrap docs consistency', () => {
   });
 
   it('describes the bootstrap verification gate set without stale gate counts', () => {
-    assert.match(readmeTr, /Gate A-H \+ B2/);
-    assert.match(readmeEn, /Gate A-H \+ B2/);
-    assert.doesNotMatch(readmeTr, /8 ayrı gate/);
-    assert.doesNotMatch(readmeEn, /Eight separate gates/);
+    assert.match(readme, /Gate A-H \+ B2/);
+    assert.match(readme, /Gate A-H \+ B2/);
+    assert.doesNotMatch(readme, /8 ayrı gate/);
+    assert.doesNotMatch(readme, /Eight separate gates/);
   });
 
   it('keeps the Graphify install reference inside the Agentbase config boundary', () => {

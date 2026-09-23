@@ -2,9 +2,9 @@
 
 module.exports = {
   project: {
-    description: 'Hook test manifesti',
+    description: 'Hook test manifest',
     type: 'monorepo',
-    language: 'tr',
+    language: 'en',
     structure: '../Codebase',
     subprojects: [
       {

@@ -856,7 +856,7 @@ const SIMPLE_GENERATORS = {
     const rows = [];
     const add = (k, v) => { if (v) rows.push(`| ${k} | ${v} |`); };
     add('Runtime', s.runtime ? `${s.runtime}${s.runtime_version ? ` ${s.runtime_version}` : ''}` : null);
-    add('Dil', hasTypeScript(manifest) ? 'TypeScript' : (manifest?.project?.language || null));
+    add('Language', hasTypeScript(manifest) ? 'TypeScript' : (manifest?.project?.language || null));
     add('ORM', s.orm);
     add('Database', s.database);
     add('Auth', s.auth_method && s.auth_method !== 'none' ? s.auth_method : null);
@@ -962,7 +962,7 @@ const SIMPLE_GENERATORS = {
     return ['| Command | Reason | Guard |', '|---|---|---|', ...rows].join('\n');
   },
 
-  // --- KOMUT TABLOLARI ---
+  // --- COMMAND TABLES ---
 
   DETECTED_ORM(manifest) {
     const orm = getDetectedOrm(manifest);
