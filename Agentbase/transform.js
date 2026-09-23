@@ -133,7 +133,7 @@ function loadExternalCapabilities(configPath) {
 
   if (!configPath) return merged;
   if (!fs.existsSync(configPath)) {
-    throw new Error(`CLI config bulunamadi: ${configPath}`);
+    throw new Error(`CLI config not found: ${configPath}`);
   }
 
   const ext = path.extname(configPath).toLowerCase();
@@ -462,7 +462,7 @@ function stripFrontmatter(content) {
 
 function parseClaudeOutput(claudeDir) {
   if (!fs.existsSync(claudeDir)) {
-    throw new Error(`Claude cikti dizini bulunamadi: ${claudeDir}. Once generate.js calistirin.`);
+    throw new Error(`Claude output directory not found: ${claudeDir}. Run generate.js first.`);
   }
 
   const commands = [];
@@ -677,6 +677,8 @@ function main() {
     dryRun: args.includes('--dry-run'),
     verbose: args.includes('--verbose'),
     targets: null,
+    sourceDir: null,
+    outputDir: null,
   };
 
   const targetsIdx = args.indexOf('--targets');
@@ -684,7 +686,17 @@ function main() {
     flags.targets = args[targetsIdx + 1];
   }
 
-  const VALUE_FLAGS = new Set(['--targets']);
+  const sourceIdx = args.indexOf('--source-dir');
+  if (sourceIdx !== -1 && args[sourceIdx + 1]) {
+    flags.sourceDir = path.resolve(args[sourceIdx + 1]);
+  }
+
+  const outputIdx = args.indexOf('--output-dir');
+  if (outputIdx !== -1 && args[outputIdx + 1]) {
+    flags.outputDir = path.resolve(args[outputIdx + 1]);
+  }
+
+  const VALUE_FLAGS = new Set(['--targets', '--source-dir', '--output-dir']);
   const manifestPath = args.find((a, i) => {
     if (a.startsWith('--')) return false;
     if (i > 0 && VALUE_FLAGS.has(args[i - 1])) return false;
@@ -692,13 +704,13 @@ function main() {
   });
 
   if (!manifestPath) {
-    console.error('Kullanim: node transform.js <manifest-yolu> [--targets cli1,cli2] [--dry-run] [--verbose]');
+    console.error('Usage: node transform.js <manifest> [--targets cli1,cli2] [--source-dir <dir>] [--output-dir <dir>] [--dry-run] [--verbose]');
     process.exit(1);
   }
 
   const resolvedPath = path.resolve(manifestPath);
   if (!fs.existsSync(resolvedPath)) {
-    console.error(`Hata: Manifest bulunamadi: ${resolvedPath}`);
+    console.error(`Error: Manifest not found: ${resolvedPath}`);
     process.exit(1);
   }
 
@@ -707,12 +719,12 @@ function main() {
     manifest = yaml.load(fs.readFileSync(resolvedPath, 'utf8'));
   } catch (err) {
     const location = err.mark ? ` (satir ${err.mark.line + 1})` : '';
-    console.error(`Hata: Manifest YAML parse hatasi${location}: ${err.message}`);
+    console.error(`Error: Manifest YAML parse error${location}: ${err.message}`);
     process.exit(1);
   }
 
   if (!manifest || typeof manifest !== 'object') {
-    console.error('Hata: Manifest bos veya gecersiz — YAML objesi bekleniyor.');
+    console.error('Error: Manifest is empty or invalid — a YAML object is required.');
     process.exit(1);
   }
 
@@ -726,13 +738,13 @@ function main() {
   const { targets, invalid } = resolveTargets(manifest, flags.targets, localCapabilities);
 
   if (invalid.length > 0) {
-    console.error(`Hata: ${invalid.length} gecersiz transform target'i:`);
+    console.error(`Error: ${invalid.length} invalid transform target(s):`);
     invalid.forEach(({ name, reason }) => console.error(`  ! "${name}": ${reason}`));
     process.exit(1);
   }
 
   if (targets.length === 0) {
-    console.log('Transform hedefi yok — sadece Claude aktif.');
+    console.log('No transform target — Claude is the only selected host. Other hosts are unchanged.');
     return;
   }
 
@@ -741,7 +753,9 @@ function main() {
     ? manifest.transform.skip_paths.filter(p => typeof p === 'string')
     : DEFAULT_SKIP_PATHS;
 
-  const claudeDir = path.join(AGENTBASE_DIR, '.claude');
+  const sourceRoot = flags.sourceDir || AGENTBASE_DIR;
+  const outputRoot = flags.outputDir || sourceRoot;
+  const claudeDir = path.join(sourceRoot, '.claude');
   const source = parseClaudeOutput(claudeDir);
   const effectivePathMaps = mergePathMaps(manifest.path_maps);
 
@@ -753,7 +767,7 @@ function main() {
       const fileCount = Object.keys(fileMap).length;
 
       if (!flags.dryRun) {
-        const writeErrors = writeTarget(AGENTBASE_DIR, target, fileMap);
+        const writeErrors = writeTarget(outputRoot, target, fileMap);
         if (writeErrors && writeErrors.length > 0) {
           report.errors.push(...writeErrors.map(e => `${target}: ${e}`));
         }
@@ -775,12 +789,12 @@ function main() {
 
   console.log('');
   console.log('\u2501'.repeat(55));
-  console.log('  Transform Raporu');
+  console.log('  Transform report');
   console.log('\u2501'.repeat(55));
   for (const t of report.targets) {
     console.log(`  ${t.name}: ${t.files} dosya`);
   }
-  console.log(`  Toplam: ${report.totalFiles} dosya`);
+  console.log(`  Total: ${report.totalFiles} files`);
   if (report.errors.length > 0) {
     console.log(`  Hata: ${report.errors.length}`);
     report.errors.forEach(e => console.log(`    ${e}`));

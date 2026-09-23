@@ -1,29 +1,29 @@
-# Knowledge Graph Kategori Tespiti
+# Knowledge Graph Category Detection
 
-Bu kategori, kod tabanini knowledge graph olarak modelleyen ve "X nerede / Y'yi ne kullaniyor / Z nasil bagli" sorularinda grep/find yerine BFS query ile cevap veren araclar icin entegrasyon saglar.
+This category integrates tools that model the codebase as a knowledge graph and answer "where is X / what uses Y / how is Z connected" questions with BFS query instead of grep/find.
 
 ## Variants
 
-Bu kategori **zorunludur**: graphify her bootstrap'ta aktiftir. Asagidaki tespit, secim kapisi degil bir saglik teyididir — CLI ve artifact varligini dogrular.
+This category is **optional**. The module is generated only when selected. The checks below confirm CLI and artifact presence when the module is active; absence does not fail bootstrap.
 
-| Varyant | Tespit Dosyasi | Oncelik |
+| Variant | Detection File | Priority |
 |---------|---------------|---------|
-| Graphify | `knowledge-graph/graphify/detect.md` | 1 (zorunlu) |
+| Graphify | `knowledge-graph/graphify/detect.md` | 1 (optional) |
 
 ## Provides
 
-- Code-relation discovery icin BFS query (grep'ten ~150-540x token tasarrufu)
-- PreToolUse hook ile `grep`/`Grep`/`Glob`/`rg`/`find` cagrilarinda akilli yonlendirme (block degil, ask)
-- Whitelist destegi: magic constant, error keyword, snake_case db column, config file, test path, vendor/node_modules, single file, git native commands
-- `/g` slash command (query/explain/path/report/health modlari)
-- Multi-layer monorepo desteginde paralel update + Python merge script
+- BFS query for code-relation discovery (~150-540x token savings vs grep)
+- PreToolUse hook with smart guidance on `grep`/`Grep`/`Glob`/`rg`/`find` calls (ask, not block)
+- Whitelist support: magic constant, error keyword, snake_case db column, config file, test path, vendor/node_modules, single file, git native commands
+- `/g` slash command (query/explain/path/report/health modes)
+- Parallel update + Python merge script for multi-layer monorepo support
 
 ## Affects Core
 
-- code-review: Knowledge graph kapsami varsa grep oncesi graphify query onerisi eklenir
-- CLAUDE.md: "Graphify-First Workflow" zorunlu kurali ve whitelist tablosu eklenir
-- Bootstrap: "Graphify İlk Kurulum" ozel adimi her zaman calisir (graphify zorunlu modul) — CLI otomatik kurulumu, ilk `graphify update`, `.gitignore` patch, opsiyonel pre-push hook
+- code-review: If knowledge graph coverage exists, suggest graphify query before grep
+- CLAUDE.md: "Graphify-First Workflow" rule and whitelist table are added when the module is selected
+- Bootstrap: Graphify setup runs only when the module is selected; if the CLI is absent, bootstrap continues and does not install it
 
-## Bootstrap Istisnasi
+## Bootstrap Note
 
-Bootstrap normalde paket kurmaz ve harici komut tetiklemez — sadece dosya kopyalar. Bu kategori bir **istisnadir** ve graphify zorunlu oldugu icin her bootstrap'ta uygulanir: graphify CLI yoksa `uv tool install graphifyy` ile otomatik kurar (init birincil, bootstrap ADIM 1.1.6 fallback; basarisizsa KOMPLE DURUR) ve ilk `graphify update <root>`'u best-effort calistir. Detaylar: `knowledge-graph/graphify/install.md`.
+Bootstrap does not install packages or trigger external commands by default — it only copies files. When this module is selected, Graphify artifacts and config are generated under Agentbase. If the `graphify` CLI is absent, bootstrap continues and does not install it. Details: `knowledge-graph/graphify/install.md`.

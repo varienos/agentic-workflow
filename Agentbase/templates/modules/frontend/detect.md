@@ -1,23 +1,23 @@
-# Frontend Kategori Tespiti
+# Frontend Category Detection
 
-Bu kategori frontend meta-framework'ler icin build, routing ve rendering kurallari saglar.
+This category provides build, routing, and rendering rules for frontend meta-frameworks.
 
 ## Variants
 
-| Varyant | Tespit Dosyasi | Oncelik | Not |
+| Variant | Detection File | Priority | Note |
 |---------|---------------|---------|-----|
-| Next.js | `frontend/nextjs/detect.md` | 1 | Next.js tespit edilirse React SPA aktive edilmez |
-| React SPA | `frontend/react/detect.md` | 2 | Standalone React SPA'lar (Vite, CRA, custom bundler) |
-| HTML/CSS/JS | `frontend/html/detect.md` | 3-fallback | Hicbir framework tespit edilmezse devreye girer |
+| Next.js | `frontend/nextjs/detect.md` | 1 | If Next.js is detected, React SPA is not activated |
+| React SPA | `frontend/react/detect.md` | 2 | Standalone React SPAs (Vite, CRA, custom bundler) |
+| HTML/CSS/JS | `frontend/html/detect.md` | 3-fallback | Activates when no framework is detected |
 
 ## Provides
 
-- Framework-spesifik rendering ve routing kurallari
-- Build optimizasyon kontrolleri
-- Code review agent'a framework pattern'leri eklenir
-- Vanilla web projelerinde semantik HTML ve erisilebirlik kurallari
+- Framework-specific rendering and routing rules
+- Build optimization checks
+- Framework patterns added to the code review agent
+- Semantic HTML and accessibility rules for vanilla web projects
 
 ## Affects Core
 
-- code-review: framework-spesifik anti-pattern kontrolu
-- task-hunter: IMPLEMENTATION_RULES'a framework kurallari eklenir
+- code-review: framework-specific anti-pattern check
+- task-hunter: Framework rules added to IMPLEMENTATION_RULES

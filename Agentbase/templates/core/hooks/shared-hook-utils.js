@@ -1,24 +1,24 @@
 'use strict';
 
 /**
- * shared-hook-utils.js — Hook ortak yardimci fonksiyonlari
- * Tum hook'lar ayni readStdin/createGuardHook pattern'ini kullanir.
+ * shared-hook-utils.js — Shared helper functions for hooks
+ * All hooks use the same readStdin/createGuardHook pattern.
  */
 
 const path = require('path');
 const fs = require('fs');
 
 /**
- * Hedef Codebase kokunu cozumler.
+ * Resolves the target Codebase root.
  *
- * Cozumleme sirasi (tek sozlesme):
- *   1. process.env.AGENTIC_CODEBASE_DIR  — runtime override (mutlak yol beklenir)
- *   2. fallbackRelative                  — bootstrap zamani manifest.project.structure'tan baked
+ * Resolution order (single contract):
+ *   1. process.env.AGENTIC_CODEBASE_DIR  — runtime override (absolute path expected)
+ *   2. fallbackRelative                  — baked from manifest.project.structure at bootstrap time
  *
- * @param {string} hookDir       Cagiran hook'un __dirname degeri
- * @param {string} fallbackRel   hookDir/../.. tabaninda hedef Codebase'e gotueren relatif yol
- *                               Tipik: '../Codebase' (manifest.project.structure default'u)
- * @returns {string}             realpathSync sonucu mutlak yol; cozum basarisizsa duz resolve sonucu
+ * @param {string} hookDir       Calling hook's __dirname value
+ * @param {string} fallbackRel   Relative path to Codebase from hookDir/../.. base
+ *                               Typical: '../Codebase' (manifest.project.structure default)
+ * @returns {string}             Absolute path from realpathSync; plain resolve result if resolution fails
  */
 function resolveCodebaseRoot(hookDir, fallbackRel) {
   const envPath = process.env.AGENTIC_CODEBASE_DIR;
@@ -60,13 +60,13 @@ function createGuardHook(rules, options = {}) {
           if (rule.decision === 'block') {
             process.stdout.write(JSON.stringify({ decision: 'block', reason: rule.reason }));
           } else {
-            const prefix = rule.decision === 'warn' ? '\u26a0\ufe0f UYARI' : '\u2139\ufe0f BILGI';
+            const prefix = rule.decision === 'warn' ? '\u26a0\ufe0f WARNING' : '\u2139\ufe0f INFO';
             process.stdout.write(JSON.stringify({ systemMessage: prefix + ': ' + rule.reason }));
           }
           return;
         }
       }
-    } catch (e) { /* Hook hatalari sessizce yutulur */ }
+    } catch (e) { /* Hook errors are swallowed silently */ }
   };
 }
 

@@ -33,27 +33,27 @@ venv/
 *~
 
 # ─────────────────────────────────────────────────────
-# BU PROJE'NIN KENDI GELISTIRME ORTAMI
-# (template'in parcasi degil, repo'ya girmez)
+# THIS PROJECT'S OWN DEVELOPMENT ENVIRONMENT
+# (not part of the template; does not enter the repo)
 # ─────────────────────────────────────────────────────
 
-# Root .claude/ — bu projeyi gelistirmek icin kullanilan CC config
-# (task-hunter.md, task-plan.md gibi proje-spesifik komutlar burada)
+# Root .claude/ — CC config used to develop this project
+# (project-specific commands such as task-hunter.md, task-plan.md live here)
 /.claude/
 /.gemini/
 /.agent/
 
-# Root CLAUDE.md — bu projenin kendi CC talimat dosyasi
+# Root CLAUDE.md — this project's own CC instruction file
 /CLAUDE.md
 
-# Root backlog — bu projenin kendi gorev takibi (IGNORE — repoya GIRMEZ)
-# Proje-spesifik gorev takibi
+# Root backlog — this project's own task tracking (IGNORE — does NOT enter the repo)
+# Project-specific task tracking
 /backlog/
 
-# Release gecici dosyalari
+# Release temporary files
 .release-notes.tmp
 
-# Diger proje-spesifik root dosyalar
+# Other project-specific root files
 AGENTS.md
 GEMINI.md
 .copilot/
@@ -61,11 +61,11 @@ GEMINI.md
 .github/copilot-instructions.md
 
 # ─────────────────────────────────────────────────────
-# AGENTBASE ICINDEKI BOOTSTRAP URETIMI
-# (template'in parcasi degil, hedef proje icin uretilir)
+# BOOTSTRAP OUTPUT INSIDE AGENTBASE
+# (not part of the template; produced for the target project)
 # ─────────────────────────────────────────────────────
 
-# Bootstrap ciktilari — /bootstrap calistirildiktan sonra olusur
+# Bootstrap outputs — created after /bootstrap runs
 Agentbase/.claude/settings.local.json
 Agentbase/.claude/settings.json
 Agentbase/.claude/CLAUDE.md
@@ -77,7 +77,7 @@ Agentbase/.mcp.json
 Agentbase/.claude-ignore
 Agentbase/CLAUDE.md
 
-# Transform ciktilari (transform.js uretir — hedef CLI yapilandirmalari)
+# Transform outputs (produced by transform.js — target CLI configurations)
 Agentbase/.gemini/
 Agentbase/.codex/
 Agentbase/.kimi/
@@ -85,48 +85,48 @@ Agentbase/.opencode/
 Agentbase/GEMINI.md
 Agentbase/AGENTS.md
 
-# Runtime verisi (oturum bazli)
+# Runtime data (session-based)
 Agentbase/.claude/tracking/sessions/session-*.json
 Agentbase/.claude/reports/deploys/deploy-*.md
 Agentbase/.claude/hooks/.test-reminder-state.json
 Agentbase/.claude/hooks/.drift-state.json
 
-# Agentbase backlog (hedef proje icin bootstrap uretir)
+# Agentbase backlog (bootstrap produces this for the target project)
 Agentbase/backlog/
 
 # ─────────────────────────────────────────────────────
-# REPO'DA KALAN DOSYALAR (asagidakiler TRACKED):
+# FILES THAT REMAIN IN THE REPO (the following are TRACKED):
 #
-# Agentbase/.claude/commands/bootstrap.md  ← Template'in bootstrap komutu
-# Agentbase/templates/                     ← Skeleton dosyalar (template'in ozu)
-# Agentbase/generate.js                    ← Deterministik uretim betigi
-# Agentbase/bin/session-monitor.js         ← Oturum izleme araci
+# Agentbase/.claude/commands/bootstrap.md  ← Template bootstrap command
+# Agentbase/templates/                     ← Skeleton files (core of the template)
+# Agentbase/generate.js                    ← Deterministic generation script
+# Agentbase/bin/session-monitor.js         ← Session monitoring tool
 # Agentbase/tests/                         ← Test suite
-# Agentbase/*.md stub'lari                 ← Bootstrap dolduracak
-# Docbase/superpowers/                      ← Spec ve plan dokumanlari
+# Agentbase/*.md stubs                     ← Bootstrap will fill these
+# Docbase/superpowers/                      ← Spec and plan documents
 # ─────────────────────────────────────────────────────
 
-# Superpowers docs (spec/plan dosyalari — lokal gelistirme icin, repoya GIRMEZ)
+# Superpowers docs (spec/plan files — for local development; do NOT enter the repo)
 /docs/
 
-# Test ortami (bootstrap test icin kullanilir, icerik ignore)
+# Test environment (used for bootstrap tests; contents ignored)
 test/*
 !test/.gitkeep
 
-# Template repo placeholder'i: Codebase/.gitkeep tracked kalir ki klonda
-# Codebase/ dizini gorunsun. Hedef proje kokune bootstrap'in yazdigi
-# root-gitignore.skeleton daha siki davranir ve Codebase/ tamamini ignore eder.
+# Template repo placeholder: Codebase/.gitkeep stays tracked so the
+# Codebase/ directory appears after clone. The root-gitignore.skeleton that
+# bootstrap writes into the target project root is stricter and ignores all of Codebase/.
 Codebase/*
 !Codebase/.gitkeep
 
-# Codebase git worktree dizinleri de ust-kok gelistirici reposunda izlenmez.
-# Root-anchored (/): yalnizca repo kokundeki worktree'ler — nested Codebase-wt-* yollari degil.
+# Codebase git worktree directories are also not tracked in the upper-root developer repo.
+# Root-anchored (/): only worktrees at the repo root — not nested Codebase-wt-* paths.
 /Codebase-wt-*/
 
-# Docbase (Bootstrap uretir — proje-spesifik)
+# Docbase (Bootstrap produces — project-specific)
 Docbase/agentic/project-manifest.yaml
 /Docbase/superpowers/
 /Docbase/agentic/
 
-# Git worktrees (superpowers skill tarafindan kullanilir)
+# Git worktrees (used by the superpowers skill)
 .worktrees/

@@ -1,85 +1,78 @@
-# Bootstrap — Agentic Workflow Kurulum Sihirbazi
+# Bootstrap — Agentic Workflow Setup Wizard
 
-Bu komut projenizi analiz eder, sizinle kisa bir roportaj yapar ve tum agentic workflow yapilandirmasini olusturur. Her adim konsolda gorunur. Islem sonunda `.claude/` dizini, root dosyalar, manifest ve backlog hazir olur.
+This command analyzes your project, runs a short interview with you, and creates the full agentic workflow configuration. Every step is visible on the console. When finished, the `.claude/` directory, root files, manifest, and backlog are ready.
 
-**KURAL: Bu talimatlari harfi harfine, ADIM ADIM, sirasiyla uygula. Hicbir adimi atlama, hicbir adimi birlestirme. Her adimdaki ciktilari kullaniciya goster.**
+**RULE: Follow these instructions literally, STEP BY STEP, in order. Skip no step, merge no steps. Show the user the outputs from every step.**
 
-## KUTSAL KURALLAR
+## Invariant rules
 
-Bu kurallar Bootstrap'in ve urettigi tum dosyalarin temelini olusturur:
+These rules are the foundation of Bootstrap and of every file it produces:
 
-### 1. Git sadece Codebase'de calisir
-- Agentbase'de `.git/` YOKTUR. Agentbase sadece bir konfigürasyon dizinidir.
-- Tum git islemleri (commit, push, branch, worktree) `../Codebase/` icinde yapilir.
-- Command'lardaki git komutlari: `cd ../Codebase && git ...`
-- Worktree izolasyonu: `cd ../Codebase && git worktree add ...`
-- Bu ayrim Codebase'in guvenli worktree izolasyonunu saglar — agent ve backlog dosyalarindan bagimsiz.
-- Iki-repo teslimat modeli (opsiyonel): Proje koku (Agentbase/Codebase/Docbase'in USTU) gelistiricinin KENDI git reposu olabilir — Agentbase + Docbase'i versiyonlar, `Codebase`'i `.gitignore` ile yok sayar (bkz. ADIM 6.6). Codebase kendi bagimsiz reposudur ve musteriye AYRI teslim edilir (musteri sadece Codebase'i klonlar). Bu durumda bile `.git` proje kokune yazilir; **Agentbase icine YAZILMAZ** — yukaridaki "Agentbase'de `.git/` YOKTUR" kurali aynen korunur.
-- Ajan siniri: Ajan/workflow git islemleri (commit/push/branch/worktree) DAIMA `../Codebase/`'i hedefler; ust-kok (gelistirici) reposuna ASLA dokunmaz. Ust-kok repo gelistiricinin manuel aracidir, ajanlarin degil.
+### 1. Git runs only in Codebase
+- There is NO `.git/` inside Agentbase. Agentbase is a configuration directory only.
+- All git operations (commit, push, branch, worktree) run inside `../Codebase/`.
+- Git commands in commands: `cd ../Codebase && git ...`
+- Worktree isolation: `cd ../Codebase && git worktree add ...`
+- This split keeps Codebase's safe worktree isolation independent of agent and backlog files.
+- Two-repo delivery model (optional): The project root (the parent ABOVE Agentbase/Codebase/Docbase) may be the developer's OWN git repo — it versions Agentbase + Docbase and ignores `Codebase` via `.gitignore` (see STEP 6.6). Codebase is its own independent repo and is delivered SEPARATELY to the customer (the customer clones only Codebase). Even in that case `.git` is written at the project root; it is **NOT written inside Agentbase** — the "no `.git/` in Agentbase" rule above still holds.
+- Agent boundary: Agent/workflow git operations (commit/push/branch/worktree) ALWAYS target `../Codebase/`; the agent never touches the parent (developer) repository. The parent-root repo is the developer's manual tool, not the agents'.
 
-### 2. Bootstrap Codebase'e ASLA yazmaz (tek istisna: AI Import)
-- Bootstrap Codebase'i OKUR → Agentbase'i YAPILANDIRIR.
-- Codebase'deki hiçbir dosya degistirilmez, eklenmez veya silinmez.
-- Tum uretilen dosyalar **Agentbase/ icine** gider — alt dagilim:
-  - **Agentbase ROOT** (yani `Agentbase/` direkt) — **Bootstrap'in DOĞRUDAN urettigi (6+1 root dokuman + 1 mcp config)**: `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md` (root context), `onboarding.md` (yeni gelistirici rehberi), `.claude-ignore`, `.mcp.json` (zorunlu — `templates/core/mcp.skeleton.json` kaynagindan). **Bootstrap'in cagirdigi araclarin urettigi**: `backlog/` (Backlog.md CLI), `../Docbase/memory/` (basic-memory vault). **Repo'da hazir gelen (statik root dokumanlar — Bootstrap doldurmaz, root `CLAUDE.md`'deki `@<dosya>` zincirine dahil edilir)**: `ORCHESTRATION.md` (ortak ajan davranis felsefesi — tum modeller icin), `LESSONS.md` (oz-gelisim dersleri), `BACKLOG.md` (Backlog CLI hizli referans). **Repo'da hazir gelen (kod ve template altyapisi)**: `bin/`, `templates/`, `tests/`, `generate.js`, `transform.js`, `package.json`.
-  - **Agentbase/.claude/** altinda: `commands/`, `agents/`, `hooks/`, `rules/`, `reports/`, `tracking/`, `custom/`, `settings.json`, `CLAUDE.md` (agent-icin dahili runtime config — root `CLAUDE.md`'den AYRI bir dosya, son kullaniciya degil agent'a yoneliktir).
-  - **Manifest:** `../Docbase/agentic/project-manifest.yaml` (Agentbase **disinda**, Docbase altinda).
-  - **Transform.js opsiyonel ciktilari** (`manifest.targets` icinde `claude` disinda hedef varsa): `GEMINI.md` (gemini/antigravity hedefi → Agentbase root), `.agents/workflows/*`, `.agents/skills/*/SKILL.md`, `.agents/rules/*` (antigravity hedefi), `AGENTS.md` + `.codex/skills/*/SKILL.md` (codex hedefi → Agentbase root + `.codex/`), `.kimi/skills/`, `.kimi/agents/` (kimi hedefi), `.opencode/AGENTS.md` + `.opencode/skills/` + `.opencode/agents/` (opencode hedefi). Bu dosyalar root `CLAUDE.md` icerigini hedef CLI formatina cevirir — enjeksiyon zinciri otomatik korunur.
-  - **YASAK:** Root dokumanlari (PROJECT.md, STACK.md, DEVELOPER.md, ARCHITECTURE.md, WORKFLOWS.md, ORCHESTRATION.md, LESSONS.md, BACKLOG.md, root CLAUDE.md, onboarding.md) `.claude/` altina YAZMA veya KOPYALAMA. `.claude/` agent runtime konfiguudur, dokumantasyon degil. Bu dosyalar gercek Agentbase root'unda kalir ki **tum modeller (Claude, Gemini, Antigravity, Codex, Kimi, OpenCode) ayni context'i okuyabilsin**.
-- Manifest `../Docbase/agentic/` altina gider (Codebase disinda).
-- Projenin mevcut .gitignore, package.json, CI config dosyalari korunur.
+### 2. Bootstrap NEVER writes to Codebase (single exception: AI Import)
+- Bootstrap READS Codebase → CONFIGURES Agentbase.
+- No file in Codebase is changed, added, or deleted.
+- All generated files go **into Agentbase/** — distribution:
+  - **Agentbase ROOT** (i.e. directly under `Agentbase/`) — **produced DIRECTLY by Bootstrap (6+1 root documents + 1 mcp config)**: `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md` (root context), `onboarding.md` (new developer guide), `.claude-ignore`, `.mcp.json` (required — from `templates/core/mcp.skeleton.json`). **Produced by tools Bootstrap invokes**: `backlog/` (Backlog.md CLI), `../Docbase/memory/` (basic-memory vault). **Shipped with the repo (static root documents — Bootstrap does not fill these; they are included via the `@<file>` chain in root `CLAUDE.md`)**: `ORCHESTRATION.md` (shared agent behavior philosophy — for all models), `LESSONS.md` (self-improvement lessons), `BACKLOG.md` (Backlog CLI quick reference). **Shipped with the repo (code and template infrastructure)**: `bin/`, `templates/`, `tests/`, `generate.js`, `transform.js`, `package.json`.
+  - **Under Agentbase/.claude/**: `commands/`, `agents/`, `hooks/`, `rules/`, `reports/`, `tracking/`, `custom/`, `settings.json`, `CLAUDE.md` (internal runtime config for the agent — a SEPARATE file from root `CLAUDE.md`, aimed at the agent, not the end user).
+  - **Manifest:** `../Docbase/agentic/project-manifest.yaml` (**outside** Agentbase, under Docbase).
+  - **Optional transform.js outputs** (when `manifest.targets` has a target other than `claude`): `GEMINI.md` (gemini/antigravity target → Agentbase root), `.agents/workflows/*`, `.agents/skills/*/SKILL.md`, `.agents/rules/*` (antigravity target), `AGENTS.md` + `.codex/skills/*/SKILL.md` (codex target → Agentbase root + `.codex/`), `.kimi/skills/`, `.kimi/agents/` (kimi target), `.opencode/AGENTS.md` + `.opencode/skills/` + `.opencode/agents/` (opencode target). These files convert root `CLAUDE.md` content into the target CLI format — the injection chain is preserved automatically.
+  - **FORBIDDEN:** Do NOT WRITE or COPY root documents (PROJECT.md, STACK.md, DEVELOPER.md, ARCHITECTURE.md, WORKFLOWS.md, ORCHESTRATION.md, LESSONS.md, BACKLOG.md, root CLAUDE.md, onboarding.md) under `.claude/`. `.claude/` is agent runtime config, not documentation. These files stay at the real Agentbase root so **all models (Claude, Gemini, Antigravity, Codex, Kimi, OpenCode) can read the same context**.
+- The manifest goes under `../Docbase/agentic/` (outside Codebase).
+- The project's existing .gitignore, package.json, and CI config files are preserved.
 
-**ISTISNA — AI Import (Adim 1.2.5):** Kullanicinin cift onayiyla (tam metin
-"TASIMA VE SILME ONAYI") Codebase icindeki onceki Claude Code ve Backlog
-varlıklari (`.claude/`, `.claude/memory/`, `.claude/agent-memory/`, `CLAUDE.md`,
-`.mcp.json`, `backlog/*`) Agentbase'e tasinir ve kaynak Codebase'ten silinir.
-Bu tek istisna disinda Codebase'e yazma/silme ASLA yapilmaz.
+**EXCEPTION — AI Import (Step 1.2.5):** With the user's double confirmation (exact text
+"MOVE AND DELETE APPROVED"), prior Claude Code and Backlog
+assets inside Codebase (`.claude/`, `.claude/memory/`, `.claude/agent-memory/`, `CLAUDE.md`,
+`.mcp.json`, `backlog/*`) are moved into Agentbase and deleted from source Codebase.
+Outside this single exception, writing/deleting in Codebase is NEVER done.
 
 ---
 
-## ADIM 0 — `/goal` MOD ZORUNLULUĞU (Tamamlama Garantisi)
+## STEP 0 — Host runtime and completion guarantee
 
-Bootstrap çok-adımlı, çok-teammate'li ve yarıda kesilmesi tehlikeli bir süreçtir. Geçmiş hatalar:
+Bootstrap is a multi-step, multi-teammate process that is dangerous to leave half-finished. Past failures:
 
-- Dosyaların yanlış konuma yazılması (örn. `.claude/PROJECT.md`).
-- Sonda açık kalan konular (eksik teammate çıktıları, yarım manifest, yazılmayan root dokümanları).
-- Tek-turlu yanıtla bitirilmeye çalışılan iş.
+- Files written to the wrong location (e.g. `.claude/PROJECT.md`).
+- Open issues at the end (missing teammate outputs, incomplete manifest, unwritten root documents).
+- Attempts to finish in a single-turn response.
 
-**Çözüm:** Bu komut Claude Code 2.1.139+ tarafından sunulan native `/goal` modunda çalıştırılmalıdır. `/goal` her turdan sonra evaluator model devreye sokar; ADIM 8'deki tamamlama kapısı (verification gate) TRUE dönmedikçe Claude yeni turda eksikleri tamamlamaya devam eder.
+**Approach:** This wizard runs on **any host agent**. Claude is one host, not the product. The completion condition is the STEP 8 verification gate (`BOOTSTRAP_COMPLETE`). On a Claude host you may optionally wrap the run with `/goal` so an evaluator keeps driving until the gate passes; other hosts do not run Claude hooks or `/goal` automatically — they must apply the self-discipline rules in 0.3 and finish at STEP 8.
 
-### 0.1 Çağrı Şekli Kontrolü
+### 0.1 Startup notice
 
-İdeal çağrı:
-
-```
-/goal /bootstrap until "ADIM 8 verification gate tüm TRUE (BOOTSTRAP_COMPLETE marker stdout'a basıldı)"
-```
-
-Mevcut session'ın `/goal` modunda olup olmadığını doğrudan tespit edemezsin (Claude Code bunu prompt'a yansıtmıyor). Bu nedenle aşağıdaki kuralı uygula:
-
-1. **Sürecin başında kullanıcıya bildir** — ilk konsol çıktısı şu olur:
+At the start of the process, notify the user — the first console output is:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Bootstrap /goal modunda çalıştırılmalıdır.
-   Bu mod yarıda kalmayı önler ve evaluator
-   her turdan sonra tamamlanmayı doğrular.
+🎯 Bootstrap setup wizard
+   Runs on any host agent. Completion is
+   the STEP 8 verification gate
+   (BOOTSTRAP_COMPLETE).
 
-   Önerilen çağrı:
-     /goal /bootstrap until "ADIM 8 verification gate tüm TRUE"
+   On Claude hosts, /goal is optional and
+   can help prevent half-finished runs.
+   Other hosts do not run /goal or Claude
+   hooks automatically — follow every STEP
+   through STEP 8.
 
-   Doğrudan /bootstrap ile başlattıysanız ve
-   ADIM 8 fail ederse, manuel olarak yukarıdaki
-   /goal çağrısıyla yeniden başlatın.
+   Continue with Enter >
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Devam etmek için Enter >
 ```
 
-2. **Bu uyarıyı atlama** — `--bypass-permissions` aktif olsa bile bu mesaj gösterilmeli; kullanıcı bilinçli karar verebilsin.
+2. **Do not skip this notice** — show it even when a host-specific permission bypass is active so the user can make a conscious decision.
 
-### 0.2 Tamamlama Koşulu (ADIM 8 İçin Referans)
+### 0.2 Completion condition (reference for STEP 8)
 
-`/goal` modunda evaluator şu koşulu kontrol edecek (ADIM 8'de machine-checkable olarak doğrulanır):
+The STEP 8 gate is machine-checkable as follows (hosts that optionally use `/goal` may treat this as the evaluator stop condition):
 
 ```
 BOOTSTRAP_COMPLETE = (
@@ -95,576 +88,572 @@ BOOTSTRAP_COMPLETE = (
 )
 ```
 
-Bu koşulun her bir bileşeni ADIM 8'de bash test komutlarıyla doğrulanır. FAIL durumunda Claude (veya `/goal` evaluator'ı) eksik bileşeni tamamlamak için yeni tura geçer.
+Each component of this condition is verified in STEP 8 with bash test commands. On FAIL, the host agent (or an optional Claude `/goal` evaluator) starts a new turn to complete the missing component.
 
-### 0.3 Self-Disipline Kuralları (Tek-turlu Modda)
+### 0.3 Self-discipline rules (single-turn / non-`/goal` hosts)
 
-Eğer kullanıcı `/goal` olmadan başlatırsa şu disiplinleri uygula:
+If the user starts without `/goal` (or the host does not support it), apply these disciplines:
 
-1. **Hiçbir adımı atlama** — "burada zaten doğru" varsayımı yapma; her dosya yazımını yap.
-2. **Hiçbir adımı erken sonlandırma** — `_partial`, `TODO:`, `<!-- CLAUDE_FILL: ... -->` marker'ları **kalmamalı** (CLAUDE_FILL doldurma adımı atlanmamalı).
-3. **Konum doğrulama** — her dosya yazımından sonra path'i konsola basın: `✏️  yazildi: <abs-path>`. Bu log ADIM 8'de scan edilir.
-4. **Sonda ADIM 8 zorunlu** — atlama.
+1. **Skip no step** — do not assume "this is already correct"; perform every file write.
+2. **End no step early** — `_partial`, `TODO:`, `<!-- CLAUDE_FILL: ... -->` markers **must not remain** (the CLAUDE_FILL fill step must not be skipped).
+3. **Path verification** — after every file write, print the path to the console: `✏️  written: <abs-path>`. This log is scanned in STEP 8.
+4. **STEP 8 at the end is mandatory** — do not skip it.
 
 ---
 
-## ADIM 1 — ON KOSUL KONTROLLERI
+## STEP 1 — PRECONDITION CHECKS
 
-Asagidaki kontrolleri SIRAYLA yap. Herhangi biri basarisiz olursa DUR, devam etme.
+Run the checks below IN ORDER. If any one fails, STOP; do not continue.
 
-### 1.0 Izin Modu Onerisi
+### 1.0 Permission mode suggestion
 
-Bootstrap cok sayida dosya olusturma, dizin yaratma ve backlog islemleri yapacak. Her bir islem icin izin sormak sureci yavaslatir. Kullaniciya su oneriyi goster:
+Bootstrap will create many files, directories, and backlog operations. Asking for permission on every operation slows the process. Show the user this suggestion:
 
 ```
-💡 Bootstrap cok sayida dosya islemi yapacak.
-   Sureci hizlandirmak icin --bypass-permissions ile calistirmanizi oneriyoruz.
+💡 Bootstrap will perform many file operations.
+   If your host agent supports a permission-bypass
+   or auto-approve mode, enabling it can speed up
+   the run. This is an optional host-specific
+   speedup — not a product requirement.
 
-   Mevcut oturumda bypass aktif mi kontrol edin.
-   Degilse bu oturumu kapatip su komutla yeniden baslatabilirsiniz:
-     claude --bypass-permissions
-
-   Devam etmek icin Enter'a basin >
+   Continue with Enter >
 ```
 
-> Bu bir ONERI — zorunluluk degil. Kullanıcı devam etmek isterse bypass olmadan da calisir.
+> This is a SUGGESTION — not a requirement. The wizard works without bypass if the user continues.
 
-### 1.0.5 Bootstrap Baslangic Sentinel'i
+### 1.0.5 Bootstrap start sentinel
 
-Codebase sizinti kontrolunun dogru calismasi icin bootstrap dosya yazimlari baslamadan once sentinel dosyasini olustur:
+So the Codebase leak check works correctly, create the sentinel file before Bootstrap file writes begin:
 
 ```bash
 : > /tmp/bootstrap-start
-echo "✅ Bootstrap sentinel hazir: /tmp/bootstrap-start"
+echo "✅ Bootstrap sentinel ready: /tmp/bootstrap-start"
 ```
 
-Bu dosya ADIM 8 Gate H tarafindan kullanilir. Sentinel yoksa Gate H fail eder; boylece Codebase'e yanlis konumda yazilan dosyalar sessizce kacmaz.
+This file is used by STEP 8 Gate H. If the sentinel is missing, Gate H fails; that way files wrongly written into Codebase cannot slip through silently.
 
-### 1.1 Backlog CLI Kontrolu
+### 1.1 Backlog CLI check
 
-Bash ile calistir: `which backlog`
+Run with bash: `which backlog`
 
-- **Bulunamazsa** → Kullaniciya su mesaji goster ve KOMPLE DUR, hicbir adima devam etme:
+- **If not found** → Show the user this message and STOP COMPLETELY; do not continue to any step:
 
 ```
-❌ Backlog.md CLI kurulu degil. Bu workflow Backlog.md olmadan calismaz.
+❌ Backlog.md CLI is not installed. This workflow does not work without Backlog.md.
 
-Kurulum secenekleri:
+Install options:
   npm i -g backlog.md
-  veya
+  or
   brew install backlog-md
 
-Kurduktan sonra /bootstrap komutunu tekrar calistirin.
+After installing, run the /bootstrap command again.
 ```
 
-- **Bulunursa** → `✅ Backlog CLI bulundu` yazdir ve devam et.
+- **If found** → print `✅ Backlog CLI found` and continue.
 
-### 1.1.5 basic-memory MCP Kontrolu (Shared Agent Memory Layer)
+### 1.1.5 basic-memory MCP check (Shared Agent Memory Layer)
 
-Bu workflow `basic-memory` MCP'sini **zorunlu** olarak kullanir. Vault: `Docbase/memory/` — tum ajanlar (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) ayni Markdown knowledge graph'ina baglanir. Oturum/CLI arasi paylasilan hafiza icin tek kaynak.
+This workflow uses the `basic-memory` MCP as **required**. Vault: `../Docbase/memory/` — all agents (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connect to the same Markdown knowledge graph. Single source for shared memory across sessions/CLIs.
 
-**1.1.5.a — `uv` (Python paket yoneticisi) Kontrolu**
+**1.1.5.a — `uv` (Python package manager) check**
 
-Bash ile calistir: `command -v uv >/dev/null 2>&1 && uv --version || echo "__UV_MISSING__"`
+Run with bash: `command -v uv >/dev/null 2>&1 && uv --version || echo "__UV_MISSING__"`
 
-- **`__UV_MISSING__`** → Kullaniciya su mesaji goster ve KOMPLE DUR:
+- **`__UV_MISSING__`** → Show the user this message and STOP COMPLETELY:
 
 ```
-❌ uv (Python paket yoneticisi) kurulu degil. basic-memory MCP bu olmadan calismaz.
+❌ uv (Python package manager) is not installed. basic-memory MCP does not work without it.
 
-Kurulum (macOS / Linux):
+Install (macOS / Linux):
   curl -LsSf https://astral.sh/uv/install.sh | sh
 
-Kurulum (Windows PowerShell):
+Install (Windows PowerShell):
   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-Veya Homebrew:
+Or Homebrew:
   brew install uv
 
-Kurduktan sonra /bootstrap komutunu tekrar calistirin.
+After installing, run the /bootstrap command again.
 ```
 
-- **Varsa** → `✅ uv bulundu (<version>)` yazdir.
+- **If present** → print `✅ uv found (<version>)`.
 
-**1.1.5.a.2 — Python 3.12+ Kontrolu**
+**1.1.5.a.2 — Python 3.12+ check**
 
-basic-memory Python 3.12+ gerektirir. `uv` Python'i otomatik yonetir, ayri sistem Python'ina gerek yoktur.
+basic-memory requires Python 3.12+. `uv` manages Python automatically; a separate system Python is not needed.
 
-`uv python find` registry erisimi yapabildiginden ag/SSL hatasini "kurulu degil" diye yanlis yorumlamamak icin deterministik yerel kontrol kullanilir (1.1.5.b ile ayni pattern):
+Because `uv python find` can hit the registry, a deterministic local check is used so network/SSL errors are not misread as "not installed" (same pattern as 1.1.5.b):
 
 ```bash
-# 1) Yerelde kurulu mu? (ag erisimi gerekmez, registry hatasi etkilemez)
+# 1) Installed locally? (no network needed; registry errors do not affect this)
 if uv python list --only-installed 2>/dev/null | grep -Eq '^cpython-3\.(1[2-9]|[2-9][0-9])'; then
   echo "__PY_312_OK__"
 else
-  # 2) Yerelde yok — install denenebilir. Ag hatasi ayri yakalanir.
+  # 2) Not local — install may be tried. Network errors are caught separately.
   echo "__PY_312_MISSING__"
 fi
 ```
 
-- **`__PY_312_OK__`** → `✅ Python 3.12+ bulundu (uv-managed)` yazdir ve devam et.
+- **`__PY_312_OK__`** → print `✅ Python 3.12+ found (uv-managed)` and continue.
 
-- **`__PY_312_MISSING__`** → Kurulum dene (stderr yutulmaz):
+- **`__PY_312_MISSING__`** → Try install (stderr is not swallowed):
   ```bash
   if uv python install 3.12 2>/tmp/uv-py-stderr; then
-    echo "✅ Python 3.12 kuruldu (uv-managed)"
+    echo "✅ Python 3.12 installed (uv-managed)"
   else
     cat /tmp/uv-py-stderr
     echo "__PY_312_INSTALL_FAILED__"
   fi
   ```
-  - Basariliysa → devam et.
-  - `__PY_312_INSTALL_FAILED__` → Yukarida gosterilen stderr ag/proxy/SSL hatasi olabilir. Kullaniciya hata mesajini goster ve KOMPLE DUR. ASLA "Python yok, baska yerden indir" diye yorumlama — kok sebep ag olabilir.
+  - If successful → continue.
+  - `__PY_312_INSTALL_FAILED__` → The stderr shown above may be a network/proxy/SSL error. Show the user the error message and STOP COMPLETELY. NEVER interpret this as "Python is missing, download it elsewhere" — the root cause may be the network.
 
-**1.1.5.b — basic-memory Kurulum Kontrolu**
+**1.1.5.b — basic-memory install check**
 
-`uvx --version`'in stderr'ini yutmak yerine deterministik **kurulu paket** kontrolu yapilir. Bu, ag/registry/SSL hatalarini "kurulu degil" diye yanlis yorumlamaktan kacinir (silent failure korumasi).
+Instead of swallowing `uvx --version` stderr, a deterministic **installed package** check is used. This avoids misreading network/registry/SSL errors as "not installed" (silent-failure protection).
 
 ```bash
-# 1) Kurulu mu? (deterministik, ag erisimi gerekmez)
+# 1) Installed? (deterministic, no network needed)
 if uv tool list 2>/dev/null | grep -q "^basic-memory "; then
-  # 2) Kurulu — calistirma testi (gercek runtime hatalarini yakala)
+  # 2) Installed — runtime test (catch real runtime errors)
   if BM_VER=$(uvx basic-memory --version 2>/tmp/bm-stderr); then
     echo "__BM_OK__:$BM_VER"
   else
     echo "__BM_RUNTIME_ERROR__"
-    cat /tmp/bm-stderr  # Hata detayini kullaniciya goster
+    cat /tmp/bm-stderr  # Show error detail to the user
   fi
 else
   echo "__BM_MISSING__"
 fi
 ```
 
-- **`__BM_OK__:<version>`** → `✅ basic-memory bulundu (<version>)` yazdir ve devam et.
+- **`__BM_OK__:<version>`** → print `✅ basic-memory found (<version>)` and continue.
 
-- **`__BM_MISSING__`** → Otomatik kurulum dene: `uv tool install basic-memory`
-  - Kurulum basariliysa → `✅ basic-memory kuruldu` yazdir ve devam et.
-  - Kurulum hata verirse → stderr ciktisini kullaniciya goster ve KOMPLE DUR:
+- **`__BM_MISSING__`** → Try automatic install: `uv tool install basic-memory`
+  - If install succeeds → print `✅ basic-memory installed` and continue.
+  - If install fails → show stderr to the user and STOP COMPLETELY:
 
 ```
-❌ basic-memory kurulumu basarisiz.
+❌ basic-memory install failed.
 
-Manuel kurulum dene:
+Try manual install:
   uv tool install basic-memory
 
-Hata detaylari yukarida. Cozdukten sonra /bootstrap komutunu tekrar calistirin.
+Error details above. After fixing, run the /bootstrap command again.
 ```
 
-- **`__BM_RUNTIME_ERROR__`** → basic-memory kurulu **ama calistirilamiyor** (yaygin sebepler: ag/proxy/SSL, bozulmus install, izin sorunu). Stderr detaylarini kullaniciya goster ve KOMPLE DUR. ASLA "kurulu degil" diye yorumlama — yeniden kurulum bu hatayi cozmez.
+- **`__BM_RUNTIME_ERROR__`** → basic-memory is installed **but cannot run** (common causes: network/proxy/SSL, broken install, permission issue). Show stderr details to the user and STOP COMPLETELY. NEVER interpret this as "not installed" — reinstalling alone will not fix this error.
 
 ```
-❌ basic-memory kurulu ama calistirilamiyor.
+❌ basic-memory is installed but cannot run.
 
-Yukaridaki stderr ciktisini kontrol edin. Sik nedenler:
-  - Ag/proxy/SSL hatasi (firma agi, VPN)
-  - Bozulmus kurulum (cozum: uv tool uninstall basic-memory && uv tool install basic-memory)
-  - Izin sorunu (uv tool dizinindeki dosyalar)
+Check the stderr output above. Common causes:
+  - Network/proxy/SSL error (corporate network, VPN)
+  - Broken install (fix: uv tool uninstall basic-memory && uv tool install basic-memory)
+  - Permission issue (files under the uv tool directory)
 
-Sorunu cozdukten sonra /bootstrap komutunu tekrar calistirin.
+After fixing the problem, run the /bootstrap command again.
 ```
 
-**Not:** Vault dizini (`../Docbase/memory/`) olusturma ve project register islemi ADIM 5'te Teammate 5 root-generator tarafindan yapilir — bu adim sadece bagimliligin varligini dogrular.
+**Note:** Creating the vault directory (`../Docbase/memory/`) and project register is done in STEP 5 by Teammate 5 root-generator — this step only verifies that the dependency exists.
 
-### 1.1.6 graphify CLI Kontrolu (Knowledge-Graph — Zorunlu Modul)
+### 1.1.6 graphify CLI check (Knowledge-Graph — optional)
 
-Bu workflow `knowledge-graph/graphify` modulunu **zorunlu** olarak icerir. graphify, kod-iliski kesfinde (`X nerede`, `Y'yi ne kullaniyor`) grep/find yerine BFS query ile ~150-540x token tasarrufu saglar; CLI olmadan modul calismaz.
+This workflow can use the `knowledge-graph/graphify` module for code-relationship discovery (`where is X`, `what uses Y`) with BFS queries instead of grep/find (~150-540x token savings). The graphify CLI is **optional**. Absence must **not** stop the wizard.
 
-> **🔗 init dikisi:** `npm run init` calistirildiysa graphify CLI'i zaten kurmustur (`ensureGraphify`). Bu adim yalnizca `command -v graphify` ile teyit eder — kuruluysa kurulum atlanir.
+> **🔗 init stitch:** If `npm run init` already ran, it may have installed the graphify CLI (`ensureGraphify`). This step only confirms with `command -v graphify` — if present, take no further install action.
 
-`uv` ve Python 3.12+ ADIM 1.1.5.a / 1.1.5.a.2'de zaten dogrulandi (graphify Python 3.10+ ister, bu kosul karsilanir). Tekrar kontrol edilmez.
+`uv` and Python 3.12+ were already verified in STEP 1.1.5.a / 1.1.5.a.2 (graphify wants Python 3.10+; that condition is met). Do not re-check.
 
-Bash ile calistir: `command -v graphify >/dev/null 2>&1 && echo "__GRAPHIFY_OK__" || echo "__GRAPHIFY_MISSING__"`
+Run with bash: `command -v graphify >/dev/null 2>&1 && echo "__GRAPHIFY_OK__" || echo "__GRAPHIFY_MISSING__"`
 
-- **`__GRAPHIFY_OK__`** → `✅ graphify bulundu` yazdir ve devam et (init kurmus olabilir).
+- **`__GRAPHIFY_OK__`** → print `✅ graphify found` and continue (init may have installed it).
 
-- **`__GRAPHIFY_MISSING__`** → Otomatik kurulum dene: `uv tool install graphifyy`
-  - Kurulum basariliysa → `✅ graphify kuruldu` yazdir ve devam et.
-  - Kurulum hata verirse → stderr ciktisini kullaniciya goster ve KOMPLE DUR:
+- **`__GRAPHIFY_MISSING__`** → print that graphify is optional and continue. Do **not** install it. Do **not** stop the wizard:
 
 ```
-❌ graphify CLI kurulumu basarisiz.
-
-Manuel kurulum dene:
-  uv tool install graphifyy
-
-Hata detaylari yukarida. Cozdukten sonra /bootstrap komutunu tekrar calistirin.
+ℹ️ graphify CLI is not installed. It is optional —
+   the wizard continues without it. Knowledge-graph
+   features that need the CLI will be limited until
+   you install it later if you want them.
 ```
 
-**Not:** Skill kurulumu (`graphify install` / `graphify claude install`) **ZORUNLU DEGILDIR ve calistirilMAZ** — bu komutlar cwd'ye `CLAUDE.md` + `.claude/settings.json` PreToolUse hook yazarak Kutsal Kural 2'yi (Codebase'e config yazma yasagi) ihlal eder. CLI + `graphify update`/`query` skill olmadan calisir; graphify config'i yalnizca Agentbase tarafinda generate edilir.
+**Note:** Skill install (`graphify install` / `graphify claude install`) is **NOT required and must NOT be run** — those commands write `CLAUDE.md` + `.claude/settings.json` PreToolUse hooks into the cwd and can violate Invariant rule 2 (Codebase write ban). The CLI + `graphify update`/`query` work without the skill; graphify config is generated only on the Agentbase side.
 
-### 1.2 Codebase Kontrolu
+### 1.2 Codebase check
 
-`../Codebase/` dizinini kontrol et (Agentbase'e gore goreceli yol).
+Check the `../Codebase/` directory (path relative to Agentbase).
 
-Bash ile calistir: `if [ ! -d ../Codebase ]; then echo "__CODEBASE_MISSING__"; else find ../Codebase -mindepth 1 -maxdepth 1 ! -name '.gitkeep' ! -name '.DS_Store' -print 2>/dev/null | head -5; fi`
+Run with bash: `if [ ! -d ../Codebase ]; then echo "__CODEBASE_MISSING__"; else find ../Codebase -mindepth 1 -maxdepth 1 ! -name '.gitkeep' ! -name '.DS_Store' -print 2>/dev/null | head -5; fi`
 
-- **Cikti `__CODEBASE_MISSING__` ise** → Kullaniciya su mesaji goster ve KOMPLE DUR:
+- **If output is `__CODEBASE_MISSING__`** → Show the user this message and STOP COMPLETELY:
 
 ```
-❌ Codebase/ dizini bulunamadi.
-Projenizi bu dizine koyun veya sembolik link olusturun:
+❌ Codebase/ directory not found.
+Put your project in this directory or create a symbolic link:
 
   ln -s /path/to/your/project ../Codebase
 
-Ardindan /bootstrap komutunu tekrar calistirin.
+Then run the /bootstrap command again.
 ```
 
-- **Dizin var ama bos** (`.gitkeep` ve `.DS_Store` placeholder kabul edilir) → Greenfield moduna gec. Kullaniciya `AskUserQuestion` ile sor (plain text prompt kullanma):
+- **Directory exists but is empty** (`.gitkeep` and `.DS_Store` count as placeholders) → Switch to Greenfield mode. Ask the user with `AskUserQuestion` (do not use a plain text prompt):
 
 ```yaml
-AskUserQuestion cagrisi:
-  question: "📦 Codebase/ dizini boş. Sıfırdan yeni bir proje mi başlıyorsunuz?"
+AskUserQuestion call:
+  question: "📦 Codebase/ directory is empty. Are you starting a brand-new project from scratch?"
   header: "Greenfield"
   multiSelect: false
   options:
-    - label: "Evet, greenfield"
-      description: "Stack ve proje bilgileri röportajda sorulacak"
-    - label: "Hayır, duracağım"
-      description: "Önce projeyi Codebase/ dizinine koyacağım"
+    - label: "Yes, greenfield"
+      description: "Stack and project details will be asked in the interview"
+    - label: "No, I will stop"
+      description: "I will put the project into Codebase/ first"
 ```
 
-  - **"Evet, greenfield"** → `GREENFIELD_MODE = true` olarak kaydet. `✅ Greenfield modu aktif` yazdir ve devam et.
-  - **"Hayır, duracağım"** → KOMPLE DUR (mevcut davranis).
+  - **"Yes, greenfield"** → Record `GREENFIELD_MODE = true`. Print `✅ Greenfield mode active` and continue.
+  - **"No, I will stop"** → STOP COMPLETELY (existing behavior).
 
-- **Gercek dosyalar varsa** → `GREENFIELD_MODE = false`. `✅ Codebase bulundu` yazdir, bulunan ust-duzey dosya/klasorleri listele ve devam et.
+- **If real files exist** → `GREENFIELD_MODE = false`. Print `✅ Codebase found`, list the top-level files/folders found, and continue.
 
-### 1.2.5 Codebase AI Varlik Import
+### 1.2.5 Codebase AI asset import
 
-`GREENFIELD_MODE = false` ise Codebase'te önceki Claude Code veya Backlog
-varliklari (`.claude/`, `CLAUDE.md`, `.mcp.json`, `backlog/tasks/` vb.)
-olabilir. Bu varliklari tespit et ve kullaniciya import secenegi sun.
+If `GREENFIELD_MODE = false`, Codebase may contain prior Claude Code or Backlog
+assets (`.claude/`, `CLAUDE.md`, `.mcp.json`, `backlog/tasks/`, etc.).
+Detect these assets and offer the user an import option.
 
-**Adim 1.2.5.a — Tespit (dry-run):**
+**Step 1.2.5.a — Detect (dry-run):**
 
 ```
 node bin/import-codebase-ai.js --codebase ../Codebase --agentbase . --dry-run
 ```
 
-Script stdout'unu kullaniciya aynen goster. Son satirdaki marker'a gore:
+Show the script stdout to the user as-is. Based on the marker on the last line:
 
-- **`NO_IMPORT_NEEDED`** → Codebase'te AI varligi yok. Adim 1.3'e gec.
-- **`IMPORT_CANCELLED`** → Hedef cakismasi var (raporda listelenir). Manuel
-  inceleme gerekli, kullaniciya bildir ve Adim 1.3'e gec.
-- **`IMPORT_DONE`** (dry-run isaretiyle) → Tespit tamamlandi, Adim 1.2.5.b'ye
-  gec.
-- **`IMPORT_ERROR`** → Stderr mesajini goster ve KOMPLE DUR.
+- **`NO_IMPORT_NEEDED`** → No AI assets in Codebase. Go to Step 1.3.
+- **`IMPORT_CANCELLED`** → Target conflict (listed in the report). Manual
+  review needed; notify the user and go to Step 1.3.
+- **`IMPORT_DONE`** (with dry-run marker) → Detection complete; go to
+  Step 1.2.5.b.
+- **`IMPORT_ERROR`** → Show the stderr message and STOP COMPLETELY.
 
-**Adim 1.2.5.b — Chat uzerinden cift onay:**
+**Step 1.2.5.b — Double confirmation over chat:**
 
-Claude Code / Gemini CLI icinde `node --interactive` TTY saglamaz. Bu yuzden
-cift onay script yerine bu akisin icinde kullanici ile chat uzerinden alinir.
+Inside Claude Code / Gemini CLI, `node --interactive` does not provide a TTY. Therefore
+double confirmation is taken with the user over chat inside this flow, not by the script.
 
-Kullaniciya dry-run ciktisini ozetleyip su mesaji goster:
-
-```
-Yukaridaki varliklar Codebase'ten Agentbase'e tasinacak ve Codebase'ten
-silinecek. Devam etmek istiyor musunuz? (yes/no)
-```
-
-- Kullanici `no` / `hayir` / bos yanit verirse → "Import iptal edildi, mevcut
-  Codebase korundu" yazdir ve Adim 1.3'e gec.
-- Kullanici `yes` / `evet` verirse ikinci onayi iste:
+Summarize the dry-run output for the user and show this message:
 
 ```
-⚠️  KUTSAL KURAL 2 MUAFIYETI
-Bu islem Codebase'teki dosyalari silecek (geri donusu git history'dedir).
-Onaylamak icin tam metni yaziniz:
-
-  TASIMA VE SILME ONAYI
+The assets above will be moved from Codebase to Agentbase and deleted from
+Codebase. Do you want to continue? (yes/no)
 ```
 
-- Kullanicinin yaniti tam olarak `TASIMA VE SILME ONAYI` degilse → iptal,
-  Adim 1.3'e gec.
-- Tam metin eslesirse Adim 1.2.5.c'ye gec.
+- If the user answers `no` / empty → print "Import cancelled, existing
+  Codebase preserved" and go to Step 1.3.
+- If the user answers `yes` → request the second confirmation:
 
-**Adim 1.2.5.c — Gercek yurutme (`--yes`):**
+```
+⚠️  INVARIANT RULE 2 EXEMPTION
+This operation will delete files in Codebase (recovery is via git history).
+To confirm, type the exact text:
+
+  MOVE AND DELETE APPROVED
+```
+
+- If the user's reply is not exactly `MOVE AND DELETE APPROVED` → cancel,
+  go to Step 1.3.
+- If the exact text matches → go to Step 1.2.5.c.
+
+**Step 1.2.5.c — Real execution (`--yes`):**
 
 ```
 node bin/import-codebase-ai.js --codebase ../Codebase --agentbase . --yes
 ```
 
-`--yes` bayragi chat uzerinden alinmis cift onayi scripte bildirir. Script
-interaktif prompt atlar ve tespit → kopya → silme → rapor adimlarini
-yurutur. Cikti marker'i:
+The `--yes` flag tells the script that double confirmation was already taken over chat. The script
+skips interactive prompts and runs detect → copy → delete → report.
+Output marker:
 
-- **`IMPORT_DONE`** → Rapor `Agentbase/.claude/custom/_imported/[ts]/import-report.md`
-  yolunu gosterir. Kullaniciya bildir ve Adim 1.3'e gec.
-- **`IMPORT_ERROR`** → Stderr mesajini goster ve KOMPLE DUR.
+- **`IMPORT_DONE`** → The report path is
+  `Agentbase/.claude/custom/_imported/[ts]/import-report.md`.
+  Notify the user and go to Step 1.3.
+- **`IMPORT_ERROR`** → Show the stderr message and STOP COMPLETELY.
 
-**ONEMLI — KUTSAL KURAL 2 MUAFIYETI:** Bu adim Codebase'e silme yapabilen tek
-bootstrap adimidir. Silme yalnizca Adim 1.2.5.b'deki cift onay tam olarak
-karsilandiysa yurutulur. `--yes` bayragi bu onayin scripte iletimi icindir;
-onay olmadan ASLA verilmez.
+**IMPORTANT — INVARIANT RULE 2 EXEMPTION:** This is the only
+bootstrap step that may delete inside Codebase. Deletion runs only when the double confirmation in
+Step 1.2.5.b is fully satisfied. The `--yes` flag exists to pass that confirmation to the script;
+it is NEVER given without confirmation.
 
-### 1.3 Onceki Bootstrap Kontrolu
+### 1.3 Prior Bootstrap check
 
-`../Docbase/agentic/project-manifest.yaml` dosyasinin varligini kontrol et.
+Check whether `../Docbase/agentic/project-manifest.yaml` exists.
 
-- **Dosya varsa**:
+- **If the file exists**:
 
-  **🔗 SLIM PATH (init dikişi) — önce bunu kontrol et:** Manifesti oku. Eğer `manifest.init.produced_by == "init-cli"` ve `manifest.init.narrative_pending == true` ise, bu init-sonrası **İLK** bootstrap'tır (yeniden çalıştırma değil). `bin/init.js` zaten detect + röportaj + manifest + generate.js'i deterministik olarak tamamlamıştır. Şunu yap ve bu 1.3 bölümünün geri kalanını (yeniden-çalıştırma menüsü) **ATLA**:
-  - Manifesti `templates/manifest.schema.js` `validateManifest` ile doğrula. Geçersizse SLIM PATH'i bırak ve aşağıdaki normal yeniden-çalıştırma akışına düş.
-  - Geçerliyse konsola yaz: `🔗 init dikişi algılandı — detect/röportaj/manifest atlanıyor, yalnızca CLAUDE_FILL narrative doldurulacak.` Ardından **ADIM 2 (codebase analizi), ADIM 3 (röportaj) ve ADIM 4 (manifest oluşturma) TAMAMEN ATLANIR** — init bunları üretti. Doğrudan ADIM 5'e geç: generate.js deterministik çıktısı zaten mevcuttur (yeniden üretim idempotenttir), teammate'ler **yalnızca CLAUDE_FILL narrative bloklarını ve root dokümanlarını** doldurur. ADIM 8 GATE değişmeden çalışır.
+  **🔗 SLIM PATH (init stitch) — check this first:** Read the manifest. If `manifest.init.produced_by == "init-cli"` and `manifest.init.narrative_pending == true`, this is the **FIRST** bootstrap after init (not a re-run). `bin/init.js` has already completed detect + interview + manifest + generate.js deterministically. Do the following and **SKIP** the rest of this 1.3 section (the re-run menu):
+  - Validate the manifest with `templates/manifest.schema.js` `validateManifest`. If invalid, leave the SLIM PATH and fall through to the normal re-run flow below.
+  - If valid, print to the console: `🔗 init stitch detected — skipping detect/interview/manifest; only CLAUDE_FILL narrative will be filled.` Then **STEP 2 (codebase analysis), STEP 3 (interview), and STEP 4 (manifest creation) are SKIPPED ENTIRELY** — init produced them. Go directly to STEP 5: generate.js deterministic output already exists (regeneration is idempotent); teammates fill **only CLAUDE_FILL narrative blocks and root documents**. STEP 8 GATE still runs unchanged.
 
-  Aksi halde (init imzası yoksa) bu **önceki bir bootstrap** çalıştırmasıdır; aşağıdaki yeniden-çalıştırma akışını uygula:
+  Otherwise (no init signature) this is a **prior bootstrap** run; apply the re-run flow below:
 
-  1. Mevcut manifesti oku.
-  2. `manifest.version` alanini kontrol et. Beklenen major surum `1` kabul edilir.
-  3. Uyumluluk kararini ver:
-     - major ayniysa → `UYUMLU` (`merge` ve `incremental` kullanilabilir)
-     - major farkliysa veya alan yoksa → `UYUMSUZ` (yalnizca `overwrite` veya iptal)
-  4. Bootstrap-yonetimli dosyalarda yerel degisiklik var mi kontrol et. Yonetilen kapsam:
+  1. Read the existing manifest.
+  2. Check the `manifest.version` field. Expected major version is `1`.
+  3. Decide compatibility:
+     - same major → `COMPATIBLE` (`merge` and `incremental` may be used)
+     - different major or field missing → `INCOMPATIBLE` (only `overwrite` or cancel)
+  4. Check whether Bootstrap-managed files have local changes. Managed scope:
      - `.claude/commands/`
      - `.claude/agents/`
      - `.claude/hooks/`
      - `.claude/rules/`
-     - generate.js ciktilari: `.claude/settings.json`, `.claude/CLAUDE.md`, `.claude-ignore`, `git-hooks/`
-     - Bootstrap-direct dosyalar (Claude dogrudan yazar, generate.js uretmez): `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`
-     - NOT: Root `CLAUDE.md` generate.js tarafindan URETILMEZ — `.claude/CLAUDE.md` uretilir. `.mcp.json` `templates/core/mcp.skeleton.json` kaynagindan zorunlu olarak uretilir (codex + basic-memory MCP entry'leri).
-     - **YONETIM DISI (statik root dokumanlar):** `ORCHESTRATION.md`, `LESSONS.md`, `BACKLOG.md` Bootstrap-yonetimli **DEGILDIR**. Repo'da statik gelir, kullanici editler (ozellikle `LESSONS.md` zamanla derslerle dolar). Hicbir modda (`overwrite`/`merge`/`incremental`) bu dosyalara checksum karsilastirmasi yapilmaz, `_rescued/` altina kopyalanmaz, uzerine yazilmaz. Sadece varliklari ADIM 8 GATE B/G ile dogrulanir.
-  5. Her yonetilen dosya icin manifestteki checksum ile mevcut dosyayi karsilastir:
-     - eslesiyorsa → Bootstrap-yonetimli ve temiz
-     - eslesmiyorsa → kullanici customization'i olarak isaretle
-     - dosya `.claude/custom/` altindaysa → her zaman kullaniciya ait kabul et ve dokunma
-  6. Kullaniciya su menuyu goster:
+     - generate.js outputs: `.claude/settings.json`, `.claude/CLAUDE.md`, `.claude-ignore`, `git-hooks/`
+     - Bootstrap-direct files (Claude writes directly; generate.js does not produce them): `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`
+     - NOTE: Root `CLAUDE.md` is NOT produced by generate.js — `.claude/CLAUDE.md` is. `.mcp.json` is produced as required from `templates/core/mcp.skeleton.json` (codex + basic-memory MCP entries).
+     - **OUT OF MANAGEMENT (static root documents):** `ORCHESTRATION.md`, `LESSONS.md`, `BACKLOG.md` are **NOT** Bootstrap-managed. They ship static with the repo; the user edits them (especially `LESSONS.md` fills with lessons over time). In no mode (`overwrite`/`merge`/`incremental`) are these files checksum-compared, copied under `_rescued/`, or overwritten. Only their presence is verified by STEP 8 GATE B/G.
+  5. For each managed file, compare the checksum in the manifest with the current file:
+     - match → Bootstrap-managed and clean
+     - mismatch → mark as user customization
+     - if the file is under `.claude/custom/` → always treat as user-owned and do not touch
+  6. Show the user this menu:
 
 ```
-⚠️  Daha once Bootstrap calistirilmis.
-Manifest surumu: [mevcut veya yok] (beklenen major: 1) → [UYUMLU/UYUMSUZ]
-Template surumu: [manifest.template_version veya bilinmiyor]
-Yerel customization: [yok | dosya listesi]
+⚠️  Bootstrap has been run before.
+Manifest version: [current or missing] (expected major: 1) → [COMPATIBLE/INCOMPATIBLE]
+Template version: [manifest.template_version or unknown]
+Local customization: [none | file list]
 
-Yeniden calistirma modu secin:
-  1) overwrite   — Bootstrap-yonetimli dosyalari sifirdan uret; `.claude/custom/`, `reports/`, `tracking/` korunur
-  2) merge       — Manifest farklarini birlestir; yeni modulleri ekle; artik tespit edilmeyen modulleri pasife al; sadece etkilenen dosyalari guncelle
-  3) incremental — Sadece girdisi veya template'i degisen dosyalari güncelle
-  4) iptal
+Choose re-run mode:
+  1) overwrite   — Regenerate Bootstrap-managed files from scratch; `.claude/custom/`, `reports/`, `tracking/` are kept
+  2) merge       — Merge manifest diffs; add new modules; deactivate modules no longer detected; update only affected files
+  3) incremental — Update only files whose input or template changed
+  4) cancel
 
-Secim: [1/2/3/4]
+Choice: [1/2/3/4]
 ```
 
-  7. `UYUMSUZ` ise `merge` ve `incremental` seceneklerini sunma; kullanici sadece `overwrite` veya `iptal` secsin.
-  8. `overwrite` secilirse:
-     - checksum farki olan her yonetilen dosyayi yazmadan once `.claude/custom/_rescued/[timestamp]/` altina kopyala
-     - sonra bootstrap-yonetimli dosyalari sifirdan uret
-  9. `merge` secilirse:
-     - onceki manifestteki interview cevaplarini koru
-     - yeni codebase analizinden gelen ek modulleri/alanlari ekle
-     - artik tespit edilmeyen leaf'leri `modules.skipped` altina tasi
-     - checksum farki olan dosyayi yerinde ezme; yeni icerigi `.claude/custom/_rescued/[timestamp]/candidate/` altina yaz ve kullaniciya raporla
-  10. `incremental` secilirse:
-      - sadece template checksum'u veya ilgili manifest girdisi degisen dosyalari yeniden uret
-      - checksum farki olan dosyayi yerinde ezme; yeni icerigi `.claude/custom/_rescued/[timestamp]/candidate/` altina yaz ve kullaniciya raporla
-  11. `iptal` secilirse → DUR.
+  7. If `INCOMPATIBLE`, do not offer `merge` and `incremental`; the user may only choose `overwrite` or `cancel`.
+  8. If `overwrite` is chosen:
+     - before writing, copy every managed file with a checksum mismatch under `.claude/custom/_rescued/[timestamp]/`
+     - then regenerate Bootstrap-managed files from scratch
+  9. If `merge` is chosen:
+     - keep interview answers from the previous manifest
+     - add extra modules/fields from the new codebase analysis
+     - move leaves no longer detected under `modules.skipped`
+     - do not overwrite a checksum-mismatched file in place; write the new content under `.claude/custom/_rescued/[timestamp]/candidate/` and report to the user
+  10. If `incremental` is chosen:
+      - regenerate only files whose template checksum or related manifest input changed
+      - do not overwrite a checksum-mismatched file in place; write the new content under `.claude/custom/_rescued/[timestamp]/candidate/` and report to the user
+  11. If `cancel` is chosen → STOP.
 
-- **Dosya yoksa** → Sessizce devam et.
+- **If the file does not exist** → Continue silently.
 
-### 1.4 Interview Phase Template Doğrulaması
+### 1.4 Interview phase template validation
 
-Bootstrap, `templates/interview/phase-{N}-*.md` dosyalarının varlığını **zorunlu** olarak doğrular. Aşağıdaki 4 dosya beklenir:
+Bootstrap **requires** that the `templates/interview/phase-{N}-*.md` files exist. The following 4 files are expected:
 
 - `Agentbase/templates/interview/phase-1-project.md`
 - `Agentbase/templates/interview/phase-2-technical.md`
 - `Agentbase/templates/interview/phase-3-developer.md`
 - `Agentbase/templates/interview/phase-4-rules.md`
 
-Her bir dosya için `fs.statSync(path)` çağır ve `stat.isFile()` true olduğunu doğrula. Hata fırlatırsa veya dosya değilse (örn: dizin) eksik kabul et. Sadece `fs.existsSync` yetersizdir — bozuk yol veya dizin kaynağında ADIM 3 okumasına kadar gecikmeden net hata vermek için tip kontrolü zorunludur. Eksik veya geçersiz dosya tespit edilirse Bootstrap **hemen DUR** ve şu hatayı stderr'a yaz:
+For each file call `fs.statSync(path)` and verify `stat.isFile()` is true. If it throws or the path is not a file (e.g. a directory), treat it as missing. `fs.existsSync` alone is not enough — type checking is required so a clear error is raised immediately instead of delaying until STEP 3 reads. If a missing or invalid file is detected, Bootstrap **STOPS immediately** and writes this error to stderr:
 
 ```
-❌ HATA: templates/interview/phase-{N}-*.md eksik. Lütfen template kurulumunu doğrulayın.
+❌ ERROR: templates/interview/phase-{N}-*.md missing. Verify the template installation
 
-Eksik dosyalar:
-  - {tam yol 1}
-  - {tam yol 2}
+Missing files:
+  - {full path 1}
+  - {full path 2}
 ```
 
-Bu zorunlu kaynak kontrolü TASK-210/T6a sonrasında ADIM 3'ün phase template'lerine refere etmesi nedeniyle gereklidir; önceki "yoksa default kullan" fallback davranışı TASK-214/T6b ile kaldırılmıştır. Bu breaking change TASK-215/T6c kapsamında CHANGELOG'a kaydedilir.
+This required source check exists because after TASK-210/T6a, STEP 3 references the phase templates; the previous "if missing, use defaults" fallback was removed by TASK-214/T6b. This breaking change is recorded in the CHANGELOG under TASK-215/T6c.
 
-Tum kontroller basarili oldugunda:
+When all checks succeed:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚀 Bootstrap baslatiliyor...
+🚀 Bootstrap starting...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
 
-## ADIM 2 — CODEBASE ANALIZI (Otomatik)
+## STEP 2 — CODEBASE ANALYSIS (Automatic)
 
-> **🔗 SLIM PATH (init dikişi) aktifse** (ADIM 1.3'te tespit edildi) bu adimin tamamini atla — `bin/init.js` codebase analizini deterministik olarak zaten yapti ve `manifest.detected.*` alanlarini doldurdu.
+> **🔗 SLIM PATH (init stitch) active** (detected in STEP 1.3) → skip this entire step — `bin/init.js` already ran codebase analysis deterministically and filled `manifest.detected.*`.
 
-> **GREENFIELD_MODE = true ise** bu adimin tamamini atla. Asagidaki mesaji göster ve dogrudan ADIM 3'e gec:
+> **If GREENFIELD_MODE = true** skip this entire step. Show the message below and go directly to STEP 3:
 >
 > ```
-> 🌱 Greenfield modu — otomatik codebase analizi atlanıyor.
->    Tum proje bilgileri roportajda sorulacak.
+> 🌱 Greenfield mode — automatic codebase analysis skipped.
+>    All project details will be asked in the interview.
 > ```
 
-`../Codebase/` dizinini tarayarak proje hakkinda mumkun olan her seyi otomatik tespit et. Her alt adimin sonucunu bir degiskende tut — roportajda ve manifest'te kullanilacak.
+Scan `../Codebase/` and automatically detect everything possible about the project. Keep each sub-step result in a variable — they will be used in the interview and the manifest.
 
-Her alt adimi yaptiginda konsolda sonuclari goster.
+When you finish each sub-step, show the results on the console.
 
-### Placeholder Çözümleme Protokolü
+### Placeholder resolution protocol
 
-Bootstrap akışında ADIM 3'teki `AskUserQuestion` çağrılarında "Tespit edilen değer" ipuçları için **canonical placeholder formatı** kullanılır. Bu protokol ipucu yerleştirme mantığını standartlaştırır.
+In the Bootstrap flow, `AskUserQuestion` calls in STEP 3 use a **canonical placeholder format** for "Detected value" hints. This protocol standardizes hint placement.
 
 **Canonical format:**
 ```
-[Tespit edilen: {detected.<field>}]
+[Detected: {detected.<field>}]
 ```
 
-Örnek: `[Tespit edilen: {detected.test_framework}]`. Bootstrap parser bu ifadeyi gördüğünde `manifest.detected.<field>.value` değerini substitute eder. Sonuç: `[Tespit edilen: vitest]`.
+Example: `[Detected: {detected.test_framework}]`. When the Bootstrap parser sees this expression it substitutes `manifest.detected.<field>.value`. Result: `[Detected: vitest]`.
 
-**Substitute kuralları:**
+**Substitute rules:**
 
-| Durum | Davranış |
+| State | Behavior |
 |---|---|
-| `manifest.detected.<field>` mevcut, `value` dolu, confidence ≥ medium | `{detected.<field>}` → `value` substitute edilir. Soru metninde göster. |
-| `manifest.detected.<field>` mevcut, confidence == "low" | `value` substitute edilir + "[düşük güven]" eklenir: `[Tespit edilen: free [düşük güven]]`. |
-| `manifest.detected.<field>` yok veya `value` null/boş | **Tüm `[Tespit edilen: {detected.<field>}]` ifadesi silinir** (parantez ve içerik dahil; `[]` boş bırakılmaz). |
-| GREENFIELD_MODE = true | `manifest.detected` baştan boş → tüm placeholder ifadeleri otomatik silinir (yukarıdaki kuralın doğal sonucu). |
+| `manifest.detected.<field>` present, `value` filled, confidence ≥ medium | `{detected.<field>}` → `value` is substituted. Show in the question text. |
+| `manifest.detected.<field>` present, confidence == "low" | `value` is substituted + "[low confidence]" is appended: `[Detected: free [low confidence]]`. |
+| `manifest.detected.<field>` missing or `value` null/empty | **The entire `[Detected: {detected.<field>}]` expression is removed** (brackets and contents included; do not leave empty `[]`). |
+| GREENFIELD_MODE = true | `manifest.detected` starts empty → all placeholder expressions are removed automatically (natural result of the rule above). |
 
-**Sadece bootstrap.md kapsamı:** Bu protokol bootstrap.md'deki `AskUserQuestion` `question:` alanlarında uygulanır. `templates/interview/phase-{N}-*.md` dosyalarındaki placeholder'lar **bu task kapsamı dışındadır** (T4/TASK-213 scope sınırı; ileride ayrı task açılabilir).
+**bootstrap.md scope only:** This protocol applies to `AskUserQuestion` `question:` fields in bootstrap.md. Placeholders in `templates/interview/phase-{N}-*.md` files are **out of scope for this task** (T4/TASK-213 scope boundary; a separate task may be opened later).
 
-**Detected dışı placeholder'lar:** `[Tespit edilen: ...]` ifadesinde `{detected.<field>}` referansı yoksa (örn. `[Tespit edilen: route dosyalarından tahmin]`), bu canonical olmayan bir özel ipucudur. Parser dokunmaz; metin olduğu gibi gösterilir. Bu durum Faz 1 S2 (production URL), Faz 1 S4 (alt proje rolleri), Faz 1 S5 (API prefix) gibi `manifest.detected` listesinde olmayan alanlar için geçerlidir.
+**Non-detected placeholders:** If a `[Detected: ...]` expression has no `{detected.<field>}` reference (e.g. `[Detected: estimated from route files]`), it is a non-canonical special hint. The parser does not touch it; the text is shown as-is. This applies to fields not in the `manifest.detected` list such as Phase 1 S2 (production URL), Phase 1 S4 (subproject roles), Phase 1 S5 (API prefix).
 
-**Çoklu alan ipuçları:** Bir soru birden fazla detected alanını göstermek istiyorsa **her alan için ayrı bir bracket** kullanılır (canonical formatın gereği — tek bracket içinde birden fazla `{detected.X}` referansı yasaktır, çünkü fallback davranışı belirsizleşir). Örnek: `[Tespit edilen linter: {detected.linter}] [Tespit edilen formatter: {detected.formatter}]`. Her bracket bağımsız substitute/silme kuralına tabidir; biri silinirken diğeri kalabilir.
+**Multi-field hints:** If a question wants to show more than one detected field, **use a separate bracket per field** (required by the canonical format — multiple `{detected.X}` references inside a single bracket are forbidden because fallback behavior becomes ambiguous). Example: `[Detected linter: {detected.linter}] [Detected formatter: {detected.formatter}]`. Each bracket follows the substitute/remove rule independently; one may be removed while the other remains.
 
 ---
 
-### 2.1 Proje Tipi Tespiti
+### 2.1 Project type detection
 
-`../Codebase/` dizininde asagidaki dosyalari ara:
+Search for the following files under `../Codebase/`:
 
-| Dosya | Proje Tipi | Detay Kontrolu |
+| File | Project type | Detail check |
 |-------|-----------|----------------|
-| `package.json` | Node.js | `dependencies`/`devDependencies` icinde: express→Express API, fastify→Fastify API, next→Next.js, `expo`→Expo, `react-native`→React Native, react→React SPA, vue→Vue, svelte→Svelte |
-| `package.json` icinde `workspaces` alani | Monorepo | npm/yarn workspaces |
+| `package.json` | Node.js | Inside `dependencies`/`devDependencies`: express→Express API, fastify→Fastify API, next→Next.js, `expo`→Expo, `react-native`→React Native, react→React SPA, vue→Vue, svelte→Svelte |
+| `workspaces` field inside `package.json` | Monorepo | npm/yarn workspaces |
 | `lerna.json` | Monorepo | Lerna |
-| `turbo.json` veya `nx.json` | Monorepo | Turbo/Nx |
-| `composer.json` | PHP | `require` icinde: laravel→Laravel, codeigniter→CodeIgniter |
+| `turbo.json` or `nx.json` | Monorepo | Turbo/Nx |
+| `composer.json` | PHP | Inside `require`: laravel→Laravel, codeigniter→CodeIgniter |
 | `go.mod` | Go | — |
 | `Cargo.toml` | Rust | — |
-| `requirements.txt` veya `pyproject.toml` | Python | django→Django, fastapi→FastAPI, flask→Flask |
+| `requirements.txt` or `pyproject.toml` | Python | django→Django, fastapi→FastAPI, flask→Flask |
 | `pom.xml` | Java | — |
-| `build.gradle` veya `build.gradle.kts` | Kotlin/Java | — |
+| `build.gradle` or `build.gradle.kts` | Kotlin/Java | — |
 
-Monorepo tespiti icin ek kontrol: Root'ta birden fazla alt dizin kendi `package.json` veya `composer.json` dosyasina sahipse → monorepo olarak isaretle.
+Extra monorepo check: If more than one subdirectory at the root has its own `package.json` or `composer.json` → mark as monorepo.
 
-Monorepo ise her alt projeyi (subproject) ayri ayri analiz et — her birinin adi, yolu, tipi ve stack'i.
+If monorepo, analyze each subproject separately — name, path, type, and stack for each.
 
-Sonucu goster:
-
-```
-📦 Proje Tipi: [tespit edilen tip]
-   Alt projeler: [varsa listele]
-```
-
-### 2.2 Dizin Haritasi
-
-Bash ile `../Codebase/` icinde 3 seviye derinlige kadar dizin agacini olustur.
-
-Ozel olarak tespit et:
-- Kaynak dizinleri: `src/`, `app/`, `lib/`, `source/`, `pkg/`
-- Test dizinleri: `test/`, `tests/`, `__tests__/`, `spec/`, `cypress/`
-- Config dizinleri: `config/`, `.config/`
-- Docs dizinleri: `docs/`, `documentation/`
-
-Sonucu goster:
+Show the result:
 
 ```
-📁 Dizin Yapisi:
-   [tree ciktisi]
-
-   Kaynak dizinleri: [bulunanlar]
-   Test dizinleri: [bulunanlar]
+📦 Project type: [detected type]
+   Subprojects: [list if any]
 ```
 
-### 2.3 Tech Stack Tespiti
+### 2.2 Directory map
 
-Asagidaki her bir bileseni dosya varligina gore tespit et:
+With bash, build a directory tree under `../Codebase/` up to 3 levels deep.
 
-**Paket Yoneticisi:**
-| Dosya | Yonetici |
+Detect specifically:
+- Source directories: `src/`, `app/`, `lib/`, `source/`, `pkg/`
+- Test directories: `test/`, `tests/`, `__tests__/`, `spec/`, `cypress/`
+- Config directories: `config/`, `.config/`
+- Docs directories: `docs/`, `documentation/`
+
+Show the result:
+
+```
+📁 Directory structure:
+   [tree output]
+
+   Source directories: [found]
+   Test directories: [found]
+```
+
+### 2.3 Tech stack detection
+
+Detect each of the following components by file presence:
+
+**Package manager:**
+| File | Manager |
 |-------|----------|
 | `pnpm-lock.yaml` | pnpm |
 | `yarn.lock` | yarn |
-| `bun.lockb` veya `bun.lock` | bun |
+| `bun.lockb` or `bun.lock` | bun |
 | `package-lock.json` | npm |
 | `composer.lock` | composer |
-| `Pipfile.lock` veya `poetry.lock` | pip/poetry |
+| `Pipfile.lock` or `poetry.lock` | pip/poetry |
 | `Cargo.lock` | cargo |
 | `go.sum` | go modules |
 
-**TypeScript:** `tsconfig.json` dosyasi varsa → TypeScript aktif.
+**TypeScript:** If `tsconfig.json` exists → TypeScript active.
 
-**Test Framework:**
-- `jest.config.*` veya package.json icinde `jest` → Jest
-- `vitest.config.*` veya package.json icinde `vitest` → Vitest
-- `mocha` bagimliligi → Mocha
-- `pytest.ini` veya `conftest.py` → pytest
+**Test framework:**
+- `jest.config.*` or `jest` in package.json → Jest
+- `vitest.config.*` or `vitest` in package.json → Vitest
+- `mocha` dependency → Mocha
+- `pytest.ini` or `conftest.py` → pytest
 - `phpunit.xml` → PHPUnit
 
 **Linter/Formatter:**
-- `eslint.config.*` veya `.eslintrc*` → ESLint
-- `.prettierrc*` veya `prettier.config.*` → Prettier
+- `eslint.config.*` or `.eslintrc*` → ESLint
+- `.prettierrc*` or `prettier.config.*` → Prettier
 - `biome.json` → Biome
-- `ruff.toml` veya `pyproject.toml` icinde `[tool.ruff]` → Ruff
+- `ruff.toml` or `[tool.ruff]` in `pyproject.toml` → Ruff
 
 **ORM/Database:**
 - `prisma/schema.prisma` → Prisma
-- `typeorm` bagimliligi → TypeORM
-- `sequelize` bagimliligi → Sequelize
+- `typeorm` dependency → TypeORM
+- `sequelize` dependency → Sequelize
 - `drizzle.config.*` → Drizzle
-- `eloquent` (Laravel icinde) → Eloquent
+- `eloquent` (inside Laravel) → Eloquent
 
-**Database:** package.json veya config dosyalarinda: mysql, pg/postgres, sqlite3, mongodb/mongoose
+**Database:** in package.json or config files: mysql, pg/postgres, sqlite3, mongodb/mongoose
 
 **CI/CD:**
-- `.github/workflows/` dizini → GitHub Actions
+- `.github/workflows/` directory → GitHub Actions
 - `.gitlab-ci.yml` → GitLab CI
 - `Jenkinsfile` → Jenkins
 - `.circleci/` → CircleCI
 
 **Container:**
 - `Dockerfile` → Docker
-- `docker-compose.yml` veya `docker-compose.yaml` veya `compose.yml` → Docker Compose
+- `docker-compose.yml` or `docker-compose.yaml` or `compose.yml` → Docker Compose
 
-Sonucu tablo olarak goster:
+Show the result as a table:
 
 ```
 🔧 Tech Stack:
-   Runtime:        [tespit edilen]
-   Paket Yonetici: [tespit edilen]
-   TypeScript:     [evet/hayir]
-   Test:           [tespit edilen]
-   Linter:         [tespit edilen]
-   Formatter:      [tespit edilen]
-   ORM:            [tespit edilen]
-   Veritabani:     [tespit edilen]
-   CI/CD:          [tespit edilen]
-   Container:      [tespit edilen]
+   Runtime:        [detected]
+   Package manager:[detected]
+   TypeScript:     [yes/no]
+   Test:           [detected]
+   Linter:         [detected]
+   Formatter:      [detected]
+   ORM:            [detected]
+   Database:       [detected]
+   CI/CD:          [detected]
+   Container:      [detected]
 ```
 
-### 2.4 Modul Tespiti
+### 2.4 Module detection
 
-Moduller kategori bazli organize edilmistir. Tespit recursive yapilir:
+Modules are organized by category. Detection is recursive:
 
-1. **Kategori seviyesi:** `templates/modules/*/detect.md` — kategori aktif mi? (orm, deploy, backend, mobile, frontend, knowledge-graph)
-2. **Ara dugum / aile seviyesi:** `templates/modules/*/*/detect.md` — gerekiyorsa aile veya runtime secimi (ornegin `backend/nodejs`)
-3. **Leaf seviyesi:** `templates/modules/**/*/detect.md` — nihai teknoloji secimi (ornegin `backend/nodejs/express`)
+1. **Category level:** `templates/modules/*/detect.md` — is the category active? (orm, deploy, backend, mobile, frontend, knowledge-graph)
+2. **Intermediate node / family level:** `templates/modules/*/*/detect.md` — family or runtime selection if needed (e.g. `backend/nodejs`)
+3. **Leaf level:** `templates/modules/**/*/detect.md` — final technology selection (e.g. `backend/nodejs/express`)
 
-> **Zorunlu istisna — knowledge-graph:** `knowledge-graph/graphify` **her zaman aktiftir** (detect.md `Minimum Match: 0/2`). Tespit sonucu bu modulun aktivasyonunu DEGISTIRMEZ — tespit yalnizca saglik teyididir. SLIM PATH'te (init dikisi) `bin/lib/assemble.js` modulu zaten `modules.active['knowledge-graph'] = ['graphify']` ile aktive eder; legacy yolda orchestrator bu modulu kosulsuz aktif sayar. CLI kurulumu ADIM 1.1.6'da garanti edilir.
+> **Optional module — knowledge-graph:** `knowledge-graph/graphify` is **not** activated unless the manifest lists it. Detection does not force it on. `bin/lib/assemble.js` leaves it inactive when it was not selected. CLI presence is probed in STEP 1.1.6; absence does not stop the wizard and bootstrap does not install graphify.
 
-#### detect.md Yapisal Formati
+#### detect.md structural format
 
-Tum detect.md dosyalari asagidaki yapisal formati kullanir. Bu format hem Claude tarafindan okunabilir hem de ileride programatik islemeye uygundur.
+All detect.md files use the structural format below. The format is readable by Claude and suitable for future programmatic processing.
 
-**Leaf / Standalone / Aile detect.md:**
+**Leaf / Standalone / Family detect.md:**
 
 ```markdown
-# [Modul Adi]
+# [Module Name]
 
 ## Checks
 - file_exists: prisma/schema.prisma
@@ -679,14 +668,14 @@ Tum detect.md dosyalari asagidaki yapisal formati kullanir. Bu format hem Claude
 - rules/prisma-rules.md
 
 ## Affects Core
-- task-hunter: VERIFICATION_COMMANDS'a prisma validate eklenir
-- settings.json: 3 hook tanimi eklenir
+- task-hunter: prisma validate added to VERIFICATION_COMMANDS
+- settings.json: 3 hook definitions added
 ```
 
-**Kategori detect.md (alt varyantlari olan):**
+**Category detect.md (with sub-variants):**
 
 ```markdown
-# [Kategori Adi]
+# [Category Name]
 
 ## Variants
 | Name | Path | Priority |
@@ -695,144 +684,144 @@ Tum detect.md dosyalari asagidaki yapisal formati kullanir. Bu format hem Claude
 | Eloquent | orm/eloquent/detect.md | 2 |
 
 ## Provides
-- Tum varyantlarda ortak ozellikler listesi
+- List of features common to all variants
 
 ## Affects Core
 - ...
 ```
 
-**Desteklenen check tipleri:**
+**Supported check types:**
 
-| Tip | Syntax | Aciklama |
+| Type | Syntax | Description |
 |-----|--------|----------|
-| `file_exists` | `file_exists: path/to/file` | Dosya veya dizin mevcut mu. `\|` ile alternatif yollar, `*/` ile wildcard |
-| `dependency` | `dependency: pkg-name` | Package dependency mevcut mu (package.json, composer.json, requirements.txt, pyproject.toml, pubspec.yaml). `\|` ile alternatif paketler |
-| `env_var` | `env_var: VAR_NAME` | .env veya config dosyasinda tanimli mi |
-| `file_pattern` | `file_pattern: **/*.controller.ts` | Glob pattern ile dosya eslesmesi |
-| `code_pattern` | `code_pattern: express() \| Router()` | Kod icinde regex/metin eslesmesi |
-| `config_key` | `config_key: package.json -> workspaces` | Config dosyasinda belirli bir key var mi |
-| `not_dependency` | `not_dependency: next` | Paketin dependency'lerde OLMAMASI gerektigi (negatif kontrol) |
+| `file_exists` | `file_exists: path/to/file` | Whether a file or directory exists. Alternative paths with `\|`, wildcards with `*/` |
+| `dependency` | `dependency: pkg-name` | Whether a package dependency exists (package.json, composer.json, requirements.txt, pyproject.toml, pubspec.yaml). Alternative packages with `\|` |
+| `env_var` | `env_var: VAR_NAME` | Whether defined in .env or a config file |
+| `file_pattern` | `file_pattern: **/*.controller.ts` | File match via glob pattern |
+| `code_pattern` | `code_pattern: express() \| Router()` | Regex/text match inside code |
+| `config_key` | `config_key: package.json -> workspaces` | Whether a specific key exists in a config file |
+| `not_dependency` | `not_dependency: next` | Package must NOT be in dependencies (negative check) |
 
-**Minimum Match formati:** `X/Y` — Y kontrol icinden minimum X'inin saglanmasi gerekir. Standalone moduller için `1/N` (herhangi 1 yeterli) kullanilir.
+**Minimum Match format:** `X/Y` — at least X of Y checks must pass. Standalone modules use `1/N` (any 1 is enough).
 
-**Tespit akisi:**
+**Detection flow:**
 
 ```
-templates/modules/ altindaki her dizin icin:
-  detect.md'yi oku ve Checks bolumunu isle
+for each directory under templates/modules/:
+  read detect.md and process the Checks section
 
-  EGER dizin bagimsiz modul ise (= monorepo, security gibi kendi commands/hooks/rules klasorleri var):
-    Checks kosullarini kontrol et -> ACTIVE veya INACTIVE
+  IF the directory is a standalone module (= has its own commands/hooks/rules folders, e.g. monorepo, security):
+    evaluate Checks conditions -> ACTIVE or INACTIVE
 
-  AKSI HALDE (= kategori veya ara dugum):
-    Checks bolumu varsa kosullari kontrol et (yoksa Variants tablosu ile devam)
+  ELSE (= category or intermediate node):
+    if a Checks section exists, evaluate conditions (otherwise continue with the Variants table)
 
-    EGER tespit gecmezse:
-      Bu dugum ve altindaki tum leaf'ler INACTIVE
+    IF detection fails:
+      this node and all leaves under it are INACTIVE
 
-    EGER tespit gecer ve alt dugum yoksa:
-      Mevcut dugum aktif leaf kabul edilir
+    IF detection passes and there is no child node:
+      current node is accepted as the active leaf
 
-    EGER tespit gecer ve alt dugum varsa:
-      Variants tablosundaki oncelik sirasina gore alt dugumleri kontrol et
-      Ilk eslesen alt dugume in
-      Daha derin leaf eslesirse aktif yol olarak kaydet
-      Eslesmeyen kardes dugumleri SKIPPED olarak kaydet
+    IF detection passes and there are child nodes:
+      check child nodes in Variants table priority order
+      descend into the first matching child
+      if a deeper leaf matches, record it as the active path
+      record non-matching sibling nodes as SKIPPED
 ```
 
-**Kategoriler ve leaf yollari:**
+**Categories and leaf paths:**
 
-**orm kategorisi:**
-- Kategori kosulu: Herhangi bir ORM/migration aracinin tespiti
-- Alt varyantlar:
-  - `prisma` — `prisma/schema.prisma` MEVCUT VE `@prisma/client` bagimliliklarda
-  - `eloquent` — `composer.json` MEVCUT VE `laravel/framework` bagimliliklarda
-  - `django-orm` — `manage.py` MEVCUT VE `django` bagimliliklarda
-  - `typeorm` — `typeorm` bagimliliklarda VE config dosyasi mevcut
+**orm category:**
+- Category condition: Detection of any ORM/migration tool
+- Sub-variants:
+  - `prisma` — `prisma/schema.prisma` EXISTS AND `@prisma/client` in dependencies
+  - `eloquent` — `composer.json` EXISTS AND `laravel/framework` in dependencies
+  - `django-orm` — `manage.py` EXISTS AND `django` in dependencies
+  - `typeorm` — `typeorm` in dependencies AND a config file exists
 
-**deploy kategorisi:**
-- Kategori kosulu: Deploy ile ilgili dosya/config tespiti
-- Leaf'ler:
-  - `docker` — `Dockerfile` MEVCUT
-  - `coolify` — `Dockerfile` + Coolify config veya etiketleri mevcut
-  - `vercel` — `vercel.json` MEVCUT VEYA `next` bagimliliklarda
+**deploy category:**
+- Category condition: Detection of deploy-related file/config
+- Leaves:
+  - `docker` — `Dockerfile` EXISTS
+  - `coolify` — `Dockerfile` + Coolify config or labels exist
+  - `vercel` — `vercel.json` EXISTS OR `next` in dependencies
 
-**backend kategorisi:**
-- Kategori kosulu: Backend framework tespiti
-- Aileler ve leaf'ler:
+**backend category:**
+- Category condition: Backend framework detection
+- Families and leaves:
   - `nodejs`
-    - `nestjs` — `@nestjs/core` bagimliliklarda
-    - `fastify` — `fastify` bagimliliklarda
-    - `express` — `express` bagimliliklarda
+    - `nestjs` — `@nestjs/core` in dependencies
+    - `fastify` — `fastify` in dependencies
+    - `express` — `express` in dependencies
   - `php`
-    - `laravel` — `composer.json` icinde `laravel/framework`
-    - `codeigniter4` — `composer.json` icinde `codeigniter4/framework`
+    - `laravel` — `laravel/framework` in `composer.json`
+    - `codeigniter4` — `codeigniter4/framework` in `composer.json`
   - `python`
-    - `django` — `manage.py` MEVCUT VE `django` bagimliliklarda
-    - `fastapi` — `fastapi` bagimliliklarda
+    - `django` — `manage.py` EXISTS AND `django` in dependencies
+    - `fastapi` — `fastapi` in dependencies
 
-**mobile kategorisi:**
-- Kategori kosulu: Mobil framework tespiti
-- Leaf'ler:
-  - `expo` — `app.json` veya `app.config.js` icinde expo config VE `expo` bagimliligi
-  - `react-native` — `react-native` bagimliliklarda VE expo config YOKSA
-  - `flutter` — `pubspec.yaml` MEVCUT VE `flutter` dependency'si tespit ediliyorsa
+**mobile category:**
+- Category condition: Mobile framework detection
+- Leaves:
+  - `expo` — expo config in `app.json` or `app.config.js` AND `expo` dependency
+  - `react-native` — `react-native` in dependencies AND NO expo config
+  - `flutter` — `pubspec.yaml` EXISTS AND `flutter` dependency detected
 
-**frontend kategorisi:**
-- Kategori kosulu: Frontend meta-framework tespiti
-- Leaf'ler:
-  - `nextjs` — `next` bagimliliklarda VE `next.config.*` dosyasi mevcut
-  - `react` — `react` ve `react-dom` bagimliliklarda VE `next` YOKSA
-  - `html` — `.html` dosyalari mevcut VE framework tespiti yoksa
+**frontend category:**
+- Category condition: Frontend meta-framework detection
+- Leaves:
+  - `nextjs` — `next` in dependencies AND `next.config.*` file exists
+  - `react` — `react` and `react-dom` in dependencies AND NO `next`
+  - `html` — `.html` files exist AND no framework detected
 
-**ci-cd kategorisi:**
-- Kategori kosulu: CI/CD pipeline dosya/config tespiti
-- Leaf'ler:
-  - `github-actions` — `.github/workflows/` dizini VE workflow YAML dosyalari mevcut
-  - `gitlab-ci` — `.gitlab-ci.yml` MEVCUT
+**ci-cd category:**
+- Category condition: CI/CD pipeline file/config detection
+- Leaves:
+  - `github-actions` — `.github/workflows/` directory AND workflow YAML files exist
+  - `gitlab-ci` — `.gitlab-ci.yml` EXISTS
 
-**monitoring kategorisi:**
-- Kategori kosulu: Hata takibi / performans izleme SDK tespiti
-- Leaf'ler:
-  - `sentry` — `@sentry/*` bagimliliklarda VE `SENTRY_DSN` env var tanimli
-  - `datadog` — `dd-trace` veya `@datadog/*` bagimliliklarda
+**monitoring category:**
+- Category condition: Error tracking / performance monitoring SDK detection
+- Leaves:
+  - `sentry` — `@sentry/*` in dependencies AND `SENTRY_DSN` env var defined
+  - `datadog` — `dd-trace` or `@datadog/*` in dependencies
 
-**api-docs kategorisi:**
-- Kategori kosulu: API dokumantasyon araclari tespiti
-- Leaf'ler:
-  - `openapi` — `openapi.yaml` / `swagger.yaml` dosyasi MEVCUT VEYA swagger dependency'si var
-  - `graphql` — `schema.graphql` MEVCUT VEYA `graphql` bagimliliklarda
+**api-docs category:**
+- Category condition: API documentation tools detection
+- Leaves:
+  - `openapi` — `openapi.yaml` / `swagger.yaml` file EXISTS OR swagger dependency present
+  - `graphql` — `schema.graphql` EXISTS OR `graphql` in dependencies
 
-**Bagimsiz moduller (kategori degil):**
+**Standalone modules (not categories):**
 
-**monorepo modulu:**
-- Kosul: `workspaces` alani VEYA `lerna.json` VEYA `turbo.json` VEYA `nx.json` MEVCUT
-- Durum: ACTIVE veya INACTIVE
+**monorepo module:**
+- Condition: `workspaces` field OR `lerna.json` OR `turbo.json` OR `nx.json` EXISTS
+- Status: ACTIVE or INACTIVE
 
-**security modulu:**
-- Kosul: API controller veya route dosyalari mevcut (ornegin `controllers/`, `routes/` dizinleri)
-- Durum: ACTIVE veya INACTIVE
+**security module:**
+- Condition: API controller or route files exist (e.g. `controllers/`, `routes/` directories)
+- Status: ACTIVE or INACTIVE
 
-**Monorepo subproject-bazli tespit (project.type == "monorepo"):**
+**Monorepo subproject-based detection (project.type == "monorepo"):**
 
-Monorepo tespit edildiginde modul tespiti IKI asamali calisir:
+When a monorepo is detected, module detection runs in TWO stages:
 
-1. **Subproject-bazli tespit:** Her `project.subprojects[]` icin modul tespitini AYRI calistir.
-   - Tespit kontexti subproject'in root dizinine (`path`) odaklanir
-   - Ornegin `apps/api/` icinde `express` + `prisma` tespiti, `apps/admin/` icinde `django` + `django-orm` tespiti
-   - Her subproject'in sonucu `subproject.modules` alanina yazilir
+1. **Subproject-based detection:** Run module detection SEPARATELY for each `project.subprojects[]`.
+   - Detection context focuses on the subproject root directory (`path`)
+   - Example: `express` + `prisma` under `apps/api/`, `django` + `django-orm` under `apps/admin/`
+   - Write each subproject result to `subproject.modules`
 
-2. **Global aggregation:** Tum subproject modullerin UNION'ini `modules.active`'e yaz.
-   - Birden fazla subproject ayni kategoriyi farkli leaf ile kullanabilir
-   - Ornegin: `active.orm: ["prisma", "django-orm"]`, `active.backend: ["nodejs/express", "python/django"]`
-   - Bu sayede teammate'ler TUM gerekli modul dosyalarini uretir
+2. **Global aggregation:** Write the UNION of all subproject modules to `modules.active`.
+   - Multiple subprojects may use the same category with different leaves
+   - Example: `active.orm: ["prisma", "django-orm"]`, `active.backend: ["nodejs/express", "python/django"]`
+   - This way teammates produce ALL required module files
 
-3. **Deploy ve standalone moduller:** Bunlar subproject-bazli DEGIL, proje genelinde tespit edilir (deploy config ve monorepo/security kosullari projenin tamami icin gecerlidir).
+3. **Deploy and standalone modules:** These are NOT subproject-based; they are detected project-wide (deploy config and monorepo/security conditions apply to the whole project).
 
-Ornek cikti (Express+Prisma API + Django Admin monorepo):
+Example output (Express+Prisma API + Django Admin monorepo):
 
 ```
-🧩 Moduller (Subproject Bazli):
+🧩 Modules (Subproject-based):
 
    apps/api (API):
      orm:      prisma ✅
@@ -859,195 +848,195 @@ Ornek cikti (Express+Prisma API + Django Admin monorepo):
      mobile:   expo ✅
      frontend: INACTIVE ⬜
 
-   Bagimsiz:
+   Standalone:
      monorepo: ACTIVE ✅
      security: ACTIVE ✅
 
-   Atlanan varyantlar: orm: [eloquent, typeorm], backend: [nodejs/fastify, php/laravel], ...
+   Skipped variants: orm: [eloquent, typeorm], backend: [nodejs/fastify, php/laravel], ...
 ```
 
-**Single proje (project.type == "single"):**
+**Single project (project.type == "single"):**
 
-Mevcut davranista degisiklik yok. Sonucu goster:
+No change from existing behavior. Show the result:
 
 ```
-🧩 Moduller:
+🧩 Modules:
 
-   Kategoriler:
-   orm:        [eslesen varyant ✅ / INACTIVE ⬜]
-   deploy:     [eslesen varyant ✅ / INACTIVE ⬜]
-   backend:    [nodejs/express gibi aktif yol ✅ / INACTIVE ⬜]
-   mobile:     [eslesen varyant ✅ / INACTIVE ⬜]
-   frontend:   [eslesen varyant ✅ / INACTIVE ⬜]
+   Categories:
+   orm:        [matched variant ✅ / INACTIVE ⬜]
+   deploy:     [matched variant ✅ / INACTIVE ⬜]
+   backend:    [active path such as nodejs/express ✅ / INACTIVE ⬜]
+   mobile:     [matched variant ✅ / INACTIVE ⬜]
+   frontend:   [matched variant ✅ / INACTIVE ⬜]
 
-   Bagimsiz:
+   Standalone:
    monorepo:   INACTIVE ⬜
    security:   [ACTIVE ✅ / INACTIVE ⬜]
 
-   Atlanan varyantlar: [kategori bazinda listelenen inaktif varyantlar]
+   Skipped variants: [inactive variants listed by category]
 ```
 
-> **Detected Alan Üretimi (2.4.1–2.4.5):**
-> Aşağıdaki 5 alt-bölüm `manifest.detected.*` alanlarını otomatik doldurur. Her tespit `{ value, confidence: high|medium|low, source: "<dosya:detay>" }` formatında yazılır. Geri kalan 3 alan (`formatter`, `linter`, `deploy_platform`) `templates/interview/phase-2-technical.md` Auto-Detection tablosundan dolaylı olarak doldurulur.
+> **Detected field generation (2.4.1–2.4.5):**
+> The 5 subsections below auto-fill `manifest.detected.*` fields. Each detection is written as `{ value, confidence: high|medium|low, source: "<file:detail>" }`. The remaining 3 fields (`formatter`, `linter`, `deploy_platform`) are filled indirectly from the Auto-Detection table in `templates/interview/phase-2-technical.md`.
 
 #### 2.4.1 — test_framework
 
-**Kaynak:** `package.json#devDependencies` veya `dependencies`, `Pipfile`, `pyproject.toml`, `composer.json#require-dev`.
+**Source:** `package.json#devDependencies` or `dependencies`, `Pipfile`, `pyproject.toml`, `composer.json#require-dev`.
 
-**Eşleme:**
+**Mapping:**
 - `jest` → `value: "jest"`, `confidence: "high"`, `source: "package.json:devDependencies"`
-- `vitest` → `value: "vitest"`, `confidence: "high"`, aynı kaynak
-- `mocha` → `value: "mocha"`, `confidence: "high"`, aynı kaynak
-- `pytest` → `value: "pytest"`, `confidence: "high"`, `source: "Pipfile veya pyproject.toml"`
+- `vitest` → `value: "vitest"`, `confidence: "high"`, same source
+- `mocha` → `value: "mocha"`, `confidence: "high"`, same source
+- `pytest` → `value: "pytest"`, `confidence: "high"`, `source: "Pipfile or pyproject.toml"`
 - `phpunit/phpunit` → `value: "phpunit"`, `confidence: "high"`, `source: "composer.json:require-dev"`
-- Hiçbir test paketi yok → `value: null`, `confidence: "low"`, `source: "no test framework detected"`
+- No test package → `value: null`, `confidence: "low"`, `source: "no test framework detected"`
 
 #### 2.4.2 — commit_convention
 
-**Kaynak:** `git log --oneline -50` (boşsa `git log --all --oneline -50`).
+**Source:** `git log --oneline -50` (if empty, `git log --all --oneline -50`).
 
 **Heuristic:**
-- 50 commit'in regex `^(feat|fix|refactor|docs|test|chore|style|perf|ci|build|revert)(\([^)]+\))?!?:` ile eşleşme oranını hesapla. Bu desen scope'lu (`feat(api):`), breaking-change (`feat!:`, `feat(api)!:`) ve standart Conventional Commits varyantlarının tümünü yakalar.
-- Boş repo (0 commit): `value: "unknown"`, `confidence: "low"`, `source: "git log boş"`
-- Eşleşme oranı `< %30`: `value: "free"`, `confidence: "low"`, `source: "git log heuristic %X"`
-- `%30 ≤ oran ≤ %60`: `value: "conventional"`, `confidence: "medium"`, `source: "git log heuristic %X"`
-- Oran `> %60`: `value: "conventional"`, `confidence: "high"`, `source: "git log heuristic %X"`
+- Compute the match rate of 50 commits against regex `^(feat|fix|refactor|docs|test|chore|style|perf|ci|build|revert)(\([^)]+\))?!?:`. This pattern catches scoped (`feat(api):`), breaking-change (`feat!:`, `feat(api)!:`), and standard Conventional Commits variants.
+- Empty repo (0 commits): `value: "unknown"`, `confidence: "low"`, `source: "git log empty"`
+- Match rate `< 30%`: `value: "free"`, `confidence: "low"`, `source: "git log heuristic %X"`
+- `30% ≤ rate ≤ 60%`: `value: "conventional"`, `confidence: "medium"`, `source: "git log heuristic %X"`
+- Rate `> 60%`: `value: "conventional"`, `confidence: "high"`, `source: "git log heuristic %X"`
 
-**Güvenlik:** `git log` komutu shell injection'a karşı `execFileSync('git', ['log', '--oneline', '-50'])` ile çalıştırılır.
+**Safety:** The `git log` command is run with `execFileSync('git', ['log', '--oneline', '-50'])` against shell injection.
 
 #### 2.4.3 — migration
 
-**Kaynak (öncelik sırası):** (1) `manifest.detected.orm.value` (henüz onay öncesi ham tespit), (2) fallback `manifest.stack.orm` (kullanıcı onayı sonrası — re-run senaryosu), (3) dosya sistemi (`migrations/`, `prisma/migrations/`, `db/migrate/`, `alembic/versions/`).
+**Source (priority order):** (1) `manifest.detected.orm.value` (raw detection before approval), (2) fallback `manifest.stack.orm` (after user approval — re-run scenario), (3) filesystem (`migrations/`, `prisma/migrations/`, `db/migrate/`, `alembic/versions/`).
 
-**Eşleme:**
-- `detected.orm.value` null değil (Prisma/TypeORM/Sequelize/Drizzle/Eloquent/Django ORM tespit edildi) → `value: "orm"`, `confidence: "high"`, `source: "detected.orm.value:{orm_value}"`
-- `detected.orm` yok ama `manifest.stack.orm` dolu (re-run) → `value: "orm"`, `confidence: "high"`, `source: "stack.orm:{orm_value}"`
-- ORM hiç yok ama `migrations/` veya benzeri klasör var → `value: "manual-sql"`, `confidence: "medium"`, `source: "migrations/ klasörü tespit edildi"`
-- Hiçbiri yok → `value: "none"`, `confidence: "low"`, `source: "no migration system"`
+**Mapping:**
+- `detected.orm.value` is not null (Prisma/TypeORM/Sequelize/Drizzle/Eloquent/Django ORM detected) → `value: "orm"`, `confidence: "high"`, `source: "detected.orm.value:{orm_value}"`
+- `detected.orm` missing but `manifest.stack.orm` filled (re-run) → `value: "orm"`, `confidence: "high"`, `source: "stack.orm:{orm_value}"`
+- No ORM at all but `migrations/` or similar folder exists → `value: "manual-sql"`, `confidence: "medium"`, `source: "migrations/ folder detected"`
+- None of the above → `value: "none"`, `confidence: "low"`, `source: "no migration system"`
 
 #### 2.4.4 — auth_method
 
-**Kaynak:** `package.json#dependencies` (Node.js), `Pipfile`/`pyproject.toml` (Python), `composer.json` (PHP).
+**Source:** `package.json#dependencies` (Node.js), `Pipfile`/`pyproject.toml` (Python), `composer.json` (PHP).
 
-**Öncelik sırası (ilk eşleşen kazanır):**
+**Priority order (first match wins):**
 - `passport`, `passport-*` → `value: "oauth2"`, `confidence: "medium"`, `source: "package.json: passport"`
-- `jsonwebtoken`, `jose`, `bcrypt`, `argon2` → `value: "jwt"`, `confidence: "medium"`, `source: "package.json: {paket}"`
-- `express-session`, `cookie-session`, `iron-session` → `value: "session"`, `confidence: "medium"`, `source: "package.json: {paket}"`
-- Hiçbiri yok → `value: "none"`, `confidence: "low"`, `source: "no auth library detected"`
+- `jsonwebtoken`, `jose`, `bcrypt`, `argon2` → `value: "jwt"`, `confidence: "medium"`, `source: "package.json: {package}"`
+- `express-session`, `cookie-session`, `iron-session` → `value: "session"`, `confidence: "medium"`, `source: "package.json: {package}"`
+- None → `value: "none"`, `confidence: "low"`, `source: "no auth library detected"`
 
-**Not:** Confidence `medium` çünkü paket varlığı auth method'u kanıtlamaz; kullanım kalıbı doğrulanmalı (kullanıcı onayı bekleniyor).
+**Note:** Confidence is `medium` because package presence does not prove the auth method; usage patterns should be confirmed (user approval expected).
 
 #### 2.4.5 — design_system
 
-**Kaynak:** `package.json#dependencies`.
+**Source:** `package.json#dependencies`.
 
-**Öncelik sırası (ilk eşleşen kazanır):**
+**Priority order (first match wins):**
 - `@mui/*` (`@mui/material`, `@mui/x-*`) → `value: "mui"`, `confidence: "high"`, `source: "package.json: @mui/material"`
-- `@radix-ui/*` AND `tailwindcss` ikisi de var → `value: "shadcn"`, `confidence: "high"`, `source: "package.json: @radix-ui + tailwindcss"`
-- `tailwindcss` var ama `@radix-ui/*` yok → `value: "tailwind"`, `confidence: "medium"`, `source: "package.json: tailwindcss only"`
+- `@radix-ui/*` AND `tailwindcss` both present → `value: "shadcn"`, `confidence: "high"`, `source: "package.json: @radix-ui + tailwindcss"`
+- `tailwindcss` present but no `@radix-ui/*` → `value: "tailwind"`, `confidence: "medium"`, `source: "package.json: tailwindcss only"`
 - `antd` → `value: "antd"`, `confidence: "high"`, `source: "package.json: antd"`
 - `react-native-paper` → `value: "rn-paper"`, `confidence: "high"`, `source: "package.json: react-native-paper"`
-- Hiçbiri yok → `value: "none"`, `confidence: "low"`, `source: "no design system detected"`
+- None → `value: "none"`, `confidence: "low"`, `source: "no design system detected"`
 
-### 2.5 Script Tespiti
+### 2.5 Script detection
 
-**package.json scripts:** Root ve her alt projenin package.json icindeki `scripts` bolumunu oku. Ozellikle: `dev`, `build`, `test`, `lint`, `start`, `format`, `typecheck`, `migrate`
+**package.json scripts:** Read the `scripts` section in package.json at the root and in each subproject. Especially: `dev`, `build`, `test`, `lint`, `start`, `format`, `typecheck`, `migrate`
 
-**Makefile:** Root'ta `Makefile` varsa hedefleri listele.
+**Makefile:** If a `Makefile` exists at the root, list its targets.
 
-Sonucu goster:
+Show the result:
 
 ```
-📜 Tespit Edilen Scriptler:
-   [proje adi]:
-     dev:   [komut]
-     build: [komut]
-     test:  [komut]
-     lint:  [komut]
+📜 Detected scripts:
+   [project name]:
+     dev:   [command]
+     build: [command]
+     test:  [command]
+     lint:  [command]
 ```
 
-### 2.6 API Endpoint Kesfetme
+### 2.6 API endpoint discovery
 
-Backend API tespit edildiyse, route/controller dosyalarini tarayarak endpoint haritasi cikar.
+If a backend API was detected, scan route/controller files and build an endpoint map.
 
-**Oncelik sirasi:**
-1. OpenAPI spec varsa (`openapi.yaml`, `openapi.json`, `swagger.json`, `swagger.yaml`) → spec ten oku, codebase taramasi ATLA
-2. Spec yoksa → framework-spesifik pattern ler ile tara:
+**Priority order:**
+1. If an OpenAPI spec exists (`openapi.yaml`, `openapi.json`, `swagger.json`, `swagger.yaml`) → read from the spec, SKIP codebase scan
+2. If no spec → scan with framework-specific patterns:
 
-| Framework | Aranacak Pattern | Dosya Konumu |
+| Framework | Pattern to search | File location |
 |---|---|---|
 | Express | `app.get/post/put/delete(`, `router.get/post/put/delete(` | `routes/`, `src/routes/`, `app.js`, `server.js` |
-| NestJS | `@Get(`, `@Post(`, `@Put(`, `@Delete(` dekoratorleri | `*.controller.ts` |
+| NestJS | `@Get(`, `@Post(`, `@Put(`, `@Delete(` decorators | `*.controller.ts` |
 | Laravel | `Route::get/post/put/delete(` | `routes/api.php`, `routes/web.php` |
 | CodeIgniter 4 | `$routes->get/post/put/delete(` | `app/Config/Routes.php` |
 | FastAPI | `@app.get/post/put/delete(` | `*.py` |
 
-Her bulunan endpoint icin:
+For each found endpoint:
 ```yaml
 api_endpoints:
   - method: GET
     path: /api/v1/users
-    auth: required   # Authorization middleware/guard varsa
+    auth: required   # if Authorization middleware/guard present
     response: 200
 ```
 
-**Auth tespiti:** Route tanimi icinde `auth`, `authenticate`, `guard`, `middleware` kelimeleri geciyorsa `auth: required`.
+**Auth detection:** If the route definition contains the words `auth`, `authenticate`, `guard`, or `middleware`, set `auth: required`.
 
-Sonucu goster:
+Show the result:
 ```
-🔍 API Endpoint Kesfetme:
-   Kaynak: [OpenAPI spec / Express routes / NestJS controllers / ...]
-   Bulunan: [X] endpoint
-   Auth gerektiren: [Y] endpoint
+🔍 API endpoint discovery:
+   Source: [OpenAPI spec / Express routes / NestJS controllers / ...]
+   Found: [X] endpoints
+   Auth required: [Y] endpoints
 ```
 
-Endpoint bulunamazsa atla — smoke test fallback (health + status) kullanilir.
+If no endpoints are found, skip — the smoke test fallback (health + status) is used.
 
-### 2.7 Analiz Ozeti ve Tek Onay
+### 2.7 Analysis summary and single approval
 
-İki bölümlü özet göster: önce genel analiz özeti, sonra `manifest.detected.*` tablosu, ardından **tek bir AskUserQuestion** ile toplu onay al. Tasarım kuralı: kod analizinden güvenle çıkarılabilen bilgiler (test framework, ORM, migration sistemi vb.) ADIM 3 röportajında tek tek sorulmaz; toplu tabloda gösterilip tek onayla geçilir. Yalnızca kodda görünmeyen subjektif sorular (proje tanımı, geliştirici profili, domain kuralları, güvenlik seviyesi) tek tek sorulur.
+Show a two-part summary: first the general analysis summary, then the `manifest.detected.*` table, then take bulk approval with **a single AskUserQuestion**. Design rule: information that can be confidently extracted from code analysis (test framework, ORM, migration system, etc.) is not asked one-by-one in the STEP 3 interview; it is shown in the bulk table and passed with a single approval. Only subjective questions not visible in code (project description, developer profile, domain rules, security level) are asked one-by-one.
 
-**Bölüm 0 — Erken çıkış kontrolü (en başta yapılır):**
+**Section 0 — Early-exit check (done first):**
 
-`GREENFIELD_MODE = true` ise ADIM 2.7'nin **HİÇBİR çıktısı üretilmez** (Bölüm 1 dahil). Tek satır mesaj yazılır: "Greenfield mod — analiz özeti atlanıyor, tüm röportaj soruları sorulacak." Ardından doğrudan ADIM 3'e geçilir; ADIM 3'teki tüm skip condition'lar iptal edilir.
+If `GREENFIELD_MODE = true`, **NO** STEP 2.7 output is produced (including Section 1). A single-line message is written: "Greenfield mode — analysis summary skipped; all interview questions will be asked." Then go directly to STEP 3; all skip conditions in STEP 3 are cancelled.
 
-`GREENFIELD_MODE = false` ise Bölüm 1'den itibaren akış devam eder.
+If `GREENFIELD_MODE = false`, the flow continues from Section 1.
 
-**Bölüm 1 — Genel özet (GREENFIELD değilse gösterilir):**
+**Section 1 — General summary (shown when not GREENFIELD):**
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 Codebase Analiz Sonucu
+📊 Codebase analysis result
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Proje Tipi:    [tip]
-Runtime:       [runtime]
-Alt Projeler:  [sayi]
-Aktif Moduller:[liste]
+Project type:   [type]
+Runtime:        [runtime]
+Subprojects:    [count]
+Active modules: [list]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Bölüm 1.5 — Detected Alan Doğrulama:**
+**Section 1.5 — Detected field validation:**
 
-Bölüm 2'ye geçmeden önce `manifest.detected` içindeki **her alan için** aşağıdaki doğrulamaları yap:
+Before Section 2, run the following validations for **every field** in `manifest.detected`:
 
-1. `value` mevcut, `null` değil ve boş string değil.
-2. `source` mevcut ve string tipinde.
-3. `confidence` değeri **kesin olarak** şu enum'da: `high`, `medium`, `low`. Başka değer (örn. `unknown`, `medium-high`, sayı, boş) kabul edilmez.
+1. `value` is present, not `null`, and not an empty string.
+2. `source` is present and of string type.
+3. `confidence` is **exactly** one of this enum: `high`, `medium`, `low`. Any other value (e.g. `unknown`, `medium-high`, number, empty) is rejected.
 
-**Davranış:**
-- Doğrulamayı geçmeyen alanlar tabloda **gösterilmez** ve "Evet" onayında final manifest alanlarına **kopyalanmaz**.
-- Bu alanlar için ADIM 3'te ilgili soru kullanıcıya sorulur (skip condition iptal — soru her zaman gösterilir).
-- Bir veya daha fazla alan invalid ise stderr'a tek satırlık uyarı yazılır: `[WARN] manifest.detected.<alan> invalid (confidence|value|source) — interview fallback`.
-- Hiçbir alan doğrulamayı geçmezse `manifest.detected` boş kabul edilir → Bölüm 2 ve Bölüm 3 atlanır, ADIM 3 tüm sorularıyla çalışır.
+**Behavior:**
+- Fields that fail validation are **not shown** in the table and are **not copied** into final manifest fields on "Yes" approval.
+- For those fields, the related question is asked to the user in STEP 3 (skip condition cancelled — the question is always shown).
+- If one or more fields are invalid, write a one-line warning to stderr: `[WARN] manifest.detected.<field> invalid (confidence|value|source) — interview fallback`.
+- If no field passes validation, treat `manifest.detected` as empty → skip Section 2 and Section 3; STEP 3 runs with all questions.
 
-**Bölüm 2 — Tespit Edilenler tablosu (manifest.detected boş değilse):**
+**Section 2 — Detected fields table (when manifest.detected is not empty):**
 
-`manifest.detected` içinde en az bir alan dolu ise aşağıdaki tabloyu göster:
+If at least one field in `manifest.detected` is filled, show the table below:
 
 ```
-🔍 Tespit Edilenler:
+🔍 Detected fields:
 ┌─────────────────────┬────────────────────────────────────┬────────┬────────────────────────────────┐
-│ Alan                │ Değer                              │ Güven  │ Kaynak                         │
+│ Field               │ Value                              │ Conf.  │ Source                         │
 ├─────────────────────┼────────────────────────────────────┼────────┼────────────────────────────────┤
 │ test_framework      │ {detected.test_framework.value}    │ {…}    │ {detected.test_framework.source}│
 │ formatter           │ {detected.formatter.value}         │ {…}    │ {detected.formatter.source}     │
@@ -1061,259 +1050,258 @@ Bölüm 2'ye geçmeden önce `manifest.detected` içindeki **her alan için** a�
 └─────────────────────┴────────────────────────────────────┴────────┴────────────────────────────────┘
 ```
 
-**Düşük güven gösterimi:** `confidence: low` olan alanlar için "Değer" sütununda etiket eklenir. Örnek: `conventional [düşük güven]`. Kullanıcı bu işareti gördüğünde değeri daha dikkatli doğrular.
+**Low-confidence display:** For fields with `confidence: low`, append a label in the "Value" column. Example: `conventional [low confidence]`. When the user sees this mark they validate the value more carefully.
 
-**Boş alan davranışı:** `manifest.detected.<alan>` yoksa veya `value` `null`/boşsa o satır tabloda hiç gösterilmez (alan tamamen atlanır, "—" yazılmaz).
+**Empty field behavior:** If `manifest.detected.<field>` is missing or `value` is `null`/empty, that row is not shown in the table at all (the field is fully omitted; do not write "—").
 
-**Bölüm 3 — Tek onay sorusu (Bölüm 2 gösterildiyse):**
+**Section 3 — Single approval question (when Section 2 was shown):**
 
-`AskUserQuestion` tool'unu şu parametrelerle çağır:
+Call the `AskUserQuestion` tool with these parameters:
 
 ```yaml
-question: "Yukarıdaki tespitler doğru mu?"
-header: "Tespit onay"
+question: "Are the detections above correct?"
+header: "Detection approval"
 multiSelect: false
 options:
-  - label: "Evet, hepsi doğru"
-    description: "Tabloda gösterilen tüm tespitler manifest'e olduğu gibi yazılır; ADIM 3'te bu alanlara karşılık gelen sorular atlanır, sadece subjektif sorular sorulur."
-  - label: "Düzelteceğim"
-    description: "Hangi alanların yanlış olduğunu seçmek istiyorum (multiSelect akışı — TASK-211/T1b kapsamında implement edilir)."
+  - label: "Yes, all correct"
+    description: "All detections shown in the table are written into the manifest as-is; questions for these fields are skipped in STEP 3; only subjective questions are asked."
+  - label: "I will correct"
+    description: "I want to choose which fields are wrong (multiSelect flow — implemented under TASK-211/T1b)."
 ```
 
-**"Evet, hepsi doğru" cevabı:** `manifest.detected.<alan>.value` değerleri ilgili final alanlara kopyalanır:
-- `detected.test_framework.value` → `stack.test_framework` (ve `workflows.test_strategy` türetilir: framework varsa `tests-exist`, yoksa `none`)
+**"Yes, all correct" answer:** `manifest.detected.<field>.value` values are copied to the related final fields:
+- `detected.test_framework.value` → `stack.test_framework` (and `workflows.test_strategy` is derived: `tests-exist` if a framework exists, otherwise `none`)
 - `detected.formatter.value` → `stack.formatter`
 - `detected.linter.value` → `stack.linter`
 - `detected.orm.value` → `stack.orm`
-- `detected.migration.value` → `stack.migration_strategy` (ve `workflows.migration_strategy`)
+- `detected.migration.value` → `stack.migration_strategy` (and `workflows.migration_strategy`)
 - `detected.auth_method.value` → `stack.auth_method`
 - `detected.design_system.value` → `rules.design_system`
 - `detected.deploy_platform.value` → `environments[*].deploy_platform`
 - `detected.commit_convention.value` → `workflows.commit_convention`
-- `rules.db_migration_required` → `true` default yazilir. Kullanici ADIM 3 veya domain kurallari sirasinda DB migration disiplinini acikca istemedigini soylerse `false` yapilir; aksi halde true kalir.
+- `rules.db_migration_required` → written as `true` by default. If the user explicitly says during STEP 3 or domain rules that they do not want DB migration discipline, set to `false`; otherwise it stays true.
 
-ADIM 3'te bu alanlara karşılık gelen sorular atlanır; sadece subjektif sorular (proje tanımı, geliştirici profili, domain kuralları, ek notlar) sorulur.
+In STEP 3, questions for these fields are skipped; only subjective questions (project description, developer profile, domain rules, extra notes) are asked.
 
-**"Düzelteceğim" cevabı:** Aşağıdaki **Bölüm 4 — Düzeltme Akışı** tetiklenir.
+**"I will correct" answer:** The **Section 4 — Correction flow** below is triggered.
 
-**Bölüm 4 — Düzeltme Akışı (multiSelect):**
+**Section 4 — Correction flow (multiSelect):**
+This section runs ONLY if the user chose "I will fix" in Section 3.
 
-Bu bölüm SADECE Bölüm 3'te kullanıcı "Düzelteceğim" seçtiyse çalışır.
+**Step 4.1 — Valid field list:** `valid = [detected keys that passed Section 1.5]`. This list is the fields shown in the table (i.e. a 1–8 element subset).
 
-**Adım 4.1 — Geçerli alan listesi:** `valid = [Bölüm 1.5'ten geçen detected anahtarları]`. Bu liste tabloda gösterilen alanlardır (yani 1-8 elemanlı bir alt küme).
+**Step 4.2 — Question form (dynamic):**
 
-**Adım 4.2 — Soru biçimi (dinamik):**
+Choose the question based on `valid.length`:
 
-Soruyu `valid.length`'e göre seç:
-
-| `valid.length` | Yöntem | Detay |
+| `valid.length` | Method | Detail |
 |---|---|---|
-| 0 | Akış sonu | Bölüm 4 sessizce atlanır (zaten Bölüm 2/3 atlanmış olmalıydı). |
-| 1 | Tek soru, 2 seçenek | `AskUserQuestion` tek soru, `multiSelect: false`. Seçenekler: "Yanlış, soruyu sor" / "Doğru, manifest'e yaz". **Mapping:** "Yanlış" → `wrong = [valid[0]]`; "Doğru" → `wrong = []`. |
-| 2-4 | Tek soru, multiSelect | `AskUserQuestion` tek soru, `multiSelect: true`, seçenekler `valid` alan adları. |
-| 5-8 | İki soru, multiSelect | `AskUserQuestion` tek çağrıda 2 soru (set 1: ilk 4 alan, set 2: kalan 4 alan), her ikisi `multiSelect: true`. |
+| 0 | End of flow | Section 4 is skipped silently (Sections 2/3 should already have been skipped). |
+| 1 | Single question, 2 options | `AskUserQuestion` single question, `multiSelect: false`. Options: "Wrong, ask the question" / "Correct, write to manifest". **Mapping:** "Wrong" → `wrong = [valid[0]]`; "Correct" → `wrong = []`. |
+| 2-4 | Single question, multiSelect | `AskUserQuestion` single question, `multiSelect: true`, options are `valid` field names. |
+| 5-8 | Two questions, multiSelect | `AskUserQuestion` single call with 2 questions (set 1: first 4 fields, set 2: remaining 4 fields), both `multiSelect: true`. |
 
-**5-8 alan örneği (questions parametresi):**
+**5–8 field example (questions parameter):**
 
 ```yaml
 questions:
-  - question: "Yanlış olan alanları seçin (Set 1):"
-    header: "Düzelt 1"
+  - question: "Select the incorrect fields (Set 1):"
+    header: "Fix 1"
     multiSelect: true
     options:
       - label: "test_framework"
-        description: "Mevcut: {detected.test_framework.value}"
+        description: "Current: {detected.test_framework.value}"
       - label: "formatter"
-        description: "Mevcut: {detected.formatter.value}"
+        description: "Current: {detected.formatter.value}"
       - label: "linter"
-        description: "Mevcut: {detected.linter.value}"
+        description: "Current: {detected.linter.value}"
       - label: "orm"
-        description: "Mevcut: {detected.orm.value}"
-  - question: "Yanlış olan alanları seçin (Set 2):"
-    header: "Düzelt 2"
+        description: "Current: {detected.orm.value}"
+  - question: "Select the incorrect fields (Set 2):"
+    header: "Fix 2"
     multiSelect: true
     options:
       - label: "auth_method"
-        description: "Mevcut: {detected.auth_method.value}"
+        description: "Current: {detected.auth_method.value}"
       - label: "design_system"
-        description: "Mevcut: {detected.design_system.value}"
+        description: "Current: {detected.design_system.value}"
       - label: "deploy_platform"
-        description: "Mevcut: {detected.deploy_platform.value}"
+        description: "Current: {detected.deploy_platform.value}"
       - label: "commit_convention"
-        description: "Mevcut: {detected.commit_convention.value}"
+        description: "Current: {detected.commit_convention.value}"
 ```
 
-**Set bölümü:** `valid` listesinden ilk 4 → Set 1, sonraki 4 → Set 2. Daha az varsa Set 2 oluşturulmaz. Sıralama deterministik (manifest.detected anahtar sırası).
+**Set split:** First 4 from the `valid` list → Set 1, next 4 → Set 2. If fewer remain, Set 2 is not created. Ordering is deterministic (manifest.detected key order).
 
-**Adım 4.3 — Sonuç işleme:**
+**Step 4.3 — Result handling:**
 
-`raw = [kullanıcının seçtiği tüm label'lar]` (her iki set'in birleşimi).
+`raw = [all labels selected by the user]` (union of both sets).
 
-**Normalize:** `wrong = unique(raw ∩ valid)` — yani `raw` içinden **yalnızca `valid` kümesinde olan ve benzersiz** alan adları alınır. `valid` dışında bir label (Other/serbest metin/beklenmeyen değer) veya duplicate gelirse:
-- Stderr'a uyarı: `[WARN] Düzeltme akışı: geçersiz seçim atlandı: {label}`
-- O label `wrong` listesine **eklenmez** (sessizce yok sayılır, kullanıcıya sorgu tekrarlanmaz).
+**Normalize:** `wrong = unique(raw ∩ valid)` — i.e. from `raw`, take **only field names that are in the `valid` set and unique**. If a label outside `valid` (Other/free text/unexpected value) or a duplicate arrives:
+- Warn on stderr: `[WARN] Correction flow: invalid selection skipped: {label}`
+- That label is **not added** to the `wrong` list (silently ignored; the question is not re-asked).
 
 `correct = valid - wrong`.
 
-- `correct` içindeki alanlar için `detected.<alan>.value` ilgili final manifest alanına **kopyalanır** (Bölüm 3'teki kopyalama listesi). ADIM 3'te bu alanların sorusu **atlanır**.
-- `wrong` içindeki alanlar için **kopyalama yok**. ADIM 3'te o alanların sorusu **her zaman sorulur** (skip condition iptal).
-- `wrong` boşsa ("Doğru, manifest'e yaz" seçildi veya hiçbir şey işaretlenmedi): Bölüm 3'teki "Evet" akışıyla aynı davranış (tüm `valid` alanlar kopyalanır, ilgili sorular atlanır).
+- For fields in `correct`, `detected.<field>.value` is **copied** to the related final manifest field (copy list from Section 3). In STEP 3, questions for these fields are **skipped**.
+- For fields in `wrong`, there is **no copy**. In STEP 3, questions for those fields are **always asked** (skip condition cancelled).
+- If `wrong` is empty ("Correct, write to manifest" selected or nothing checked): same behavior as the "Yes" flow in Section 3 (all `valid` fields are copied, related questions skipped).
 
-**Adım 4.4 — Bilgi mesajı (devam etmeden önce):**
+**Step 4.4 — Info message (before continuing):**
 
-Stdout'a kısa özet yaz:
+Write a short summary to stdout:
 ```
-✅ Onaylanan alanlar: [correct listesi virgülle ayrılmış]
-❓ Yeniden sorulacak: [wrong listesi virgülle ayrılmış]
+✅ Confirmed fields: [correct list comma-separated]
+❓ Will re-ask: [wrong list comma-separated]
 ```
 
-`wrong` boşsa "Yeniden sorulacak" satırı gösterilmez.
+If `wrong` is empty, the "Will re-ask" line is not shown.
 
 ---
 
-**GREENFIELD modu (Bölüm 1.5'ten önce kontrol):**
+**GREENFIELD mode (check before Section 1.5):**
 
-`GREENFIELD_MODE = true` ise (ADIM 1'de tespit edilir, boş Codebase göstergesi) `manifest.detected` zaten baştan boş olur → **Bölüm 1.5, 2, 3, 4 tamamen atlanır**. Bölüm 1'in altına şu mesaj yazılır: "Greenfield mod — tüm röportaj soruları sorulacak." Ardından doğrudan ADIM 3'e geçilir; ADIM 3'teki tüm skip condition'lar iptal edilir (her soru sorulur).
+If `GREENFIELD_MODE = true` (detected in STEP 1, empty Codebase indicator) `manifest.detected` is already empty from the start → **Sections 1.5, 2, 3, 4 are skipped entirely**. Write this message under Section 1: "Greenfield mode — all interview questions will be asked." Then proceed directly to STEP 3; all skip conditions in STEP 3 are cancelled (every question is asked).
 
-**Detected boş + GREENFIELD değil:** T3 (TASK-212) henüz tamamlanmadıysa veya tüm alanlar Bölüm 1.5 doğrulamasından düşerse bu durum oluşur. Bu durumda da Bölüm 2/3/4 atlanır, ADIM 3 tüm sorularıyla çalışır (greenfield ile aynı fallback).
+**Detected empty + not GREENFIELD:** This occurs if T3 (TASK-212) is not yet complete, or all fields drop out of Section 1.5 validation. In this case Sections 2/3/4 are also skipped, and STEP 3 runs with all questions (same fallback as greenfield).
 
 ---
 
-## ADIM 3 — FAZLI ROPORTAJ
+## STEP 3 — PHASED INTERVIEW
 
-> **🔗 SLIM PATH (init dikişi) aktifse** (ADIM 1.3) bu adimin tamamini atla — `bin/init.js` röportajı terminalde deterministik olarak yapti ve cevaplari manifest'e yazdi. Doğrudan ADIM 5'e geç.
+> **🔗 SLIM PATH (init stitch) active** (STEP 1.3) skip this entire step — `bin/init.js` already ran the interview deterministically in the terminal and wrote answers into the manifest. Proceed directly to STEP 5.
 
-**KURALLAR:**
-1. **Soru gruplandırma:**
-   - **Tespit edilebilir sorular** (test_framework, commit_convention, migration, auth, design_system vb.) ADIM 2.7'de toplu tabloda doğrulanır — ADIM 3'te tek tek sorulmaz.
-   - **Subjektif çoktan seçmeli sorular** (deneyim, dil, otonomi, ekip, güvenlik, CLI hedefleri vb.) ilişkili olanlar `AskUserQuestion`'ın 4-soru batch desteği ile **tek çağrıda birlikte** sorulur. Faz 3 S1-S4 → tek call (4 element); Faz 4 S2+S4+S5 → tek call (3 element).
-   - **Free-text sorular** ayrı kalır, batch'lenmez. Her biri kendi `>` promptu ile sorulur. Liste: Faz 1 S1 (proje tanımı), Faz 4 S1 (yasaklı komutlar), Faz 4 S3 (domain kuralları), Faz 4 S6 (ek notlar).
-2. Onceki adimda tespit edilen bilgiyi once goster — kullanici onaylarsa veya duzeltirse devam et.
-3. Tespit edilip dogrulama gerektirmeyen sorulari atla (ADIM 2.7 onayı sonrası `manifest.detected.<alan>.confidence == "high"` ise skip; bkz. phase-2-technical.md/phase-4-rules.md skip conditions).
-4. Mumkun olan her yerde coktan secmeli (a/b/c/d) format kullan.
-5. Kullanicinin cevabini al, kaydet, sonraki adima gec (batch'te tüm cevaplar tek seferde alınır).
-6. Her fazin basinda faz basligini goster.
-7. **Çoktan seçmeli tüm soruları `AskUserQuestion` tool'u ile sor — plain text `>` promptu kullanma.** Her sorunun Markdown bloğunun hemen altında "AskUserQuestion çağrısı" şablonu verilmiştir; o şablonu tool parametresi olarak kullan. Kısıtlar:
-   - Her soru 2–4 seçenek arası olmalı. 5+ seçenek varsa en popüler 4'ünü göster — "Other" otomatik eklenir (manuel ekleme).
-   - `multiSelect: true` → birden fazla seçim gerektiğinde (örn. stack, hedef CLI araçları).
-   - `header` max 12 karakter kısa label (chip olarak gösterilir).
-   - Kullanıcı "Other" seçerse verdiği serbest metni manifest'e o şekilde yaz.
-   - **Free-text isteyen sorular** (proje tanımı, domain kuralları, ek notlar vb.) AskUserQuestion kullanma — `>` promptuyla sormaya devam et.
-   - "Tespit edilen: ..." ipuçlarını `description` alanına kısaltarak taşı; gerekirse soru metnine de parantez içinde ekle.
+**RULES:**
+1. **Question grouping:**
+   - **Detectable questions** (test_framework, commit_convention, migration, auth, design_system, etc.) are confirmed in the bulk table in STEP 2.7 — they are not asked one-by-one in STEP 3.
+   - **Subjective multiple-choice questions** (experience, language, autonomy, team, security, CLI targets, etc.) that are related are asked **together in a single call** via `AskUserQuestion`'s 4-question batch support. Phase 3 S1–S4 → single call (4 elements); Phase 4 S2+S4+S5 → single call (3 elements).
+   - **Free-text questions** stay separate and are not batched. Each is asked with its own `>` prompt. List: Phase 1 S1 (project description), Phase 4 S1 (forbidden commands), Phase 4 S3 (domain rules), Phase 4 S6 (extra notes).
+2. First show information detected in the previous step — continue once the user confirms or corrects.
+3. Skip questions that were detected and do not need confirmation (after STEP 2.7 approval, if `manifest.detected.<field>.confidence == "high"` then skip; see phase-2-technical.md/phase-4-rules.md skip conditions).
+4. Use multiple-choice (a/b/c/d) format wherever possible.
+5. Take the user's answer, save it, move to the next step (in a batch, all answers are taken at once).
+6. Show the phase title at the start of each phase.
+7. **Ask all multiple-choice questions with the `AskUserQuestion` tool — do not use a plain text `>` prompt.** Immediately under each question's Markdown block there is an "AskUserQuestion call" template; use that template as the tool parameters. Constraints:
+   - Each question must have 2–4 options. If there are 5+ options, show the most popular 4 — "Other" is added automatically (do not add manually).
+   - `multiSelect: true` → when multiple selections are needed (e.g. stack, target CLI tools).
+   - `header` max 12 character short label (shown as a chip).
+   - If the user selects "Other", write the free text they provide into the manifest as-is.
+   - **Questions that need free text** (project description, domain rules, extra notes, etc.) do not use AskUserQuestion — keep asking with a `>` prompt.
+   - Move "Detected: ..." hints into the `description` field in shortened form; if needed, also add them in parentheses in the question text.
 
-`templates/interview/phase-{N}-*.md` dosyaları **zorunludur**:
-- ADIM 1.4'te dosya varlık + tip doğrulaması yapılır (fs.statSync + isFile); eksik veya geçersizse Bootstrap **hemen durur** ve eksikler listelenir.
-- ADIM 3'te bu dosyalar okunup soru blokları oradan işlenir.
-- Bootstrap.md içinde inline default soru tanımı **yoktur** — fallback mekanizması da yoktur. Tek kaynak phase dosyalarıdır.
+`templates/interview/phase-{N}-*.md` files are **required**:
+- In STEP 1.4, file existence + type validation is performed (fs.statSync + isFile); if missing or invalid, Bootstrap **stops immediately** and lists the gaps.
+- In STEP 3 these files are read and question blocks are processed from them.
+- There is **no** inline default question definition inside Bootstrap.md — and no fallback mechanism. The sole source is the phase files.
 
-### Faz 1 — Proje Temelleri
-*Bu faz `PROJECT.md` ve `ARCHITECTURE.md` icin veri toplar.*
+### Phase 1 — Project Fundamentals
+*This phase collects data for `PROJECT.md` and `ARCHITECTURE.md`.*
 
-Soru blokları **kaynak**: `templates/interview/phase-1-project.md`. Bootstrap o dosyayı okuyup Q1-Q5 (proje tanımı, ortamlar, deploy, alt proje rolleri, API prefix) sorularını sırayla işler. Soru detayları (text, options, skip conditions, manifest mapping) phase template dosyasında tutulur.
+Question blocks **source**: `templates/interview/phase-1-project.md`. Bootstrap reads that file and processes Q1–Q5 (project description, environments, deploy, subproject roles, API prefix) in order. Question details (text, options, skip conditions, manifest mapping) live in the phase template file.
 
-> **GREENFIELD_MODE = true ise** `phase-1-project.md`'deki Q0 (stack seçimi) ek sorusu sorulur ve tüm sorular skip condition'sız işlenir.
+> **If GREENFIELD_MODE = true** the extra Q0 (stack selection) question in `phase-1-project.md` is asked and all questions are processed with no skip conditions.
 
-### Faz 2 — Teknik Tercihler
-*Bu faz `STACK.md` ve `WORKFLOWS.md` icin veri toplar.*
+### Phase 2 — Technical Preferences
+*This phase collects data for `STACK.md` and `WORKFLOWS.md`.*
 
-Soru blokları **kaynak**: `templates/interview/phase-2-technical.md`. Bootstrap Q1-Q7 (test stratejisi, branch modeli, commit convention, migration, format hook, auth, naming) sorularını işler. ADIM 2.7 toplu onayında geçen alanlar için `confidence:high → skip` uygulanır (test_framework, commit_convention, migration, auth_method). Detaylar phase template skip conditions bölümünde.
+Question blocks **source**: `templates/interview/phase-2-technical.md`. Bootstrap processes Q1–Q7 (test strategy, branch model, commit convention, migration, format hook, auth, naming). For fields that passed STEP 2.7 bulk approval, `confidence:high → skip` is applied (test_framework, commit_convention, migration, auth_method). Details are in the phase template skip conditions section.
 
-### Faz 3 — Gelistirici Profili
-*Bu faz `DEVELOPER.md` icin veri toplar.*
+### Phase 3 — Developer Profile
+*This phase collects data for `DEVELOPER.md`.*
 
-Soru blokları **kaynak**: `templates/interview/phase-3-developer.md`. Tüm 4 soru subjektiftir; tek `AskUserQuestion` batch çağrısında 4 element olarak sorulur (Seviye + Dil + Otonomi + Ekip). Header tabanlı mapping; detaylar phase template "Batch Delivery" bölümünde.
+Question blocks **source**: `templates/interview/phase-3-developer.md`. All 4 questions are subjective; they are asked as 4 elements in a single `AskUserQuestion` batch call (Level + Language + Autonomy + Team). Header-based mapping; details in the phase template "Batch Delivery" section.
 
-### Faz 4 — Domain Kurallari
-*Bu faz `rules/` dosyalari icin veri toplar.*
+### Phase 4 — Domain Rules
+*This phase collects data for `rules/` files.*
 
-Soru blokları **kaynak**: `templates/interview/phase-4-rules.md`. Sıra:
-- Q1 (yasaklı komutlar) → free-text `>` prompt
-- **[Q2 + Q4 + Q5] tek batch çağrısı (3 element):** design system + güvenlik + CLI hedefler. Header tabanlı mapping. design_system için skip yok (TASK-209/T5).
-- Q3 (domain kuralları) → free-text `>` prompt
-- Q6 (ek notlar) → free-text `>` prompt
+Question blocks **source**: `templates/interview/phase-4-rules.md`. Order:
+- Q1 (forbidden commands) → free-text `>` prompt
+- **[Q2 + Q4 + Q5] single batch call (3 elements):** design system + security + CLI targets. Header-based mapping. No skip for design_system (TASK-209/T5).
+- Q3 (domain rules) → free-text `>` prompt
+- Q6 (extra notes) → free-text `>` prompt
 
 
-Roportaj tamamlaninca:
+When the interview completes:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ Roportaj tamamlandi!
-   Simdi manifest olusturuyorum...
+✅ Interview complete!
+   Creating the manifest now...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-> **Etkileşim sayısı (T2 sonrası):** Brownfield proje (tüm `manifest.detected.*` confidence:high) için ADIM 3 etkileşim sayısı: ~7-8 (önceki ~20'den düşüş). Faz 1: 1 batch + 1 free-text + opsiyonel S0 stack; Faz 2: çoğu skip (ADIM 2.7 onayı kapsadığı alanlar); Faz 3: 1 batch (4 soru tek call); Faz 4: 1 batch (3 soru tek call) + 3 free-text. Greenfield veya düşük-tespit projelerde sayı doğal olarak artar (skip kapsama düştüğü için).
+> **Interaction count (after T2):** For a brownfield project (all `manifest.detected.*` confidence:high) STEP 3 interaction count: ~7–8 (down from previous ~20). Phase 1: 1 batch + 1 free-text + optional S0 stack; Phase 2: mostly skip (fields covered by STEP 2.7 approval); Phase 3: 1 batch (4 questions in one call); Phase 4: 1 batch (3 questions in one call) + 3 free-text. On greenfield or low-detection projects the count naturally rises (because skip coverage drops).
 
 ---
 
-## ADIM 4 — MANIFEST OLUSTURMA
+## STEP 4 — MANIFEST CREATION
 
-> **🔗 SLIM PATH (init dikişi) aktifse** (ADIM 1.3) bu adimi atla — manifest `bin/init.js` tarafindan deterministik olarak olusturulup `templates/manifest.schema.js` ile dogrulanmistir. Mevcut manifesti oldugu gibi kullan.
+> **🔗 SLIM PATH (init stitch) active** (STEP 1.3) skip this step — the manifest was created deterministically by `bin/init.js` and validated with `templates/manifest.schema.js`. Use the existing manifest as-is.
 
-Toplanan tum verileri birlestirerek `../Docbase/agentic/project-manifest.yaml` dosyasini olustur.
+Combine all collected data to create the `../Docbase/agentic/project-manifest.yaml` file.
 
-Onemli: Once `../Docbase/agentic/` dizininin var oldugundan emin ol, yoksa olustur.
+Important: First ensure the `../Docbase/agentic/` directory exists; create it if not.
 
-### Manifest Yapisi
+### Manifest Structure
 
-Asagidaki YAML sablonunu doldur. Bos kalan alanlara `null` yaz, bilinmeyen alanlari tamamen kaldir.
+Fill the YAML template below. Write `null` for empty fields; remove unknown fields entirely.
 
-**YAML Guvenlik Kurallari:**
-- Serbest metin alanlari (description, reason, rule, domain kurallari) MUTLAKA tirnak icinde yaz: `"deger"`
-- YAML ozel karakterler (`: # - | > [ ] { }`) iceren degerler icin cift tirnak ZORUNLU
-- Cok satirli degerler icin YAML literal block scalar (`|`) kullan
-- Production URL'lerini dogrudan yazmak yerine env var referansi oner: `"$PROD_URL veya .env'den alinir"`
-- Kullanici cevaplarini manifest'e yazarken icerigini OLDUKLARI GIBI koru ama YAML-safe formatla
+**YAML Safety Rules:**
+- Free-text fields (description, reason, rule, domain rules) MUST be written in quotes: `"value"`
+- Double quotes are REQUIRED for values containing YAML special characters (`: # - | > [ ] { }`)
+- Use a YAML literal block scalar (`|`) for multi-line values
+- Prefer an env var reference instead of writing production URLs directly: `"$PROD_URL or taken from .env"`
+- When writing user answers into the manifest, preserve content AS-IS but format it YAML-safe
 
 ```yaml
 manifest:
   version: "1.0.0"
-  template_version: "1.1.0"  # 1.0.0 → 1.1.0: interview phase dosyalari zorunlu (TASK-214). Geriye uyumlu — eski manifest'ler 'overwrite' modunda otomatik bump edilir.
-  generated_at: "[tarih-saat]"
+  template_version: "1.1.0"  # 1.0.0 → 1.1.0: interview phase files required (TASK-214). Backward compatible — old manifests are auto-bumped in 'overwrite' mode.
+  generated_at: "[date-time]"
   generation_mode: "[fresh|overwrite|merge|incremental]"
   managed_files:
     - path: ".claude/commands/task-hunter.md"
-      checksum: "sha256:[dosya-ozeti]"
+      checksum: "sha256:[file-digest]"
 
 project:
-  name: "[proje adi]"
-  description: "[S1 cevabindan]"
+  name: "[project name]"
+  description: "[from S1 answer]"
   type: "[single|monorepo]"
-  language: "[ana dil]"
+  language: "[primary language]"
   team_size: "[solo|small-team|large-team]"
   security_level: "[standard|high|critical]"
   api_prefix: "[/api|/api/v1|/v1|null]"
   subprojects:
-    - name: "[alt proje adi]"
-      path: "[goreceli yol]"
+    - name: "[subproject name]"
+      path: "[relative path]"
       role: "[api|mobile|web|admin|worker|shared|legacy]"
-      stack: "[kisa stack tanimi]"
-      test_command: "[test komutu]"
-      build_command: "[build komutu]"
-      dev_command: "[dev komutu]"
-      modules:                                            # subproject-bazli modul tespiti (monorepo)
-        orm: "[eslesen leaf yolu veya null]"
-        backend: "[eslesen leaf yolu veya null]"
-        frontend: "[eslesen leaf yolu veya null]"
-        mobile: "[eslesen leaf yolu veya null]"
+      stack: "[short stack description]"
+      test_command: "[test command]"
+      build_command: "[build command]"
+      dev_command: "[dev command]"
+      modules:                                            # subproject-based module detection (monorepo)
+        orm: "[matching leaf path or null]"
+        backend: "[matching leaf path or null]"
+        frontend: "[matching leaf path or null]"
+        mobile: "[matching leaf path or null]"
 
-detected:                                                 # ADIM 2.4 cıktısı — kullanıcı onayı bekleyen ham tespitler (T3/TASK-212 implement eder)
-  # Her alan: { value, confidence: high|medium|low, source: "<dosya:detay>" }
-  # ADIM 2.7'de tabloya yansır; "Evet, hepsi doğru" onayında value alanları stack/workflows/rules/environments alanlarına kopyalanır.
-  # Greenfield modunda veya T3 tamamlanmadan önce bu blok tamamen boş kalır → ADIM 2.7 Bölüm 2/3 atlanır.
-  test_framework:    { value: "[jest|vitest|mocha|pytest|phpunit|null]", confidence: "[high|medium|low]", source: "[ornek: package.json:devDependencies]" }
-  formatter:         { value: "[prettier|biome|ruff|null]",              confidence: "[high|medium|low]", source: "[paket veya config dosyasi]" }
-  linter:            { value: "[eslint|biome|ruff|null]",                confidence: "[high|medium|low]", source: "[paket veya config dosyasi]" }
-  orm:               { value: "[prisma|typeorm|sequelize|drizzle|eloquent|django-orm|null]", confidence: "[high|medium|low]", source: "[paket]" }
-  migration:         { value: "[orm|manual-sql|none]",                   confidence: "[high|medium|low]", source: "[detected.orm veya migrations/ klasoru]" }
-  auth_method:       { value: "[jwt|oauth2|session|api-key|none]",       confidence: "[high|medium|low]", source: "[paket: passport/jsonwebtoken/express-session]" }
-  design_system:     { value: "[mui|shadcn|tailwind|antd|rn-paper|none]", confidence: "[high|medium|low]", source: "[paket kombinasyonu]" }
-  deploy_platform:   { value: "[github-actions|gitlab-ci|vercel|docker|none]", confidence: "[high|medium|low]", source: "[CI dosyasi veya config]" }
-  commit_convention: { value: "[conventional|free|unknown]",             confidence: "[high|medium|low]", source: "[git log heuristic %X — 50 commit ornegi]" }
+detected:                                                 # STEP 2.4 output — raw detections awaiting user approval (implemented by T3/TASK-212)
+  # Each field: { value, confidence: high|medium|low, source: "<file:detail>" }
+  # Reflected in the STEP 2.7 table; on "Yes, all correct" approval, value fields are copied into stack/workflows/rules/environments fields.
+  # In greenfield mode or before T3 completes this block stays fully empty → STEP 2.7 Sections 2/3 are skipped.
+  test_framework:    { value: "[jest|vitest|mocha|pytest|phpunit|null]", confidence: "[high|medium|low]", source: "[example: package.json:devDependencies]" }
+  formatter:         { value: "[prettier|biome|ruff|null]",              confidence: "[high|medium|low]", source: "[package or config file]" }
+  linter:            { value: "[eslint|biome|ruff|null]",                confidence: "[high|medium|low]", source: "[package or config file]" }
+  orm:               { value: "[prisma|typeorm|sequelize|drizzle|eloquent|django-orm|null]", confidence: "[high|medium|low]", source: "[package]" }
+  migration:         { value: "[orm|manual-sql|none]",                   confidence: "[high|medium|low]", source: "[detected.orm or migrations/ directory]" }
+  auth_method:       { value: "[jwt|oauth2|session|api-key|none]",       confidence: "[high|medium|low]", source: "[package: passport/jsonwebtoken/express-session]" }
+  design_system:     { value: "[mui|shadcn|tailwind|antd|rn-paper|none]", confidence: "[high|medium|low]", source: "[package combination]" }
+  deploy_platform:   { value: "[github-actions|gitlab-ci|vercel|docker|none]", confidence: "[high|medium|low]", source: "[CI file or config]" }
+  commit_convention: { value: "[conventional|free|unknown]",             confidence: "[high|medium|low]", source: "[git log heuristic %X — 50 commit sample]" }
 
 stack:
   runtime: "[node|python|go|rust|php|java]"
-  runtime_version: "[versiyon — tespit edilebildiyse]"
+  runtime_version: "[version — if detectable]"
   package_manager: "[npm|yarn|pnpm|bun|composer|pip|cargo]"
   typescript: [true|false]
   test_framework: "[jest|vitest|mocha|pytest|phpunit|null]"
@@ -1327,31 +1315,31 @@ environments:
   - name: "local"
     api_url: "[local url]"
   - name: "staging"
-    api_url: "[staging url — varsa]"
+    api_url: "[staging url — if any]"
   - name: "production"
-    api_url: "[production url — varsa]"
+    api_url: "[production url — if any]"
     deploy_platform: "[platform]"
-    deploy_trigger: "[tetikleyici]"
+    deploy_trigger: "[trigger]"
 
 developer:
   experience: "[junior|mid|senior|new-to-stack]"
   autonomy: "[ask-every-step|plan-then-auto|full-auto]"
-  communication_language: "[tr|en|other]"        # iletisim dili (Faz 3 Q2 sonucu); manifest.project.language KOD dili icin (TypeScript/Python/...) ayri alandir.
+  communication_language: "[tr|en|other]"        # communication language (Phase 3 Q2 result); manifest.project.language is a separate field for CODE language (TypeScript/Python/...).
 
-targets: ["claude"]                                       # claude canonical kaynak; digerleri transform hedefidir. ornek: [claude, gemini, antigravity, codex, kimi]
+targets: ["claude"]                                       # claude is the canonical source; others are transform targets. example: [claude, gemini, antigravity, codex, kimi]
 
 workflows:
   branch_model: "[direct-push|feature-pr|gitflow|trunk]"
   commit_convention: "[conventional|free|custom]"
   commit_prefix_map:
-    feat: "Yeni özellik"
-    fix: "Hata duzeltme"
-    refactor: "Yeniden yapilandirma"
-    docs: "Dokumantasyon"
+    feat: "New feature"
+    fix: "Bug fix"
+    refactor: "Refactor"
+    docs: "Documentation"
     test: "Test"
-    chore: "Bakim"
-    style: "Stil/format"
-    perf: "Performans"
+    chore: "Maintenance"
+    style: "Style/format"
+    perf: "Performance"
     ci: "CI/CD"
   test_strategy: "[tdd|tests-exist|minimal|none]"
   auto_format_hook: [true|false]
@@ -1359,58 +1347,58 @@ workflows:
   ci_pipeline: "[github-actions|gitlab-ci|jenkins|null]"  # auto-detect: .github/workflows/, .gitlab-ci.yml
 
 conventions:
-  naming: "[camelCase|snake_case|PascalCase|custom]"       # degisken/fonksiyon isimlendirme
-  file_naming: "[kebab-case|snake_case|PascalCase|custom]" # dosya isimlendirme
-  component_naming: "[PascalCase|null]"                     # React/Vue component isimlendirme (varsa)
-  commit_language: "[tr|en]"                                # commit mesaj dili
-  commit_format: "[conventional|free|custom]"               # commit mesaj formati
-  docblock: "[required|optional|none]"                      # docblock/jsdoc zorunlulugu
+  naming: "[camelCase|snake_case|PascalCase|custom]"       # variable/function naming
+  file_naming: "[kebab-case|snake_case|PascalCase|custom]" # file naming
+  component_naming: "[PascalCase|null]"                     # React/Vue component naming (if any)
+  commit_language: "[tr|en]"                                # commit message language
+  commit_format: "[conventional|free|custom]"               # commit message format
+  docblock: "[required|optional|none]"                      # docblock/jsdoc requirement
 
 modules:
-  # Single proje: Her kategori tek bir leaf secer.
-  # Monorepo: Tum subproject.modules degerlerinin UNION'i. Ornegin api/ prisma + admin/ django-orm
-  # kullaniyorsa active.orm: [prisma, django-orm] olur. Bu sekilde tum gerekli modul dosyalari uretilir.
+  # Single project: Each category selects a single leaf.
+  # Monorepo: UNION of all subproject.modules values. For example if api/ uses prisma + admin/ uses django-orm
+  # then active.orm: [prisma, django-orm]. This way all required module files are produced.
   active:
-    orm: "[leaf veya leaf listesi]"                 # single: "prisma", monorepo: ["prisma", "django-orm"]
-    deploy: "[leaf veya leaf listesi]"              # ornek: "docker"
-    backend: "[leaf veya leaf listesi]"             # single: "nodejs/express", monorepo: ["nodejs/express", "python/django"]
-    mobile: "[leaf veya leaf listesi]"              # ornek: "expo"
-    frontend: "[leaf veya leaf listesi]"            # ornek: "nextjs"
-    ci-cd: "[leaf veya leaf listesi veya null]"      # ornek: "github-actions"
-    monitoring: "[leaf veya leaf listesi veya null]"  # ornek: "sentry"
-    api-docs: "[leaf veya leaf listesi veya null]"   # ornek: "openapi"
-  standalone: ["[aktif bagimsiz moduller]"]          # ornek: [monorepo, security]
+    orm: "[leaf or leaf list]"                 # single: "prisma", monorepo: ["prisma", "django-orm"]
+    deploy: "[leaf or leaf list]"              # example: "docker"
+    backend: "[leaf or leaf list]"             # single: "nodejs/express", monorepo: ["nodejs/express", "python/django"]
+    mobile: "[leaf or leaf list]"              # example: "expo"
+    frontend: "[leaf or leaf list]"            # example: "nextjs"
+    ci-cd: "[leaf or leaf list or null]"      # example: "github-actions"
+    monitoring: "[leaf or leaf list or null]"  # example: "sentry"
+    api-docs: "[leaf or leaf list or null]"   # example: "openapi"
+  standalone: ["[active standalone modules]"]          # example: [monorepo, security]
   skipped:
-    orm: ["[eslesmemis leaf'ler]"]                  # ornek: [eloquent, typeorm]
-    deploy: ["[eslesmemis leaf'ler]"]               # ornek: [vercel]
-    backend: ["[eslesmemis leaf yollari]"]          # ornek: [nodejs/fastify, php/laravel]
-    mobile: ["[eslesmemis leaf'ler]"]               # ornek: [react-native]
-    frontend: ["[eslesmemis leaf'ler]"]             # ornek: [react]
-    ci-cd: ["[eslesmemis leaf'ler]"]                # ornek: [gitlab-ci]
-    monitoring: ["[eslesmemis leaf'ler]"]            # ornek: [datadog]
-    api-docs: ["[eslesmemis leaf'ler]"]             # ornek: [graphql]
+    orm: ["[unmatched leaves]"]                  # example: [eloquent, typeorm]
+    deploy: ["[unmatched leaves]"]               # example: [vercel]
+    backend: ["[unmatched leaf paths]"]          # example: [nodejs/fastify, php/laravel]
+    mobile: ["[unmatched leaves]"]               # example: [react-native]
+    frontend: ["[unmatched leaves]"]             # example: [react]
+    ci-cd: ["[unmatched leaves]"]                # example: [gitlab-ci]
+    monitoring: ["[unmatched leaves]"]            # example: [datadog]
+    api-docs: ["[unmatched leaves]"]             # example: [graphql]
 
 rules:
-  db_migration_required: true                         # Default true; kullanici acikca hayir derse false
+  db_migration_required: true                         # Default true; false only if the user explicitly says no
   forbidden:
-    - command: "[yasakli komut]"
-      reason: "[sebep]"
+    - command: "[forbidden command]"
+      reason: "[reason]"
       hook_type: "pre-commit"
   domain:
-    - name: "[kural adi]"
-      rule: "[kural açıklaması]"
-  design_system: "[mui|shadcn|tailwind|antd|rn-paper|<custom>|none]"   # Default 'none' (kullanmiyor); null DEPRECATED ama geriye uyumlu — null gorulurse 'none' ile esdeger islenir.
+    - name: "[rule name]"
+      rule: "[rule description]"
+  design_system: "[mui|shadcn|tailwind|antd|rn-paper|<custom>|none]"   # Default 'none' (not used); null is DEPRECATED but backward compatible — if null is seen it is treated as equivalent to 'none'.
 ```
 
-Uyumluluk kurali:
+Compatibility rule:
 
-- `manifest.version` major surumu beklenen major ile ayniysa `merge` ve `incremental` desteklenir.
-- `manifest.version` yoksa veya major farkliysa manifest uyumsuz kabul edilir; yalnizca `overwrite` veya iptal sunulur.
-- Ayni major icinde eksik alanlar varsa default degerleri doldur, manifesti yeni surume yukselt ve devam et.
+- If `manifest.version` major matches the expected major, `merge` and `incremental` are supported.
+- If `manifest.version` is missing or the major differs, the manifest is considered incompatible; only `overwrite` or cancel are offered.
+- Within the same major, if fields are missing, fill defaults, bump the manifest to the new version, and continue.
 
-#### Ornek: Monorepo Coklu Stack Senaryosu
+#### Example: Monorepo Multi-Stack Scenario
 
-Express+Prisma API ve Django Admin iceren bir monorepo icin manifest ornegi:
+Manifest example for a monorepo containing an Express+Prisma API and a Django Admin:
 
 ```yaml
 project:
@@ -1465,312 +1453,315 @@ modules:
   standalone: ["monorepo", "security"]
 ```
 
-Bu yapilandirmada:
-- Teammate 2 hem Prisma hem Django ORM rule dosyalarini, hem Express hem Django backend rule dosyalarini, hem Expo rule dosyalarini uretir
-- VERIFICATION_COMMANDS blogu 3 ayri subproject icin test/build/lint komutlari icerir
-- IMPLEMENTATION_RULES her subproject'in stack'ine ozel kurallar tasir
+In this configuration:
+- Teammate 2 produces both Prisma and Django ORM rule files, both Express and Django backend rule files, and Expo rule files
+- The VERIFICATION_COMMANDS block contains test/build/lint commands for 3 separate subprojects
+- IMPLEMENTATION_RULES carries rules specific to each subproject's stack
 
-### Manifest Onay
+### Manifest Approval
 
-Olusturulan manifesti kullaniciya YAML olarak goster ve onay iste:
+Show the created manifest to the user as YAML and ask for approval:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📋 Proje Manifesti
+📋 Project Manifest
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-[YAML icerigini goster]
+[show YAML content]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Bu manifest doğru mu?
-  a) Evet, devam et
-  b) Duzeltme yapmak istiyorum (neyi?)
+Is this manifest correct?
+  a) Yes, continue
+  b) I want to make a correction (what?)
 >
 ```
 
-- `b` secilirse → kullanicinin duzeltmesini al, manifesti guncelle, tekrar goster.
-- `a` secilirse → manifesti `../Docbase/agentic/project-manifest.yaml` olarak yaz ve devam et.
+- If `b` is selected → take the user's correction, update the manifest, show again.
+- If `a` is selected → write the manifest as `../Docbase/agentic/project-manifest.yaml` and continue.
 
 ```
-✅ Manifest yazildi: ../Docbase/agentic/project-manifest.yaml
+✅ Manifest written: ../Docbase/agentic/project-manifest.yaml
 ```
 
 ---
 
-## ADIM 5 — DOSYA OLUSTURMA (TEAMMATE MODU)
+## STEP 5 — FILE CREATION (TEAMMATE MODE)
 
-**ONEMLI:** Bu adim TEAMMATE mekanizmasi ile paralel calisir. Lead (sen) teammate'leri spawn eder, her biri bagimsiz bir dosya grubunu uretir. Bu yaklasim hem hiz hem tutarlilik saglar — her teammate'in context'i temiz ve odakli kalir.
+**IMPORTANT:** This step runs in parallel via the TEAMMATE mechanism. The Lead (you) spawns teammates; each produces an independent file group. This approach provides both speed and consistency — each teammate's context stays clean and focused.
 
-### 5.0 Dizin Yapisi Olusturma
+### 5.0 Directory Structure Creation
 
-Once hedef dizinlerin var oldugundan emin ol:
+First ensure the target directories exist:
 
 ```bash
 mkdir -p .claude/{commands,agents,hooks,rules,reports/deploys,tracking/errors} .claude/custom/{commands,agents,hooks,rules,_rescued} git-hooks
 ```
 
-`templates/core/rules/db-migration-discipline.skeleton.md` HER ZAMAN islenir ve `.claude/rules/db-migration-discipline.md` olarak kopyalanir. Bu rule evrenseldir; ORM modulu aktif olmasa bile uretilir.
+`templates/core/rules/db-migration-discipline.skeleton.md` is ALWAYS processed and copied as `.claude/rules/db-migration-discipline.md`. This rule is universal; it is produced even if the ORM module is not active.
 
-### 5.1 Teammate Spawn Plani
+### 5.1 Teammate Spawn Plan
 
-Manifest verisini ve aktif modul listesini hazirla. Sonra asagidaki 5 teammate'i PARALEL olarak spawn et. Her teammate'e manifest verisinin TAMAMI + ilgili skeleton dosya yollarini ver.
+Prepare the manifest data and the active module list. Then spawn the following 5 teammates in PARALLEL. Give each teammate the FULL manifest data + the related skeleton file paths.
 
-**KRITIK:** Teammate'ler Codebase'e YAZMAZ. Sadece Agentbase/.claude/ ve Agentbase/ root dizinine yazarlar.
+**CRITICAL:** Teammates do NOT write to Codebase. They write only to Agentbase/.claude/ and the Agentbase/ root directory.
 
 ```
-Lead (sen)
+Lead (you)
   │
   ├──► Teammate 1: core-generator (Agent tool)
-  │    Gorev: Core command, agent ve rule skeleton'larini isle,
-  │           stack ve subproject bazli uzman agent'lar uret
-  │    Girdi: manifest + templates/core/commands/*.skeleton.md
+  │    Task: Process core command, agent and rule skeletons,
+  │           produce specialist agents based on stack and subproject
+  │    Input: manifest + templates/core/commands/*.skeleton.md
   │                     + templates/core/agents/*.skeleton.md
-  │                     + templates/core/rules/*.md (sabit) ve *.skeleton.md
-  │    Cikti: .claude/commands/ (16 core command dosyasi)
-  │           .claude/agents/ (8 core + uzman agent'lar)
-  │           .claude/rules/ (core rule dosyalari; db-migration-discipline.md her zaman dahil)
-  │    UZMAN AGENT URETIMI (bkz. 5.1.2):
+  │                     + templates/core/rules/*.md (fixed) and *.skeleton.md
+  │    Output: .claude/commands/ (16 core command files)
+  │           .claude/agents/ (8 core + specialist agents)
+  │           .claude/rules/ (core rule files; db-migration-discipline.md always included)
+  │    SPECIALIST AGENT PRODUCTION (see 5.1.2):
   │
   ├──► Teammate 2: module-generator (Agent tool)
-  │    Gorev: Aktif modullerin skeleton'larini isle
-  │    Girdi: manifest.modules.active listesi
-  │           + her aktif modul icin templates/modules/{kategori}/{varyant}/ altindaki dosyalar
-  │    Cikti: Modul commands/ → .claude/commands/
-  │           Modul agents/ → .claude/agents/
-  │           Modul rules/ → .claude/rules/
-  │    NOT: Sadece ACTIVE modullerin dosyalarini isler. Pasif modulleri ATLA.
-  │         Monorepo'da modules.active listelerden TUM leaf'lerin dosyalarini uret
-  │         (ornegin active.orm: ["prisma", "django-orm"] ise her ikisinin rule dosyalarini isle).
-  │         GENERATE bloklarini doldururken hangi subproject'in hangi modulu kullandigini
-  │         manifest.project.subprojects[].modules'dan oku.
+  │    Task: Process skeletons of active modules
+  │    Input: manifest.modules.active list
+  │           + files under templates/modules/{category}/{variant}/ for each active module
+  │    Output: Module commands/ → .claude/commands/
+  │           Module agents/ → .claude/agents/
+  │           Module rules/ → .claude/rules/
+  │    NOTE: Process only ACTIVE module files. SKIP passive modules.
+  │         In a monorepo, produce files for ALL leaves from modules.active lists
+  │         (e.g. if active.orm: ["prisma", "django-orm"] process both modules' rule files).
+  │         When filling GENERATE blocks, read which subproject uses which module
+  │         from manifest.project.subprojects[].modules.
   │
   ├──► Teammate 3: hook-generator (Agent tool)
-  │    Gorev: Core + modul hook'larini isle, kullanici yasaklarini hook'a donustur,
-  │           git hook'larini (pre-commit, pre-push) uret
-  │    Girdi: manifest (yasaklar dahil)
+  │    Task: Process core + module hooks, convert user forbids into hooks,
+  │           produce git hooks (pre-commit, pre-push)
+  │    Input: manifest (including forbids)
   │           + templates/core/hooks/*.skeleton.js
   │           + templates/core/git-hooks/*.skeleton (pre-commit, pre-push)
-  │           + aktif modullerin hooks/ dizinlerindeki dosyalar
-  │    Cikti: .claude/hooks/ (core + modul hook'lari)
-  │           git-hooks/ (pre-commit, pre-push — Codebase git islemleri icin)
-  │    RAPOR: Urettigi hook dosya yollarini (.claude/hooks/*.js) Lead'e listele —
-  │           Lead bu listeyi settings.json montajinda kullanir (bkz. 5.2.2).
-  │    NOT: manifest.rules.forbidden listesindeki her "block" tipi yasak icin
-  │         PreToolUse(Bash) hook'una jq bloklama kurali ekle.
-  │         Her "warn" tipi yasak icin PostToolUse(Edit|Write) hook'una uyari ekle.
-  │    JS MARKER FORMATI: Hook skeleton dosyalari (.js) MD'den farkli marker
-  │         formati kullanir. HTML comment yerine JS comment syntax:
-  │           /* GENERATE: BLOCK_NAME ... */  →  marker baslangici
-  │           /* END GENERATE */              →  marker bitisi
-  │         Wrapper satirlari (// ─── GENERATE BOLUMU BASLANGIC/BITIS ───)
-  │         bilgilendirme amaclidir, korunmalidir.
+  │           + files in active modules' hooks/ directories
+  │    Output: .claude/hooks/ (core + module hooks)
+  │           git-hooks/ (pre-commit, pre-push — for Codebase git operations)
+  │    REPORT: List the produced hook file paths (.claude/hooks/*.js) to the Lead —
+  │           the Lead uses this list when assembling settings.json (see 5.2.2).
+  │    NOTE: For every "block" type forbid in manifest.rules.forbidden
+  │         add a jq blocking rule to the PreToolUse(Bash) hook.
+  │         For every "warn" type forbid add a warning to the PostToolUse(Edit|Write) hook.
+  │    JS MARKER FORMAT: Hook skeleton files (.js) use a different marker
+  │         format than MD. JS comment syntax instead of HTML comments:
+  │           /* GENERATE: BLOCK_NAME ... */  →  marker start
+  │           /* END GENERATE */              →  marker end
+  │         Wrapper lines (// ─── GENERATE SECTION START/END ───)
+  │         are informational and must be preserved.
   │
   ├──► Teammate 4: config-generator (Agent tool)
-  │    Gorev: generate.js ile .claude/ config dosyalarini uret
-  │    Girdi: manifest + templates/core/ (CLAUDE.md.skeleton, settings.skeleton.json, claude-ignore.skeleton)
-  │    Cikti: .claude/CLAUDE.md
+  │    Task: Produce .claude/ config files with generate.js
+  │    Input: manifest + templates/core/ (CLAUDE.md.skeleton, settings.skeleton.json, claude-ignore.skeleton)
+  │    Output: .claude/CLAUDE.md
   │           .claude/settings.json
   │           .claude-ignore
-  │    NOT: CLAUDE.md.skeleton'daki GENERATE bloklarini manifest'ten doldur.
-  │         Backlog CLI rehberi SABIT kalir, proje bilgileri GENERATE bloklarina girer.
-  │         .mcp.json `templates/core/mcp.skeleton.json` kaynagindan ZORUNLU olarak uretilir — codex + basic-memory MCP entry'lerini icerir.
-  │         basic-memory vault init prosedürü (idempotent + fail-loud):
-  │           1) VAULT_DIR="$(cd .. && pwd -P)/Docbase/memory"  # canonical, boşluk-safe
-  │           2) PROJ_NAME=manifest.project.name (yoksa dizin adı). Reserved chars sanitize edilir.
-  │           3) mkdir -p "$VAULT_DIR" || { echo "❌ vault mkdir basarisiz"; exit 1; }
-  │           4) Çakışma tespiti: `uvx basic-memory project list --json` ile mevcut projeleri parse et.
-  │              - `$PROJ_NAME` listede yoksa: `uvx basic-memory project add "$PROJ_NAME" "$VAULT_DIR"` çağır.
-  │                Exit code 0 olmazsa stderr göster + DUR (silent overwrite riski yok).
-  │              - Listede VARSA ve aynı path'e işaret ediyorsa: idempotent — atla.
-  │              - Listede VARSA ama farklı path'e işaret ediyorsa: `${PROJ_NAME}-$(date +%s)` suffix ile yeni ad dene.
-  │           5) `--json` çıktısı yoksa (eski sürüm) fallback: `project list` çıktısında `^$PROJ_NAME ` regex'i ile kontrol.
-  │           Tüm path argümanları DAİMA tırnaklı ("$VAULT_DIR", "$PROJ_NAME") — boşluk/symlink path'lerde sessiz çatallanmayı önler.
+  │    NOTE: Fill GENERATE blocks in CLAUDE.md.skeleton from the manifest.
+  │         The Backlog CLI guide stays FIXED; project info goes into GENERATE blocks.
+  │         .mcp.json is REQUIRED to be produced from `templates/core/mcp.skeleton.json` — it contains codex + basic-memory MCP entries.
+  │         basic-memory vault init procedure (idempotent + fail-loud):
+  │           1) VAULT_DIR="$(cd .. && pwd -P)/Docbase/memory"  # canonical, space-safe
+  │           2) PROJ_NAME=manifest.project.name (else directory name). Reserved chars are sanitized.
+  │           3) mkdir -p "$VAULT_DIR" || { echo "❌ vault mkdir failed"; exit 1; }
+  │           4) Conflict detection: parse existing projects with `uvx basic-memory project list --json`.
+  │              - If `$PROJ_NAME` is not in the list: call `uvx basic-memory project add "$PROJ_NAME" "$VAULT_DIR"`.
+  │                If exit code is not 0, show stderr + STOP (no silent overwrite risk).
+  │              - If it IS in the list and points to the same path: idempotent — skip.
+  │              - If it IS in the list but points to a different path: try a new name with `${PROJ_NAME}-$(date +%s)` suffix.
+  │           5) If `--json` output is unavailable (older version) fallback: check `project list` output with the `^$PROJ_NAME ` regex.
+  │           All path arguments are ALWAYS quoted ("$VAULT_DIR", "$PROJ_NAME") — prevents silent branching on space/symlink paths.
   │
   └──► Teammate 5: root-generator (Agent tool)
-       Gorev: Root dokumantasyon dosyalarini uret
-       Girdi: manifest + codebase analiz sonuclari (Adim 2'den)
-       Hedef dizin: **Agentbase ROOT** (yani `./` — `.claude/` ALTINDA DEGIL; Codebase'e ASLA yazma — Kutsal Kural 2)
-       Cikti: ./PROJECT.md
+       Task: Produce root documentation files
+       Input: manifest + codebase analysis results (from Step 2)
+       Target directory: **Agentbase ROOT** (i.e. `./` — NOT under `.claude/`; NEVER write to Codebase — Invariant rule 2)
+       Output: ./PROJECT.md
               ./STACK.md
               ./DEVELOPER.md
               ./ARCHITECTURE.md
               ./WORKFLOWS.md
-       NOT: Bu dosyalar sifirdan uretilir (skeleton kullanilMAZ).
-            Manifest + codebase analizindeki bilgilerle doldurulur.
-            **KRİTİK YOL KURALI:** Çıktı yolları Agentbase root'undan başlar. `.claude/PROJECT.md` YAZMA — bu yanlış konum. Doğrusu: `Agentbase/PROJECT.md` (yani sadece `PROJECT.md` cwd Agentbase iken).
-            Hedef: Agentbase ROOT — Codebase root'a YAZMA, `.claude/` altina YAZMA.
+       NOTE: These files are produced from scratch (skeleton is NOT used).
+            Filled with information from the manifest + codebase analysis.
+            **CRITICAL PATH RULE:** Output paths start from Agentbase root. Do NOT write `.claude/PROJECT.md` — that is the wrong location. Correct: `Agentbase/PROJECT.md` (i.e. just `PROJECT.md` when cwd is Agentbase).
+            Target: Agentbase ROOT — do NOT write to Codebase root, do NOT write under `.claude/`.
 
-### 5.1.2 Uzman Agent Uretimi
+### 5.1.2 Specialist Agent Production
 
-Core-generator (Teammate 1), core skeleton agent'lara ek olarak stack ve subproject'e gore **uzman agent'lar** uretir. Bu agent'lar task-hunter'in teammate olarak spawn edebilecegi domain-spesifik uzmanlardir.
+In addition to core skeleton agents, core-generator (Teammate 1) produces **specialist agents** based on stack and subproject. These agents are domain-specific specialists that task-hunter can spawn as teammates.
 
-#### Hangi Uzman Agent Uretilir?
+#### Which Specialist Agents Are Produced?
 
-| Kosul | Uretilecek Agent | Kaynak Skeleton |
+| Condition | Agent to Produce | Source Skeleton |
 |-------|------------------|-----------------|
-| `stack.runtime` backend (node, php, python, go, rust, java) | `backend-expert.md` | `templates/core/agents/backend-expert.skeleton.md` |
-| `modules.active.mobile` mevcut | `mobile-expert.md` | `templates/core/agents/mobile-expert.skeleton.md` |
-| `modules.active.frontend` mevcut | `frontend-expert.md` | `templates/core/agents/frontend-expert.skeleton.md` |
+| `stack.runtime` is backend (node, php, python, go, rust, java) | `backend-expert.md` | `templates/core/agents/backend-expert.skeleton.md` |
+| `modules.active.mobile` present | `mobile-expert.md` | `templates/core/agents/mobile-expert.skeleton.md` |
+| `modules.active.frontend` present | `frontend-expert.md` | `templates/core/agents/frontend-expert.skeleton.md` |
 
-#### Monorepo: Subproject-Bazli Agent Uretimi
+#### Monorepo: Subproject-Based Agent Production
 
-Monorepo tespit edildiginde (`project.type == "monorepo"`), core-generator her subproject icin ilgili uzman skeleton'u **klonlayip ozellestirerek** ek agent uretir:
+When a monorepo is detected (`project.type == "monorepo"`), core-generator produces additional agents for each subproject by **cloning and specializing** the related specialist skeleton:
 
-1. Her subproject icin `manifest.project.subprojects[]` listesini tara
-2. Subproject'in `role` alanina gore kaynak skeleton'u sec:
+1. Scan the `manifest.project.subprojects[]` list for each subproject
+2. Select the source skeleton based on the subproject's `role` field:
    - `role: api | worker | backend` → `backend-expert.skeleton.md`
    - `role: mobile` → `mobile-expert.skeleton.md`
    - `role: web | admin | frontend` → `frontend-expert.skeleton.md`
-3. Skeleton'u isle ve cikti dosyasini `{subproject.name}-expert.md` olarak yaz
-4. GENERATE bloklarini subproject-spesifik doldur:
-   - `CODEBASE_CONTEXT` → sadece o subproject'in dizin yapisi ve stack'i
-   - Framework rules → sadece o subproject'in framework'u
-5. Agent frontmatter'ini güncelle:
-   - `name: {subproject.name}-expert` (ornegin `api-expert`, `mobile-expert`, `admin-expert`)
-   - `tools`, `model`, `color` kaynak skeleton'dan miras alinir
+3. Process the skeleton and write the output file as `{subproject.name}-expert.md`
+4. Fill GENERATE blocks subproject-specifically:
+   - `CODEBASE_CONTEXT` → only that subproject's directory structure and stack
+   - Framework rules → only that subproject's framework
+5. Update the agent frontmatter:
+   - `name: {subproject.name}-expert` (e.g. `api-expert`, `mobile-expert`, `admin-expert`)
+   - `tools`, `model`, `color` are inherited from the source skeleton
 
-**Ornek:** `project.subprojects` icinde api (Express), mobile (Expo), admin (Django) varsa:
-- `api-expert.md` ← backend-expert.skeleton + Express kurallari
-- `mobile-expert.md` ← mobile-expert.skeleton + Expo kurallari
-- `admin-expert.md` ← backend-expert.skeleton + Django kurallari
+**Example:** If `project.subprojects` contains api (Express), mobile (Expo), admin (Django):
+- `api-expert.md` ← backend-expert.skeleton + Express rules
+- `mobile-expert.md` ← mobile-expert.skeleton + Expo rules
+- `admin-expert.md` ← backend-expert.skeleton + Django rules
 
-**NOT:** Single proje ise subproject-bazli agent uretimi ATLANIR. Sadece stack-bazli generic agent'lar uretilir.
+**NOTE:** For a single project, subproject-based agent production is SKIPPED. Only stack-based generic agents are produced.
 
-**NOT:** Subproject-bazli agent isimleri mevcut core agent isimleriyle (code-review, regression-analyzer, service-documentation) CARPISTIRILMAMALIDIR.
+**NOTE:** Subproject-based agent names MUST NOT collide with existing core agent names (code-review, regression-analyzer, service-documentation).
 
-### 5.1.1 Hibrit Mod: Script-First Yaklasim
+### 5.1.1 Hybrid Mode: Script-First Approach
 
-Skeleton isleme iki asamali calisiir — once deterministik script, sonra Claude:
+Skeleton processing runs in two stages — first the deterministic script, then the active host:
 
-**Adim A — Deterministik Isleme (generate.js):**
+**Step A — Deterministic Processing (generate.js):**
 
 ```bash
 cd Agentbase && node generate.js ../Docbase/agentic/project-manifest.yaml --verbose
 ```
 
-Script su isleri yapar:
-1. Manifest.yaml okur
-2. Aktif modullere gore skeleton dosyalarini tarar
-3. **Basit GENERATE bloklarini** deterministik doldurur (komut tablolari, path listeleri, uzanti dizileri vb.)
-4. **Karmasik GENERATE bloklarini** `<!-- CLAUDE_FILL: BLOCK_NAME -->` marker'i ile isaretler
-5. `.skeleton` uzantisini kaldirarak cikti dosyalarini yazar
-6. Rapor ciktisi verir: kac blok dolduruldu, kac blok Claude'a birakildi
+The script does the following:
+1. Reads Manifest.yaml
+2. Scans skeleton files based on active modules
+3. Fills **simple GENERATE blocks** deterministically (command tables, path lists, extension arrays, etc.)
+4. Marks **complex GENERATE blocks** with a `<!-- CLAUDE_FILL: BLOCK_NAME -->` marker
+5. Writes output files after removing the `.skeleton` extension
+6. Emits a report: how many blocks were filled, how many were left for the active host
 
-**Adim A.2 — Multi-CLI Transform (transform.js):**
+**Step A.2 — Multi-CLI Transform (transform.js):**
 
-Manifest'te `targets` alani `claude` disinda deger iceriyorsa:
+If the `targets` field in the manifest contains values other than `claude`:
 
 ```bash
 cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --verbose
 ```
 
-Sadece `claude` varsa veya `targets` alani yoksa bu adimi ATLA.
+If only `claude` is present or the `targets` field is missing, SKIP this step.
 
-Transform raporu ciktisini kullaniciya goster. Bu adim `.claude/` ciktisini diger CLI formatlarina (`.gemini/`, `.agents/`, `.codex/`, `.kimi/`, `.opencode/`) donusturur.
+Show the transform report output to the user. This step converts `.claude/` output into other CLI formats (`.gemini/`, `.agents/`, `.codex/`, `.kimi/`, `.opencode/`).
 
-**Codex karari:** Codex icin ikinci bootstrap CALISTIRILMAZ. `manifest.targets` icindeki `codex` sadece transform hedefidir; canonical kaynak yine `claude` ciktisidir. Codex secildiyse transform `.codex/skills/*/SKILL.md` ve `AGENTS.md` uretir. Transform tamamlandiktan sonra kullaniciya opsiyonel `/codex-verify` adimini oner:
+**Codex decision:** A second Codex bootstrap is NOT run. `codex` in `manifest.targets` is only a transform target; the canonical source remains the `claude` output. If Codex is selected, transform produces `.codex/skills/*/SKILL.md` and `AGENTS.md`. After transform completes, optionally suggest the `/codex-verify` step to the user:
 
 ```
 /codex-verify
 ```
 
-Bu pass manifesti ve uretilen Codex hedef yuzeyini denetler; bootstrap, manifest veya backlog'u yeniden baslatmaz. Sadece `targets: [claude]` varsa hem transform hem Codex verify/adapt atlanir.
+This pass audits the manifest and the produced Codex target surface; it does not restart bootstrap, the manifest, or the backlog. If only `targets: [claude]` is set, both transform and Codex verify/adapt are skipped.
 
-**Script tarafindan doldurulan basit bloklar:**
+**Simple blocks filled by the script:**
 `COMMIT_CONVENTION`, `VERIFICATION_COMMANDS`, `TEST_COMMANDS`, `COMPILE_COMMANDS`, `BUILD_COMMANDS`, `DETECTED_ORM`, `MIGRATION_COMMANDS`, `DRY_RUN_COMMAND`, `ROLLBACK_COMMAND`, `FILE_EXTENSIONS`, `CODE_EXTENSIONS`, `MEMORY_PATH`, `PRISMA_PATH`, `LARAVEL_PATHS`, `DJANGO_PATHS`, `TYPEORM_PATHS`, `SECURITY_PATTERNS`, `LAYER_TESTS`, `SUBPROJECT_CONFIGS`, `STACK_SPECIFIC_IGNORES`, `DEPLOY_LOG_PATH`, `HEALTH_CHECK_URL`, `SMOKE_TEST_ENDPOINTS`, `API_SMOKE_SCRIPT`, `API_SMOKE_NODE_TESTS`, `TASK_ROUTING_CONFIG`, `GIT_PRECOMMIT_COMPILE`, `GIT_PRECOMMIT_TEST`, `GIT_PRECOMMIT_LINT`, `GIT_PRECOMMIT_FORMAT`, `GIT_PREPUSH_LOCALHOST`, `GIT_PREPUSH_MIGRATION`, `GIT_PREPUSH_ENV`, `GIT_PREPUSH_DESTRUCTIVE`
 
-**Claude'a birakilacak karmasik bloklar (CLAUDE_FILL ile isaretlenir):**
-`CODEBASE_CONTEXT`, `PROJECT_CHECKLIST`, `IMPLEMENTATION_RULES`, `PROJECT_SPECIFIC_RULES`, `REVIEW_CHECKLIST`, `FILE_DISCOVERY_HINTS`, `FILE_DETECTION_PATTERNS`, `AC_TEMPLATES`, `DEPLOY_TOPOLOGY`, `DEPLOY_STEPS`, `ENVIRONMENT_DIFFERENCES`, `HOOK_BEHAVIORS`, `CRITICAL_RULES`, `PROJECT_CONVENTIONS`, `STYLING_APPROACH`, `ROUTER_TYPE`, `STATE_MANAGEMENT` ve diger bağlam-yoğun bloklar.
+**Complex blocks left for the active host (marked with CLAUDE_FILL):**
+`CODEBASE_CONTEXT`, `PROJECT_CHECKLIST`, `IMPLEMENTATION_RULES`, `PROJECT_SPECIFIC_RULES`, `REVIEW_CHECKLIST`, `FILE_DISCOVERY_HINTS`, `FILE_DETECTION_PATTERNS`, `AC_TEMPLATES`, `DEPLOY_TOPOLOGY`, `DEPLOY_STEPS`, `ENVIRONMENT_DIFFERENCES`, `HOOK_BEHAVIORS`, `CRITICAL_RULES`, `PROJECT_CONVENTIONS`, `STYLING_APPROACH`, `ROUTER_TYPE`, `STATE_MANAGEMENT` and other context-heavy blocks.
 
-**Adim B — Claude Tamamlama (Teammate Modu):**
+**Step B — Active Host Completion (Teammate Mode):**
 
-Script tamamlandiktan sonra teammate'ler spawn edilir. Ancak artik teammate'lerin isi AZALMISTIR:
-- Dosyalar zaten yaratilmis ve basit bloklar doldurulmustur
-- Teammate'ler sadece `<!-- CLAUDE_FILL: ... -->` marker'larini bulup manifest + codebase analizi ile doldurur
-- Bu yaklasim teammate timeout riskini azaltir ve tutarliligi arttirir
+After the script completes, teammates are spawned. But now the teammates' work is REDUCED:
+- Files are already created and simple blocks are filled
+- Teammates only find `<!-- CLAUDE_FILL: ... -->` markers and fill them using the manifest + codebase analysis
+- The active host fills CLAUDE_FILL markers
+- This approach reduces teammate timeout risk and increases consistency
 
-**ONEMLI:** Script hata verirse (ornegin manifest parse hatasi), DURMA — hatayi kullaniciya bildir ve klasik teammate-only moduna geri don.
+**IMPORTANT:** If the script errors (e.g. manifest parse error), do NOT stop — report the error to the user and fall back to classic teammate-only mode.
 
-**Avantajlar:**
-- **Idempotent:** Ayni manifest → ayni basit blok ciktisi
-- **Hizli:** Basit bloklar icin Claude token harcanmaz
-- **Test edilebilir:** `node --test generate.test.js` ile dogrulanir
-- **Debug edilebilir:** Hata durumunda stack trace mevcut
+**Advantages:**
+- **Idempotent:** Same manifest → same simple block output
+- **Fast:** No host tokens spent on simple blocks
+- **Testable:** Validated with `node --test generate.test.js`
+- **Debuggable:** Stack trace available on error
 
-### 5.2 Teammate Spawn Uygulamasi
+### 5.2 Teammate Spawn Implementation
 
-Her teammate icin Agent tool kullan. `run_in_background: false` — tum teammate'ler tek bir mesajda paralel baslatilir ve sonuclari beklenir.
+Use the Agent tool for each teammate. `run_in_background: false` — all teammates are started in parallel in a single message and their results are awaited.
 
-Her teammate'e gonderilecek prompt formati:
+Prompt format to send to each teammate:
 
 ```
-Sen Bootstrap'in bir teammate'isin. Gorevin: [gorev aciklamasi]
+You are a Bootstrap teammate. Your task: [task description]
+
+You can read files and write Agentbase files. You cannot use parent-only session tools.
 
 ## Manifest
-[manifest.yaml icerigi — TAMAMI]
+[manifest.yaml content — FULL]
 
-## Skeleton Dosyalari
-[ilgili skeleton dosya yollari]
+## Skeleton Files
+[related skeleton file paths]
 
-## Kurallar
-1. Dosyalar generate.js tarafindan olusturulmus olabilir. Oncelik: `<!-- CLAUDE_FILL: BLOCK_NAME -->` marker'larini bul ve doldur.
-2. CLAUDE_FILL olmayan GENERATE bloklarini da manifest verisiyle doldur (format asagida)
-3. .skeleton uzantisini kaldir (eger generate.js zaten kaldirmissa atlat)
-4. Statik dosyalari oldugu gibi kopyala
-5. Hedef dizine yaz: Agentbase/.claude/ altina (orn: .claude/commands/, .claude/hooks/, .claude/rules/)
-6. Codebase'e ASLA yazma — tum cikti Agentbase/ icinde kalir (Kutsal Kural 2)
-7. Her dosya yazildiginda bildir
-8. Monorepo (project.type == "monorepo") icin GENERATE bloklarini subproject-scope'lu doldur:
-   - VERIFICATION_COMMANDS, TEST_COMMANDS, COMPILE_COMMANDS → her subproject icin AYRI satir uret
-   - IMPLEMENTATION_RULES, REVIEW_CHECKLIST → her subproject'in modules alanindaki stack'e gore kurallar ekle
-   - CODEBASE_CONTEXT → tum subproject'leri ve her birinin stack'ini listele
-   - CODEBASE_CONTEXT sonunda su ozeti AYNI ifadelerle ekle:
-     Kutsal Kurallar:
-     - Config dosyalari SADECE Agentbase icinde yasar
-     - Codebase icinde .claude/ OLUSTURULMAZ
-     - Git sadece Codebase de calisir
-   - Kaynak: `manifest.project.subprojects[].modules` alanlari (her subproject kendi modul setini tasir)
+## Rules
+1. Files may already have been created by generate.js. Priority: find and fill `<!-- CLAUDE_FILL: BLOCK_NAME -->` markers.
+2. Also fill GENERATE blocks that are not CLAUDE_FILL with manifest data (format below)
+3. Remove the .skeleton extension (skip if generate.js already removed it)
+4. Copy static files as-is
+5. Write to the target directory: under Agentbase/.claude/ (e.g. .claude/commands/, .claude/hooks/, .claude/rules/)
+6. NEVER write to Codebase — all output stays inside Agentbase/ (Invariant rule 2)
+7. Report each file as it is written
+8. For monorepo (project.type == "monorepo") fill GENERATE blocks with subproject scope:
+   - VERIFICATION_COMMANDS, TEST_COMMANDS, COMPILE_COMMANDS → produce a SEPARATE line for each subproject
+   - IMPLEMENTATION_RULES, REVIEW_CHECKLIST → add rules based on each subproject's modules stack
+   - CODEBASE_CONTEXT → list all subprojects and each one's stack
+   - At the end of CODEBASE_CONTEXT add this summary with the SAME wording:
+     Invariant rules:
+     - Config files live only inside Agentbase
+     - A .claude/ directory is not created inside Codebase
+     - Git runs only in Codebase
+   - Source: `manifest.project.subprojects[].modules` fields (each subproject carries its own module set)
 
-## Skeleton Marker Formatlari (Dosya Tipine Gore)
+## Skeleton Marker Formats (By File Type)
 
-Skeleton dosyalarinda iki farkli marker formati kullanilir. Dosya uzantisina gore dogru formati isle:
+Two different marker formats are used in skeleton files. Process the correct format based on file extension:
 
-**Markdown / Config dosyalari (.md, .skeleton, .json):**
+**Markdown / Config files (.md, .skeleton, .json):**
 ```
 <!-- GENERATE: BLOCK_NAME -->
-...icerik...
+...content...
 <!-- END GENERATE -->
 ```
 
-**JavaScript dosyalari (.js):**
+**JavaScript files (.js):**
 ```javascript
 /* GENERATE: BLOCK_NAME
- * ...aciklama/ornekler...
+ * ...description/examples...
  */
-...icerik...
+...content...
 /* END GENERATE */
 ```
 
-JS dosyalarinda bolum basinda `// ─── GENERATE BOLUMU BASLANGIC ───` ve sonunda `// ─── GENERATE BOLUMU BITIS ───` wrapper satirlari bulunur. Bu satirlar bilgilendirme amaclidir, isleme sirasinda degistirilmez.
+In JS files, wrapper lines `// ─── GENERATE SECTION START ───` at the start of a section and `// ─── GENERATE SECTION END ───` at the end are present. These lines are informational and are not changed during processing.
 
-## Hedef Yol Haritasi
+## Target Path Map
 - templates/core/commands/*.md → .claude/commands/
 - templates/core/agents/*.md → .claude/agents/
 - templates/core/hooks/* → .claude/hooks/
 - templates/core/git-hooks/* → git-hooks/
 - templates/core/rules/*.md → .claude/rules/
-- templates/modules/{kat}/{var}/commands/*.md → .claude/commands/
-- templates/modules/{kat}/{var}/agents/*.md → .claude/agents/
-- templates/modules/{kat}/{var}/hooks/* → .claude/hooks/
-- templates/modules/{kat}/{var}/rules/*.md → .claude/rules/
+- templates/modules/{cat}/{var}/commands/*.md → .claude/commands/
+- templates/modules/{cat}/{var}/agents/*.md → .claude/agents/
+- templates/modules/{cat}/{var}/hooks/* → .claude/hooks/
+- templates/modules/{cat}/{var}/rules/*.md → .claude/rules/
 ```
 
-### 5.2.1 GENERATE Blok Haritasi
+### 5.2.1 GENERATE Block Map
 
-Teammate'ler skeleton dosyalarini islerken hangi GENERATE bloklarinin hangi dosyada oldugunu bilmelidir. Lead bu tabloyu ilgili teammate'in prompt'una dahil eder:
+When processing skeleton files, teammates must know which GENERATE blocks live in which file. The Lead includes this table in the related teammate's prompt:
 
-| Skeleton Dosyasi | GENERATE Bloklari |
+| Skeleton File | GENERATE Blocks |
 |-----------------|-------------------|
 | api-smoke.skeleton.md | CODEBASE_CONTEXT, SMOKE_TEST_ENDPOINTS, API_SMOKE_SCRIPT, API_SMOKE_NODE_TESTS |
 | task-hunter.skeleton.md | CODEBASE_CONTEXT, FILE_DISCOVERY_HINTS, IMPLEMENTATION_RULES, VERIFICATION_COMMANDS, COMMIT_CONVENTION, PROJECT_SPECIFIC_RULES, TASK_ROUTING_CONFIG |
@@ -1814,233 +1805,233 @@ Teammate'ler skeleton dosyalarini islerken hangi GENERATE bloklarinin hangi dosy
 | pre-commit.skeleton (git-hook) | GIT_PRECOMMIT_COMPILE, GIT_PRECOMMIT_TEST, GIT_PRECOMMIT_LINT, GIT_PRECOMMIT_FORMAT |
 | pre-push.skeleton (git-hook) | GIT_PREPUSH_LOCALHOST, GIT_PREPUSH_MIGRATION, GIT_PREPUSH_ENV, GIT_PREPUSH_DESTRUCTIVE |
 | CLAUDE.md.skeleton (config) | PROFESSIONAL_STANCE, PROJECT_DEFINITION, TECH_STACK, ENVIRONMENTS, COMMANDS, ARCHITECTURE, CONVENTIONS, AVAILABLE_COMMANDS |
-| settings.skeleton.json (Lead — bkz. 5.2.2) | PRETOOLUSE_EDITWRITE_HOOKS, PRETOOLUSE_BASH_HOOKS, POSTTOOLUSE_EDITWRITE_HOOKS, POSTTOOLUSE_BASH_HOOKS, ENABLED_PLUGINS |
+| settings.skeleton.json (Lead — see 5.2.2) | PRETOOLUSE_EDITWRITE_HOOKS, PRETOOLUSE_BASH_HOOKS, POSTTOOLUSE_EDITWRITE_HOOKS, POSTTOOLUSE_BASH_HOOKS, ENABLED_PLUGINS |
 | claude-ignore.skeleton (config) | STACK_SPECIFIC_IGNORES |
 
-**CODEBASE_CONTEXT** her skeleton'da vardir ve manifest'in project + stack + subprojects bolumleriyle doldurulur.
-Her doldurulan CODEBASE_CONTEXT blogunun sonunda su kutsal kural ozeti yer almak ZORUNDADIR:
+**CODEBASE_CONTEXT** exists in every skeleton and is filled from the manifest's project + stack + subprojects sections.
+At the end of every filled CODEBASE_CONTEXT block this invariant-rule summary MUST appear:
 
 ```markdown
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde .claude/ OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Invariant rules:
+- Config files live only inside Agentbase
+- A .claude/ directory is not created inside Codebase
+- Git runs only in Codebase
 ```
 
-### 5.2.2 Lead: settings.json Montaji
+### 5.2.2 Lead: settings.json Assembly
 
-Tum teammate'ler tamamlandiktan sonra, Lead `settings.json` dosyasini asagidaki adimlarla uretir. Bu dosya hicbir teammate tarafindan yazilmaz — sahiplik tamamen Lead'dedir.
+After all teammates complete, the Lead produces the `settings.json` file with the following steps. This file is written by no teammate — ownership belongs entirely to the Lead.
 
-1. **Skeleton'u oku:** `templates/core/settings.skeleton.json` dosyasini oku
-2. **Hook GENERATE bloklarini doldur:** Manifest verisini ve Teammate 3'un raporladigi hook dosya listesini kullanarak su bloklari isle:
-   - `__GENERATE__PRETOOLUSE_EDITWRITE_HOOKS__` — manifest.rules.forbidden + aktif modul Edit/Write hook'lari
-   - `__GENERATE__PRETOOLUSE_BASH_HOOKS__` — aktif modul Bash hook'lari
-   - `__GENERATE__POSTTOOLUSE_EDITWRITE_HOOKS__` — aktif modul post-edit hook'lari
-   - `__GENERATE__POSTTOOLUSE_BASH_HOOKS__` — aktif modul post-bash hook'lari
-3. **Plugin GENERATE blogunu doldur:** Manifest.modules.active listesine gore:
-   - `__GENERATE__ENABLED_PLUGINS__` — aktif modullerin plugin tanimlamalari (root seviyesine merge edilir)
-4. **Meta-anahtarlari temizle:** Cikti JSON'indan `__doc__` ve `__GENERATE__*` wrapper anahtarlarini cikar
-5. **Dosyayi yaz:** `.claude/settings.json` olarak kaydet
-6. **Cross-check:** Uretilen settings.json'daki her hook `command` alaninda referans edilen dosya yolunun (ornegin `node .claude/hooks/code-review-check.js`) Teammate 3 tarafindan gercekten uretildigini dogrula. Eksik dosya varsa UYARI ver.
+1. **Read the skeleton:** Read `templates/core/settings.skeleton.json`
+2. **Fill hook GENERATE blocks:** Using manifest data and the hook file list reported by Teammate 3, process these blocks:
+   - `__GENERATE__PRETOOLUSE_EDITWRITE_HOOKS__` — manifest.rules.forbidden + active module Edit/Write hooks
+   - `__GENERATE__PRETOOLUSE_BASH_HOOKS__` — active module Bash hooks
+   - `__GENERATE__POSTTOOLUSE_EDITWRITE_HOOKS__` — active module post-edit hooks
+   - `__GENERATE__POSTTOOLUSE_BASH_HOOKS__` — active module post-bash hooks
+3. **Fill the plugin GENERATE block:** Based on the Manifest.modules.active list:
+   - `__GENERATE__ENABLED_PLUGINS__` — plugin definitions of active modules (merged at root level)
+4. **Clean meta-keys:** Remove `__doc__` and `__GENERATE__*` wrapper keys from the output JSON
+5. **Write the file:** Save as `.claude/settings.json`
+6. **Cross-check:** Verify that every file path referenced in a hook `command` field in the produced settings.json (e.g. `node .claude/hooks/code-review-check.js`) was actually produced by Teammate 3. If a file is missing, WARN.
 
-**GENERATE Blok Doldurma Kurallari:**
-- Her `__GENERATE__*` blogu icindeki alt anahtarlar kosula baglidir (ornegin `prisma_active` sadece prisma modulu aktifse eklenir)
-- Kosul eslesen alt-objelerin degerleri parent `hooks` array'ine yeni eleman olarak eklenir
-- `__GENERATE__ENABLED_PLUGINS__` blogu root seviyesine merge edilir (cikti JSON'una dogrudan key-value olarak eklenir)
+**GENERATE Block Fill Rules:**
+- Sub-keys inside each `__GENERATE__*` block are conditional (e.g. `prisma_active` is added only if the prisma module is active)
+- Values of matching sub-objects are added as new elements to the parent `hooks` array
+- The `__GENERATE__ENABLED_PLUGINS__` block is merged at root level (added directly as key-value to the output JSON)
 
-### 5.2.3 Teammate Recovery Mekanizmasi
+### 5.2.3 Teammate Recovery Mechanism
 
-Teammate'ler paralel calisirken basarisizlik olabilir. Lead asagidaki recovery stratejisini uygular:
+Failures can occur while teammates run in parallel. The Lead applies the following recovery strategy:
 
-#### Timeout Limitleri
+#### Timeout Limits
 
-Her teammate icin **5 dakika (300.000 ms)** timeout limiti gecerlidir. Agent tool'un `timeout` parametresi bu degerle ayarlanir.
+A **5 minute (300,000 ms)** timeout limit applies to each teammate. The Agent tool's `timeout` parameter is set to this value.
 
-| Teammate | Timeout | Gerekce |
+| Teammate | Timeout | Rationale |
 |----------|---------|---------|
-| 1 (core-generator) | 300s | 12 dosya — skeleton isleme + GENERATE doldurma |
-| 2 (module-generator) | 300s | Degisken dosya sayisi — modul adedine bagli |
-| 3 (hook-generator) | 300s | JS dosyalari + yasak kurallari isleme |
-| 4 (config-generator) | 300s | CLAUDE.md skeleton'u buyuk olabilir |
-| 5 (root-generator) | 300s | Sifirdan icerik uretimi — LLM yogun |
+| 1 (core-generator) | 300s | 12 files — skeleton processing + GENERATE fill |
+| 2 (module-generator) | 300s | Variable file count — depends on module count |
+| 3 (hook-generator) | 300s | JS files + forbid-rule processing |
+| 4 (config-generator) | 300s | CLAUDE.md skeleton can be large |
+| 5 (root-generator) | 300s | From-scratch content production — LLM-heavy |
 
-**NOT:** Monorepo projelerinde subproject sayisi fazlaysa Lead timeout'u **450s**'ye yukseltebilir.
+**NOTE:** On monorepo projects with many subprojects the Lead may raise the timeout to **450s**.
 
-#### Basarisizlik Tespiti
+#### Failure Detection
 
-Bir teammate asagidaki durumlardan birinde **basarisiz** sayilir:
+A teammate is considered **failed** in any of these cases:
 
-1. **Timeout:** Belirlenen sure icinde yanit donmedi
-2. **Hata:** Agent tool hata mesaji dondurdu (crash, context overflow vb.)
-3. **Bos cikti:** Teammate hicbir dosya uretmeden tamamlandi
-4. **Eksik cikti:** Beklenen dosya sayisindan az dosya uretildi (sanity check'te tespit edilir — bkz. 5.3)
+1. **Timeout:** No response within the allotted time
+2. **Error:** Agent tool returned an error message (crash, context overflow, etc.)
+3. **Empty output:** Teammate completed without producing any files
+4. **Incomplete output:** Fewer files than expected were produced (detected in the sanity check — see 5.3)
 
-#### Retry Stratejisi
+#### Retry Strategy
 
 ```
-Teammate basarisiz oldu
+Teammate failed
   │
-  ├─ Ilk basarisizlik mi?
-  │   ├─ EVET → Retry (1 kez)
-  │   │         • Ayni prompt ile yeniden spawn et
+  ├─ First failure?
+  │   ├─ YES → Retry (1 time)
+  │   │         • Re-spawn with the same prompt
   │   │         • run_in_background: false
-  │   │         • Diger teammate'lerin ciktilari KORUNUR
-  │   │         • Retry'da timeout ayni kalir
+  │   │         • Other teammates' outputs are PRESERVED
+  │   │         • Timeout stays the same on retry
   │   │
-  │   └─ HAYIR (2. basarisizlik) → Kullaniciya bildir
-  │         • Basarisiz teammate'in gorevini raporla
-  │         • Uretilemeyen dosya listesini goster
-  │         • Kullaniciya sec:
-  │           (a) Manuel mudahale — kullanici dosyalari kendisi olusturur
-  │           (b) Atla — eksik dosyalar olmadan devam et
-  │           (c) Bootstrap'i iptal et
+  │   └─ NO (2nd failure) → Notify the user
+  │         • Report the failed teammate's task
+  │         • Show the list of files that could not be produced
+  │         • Offer the user:
+  │           (a) Manual intervention — user creates the files themselves
+  │           (b) Skip — continue without the missing files
+  │           (c) Cancel Bootstrap
   │
-  └─ Basarili teammate'lerin ciktilari HER DURUMDA korunur
+  └─ Successful teammates' outputs are preserved in EVERY case
 ```
 
-**KRITIK:** Retry sirasinda diger teammate'lerin urettigi dosyalar ASLA silinmez veya tekrar uretilmez. Sadece basarisiz teammate yeniden calistirilir.
+**CRITICAL:** During retry, files produced by other teammates are NEVER deleted or re-produced. Only the failed teammate is re-run.
 
-#### Retry Uygulama Formati
+#### Retry Application Format
 
-Retry'da teammate'e gonderilecek prompt basina su ek eklenir:
-
-```
-[RETRY] Bu gorev daha once basarisiz oldu. Sebep: [timeout/hata/bos cikti]
-Onceki hata detayi: [varsa hata mesaji]
-Lutfen gorevi bastan tamamla. Tum dosyalari uret.
-```
-
-#### Kismi Basari Yonetimi
-
-Bir teammate BAZI dosyalari uretip BAZILARI icin basarisiz olabilir (ornegin 8 dosyadan 6'sini yazdiktan sonra timeout). Bu durumda:
-
-1. **Uretilen dosyalar korunur** — Lead bunlari silmez
-2. **Eksik dosyalar tespit edilir** — Beklenen cikti listesi ile gercek dosyalar karsilastirilir
-3. **Retry sadece eksik dosyalar icin yapilir** — Retry prompt'una su ek eklenir:
+On retry, this prefix is added to the prompt sent to the teammate:
 
 ```
-[KISMI RETRY] Onceki calistirmada su dosyalar basariyla uretildi ve KORUNUYOR:
-- [uretilmis dosya listesi]
-
-Sadece su EKSIK dosyalari uret:
-- [eksik dosya listesi]
-
-Zaten uretilmis dosyalarin UZERINE YAZMA.
+[RETRY] This task failed previously. Reason: [timeout/error/empty output]
+Previous error detail: [error message if any]
+Please complete the task from scratch. Produce all files.
 ```
 
-#### Kullanici Bildirim Formati
+#### Partial Success Management
 
-2. basarisizlik sonrasinda kullaniciya gosterilecek mesaj:
+A teammate may produce SOME files and fail on OTHERS (e.g. timeout after writing 6 of 8 files). In that case:
+
+1. **Produced files are preserved** — the Lead does not delete them
+2. **Missing files are detected** — expected output list is compared with actual files
+3. **Retry is only for missing files** — this addition is made to the retry prompt:
+
+```
+[PARTIAL RETRY] In the previous run these files were produced successfully and are PRESERVED:
+- [list of produced files]
+
+Produce only these MISSING files:
+- [list of missing files]
+
+Do NOT overwrite files already produced.
+```
+
+#### User Notification Format
+
+Message shown to the user after the 2nd failure:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️  Teammate Basarisizlik Raporu
+⚠️  Teammate Failure Report
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Basarisiz Teammate: [numara] ([isim])
-Basarisizlik Sebebi: [timeout / hata / bos cikti]
-Retry Sonucu: Basarisiz (2/2 deneme tukendi)
+Failed Teammate: [number] ([name])
+Failure Reason: [timeout / error / empty output]
+Retry Result: Failed (2/2 attempts exhausted)
 
-Uretilemeyen Dosyalar:
-  ✗ [dosya yolu 1]
-  ✗ [dosya yolu 2]
+Files Not Produced:
+  ✗ [file path 1]
+  ✗ [file path 2]
   ...
 
-Basarili Uretilen Dosyalar (korunuyor):
-  ✓ [dosya yolu 1]
-  ✓ [dosya yolu 2]
+Successfully Produced Files (preserved):
+  ✓ [file path 1]
+  ✓ [file path 2]
   ...
 
-Diger Teammate'ler: ✅ Tamamlandi (ciktilari korunuyor)
+Other Teammates: ✅ Completed (outputs preserved)
 
-Secenekler:
-  (a) Manuel mudahale — eksik dosyalari kendiniz olusturun
-  (b) Eksikleri atlayip devam et — bootstrap kismi tamamlanir
-  (c) Bootstrap'i iptal et
+Options:
+  (a) Manual intervention — create the missing files yourself
+  (b) Skip gaps and continue — bootstrap completes partially
+  (c) Cancel Bootstrap
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-**Secenek (b) secilirse:** Lead, eksik dosyalari Sanity Check raporunda "EKSIK" olarak isaretler ve bootstrap'a devam eder. settings.json montajinda eksik hook dosyalarina referans EKLENMEZ.
+**If option (b) is selected:** The Lead marks missing files as "MISSING" in the Sanity Check report and continues bootstrap. References to missing hook files are NOT added during settings.json assembly.
 
 ### 5.3 Lead Sanity Check
 
-Tum teammate'ler tamamlandiktan sonra Lead (sen) su kontrolleri yap:
+After all teammates complete, the Lead (you) performs these checks:
 
-1. **Dosya sayisi kontrolu:** Beklenen dosya sayisi ile .claude/ altindaki gercek dosya sayisini karsilastir
-2. **Carpisan dosya kontrolu:** Ayni isme sahip dosya birden fazla teammate'den geldiyse UYARI ver
-3. **settings.json tutarliligi (Lead uretimi — bkz. 5.2.2):**
-   a. settings.json'daki her `command` alanindaki `.claude/hooks/*.js` dosyasinin fiziksel olarak var oldugunu dogrula
-   b. .claude/hooks/ altindaki her .js dosyasinin settings.json'da en az bir hook'ta referans edildigini kontrol et (orphan hook uyarisi)
-   c. `__doc__` veya `__GENERATE__` anahtarlarinin cikti dosyasina sizmadigini dogrula
-   d. JSON syntax dogrulamasi yap (valid JSON mi?)
-4. **CLAUDE.md komut listesi:** Config-generator'in urettigi CLAUDE.md'deki komut tablosunu .claude/commands/ altindaki gercek dosyalarla karsilastir
+1. **File count check:** Compare expected file count with the actual file count under .claude/
+2. **Colliding file check:** If a file with the same name came from more than one teammate, WARN
+3. **settings.json consistency (Lead production — see 5.2.2):**
+   a. Verify that every `.claude/hooks/*.js` file in a `command` field in settings.json physically exists
+   b. Check that every .js file under .claude/hooks/ is referenced in at least one hook in settings.json (orphan hook warning)
+   c. Verify that `__doc__` or `__GENERATE__` keys did not leak into the output file
+   d. Perform JSON syntax validation (is it valid JSON?)
+4. **CLAUDE.md command list:** Compare the command table in the CLAUDE.md produced by config-generator with the actual files under .claude/commands/
 
-Tutarsizlik varsa kullaniciya bildir ve duzelt.
+If there is an inconsistency, notify the user and correct it.
 
-### 5.4 Dosya Olusturma Raporu
+### 5.4 File Creation Report
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📄 Dosya Olusturma Raporu (Teammate Modu)
+📄 File Creation Report (Teammate Mode)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Teammate 1 (core-generator):     [DURUM] [X] dosya uretildi
-Teammate 2 (module-generator):   [DURUM] [X] dosya uretildi
-Teammate 3 (hook-generator):     [DURUM] [X] hook dosyasi + [Y] git-hook uretildi
-Lead (settings.json montaji):    [DURUM] settings.json uretildi
-Teammate 4 (config-generator):   [DURUM] [X] dosya uretildi
-Teammate 5 (root-generator):     [DURUM] [X] dosya uretildi
+Teammate 1 (core-generator):     [STATUS] [X] files produced
+Teammate 2 (module-generator):   [STATUS] [X] files produced
+Teammate 3 (hook-generator):     [STATUS] [X] hook files + [Y] git-hooks produced
+Lead (settings.json assembly):    [STATUS] settings.json produced
+Teammate 4 (config-generator):   [STATUS] [X] files produced
+Teammate 5 (root-generator):     [STATUS] [X] files produced
 
-Lead Sanity Check:               [DURUM]
-Toplam dosya:                    [X]
+Lead Sanity Check:               [STATUS]
+Total files:                    [X]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-DURUM gosterimleri:
-  ✅  — Basarili (ilk denemede)
-  🔄✅ — Retry sonrasi basarili (2. denemede)
-  ⚠️  — Kismi basarili ([Y]/[X] dosya uretildi, [Z] eksik)
-  ❌  — Basarisiz (2 deneme tukendi, kullanici karari: [a/b/c])
+STATUS displays:
+  ✅  — Successful (on first attempt)
+  🔄✅ — Successful after retry (on 2nd attempt)
+  ⚠️  — Partially successful ([Y]/[X] files produced, [Z] missing)
+  ❌  — Failed (2 attempts exhausted, user decision: [a/b/c])
 
-Retry veya kismi basari varsa ek detay:
+If there was a retry or partial success, extra detail:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Teammate [N]: [basarisizlik sebebi]
-    1. deneme: [timeout/hata/eksik cikti] → retry baslatildi
-    2. deneme: [basarili/basarisiz]
-    Uretilen:  [dosya listesi]
-    Eksik:     [dosya listesi] (veya "yok")
+  Teammate [N]: [failure reason]
+    1st attempt: [timeout/error/incomplete output] → retry started
+    2nd attempt: [successful/failed]
+    Produced:  [file list]
+    Missing:     [file list] (or "none")
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### 5.5 Teammate Referans Sablonlari
+### 5.5 Teammate Reference Templates
 
-Asagidaki sablonlar teammate'lerin dosya uretirken kullanacagi formatlari tanimlar. Lead bu sablonlari ilgili teammate'in prompt'una dahil eder.
+The templates below define the formats teammates use when producing files. The Lead includes these templates in the related teammate's prompt.
 
-#### Root Dokumantasyon Dosyalari (Teammate 5 icin)
+#### Root Documentation Files (for Teammate 5)
 
-Manifest verisini kullanarak asagidaki dosyalari Agentbase root'una (`./`) olustur. Her dosya icin once `templates/core/` altinda ayni isimde skeleton dosya aranir, bulunursa o kullanilir, bulunamazsa asagidaki sablonlarla olusturulur.
+Using manifest data, create the following files at Agentbase root (`./`). For each file, first look for a same-named skeleton file under `templates/core/`; if found use it, otherwise create with the templates below.
 
 **PROJECT.md:**
 ```markdown
-# [proje adi]
+# [project name]
 
-## Proje Tanimi
+## Project Definition
 [manifest.project.description]
 
-## Proje Tipi
+## Project Type
 [manifest.project.type] ([manifest.project.language])
 
-## Alt Projeler
-[Her subproject icin: isim, yol, rol, stack]
+## Subprojects
+[For each subproject: name, path, role, stack]
 
-## Ortamlar
-[Her environment icin: isim, URL]
+## Environments
+[For each environment: name, URL]
 
-## Onemli Kurallar
-[manifest.rules.domain'den]
-[manifest.rules.forbidden'den]
+## Important Rules
+[from manifest.rules.domain]
+[from manifest.rules.forbidden]
 
-## Hizli Baslatma
-[Her subproject icin dev komutu]
+## Quick Start
+[dev command for each subproject]
 ```
 
 **STACK.md:**
@@ -2050,121 +2041,120 @@ Manifest verisini kullanarak asagidaki dosyalari Agentbase root'una (`./`) olust
 ## Runtime
 [manifest.stack.runtime] [manifest.stack.runtime_version]
 
-## Paket Yoneticisi
+## Package Manager
 [manifest.stack.package_manager]
 
-## Dil & Tip Sistemi
-[TypeScript durumu, diger diller]
+## Language & Type System
+[TypeScript status, other languages]
 
 ## Test
 Framework: [manifest.stack.test_framework]
-Strateji: [manifest.workflows.test_strategy]
+Strategy: [manifest.workflows.test_strategy]
 
 ## Lint & Format
 Linter: [manifest.stack.linter]
 Formatter: [manifest.stack.formatter]
 
-## Veritabani & ORM
+## Database & ORM
 ORM: [manifest.stack.orm]
 DB: [manifest.stack.database]
 
 ## CI/CD & Deploy
-[Tespit edilen CI/CD araclari]
-[Deploy bilgisi]
+[Detected CI/CD tools]
+[Deploy info]
 ```
 
 **DEVELOPER.md:**
 ```markdown
-# Gelistirici Profili
+# Developer Profile
 
-## Deneyim Seviyesi
+## Experience Level
 [manifest.developer.experience]
 
-## Iletisim
-Dil: [manifest.project.language]
+## Communication
+Language: [manifest.project.language]
 
-## Otonomi
+## Autonomy
 [manifest.developer.autonomy]
-[Otonomi seviyesine gore davranis aciklamasi]
+[Behavior description based on autonomy level]
 
-## Davranis Rehberi
-[Deneyim seviyesine gore Claude'un nasil davranmasi gerektigi]
+## Behavior Guide
+[How the active host should behave based on experience level]
 ```
 
 **ARCHITECTURE.md:**
 ```markdown
-# Mimari
+# Architecture
 
-## Dizin Yapisi
-[Adim 2.2'deki tespit edilen dizin haritasi]
+## Directory Structure
+[Detected directory map from Step 2.2]
+## Subproject Structure
+[For each subproject: role, responsibility area, main directories]
 
-## Alt Proje Yapisi
-[Her subproject icin: rol, sorumluluk alani, ana dizinler]
+## Data Flow
+<!-- This section will be detailed during project development -->
 
-## Veri Akisi
-<!-- Bu bolum proje gelistirme sirasinda detaylandirilacak -->
+## Dependency Rules
+<!-- This section will be detailed during project development -->
 
-## Bagimlilik Kurallari
-<!-- Bu bolum proje gelistirme sirasinda detaylandirilacak -->
-
-> Bu dosya ilk bootstrap sirasinda iskelet olarak olusturulmustur.
-> Detaylandirmak icin: backlog'daki "ARCHITECTURE.md'yi detaylandir" gorevini tamamlayin.
+> This file was created as a skeleton during the first bootstrap.
+> To flesh it out: complete the "Detail ARCHITECTURE.md" task in the backlog.
 ```
 
 **WORKFLOWS.md:**
 ```markdown
-# Is Akislari
+# Workflows
 
 ## Git Workflow
-Branch Modeli: [manifest.workflows.branch_model]
+Branch Model: [manifest.workflows.branch_model]
 Commit Convention: [manifest.workflows.commit_convention]
 
-### Commit Prefix'leri
-[manifest.workflows.commit_prefix_map'den tablo]
+### Commit Prefixes
+[table from manifest.workflows.commit_prefix_map]
 
 ## Test Workflow
-Strateji: [manifest.workflows.test_strategy]
-[Her subproject icin test komutu]
+Strategy: [manifest.workflows.test_strategy]
+[Test command for each subproject]
 
 ## Deploy Workflow
-[Environment ve deploy bilgileri]
+[Environment and deploy information]
 
 ## Code Review
-[Branch modeline gore review sureci]
+[Review process according to the branch model]
 
 ## Migration Workflow
-[manifest.workflows.migration_strategy'ye gore]
+[according to manifest.workflows.migration_strategy]
 ```
 
-#### CLAUDE.md Dosyalari (Teammate 4 icin)
+#### CLAUDE.md Files (for Teammate 4)
 
-Iki ayri CLAUDE.md dosyasi olustur:
+Create two separate CLAUDE.md files:
 
 **Root CLAUDE.md (`./CLAUDE.md`):**
 ```markdown
-# [proje adi] — Claude Code Yapilandirmasi
+# [project name] — Claude Code Configuration
 
-Bu proje agentic workflow kullanir. Tum yapilandirma Agentbase dizinindedir.
+This project uses the agentic workflow. All configuration lives in the Agentbase directory.
 
-## Calisma Dizini
-- **Agentbase/** — Agent yapilandirmasi, komutlar, kurallar (BURADASIN)
-- **../Codebase/** — Proje kaynak kodu (BURAYA ERISIRSIN)
-- **../Docbase/** — Proje dokumantasyonu
+## Working Directory
+- **Agentbase/** — Agent configuration, commands, rules (YOU ARE HERE)
+- **../Codebase/** — Project source code (YOU ACCESS HERE)
+- **../Docbase/** — Project documentation
 
-## Temel Kurallar
-- Dil: [manifest.project.language]
+## Core Rules
+- Language: [manifest.project.language]
 - Commit: [manifest.workflows.commit_convention]
-- Otonomi: [manifest.developer.autonomy]
-- [manifest.rules.domain'den onemli kurallar]
+- Autonomy: [manifest.developer.autonomy]
+- [important rules from manifest.rules.domain]
 
-## Yasakli Islemler
-[manifest.rules.forbidden'den — her biri icin: komut ve sebep]
+## Forbidden Operations
+[from manifest.rules.forbidden — for each: command and reason]
 
-## Aktif Moduller
-[manifest.modules.active listesi]
+## Active Modules
+[manifest.modules.active list]
 
-## Kullanilabilir Komutlar
-[.claude/commands/ altindaki tum komutlari listele]
+## Available Commands
+[list all commands under .claude/commands/]
 
 @PROJECT.md
 @STACK.md
@@ -2176,53 +2166,53 @@ Bu proje agentic workflow kullanir. Tum yapilandirma Agentbase dizinindedir.
 @onboarding.md
 ```
 
-> **NOT — Enjeksiyon zinciri:** Root `CLAUDE.md` yukaridaki `@<dosya>` satirlariyla (Claude Code resmi import syntax'i — bosluksuz, tek token) **TUM** root dokumanlarini context'e dahil eder. Bu sayede:
-> - Claude Code root `CLAUDE.md`'yi okudugunda PROJECT, STACK, DEVELOPER, ARCHITECTURE, WORKFLOWS, ORCHESTRATION, LESSONS, onboarding tamami otomatik yuklenir.
-> - ORCHESTRATION.md tum ajanlarin ortak davranis felsefesini, LESSONS.md gecmis hatalardan turetilmis kurallari tasir — bu iki dosya repo'da statik gelir, Bootstrap doldurmaz.
-> - `transform.js` calistirildiginda root `CLAUDE.md` icerigi GEMINI.md, AGENTS.md, .agents/..., .kimi/..., .opencode/... hedeflerine kopyalanir — enjeksiyon zinciri TUM modeller icin korunur.
-> - Sadece root `CLAUDE.md` icine import satirlarini eklemek yeterli; her hedef dosyaya ayri ayri yazmaya gerek yok (transform.js otomatik adapte eder).
+> **NOTE — Injection chain:** Root `CLAUDE.md` includes **ALL** root documents in context via the `@<file>` lines above (Claude Code official import syntax — no spaces, single token). This means:
+> - When Claude Code reads root `CLAUDE.md`, PROJECT, STACK, DEVELOPER, ARCHITECTURE, WORKFLOWS, ORCHESTRATION, LESSONS, and onboarding are all loaded automatically.
+> - ORCHESTRATION.md carries the shared behavioral philosophy for all agents; LESSONS.md carries rules derived from past mistakes — these two files ship statically in the repo; Bootstrap does not fill them.
+> - When `transform.js` runs, root `CLAUDE.md` content is copied to GEMINI.md, AGENTS.md, .agents/..., .kimi/..., .opencode/... targets — the injection chain is preserved for ALL models.
+> - Adding the import lines only in root `CLAUDE.md` is enough; you do not need to write them into each target file separately (transform.js adapts automatically).
 >
-> **Import satirlarinin tam listesi degisirse** (yeni root dokuman eklenirse), bu listeyi guncellemek ve `ADIM 8 GATE B` icindeki dosya listesini de paralel guncellemek **zorunludur**.
+> **If the full list of import lines changes** (a new root document is added), updating this list and also updating the file list inside `STEP 8 GATE B` in parallel is **mandatory**.
 
 **Inner CLAUDE.md (`.claude/CLAUDE.md`):**
 ```markdown
-# Agent Dahili Yapilandirma
+# Agent Internal Configuration
 
-Bu dizin Claude Code agent yapilandirmasini icerir.
+This directory contains Claude Code agent configuration.
 
-## Dizin Yapisi
-- `commands/` — Slash komutlari (/bootstrap, /task-hunter, vb.)
-- `agents/` — Alt agent tanimlamalari
-- `hooks/` — Pre/post commit ve diger hook'lar
-- `rules/` — Kural dosyalari
-- `reports/` — Agent raporlari
-- `tracking/` — Hata ve islem takibi
+## Directory Structure
+- `commands/` — Slash commands (/bootstrap, /task-hunter, etc.)
+- `agents/` — Sub-agent definitions
+- `hooks/` — Pre/post commit and other hooks
+- `rules/` — Rule files
+- `reports/` — Agent reports
+- `tracking/` — Error and operation tracking
 
 ## Manifest
-Proje manifesti: ../Docbase/agentic/project-manifest.yaml
-Tum yapilandirma bu manifest'ten turetilmistir.
+Project manifest: ../Docbase/agentic/project-manifest.yaml
+All configuration is derived from this manifest.
 ```
 
-#### settings.json (Lead montaji — Adim 5.2.2)
+#### settings.json (Lead assembly — Step 5.2.2)
 
-Lead, tum teammate'ler tamamlandiktan sonra `templates/core/settings.skeleton.json` dosyasindan `.claude/settings.json` dosyasini uretir. Hook GENERATE bloklari manifest + Teammate 3 ciktilariyla, plugin GENERATE blogu manifest.modules.active ile doldurulur.
+After all teammates finish, the Lead produces `.claude/settings.json` from `templates/core/settings.skeleton.json`. Hook GENERATE blocks are filled from the manifest + Teammate 3 outputs; the plugin GENERATE block is filled from manifest.modules.active.
 
 ```
-Girdi:  templates/core/settings.skeleton.json
-Cikti:  .claude/settings.json
+Input:  templates/core/settings.skeleton.json
+Output:  .claude/settings.json
 
-Montaj sureci:
-1. Skeleton'u oku (tum __doc__ ve __GENERATE__* meta-anahtarlari tasinmaz)
-2. Her __GENERATE__* blogundaki kosullu alt-objeleri manifest'e gore degerlendir
-3. Kosul saglanan objeleri parent array/objeye ekle
-4. ENABLED_PLUGINS blogunu root seviyesine merge et
-5. Teammate 3'un raporladigi hook dosya listesiyle cross-check yap
-6. Clean JSON olarak .claude/settings.json'a yaz
+Assembly process:
+1. Read the skeleton (all __doc__ and __GENERATE__* meta-keys are not carried over)
+2. Evaluate the conditional sub-objects in each __GENERATE__* block against the manifest
+3. Add objects whose conditions are met to the parent array/object
+4. Merge the ENABLED_PLUGINS block at the root level
+5. Cross-check against the hook file list reported by Teammate 3
+6. Write clean JSON to .claude/settings.json
 ```
 
-#### .claude-ignore (Teammate 4 icin)
+#### .claude-ignore (for Teammate 4)
 
-`Agentbase/.claude-ignore` dosyasini olustur veya guncelle:
+Create or update the `Agentbase/.claude-ignore` file:
 ```
 node_modules/
 .env
@@ -2237,357 +2227,361 @@ coverage/
 *.db
 ```
 
-#### Modul Etkilesim Matrisi (Tum teammate'ler icin referans)
+#### Module Interaction Matrix (reference for all teammates)
 
-Birden fazla modul aktifse, dosyalar arasindaki katkilari birlestir:
+When multiple modules are active, merge contributions across files:
 
-**Dogrulama Komutlari (task-hunter vb. icin VERIFICATION_COMMANDS):**
-- Core: `tsc --noEmit` (TypeScript varsa) + `[test_command]`
-- orm/* aktifse ekle: ORM validate komutu (ornegin prisma icin `npx prisma validate`)
-- monorepo aktifse: Her alt proje icin ayri dogrulama blogu
+**Verification Commands (VERIFICATION_COMMANDS for task-hunter etc.):**
+- Core: `tsc --noEmit` (if TypeScript) + `[test_command]`
+- If orm/* is active add: ORM validate command (e.g. `npx prisma validate` for prisma)
+- If monorepo is active: separate verification block per subproject
 
-**Code Review Checklist (code-review icin PROJECT_CHECKLIST):**
-- Core: Genel kod kalitesi kontrolleri
-- security aktifse ekle: IDOR, SQL injection, auth bypass kontrolleri
-- mobile/* aktifse ekle: Tema uygunlugu, platform-specific kontroller
-- backend/* aktifse ekle: Framework-spesifik kontroller
-- frontend/* aktifse ekle: Framework-spesifik kontroller
+**Code Review Checklist (PROJECT_CHECKLIST for code-review):**
+- Core: General code quality checks
+- If security is active add: IDOR, SQL injection, auth bypass checks
+- If mobile/* is active add: Theme fitness, platform-specific checks
+- If backend/* is active add: Framework-specific checks
+- If frontend/* is active add: Framework-specific checks
 
 **Workflow Lifecycle:**
 - Core: Branch → commit → push → merge
-- deploy/* aktifse ekle: Deploy adimlari (docker icin Docker build, vercel icin build kontrolu)
-- orm/* aktifse ekle: Migration adimlari
+- If deploy/* is active add: Deploy steps (Docker build for docker, build check for vercel)
+- If orm/* is active add: Migration steps
 
-**Hook'lar:**
-- Core hook'lari
-- orm/* aktifse: ORM'e ozel hook'lar (prisma icin pre-commit'e `prisma validate` + `prisma format`)
-- monorepo aktifse: pre-commit'e cross-package format kontrolu
-- backend/* aktifse: Framework-spesifik hook'lar
+**Hooks:**
+- Core hooks
+- If orm/* is active: ORM-specific hooks (for prisma: `prisma validate` + `prisma format` on pre-commit)
+- If monorepo is active: cross-package format check on pre-commit
+- If backend/* is active: Framework-specific hooks
 
-**NOT:** Eski monolitik "Dosya Olusturma Raporu" kaldirildi. Teammate modu kendi raporunu uretir (Adim 5.4).
+**NOTE:** The old monolithic "File Creation Report" was removed. Teammate mode produces its own report (Step 5.4).
 
-Template'den olusturulan:
-  [template'den okunan ve olusturulan dosya listesi]
+Created from template:
+  [list of files read from template and created]
 
-Atlanan (template bulunamadi):
-  [varsa atlanan dosyalar]
+Skipped (template not found):
+  [skipped files if any]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
 
-## ADIM 6 — BACKLOG BASLANGIC
+## STEP 6 — BACKLOG START
 
-### 6.1 Backlog Baslatma
+### 6.1 Backlog Initialization
 
-Bash ile kontrol et: `ls backlog/config.yml 2>/dev/null`
+Check with Bash: `ls backlog/config.yml 2>/dev/null`
 
-- **Mevcutsa** → Atlat, mevcut backlog'u koru.
-- **Mevcut degilse** → Non-interactive init komutu calistir:
+- **If it exists** → Skip, keep the existing backlog.
+- **If it does not exist** → Run the non-interactive init command:
 
 ```bash
 backlog init "[manifest.project.name]" --defaults
 ```
 
-Bu komut mevcut Agentbase CWD'sinde `backlog/` dizinini tasks/, completed/, archive/, milestones/ alt dizinleriyle ve config.yml ile olusturur. Eger Backlog CLI kurulu degilse veya init basarisiz olursa, DURMA — kullaniciya bildir:
+This command creates the `backlog/` directory in the current Agentbase CWD with tasks/, completed/, archive/, milestones/ subdirectories and config.yml. If the Backlog CLI is not installed or init fails, do NOT STOP — notify the user:
 
 ```
-Backlog CLI bulunamadi veya init basarisiz oldu.
-Kurulum: npm i -g backlog.md
-Sonra bootstrap'i tekrar calistirin.
+Backlog CLI not found or init failed.
+Install: npm i -g backlog.md
+Then run bootstrap again.
 ```
 
-### 6.2 Baslangic Gorevleri
+### 6.2 Initial Tasks
 
-Asagidaki gorevleri olustur (backlog CLI ile):
+Create the following tasks (via backlog CLI):
 
-**GREENFIELD_MODE = false (mevcut proje):**
+**GREENFIELD_MODE = false (existing project):**
 
 ```bash
-backlog task create "Codebase'i incele ve ARCHITECTURE.md'yi detaylandir" \
-  -d "Bootstrap tarafindan olusturulan iskelet ARCHITECTURE.md dosyasini, codebase'i derinlemesine inceleyerek detaylandir. Katman yapisi, veri akisi, bagimlilik kurallari, onemli pattern'ler ekle." \
+backlog task create "Inspect the Codebase and detail ARCHITECTURE.md" \
+  -d "Detail the skeleton ARCHITECTURE.md created by Bootstrap by deeply inspecting the codebase. Add layer structure, data flow, dependency rules, and important patterns." \
   --priority high \
   -l bootstrap
 
-backlog task create "Ilk feature/bug task'ini olustur" \
-  -d "Codebase'i inceledikten sonra, en oncelikli feature veya bug icin bir backlog task'i olustur. Kabul kriterleri ve implementation plani ekle." \
+backlog task create "Create the first feature/bug task" \
+  -d "After inspecting the Codebase, create a backlog task for the highest-priority feature or bug. Add acceptance criteria and an implementation plan." \
   --priority medium \
   -l bootstrap
 ```
 
-**GREENFIELD_MODE = true (yeni proje):**
+**GREENFIELD_MODE = true (new project):**
 
 ```bash
-backlog task create "Proje scaffold'unu olustur" \
-  -d "Codebase/ dizininde proje scaffold'unu olustur. Stack: [manifest.stack.primary]. Gerekli komutlar Bootstrap raporunda listelenmistir." \
+backlog task create "Create the project scaffold" \
+  -d "Create the project scaffold in the Codebase/ directory. Stack: [manifest.stack.primary]. Required commands are listed in the Bootstrap report." \
   --priority high \
   -l bootstrap -l greenfield
 
-backlog task create "ARCHITECTURE.md'yi proje planina gore yaz" \
-  -d "Greenfield projesi icin hedef mimariyi, katmanlari ve veri akisini tanimla. Henuz kod yok — bu bir hedef dokuman." \
+backlog task create "Write ARCHITECTURE.md according to the project plan" \
+  -d "Define the target architecture, layers, and data flow for the greenfield project. There is no code yet — this is a target document." \
   --priority high \
   -l bootstrap -l greenfield
 
-backlog task create "Ilk feature'i planla ve implement et" \
-  -d "Proje scaffold'u olustuktan sonra ilk feature'i planla. /task-plan ile baslayabilirsiniz." \
+backlog task create "Plan and implement the first feature" \
+  -d "After the project scaffold exists, plan the first feature. You can start with /task-plan." \
   --priority medium \
   -l bootstrap -l greenfield
 ```
 
 ```
-✅ Backlog hazir — [2|3] baslangic gorevi olusturuldu.
+✅ Backlog ready — [2|3] initial task(s) created.
 ```
 
 ---
 
-## ADIM 6.5 — KNOWLEDGE-GRAPH MODULU ILK KURULUM (Zorunlu)
+## STEP 6.5 — KNOWLEDGE-GRAPH MODULE FIRST SETUP (Optional)
 
-Bu adim **her zaman calisir** — `knowledge-graph/graphify` zorunlu moduldur (ADIM 1.1.6 CLI'i garanti eder, generate.js hook/`/g`/rules dosyalarini her zaman uretir).
+This step **always runs when reachable** — `knowledge-graph/graphify` is an **optional** module. Graph artifacts improve query efficiency when present; if the CLI is missing, say it is optional and continue. Do not fail or stop bootstrap because graphify is absent. generate.js may still emit hook/`/g`/rules files when the module is selected; this step focuses on optional graph production.
 
-### Bootstrap Istisnasi — Aciklama
+### Bootstrap Exception — Explanation
 
-Bootstrap normalde harici komut tetiklemez — sadece dosya kopyalar/uretir. **Knowledge-graph modulu bilincli bir istisnadir:** hedef projeye ilk graph'i olusturmak icin `graphify update` calistirir. Bu istisnanin gerekcesi: modulun degeri (BFS query ile 150-540x token tasarrufu) ilk graph artifact'i (`graphify-out/graph.json`) olmadan ortaya cikmaz. CLI kurulumu artik ADIM 1.1.6'da yapilir; bu adim graph uretimine odaklanir.
+Bootstrap normally does not trigger external commands — it only copies/generates files. **The knowledge-graph module is a deliberate exception when available:** it runs `graphify update` to create the first graph for the target project. The rationale: the module's value (150-540x token savings via BFS query) does not appear without the first graph artifact (`graphify-out/graph.json`). CLI presence is optional here; if missing, continue without installing.
 
-### Adim 6.5.1 — graphify CLI Teyidi
+### Step 6.5.1 — graphify CLI Check
 
-CLI, ADIM 1.1.6'da zorunlu olarak kuruldu (init dikisi varsa init kurmustur). Burada yalnizca teyit edilir:
+Confirm whether the CLI is available:
 
 ```bash
 command -v graphify >/dev/null 2>&1 && echo "__GRAPHIFY_OK__" || echo "__GRAPHIFY_MISSING__"
 ```
 
-- **`__GRAPHIFY_OK__`** → Adim 6.5.2'ye gec.
-- **`__GRAPHIFY_MISSING__`** → Beklenmedik durum (ADIM 1.1.6 kurmus olmaliydi). `uv tool install graphifyy` kurulumunu tekrar dene; basarisizsa stderr'i goster ve KOMPLE DUR. Modul iskeleti (`.claude/commands/g.md`, `.claude/hooks/graphify-first-guard-v2.js`, `.claude/rules/graphify-rules.md`) zaten generate edildi; eksik olan yalnizca CLI'dir.
+- **`__GRAPHIFY_OK__`** → Proceed to Step 6.5.2.
+- **`__GRAPHIFY_MISSING__`** → graphify is **optional**. Report that the CLI is not installed and continue bootstrap without stopping. The module skeleton (`.claude/commands/g.md`, `.claude/hooks/graphify-first-guard-v2.js`, `.claude/rules/graphify-rules.md`) may already have been generated; only the CLI is missing. Do **not** attempt to install it during bootstrap.
 
-### Adim 6.5.2 — `.gitignore` Patch (Idempotent)
+### Step 6.5.2 — `.gitignore` Patch (Idempotent)
 
-`<Codebase>/.gitignore` dosyasina sirayla:
+In `<Codebase>/.gitignore`, in order:
 
-1. Dosya yoksa olustur.
-2. `graphify-out/` satiri zaten varsa atla.
-3. Yoksa dosya sonuna append et:
+1. Create the file if it does not exist.
+2. If a `graphify-out/` line already exists, skip.
+3. Otherwise append to the end of the file:
    ```
-   # Graphify knowledge graph artifact'i — her gelistirici kendi makinesinde uretir
+   # Graphify knowledge graph artifact — each developer produces it on their own machine
    graphify-out/
    ```
 
-### Adim 6.5.3 — Ilk `graphify update` (Otomatik, Best-Effort)
+### Step 6.5.3 — First `graphify update` (Automatic, Best-Effort)
 
-Zorunlu modul oldugu icin ilk graph **otomatik** uretilir (kullaniciya sorulmaz). Best-effort: basarisiz olursa gorunur uyari verilir ama bootstrap **bloklanmaz** (graph sonradan `/g` veya elle `graphify update .` ile uretilebilir).
+When the CLI is present, the first graph is produced **automatically** (the user is not asked). Best-effort: on failure, emit a visible warning but **do not block** bootstrap (the graph can be produced later via `/g` or manually with `graphify update .`). If the CLI is missing, skip this substep and continue.
 
-`graphify update` calistir (codebase'i tarar, `graphify-out/graph.json` uretir, ~5-10 saniye):
+Run `graphify update` (scans the codebase, produces `graphify-out/graph.json`, ~5-10 seconds):
 
-- **Tek-katman:** `cd <Codebase> && graphify update .`
-- **Monorepo (monorepo modulu de aktif):** `cd <Codebase> && graphify update "<sub1>" && graphify update "<sub2>" && ... && python3 ../Agentbase/scripts/graphify-merge-layers.py`
-  - Subproject yollari manifest `project.subprojects` listesinden alinir
-  - Yollar Codebase-root-relative (`'../Codebase/' onek YOK`) ve shell-quote'lu uretilir
-  - `../Agentbase/scripts/graphify-merge-layers.py` zaten generate.js tarafindan Agentbase kok `scripts/` dizinine kopyalanmis olmalidir
-  - **LAYERS uyarisi:** Python script uretildikten sonra kullanicinin `../Agentbase/scripts/graphify-merge-layers.py` icindeki LAYERS listesini kendi monorepo yapisina gore dogrulamasini hatirlat (generate.js manifest'ten ilk dolumu yapar, kullanici son uyarlamayi yapar)
+- **Single-layer:** `cd <Codebase> && graphify update .`
+- **Monorepo (monorepo module also active):** `cd <Codebase> && graphify update "<sub1>" && graphify update "<sub2>" && ... && python3 ../Agentbase/scripts/graphify-merge-layers.py`
+  - Subproject paths are taken from the manifest `project.subprojects` list
+  - Paths are Codebase-root-relative (NO `'../Codebase/'` prefix) and shell-quoted
+  - `../Agentbase/scripts/graphify-merge-layers.py` should already have been copied by generate.js into the Agentbase root `scripts/` directory
+  - **LAYERS warning:** After the Python script is produced, remind the user to verify the LAYERS list inside `../Agentbase/scripts/graphify-merge-layers.py` against their monorepo layout (generate.js does the first fill from the manifest; the user does the final adaptation)
 
-Komut basarisiz olursa hatayi raporla, bootstrap'i durdurma — kullanici elle uyarlasin.
+If the command fails, report the error; do not stop bootstrap — the user can adapt manually.
 
-### Adim 6.5.4 — Opsiyonel Pre-Push Hook Kurulumu (Idempotent + Mevcut Hook Korumali)
+### Step 6.5.4 — Optional Pre-Push Hook Setup (Idempotent + Existing Hook Protected)
 
-Kullaniciya sor:
+Ask the user:
 
 ```
-Pre-push hook kurulsun mu? Her `git push` oncesi graph otomatik guncellenir. (Bypass: git push --no-verify)
+Install a pre-push hook? The graph is updated automatically before each `git push`. (Bypass: git push --no-verify)
 ```
 
-**Evet** secilirse `<Codebase>/.git/hooks/pre-push` hedef dosya icin:
+If **Yes** is chosen, for target file `<Codebase>/.git/hooks/pre-push`:
 
-1. `core.hooksPath` yapilandirmasini kontrol et — bos degilse `.git/hooks/` kullanilmiyor demektir; kullaniciya bunu raporla ve hedef yolu ona gore degistir:
+1. Check the `core.hooksPath` configuration — if it is not empty, `.git/hooks/` is not in use; report this to the user and change the target path accordingly:
    ```bash
    HOOKS_DIR="$(git -C <Codebase> config --get core.hooksPath || echo .git/hooks)"
    ```
-2. Hedef dosya `${HOOKS_DIR}/pre-push` zaten varsa:
-   - Icerik `# Graphify auto-update` marker'ini iceriyor mu kontrol et.
-     - **Iceriyorsa:** Idempotent — atla, "Graphify pre-push hook zaten kurulu" raporla.
-     - **Icermiyorsa:** Kullaniciya soru sun: `[append | backup-and-replace | skip]`.
-       - `append`: Mevcut hook'un sonuna marker'li blok ekle (mevcut komutlari koru).
-       - `backup-and-replace`: Mevcut hook'u `pre-push.bak-<timestamp>` olarak yedekle, sonra yeni hook yaz.
-       - `skip`: Hicbir sey yapma.
-3. Hedef dosya yoksa: Yeni hook'u sifirdan yaz (shebang + marker'li blok).
+2. If the target file `${HOOKS_DIR}/pre-push` already exists:
+   - Check whether the content contains the `# Graphify auto-update` marker.
+     - **If it does:** Idempotent — skip, report "Graphify pre-push hook already installed".
+     - **If it does not:** Offer the user: `[append | backup-and-replace | skip]`.
+       - `append`: Append the marker block to the end of the existing hook (keep existing commands).
+       - `backup-and-replace`: Back up the existing hook as `pre-push.bak-<timestamp>`, then write the new hook.
+       - `skip`: Do nothing.
+3. If the target file does not exist: Write the new hook from scratch (shebang + marker block).
 
-Marker'li blok format (append veya yeni yazimda eklenen):
+Marker block format (added on append or new write):
 
 ```sh
-# Graphify auto-update — pre-push tetikleyici (modul: knowledge-graph/graphify)
+# Graphify auto-update — pre-push trigger (module: knowledge-graph/graphify)
 # Bypass: git push --no-verify
-# Sessiz fail YOK — hata mesaji stderr'e yazilir, push BLOKLANMAZ.
+# No silent fail — error message is written to stderr; push is NOT blocked.
 
-# Tek-katman:
+# Single-layer:
 if ! graphify update . ; then
-  echo "WARN: graphify update . basarisiz; manuel olarak 'graphify update .' calistirin (push devam ediyor)" >&2
+  echo "WARN: graphify update . failed; run 'graphify update .' manually (push continues)" >&2
 fi
 
-# Multi-layer monorepo (yukaridaki yerine kullanin):
+# Multi-layer monorepo (use instead of the above):
 # if ! ( graphify update "<sub1>" && graphify update "<sub2>" && python3 ../Agentbase/scripts/graphify-merge-layers.py ); then
-#   echo "WARN: graphify multi-layer update basarisiz; manuel update gerekli (push devam ediyor)" >&2
+#   echo "WARN: graphify multi-layer update failed; manual update required (push continues)" >&2
 # fi
 
 exit 0
 ```
 
-Son olarak `chmod +x ${HOOKS_DIR}/pre-push`.
+Finally `chmod +x ${HOOKS_DIR}/pre-push`.
 
-**Hayir** secilirse atla — `templates/modules/knowledge-graph/graphify/install.md` referansi ile kullaniciya manuel kurulum yonergesi ver.
+This optional hook must not install graphify and must not block push.
 
-**Tasarim kararlari:**
-- `2>/dev/null` YASAK — graphify hatalari **kaybedilmez**, stderr'e gorunur uyari yazilir
-- `|| true` yerine `if ! cmd ; then ... ; fi` — hata bildirimi acik, push yine bloklanmaz
-- `core.hooksPath` desteklenir — projenin custom hooks dizini varsa ona yaz
-- Idempotent: marker satiri (`# Graphify auto-update`) yeniden calistirma sirasinda duplicate kurulumu onler
-- Mevcut hook ezilmesi: append/backup-and-replace/skip secimi kullaniciya birakilir
+If **No** is chosen, skip — give the user manual install guidance with a reference to `templates/modules/knowledge-graph/graphify/install.md`.
 
-### Adim 6.5.5 — Tamamlanma Bildirimi
+**Design decisions:**
+- `2>/dev/null` is FORBIDDEN — graphify errors are **not discarded**; a visible warning is written to stderr
+- Use `if ! cmd ; then ... ; fi` instead of `|| true` — error reporting is explicit; push is still not blocked
+- `core.hooksPath` is supported — write to the project's custom hooks directory if present
+- Idempotent: the marker line (`# Graphify auto-update`) prevents duplicate install on re-run
+- Overwriting an existing hook: append/backup-and-replace/skip is left to the user
+
+### Step 6.5.5 — Completion Notice
 
 ```
-🧠 Knowledge-Graph Modulu Hazir
-   ✅ Hook kuruldu: .claude/hooks/graphify-first-guard-v2.js (PreToolUse Bash|Grep|Glob)
-   ✅ Slash komut: /g (query/explain/path/report/health)
-   ✅ Kural dosyasi: .claude/rules/graphify-rules.md (CLAUDE.md'den referansli)
+🧠 Knowledge-Graph Module
+   ✅ Hook installed: .claude/hooks/graphify-first-guard-v2.js (PreToolUse Bash|Grep|Glob)
+   ✅ Slash command: /g (query/explain/path/report/health)
+   ✅ Rule file: .claude/rules/graphify-rules.md (referenced from CLAUDE.md)
    ✅ .gitignore patch: graphify-out/
-   ✅ Ilk graphify update: <node_count> node, <edge_count> edge   (best-effort — basarisizsa WARN, bootstrap devam eder)
-   [optional] ✅ Pre-push hook etkinlestirildi
+   ✅ First graphify update: <node_count> nodes, <edge_count> edges   (best-effort — WARN on failure, bootstrap continues)
+   [optional] ✅ Pre-push hook enabled
+   [optional] graphify CLI missing — skipped; install later if desired
 
-   Ilk sorgu: /g query "<simdilik aklindaki sey>"
-   Sagligi kontrol et: /g health
+   First query: /g query "<whatever is on your mind>"
+   Check health: /g health
 ```
 
 ---
 
-## ADIM 6.6 — HEDEF PROJE REPO AYRIMI: Proje-Kökü `.gitignore` + İki-Repo Teslimat Modeli
+## STEP 6.6 — TARGET PROJECT REPO SEPARATION: Project-Root `.gitignore` + Two-Repo Delivery Model
 
-Bu adım, hedef projeyi **iki-repo teslimat modeline** (Şık 1 — iki ayrı repo) hazırlar:
+This step prepares the target project for the **Two-repo delivery model** (Option 1 — two separate repos):
 
-- **Üst kök (proje kökü)** = geliştiricinin OPSIYONEL git reposu → `Agentbase/` + `Docbase/` versiyonlanır.
-- **Codebase** = kendi bağımsız git reposu → müşteriye AYRI ve tertemiz teslim edilir.
+- **Parent root (project root)** = the developer's OPTIONAL git repo → `Agentbase/` + `Docbase/` are versioned.
+- **Codebase** = its own independent git repo → delivered to the customer SEPARATELY and clean.
 
-İki repo birbirini tanımaz (submodule DEĞİL). Geliştirici üst-kök repoyu (Agentbase + Docbase) klonlar ve `Codebase`'i **ayrıca** klonlar/bağlar — `Codebase` gitignore'lu olduğu için üst-kök klonuyla gelmez. Müşteri yalnızca `Codebase`'i klonlar.
+The two repos do not know each other (NOT a submodule). The developer clones the parent-root repo (Agentbase + Docbase) and clones/attaches `Codebase` **separately** — because `Codebase` is gitignored, it does not come with the parent-root clone. The customer clones only `Codebase`.
 
-> **Kutsal Kural 1 uyumu:** `.git` proje köküne yazılır, **Agentbase içine değil**. Ajanlar üst-kök repoya asla dokunmaz; tüm ajan/workflow git işlemleri `../Codebase/` içindedir.
+> **Invariant rule 1 alignment:** `.git` is written at the project root, **not inside Agentbase**. Agents never touches the parent (developer) repository; Git runs only in Codebase (`../Codebase/`).
 
-### Adim 6.6.1 — Proje-Kökü `.gitignore` Yaz (Idempotent)
+### Step 6.6.1 — Write Project-Root `.gitignore` (Idempotent)
 
-Kaynak şablon: `Agentbase/templates/core/root-gitignore.skeleton`. Hedef: **proje kökü** (`Agentbase/../.gitignore`, yani `Codebase/` ve `Docbase/` ile aynı seviye). Yazımı **Bootstrap orkestratörü doğrudan yapar** — `generate.js` bu skeleton'u işlemez (çıktısını `Agentbase/` içinde tuttuğu için üst dizine yazamaz; bu yüzden skeleton `scanSkeletonFiles` taramasından muaftır).
+Source template: `Agentbase/templates/core/root-gitignore.skeleton`. Target: **project root** (`Agentbase/../.gitignore`, same level as `Codebase/` and `Docbase/`). Writing is done **directly by the Bootstrap orchestrator** — `generate.js` does not process this skeleton (its outputs stay inside `Agentbase/` so it cannot write to the parent directory; therefore this skeleton is exempt from the `scanSkeletonFiles` scan).
 
-Idempotent + **kendini onaran** kural — Gate J ile **birebir aynı** geçerlilik koşulunu kullanır.
+Idempotent + **self-healing** rule — uses the **exact same** validity condition as Gate J.
 
-**Geçerlilik koşulu (GATE J ile aynı):** `../.gitignore` şu üçünü de içerir → `AGENTIC-WORKFLOW-ROOT-GITIGNORE` sentinel'i, `^/Codebase/?$` satırı VE `^/Codebase-wt-\*/$` satırı (root-anchored, baştaki `/` ile).
+**Validity condition (same as GATE J):** `../.gitignore` contains all three of → the `AGENTIC-WORKFLOW-ROOT-GITIGNORE` sentinel, the `^/Codebase/?$` line, AND the `^/Codebase-wt-\*/$` line (root-anchored, with leading `/`).
 
-1. `../.gitignore` yoksa → `root-gitignore.skeleton` içeriğini olduğu gibi `../.gitignore` olarak yaz.
-2. Varsa ve geçerlilik koşulunu **zaten sağlıyorsa** → ATLA (kurulu).
-3. Varsa ama koşulu **sağlamıyorsa** (sentinel yok VEYA gerekli satır(lar) eksik — partial/stale dosya) → managed bloğu **NORMALIZE/REPLACE** et: önceki managed bloğu (START `AGENTIC-WORKFLOW-ROOT-GITIGNORE` … END `END-AGENTIC-WORKFLOW-ROOT-GITIGNORE` arası) VE blok dışında kalmış stale/anchorsuz managed satırları (`Codebase`, `Codebase/`, `Codebase-wt-*/` ve en eski sürümdeki generic `*-wt-*/`) **SİL**, sonra taze skeleton bloğunu sona ekle. Managed olmayan kullanıcı satırları korunur.
+1. If `../.gitignore` does not exist → write the `root-gitignore.skeleton` contents as-is to `../.gitignore`.
+2. If it exists and **already satisfies** the validity condition → SKIP (installed).
+3. If it exists but **does not satisfy** the condition (sentinel missing OR required line(s) missing — partial/stale file) → **NORMALIZE/REPLACE** the managed block: **DELETE** the previous managed block (between START `AGENTIC-WORKFLOW-ROOT-GITIGNORE` … END `END-AGENTIC-WORKFLOW-ROOT-GITIGNORE`) AND any stale/unanchored managed lines left outside the block (`Codebase`, `Codebase/`, `Codebase-wt-*/`, and the oldest-version generic `*-wt-*/`), then append a fresh skeleton block at the end. Non-managed user lines are preserved.
 
-> **Önemli — APPEND-ONLY DEĞİL (stale upgrade kuralı):** Eski bir `.gitignore`'da anchorsuz `Codebase`/`Codebase/`/`Codebase-wt-*/` (veya en eski sürümdeki generic `*-wt-*/`) satırları varsa, yenisini sadece eklemek (append) bu eski satırları bırakır ve onlar `Agentbase/.../Codebase/...` veya `Agentbase/.../foo-wt-bar/...` gibi nested yolları ignore etmeye **devam eder**. Bu yüzden onarım eski managed satırları **silmeli** (normalize/replace).
+> **Important — NOT APPEND-ONLY (stale upgrade rule):** If an older `.gitignore` has unanchored `Codebase`/`Codebase/`/`Codebase-wt-*/` (or the oldest-version generic `*-wt-*/`) lines, merely appending the new ones leaves those old lines in place and they **continue** to ignore nested paths such as `Agentbase/.../Codebase/...` or `Agentbase/.../foo-wt-bar/...`. Therefore repair must **delete** old managed lines (normalize/replace).
 
-> **Önemli (deadlock önleme):** "Sentinel var" tek başına yeterli DEĞİL. Sadece sentinele bakıp atlamak; sentinelı olup gerekli ignore satırları eksik (partial/stale) bir `.gitignore`'da Gate J'nin her turda FAIL etmesine ve `/goal` döngüsünün kilitlenmesine yol açar. Bu yüzden onarım koşulu Gate J koşuluyla **aynıdır** ve eksikse onarır.
+> **Important (deadlock prevention):** "Sentinel present" alone is NOT enough. Skipping based only on the sentinel causes Gate J to FAIL every turn on a partial/stale `.gitignore` that has the sentinel but is missing required ignore lines, locking the `/goal` loop. Therefore the repair condition is **identical** to the Gate J condition and repairs when incomplete.
 
-**Deterministik yöntem (önerilen):** `generate.js`'teki saf `repairRootGitignore(existing, skeleton)` fonksiyonunu kullan — idempotenttir, eski/stale bloğu temizler, kullanıcı satırlarını korur ve yok/partial/stale/geçerli tüm durumları tek seferde doğru sonuca getirir:
+**Deterministic method (recommended):** Use the pure `repairRootGitignore(existing, skeleton)` function in `generate.js` — it is idempotent, cleans the old/stale block, preserves user lines, and brings missing/partial/stale/valid states to the correct result in one pass:
 
 ```bash
 node -e 'const {repairRootGitignore}=require("./generate.js");const fs=require("fs");const f="../.gitignore";const sk=fs.readFileSync("templates/core/root-gitignore.skeleton","utf8");const cur=fs.existsSync(f)?fs.readFileSync(f,"utf8"):"";fs.writeFileSync(f,repairRootGitignore(cur,sk));'
 ```
 
-Pattern'ler **root-anchored**'dır (baştaki `/`): yalnızca proje kökündeki `Codebase` (symlink veya gerçek dizin), Codebase worktree dizinleri (`/Codebase-wt-*/`) ve OS gürültüsü üst-kök repoda izlenmez. Anchorsuz `Codebase` git'te her seviyede eşleşir (örn. `Agentbase/docs/Codebase/...`) — bu istenmez.
+Patterns are **root-anchored** (leading `/`): only `Codebase` at the project root (symlink or real directory), Codebase worktree directories (`/Codebase-wt-*/`), and OS noise are not tracked in the parent-root repo. Unanchored `Codebase` matches at every level in git (e.g. `Agentbase/docs/Codebase/...`) — that is not desired.
 
-### Adim 6.6.2 — Geliştiriciye Opsiyonel `git init` Rehberi
+### Step 6.6.2 — Optional `git init` Guide for the Developer
 
-`git init` **FORCE EDİLMEZ** — sadece önerilir. Konsola şunu bas:
+`git init` is **NOT FORCED** — only suggested. Print the following to the console:
 
 ```
-📦 İki-Repo Teslimat Modeli (opsiyonel)
-   Proje kökü .gitignore hazır → Codebase/ yok sayılıyor.
+📦 Two-repo delivery model (optional)
+   Project-root .gitignore is ready → Codebase/ is ignored.
 
-   Kendi workflow ortamını (Agentbase + Docbase) versiyonlamak istersen,
-   PROJE KÖKÜNDE (Agentbase'in bir üstü) kendi reponu başlat:
+   If you want to version your own workflow environment (Agentbase + Docbase),
+   start your own repo at the PROJECT ROOT (one level above Agentbase):
 
-     cd ..            # proje köküne çık (Agentbase'in üstü)
+     cd ..            # go to project root (parent of Agentbase)
      git init
-     git add .        # Codebase otomatik hariç (.gitignore)
-     git commit -m "chore: workflow ortamı (Agentbase + Docbase)"
+     git add .        # Codebase is automatically excluded (.gitignore)
+     git commit -m "chore: workflow environment (Agentbase + Docbase)"
 
-   Codebase ZATEN kendi reposudur — müşteriye onu ayrı teslim edersin:
-     müşteri →  git clone <Codebase-remote>   (tertemiz, workflow izi yok)
+   Codebase is ALREADY its own repo — deliver that separately to the customer:
+     customer →  git clone <Codebase-remote>   (clean, no workflow traces)
 
-   Not: Üst-kök repo SENİN aracın. Ajanlar ona dokunmaz; tüm ajan git
-   işlemleri ../Codebase/ içinde kalır (Kutsal Kural 1).
+   Note: The parent-root repo is YOUR tool. Agents never touches the parent (developer) repository;
+   Git runs only in Codebase (Invariant rule 1).
 ```
 
-Kullanıcı istemezse bu adımı atla — `../.gitignore` zaten yazıldığı için model her an hazırdır.
+If the user declines, skip this step — because `../.gitignore` is already written, the model is ready at any time.
 
 ---
 
-## ADIM 7 — TAMAMLANMA RAPORU
+## STEP 7 — COMPLETION REPORT
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎉 Bootstrap Tamamlandi!
+🎉 Bootstrap Complete!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📦 Proje: [proje adi]
-📁 Tip:   [single/monorepo]
-🔧 Stack: [ana teknolojiler]
+📦 Project: [project name]
+📁 Type:   [single/monorepo]
+🔧 Stack: [primary technologies]
 
-🧩 Aktif Moduller:
-   Kategoriler:
-     [her aktif kategori icin: kategori → varyant]
-   Bagimsiz:
-     [her aktif bagimsiz modul icin satir]
+🧩 Active Modules:
+   Categories:
+     [for each active category: category → variant]
+   Standalone:
+     [one line per active standalone module]
 
-📄 Olusturulan Dosyalar: [toplam sayi]
-   Root:    [sayi] dosya
-   .claude: [sayi] dosya
+📄 Files Created: [total count]
+   Root:    [count] files
+   .claude: [count] files
 
-📋 Backlog — Baslangic Gorevleri:
-   TASK-1 [HIGH] Codebase'i incele ve ARCHITECTURE.md'yi detaylandir
-     → Calistir: /task-hunter 1
-   TASK-2 [MEDIUM] Ilk feature/bug task'ini olustur
-     → Calistir: /task-plan <istek>
+📋 Backlog — Initial Tasks:
+   TASK-1 [HIGH] Inspect the Codebase and detail ARCHITECTURE.md
+     → Run: /task-hunter 1
+   TASK-2 [MEDIUM] Create the first feature/bug task
+     → Run: /task-plan <request>
 
-🚀 Kullanilabilir Komutlar:
-   [.claude/commands/ altindaki her komut icin]
-   /bootstrap  — Kurulumu ilk kez yapar veya kontrollu sekilde yeniden calistirir
-   [diger komutlar]
+🚀 Available Commands:
+   [for each command under .claude/commands/]
+   /bootstrap  — Runs setup for the first time or re-runs in a controlled way
+   [other commands]
 
-🤖 Codex Hedefi:
-   [manifest.targets codex iceriyorsa bu blogu goster]
-   Transform ciktisi: Agentbase/.codex/skills/*/SKILL.md ve Agentbase/AGENTS.md
-   Sonraki adim: /codex-verify
-   Not: Codex icin ikinci bootstrap calistirma; mevcut manifest canonical kaynaktir.
-   [manifest.targets sadece claude ise bu blogu ATLA]
+🤖 Codex Target:
+   [show this block if manifest.targets includes codex]
+   Transform output: Agentbase/.codex/skills/*/SKILL.md and Agentbase/AGENTS.md
+   Next step: /codex-verify
+   Note: A second Codex bootstrap is NOT run; the existing manifest is the canonical source.
+   If only `targets: [claude]` is set, both transform and Codex verify/adapt are skipped
+   [SKIP this block if manifest.targets is only claude]
 
-🎯 Hedef Codebase:
-   Yol:      [manifest.project.structure mutlak yolu — abs(Agentbase/../{manifest.project.structure})]
-   Kaynak:   Docbase/agentic/project-manifest.yaml → project.structure
-   Hook'lar: shared-hook-utils.js → resolveCodebaseRoot(__dirname, "[manifest.project.structure]")
+🎯 Target Codebase:
+   Path:      [absolute path of manifest.project.structure — abs(Agentbase/../{manifest.project.structure})]
+   Source:   Docbase/agentic/project-manifest.yaml → project.structure
+   Hooks: shared-hook-utils.js → resolveCodebaseRoot(__dirname, "[manifest.project.structure]")
 
-   Hedefi degistirmek icin (uc yontem, oncelik sirasiyla):
-     1. Runtime override (tek oturum/terminal icin):
-          export AGENTIC_CODEBASE_DIR="/mutlak/yol/Codebase-wt-feat-auth"
+   To change the target (three methods, in priority order):
+     1. Runtime override (single session/terminal):
+          export AGENTIC_CODEBASE_DIR="/absolute/path/Codebase-wt-feat-auth"
           claude
-     2. Worktree symlink rotasyonu (kalici, manifest sabit kalir):
-          rm Codebase && ln -s /yeni/yol Codebase
-     3. Manifest guncellemesi (kalici, regenerate gerekir):
-          Docbase/agentic/project-manifest.yaml'da project.structure'i duzenleyin,
-          ardindan /workflow-update calistirin.
+     2. Worktree symlink rotation (persistent, manifest stays fixed):
+          rm Codebase && ln -s /new/path Codebase
+     3. Manifest update (persistent, regenerate required):
+          Edit project.structure in Docbase/agentic/project-manifest.yaml,
+          then run /workflow-update.
 
-   Resolution sirasi: env AGENTIC_CODEBASE_DIR > manifest.project.structure fallback.
+   Resolution order: env AGENTIC_CODEBASE_DIR > manifest.project.structure fallback.
 
-🔒 Git Hook Kurulumu:
-   Codebase'de commit/push kontrollerini aktif etmek icin:
+🔒 Git Hook Setup:
+   To enable commit/push checks in Codebase:
 
    cd [manifest.project.structure] && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"
 
-   Bu komut pre-commit (test, lint, guvenlik) ve pre-push (migration,
-   env sync, localhost leak) kontrollerini devreye sokar.
+   This command enables pre-commit (test, lint, security) and pre-push (migration,
+   env sync, localhost leak) checks.
    Bypass: TESTS_VERIFIED=1 git commit -m "..."
 
-📖 Sonraki Adimlar:
-   [GREENFIELD_MODE ise asagidaki blogu goster:]
-   🌱 Greenfield — Proje Scaffold Kurulumu:
-      Stack'inize gore asagidaki komutu Codebase/ icinde calistirin:
+📖 Next Steps:
+   [If GREENFIELD_MODE, show the block below:]
+   🌱 Greenfield — Project Scaffold Setup:
+      Run the appropriate command for your stack inside Codebase/:
 
       Node.js:       cd ../Codebase && npm init -y
       Express:       cd ../Codebase && npm init -y && npm install express
@@ -2600,352 +2594,354 @@ Kullanıcı istemezse bu adımı atla — `../.gitignore` zaten yazıldığı i�
       Flask:         cd ../Codebase && python -m venv venv && pip install flask
       Laravel:       cd ../Codebase && composer create-project laravel/laravel .
       CodeIgniter:   cd ../Codebase && composer create-project codeigniter4/appstarter .
-      Go:            cd ../Codebase && go mod init [modul-adi]
+      Go:            cd ../Codebase && go mod init [module-name]
       Rust:          cd ../Codebase && cargo init .
-      Java/Kotlin:   https://start.spring.io adresinden proje indirin veya: gradle init
+      Java/Kotlin:   Download a project from https://start.spring.io or: gradle init
 
-      Scaffold olustuktan sonra: /task-hunter 1
+      After the scaffold exists: /task-hunter 1
 
-   [Her durumda goster:]
-   1. /task-hunter 1 → [Greenfield: scaffold olustur | Normal: ARCHITECTURE.md detaylandir]
-   2. /task-plan "istediginiz ozellik veya bug" → backlog'a yeni gorev olusturur
-   3. /task-master → tum acik gorevleri onceliklendirir
-   4. /task-hunter <id> → gorevi otonom implement eder
+   [Show in every case:]
+   1. /task-hunter 1 → [Greenfield: create scaffold | Normal: detail ARCHITECTURE.md]
+   2. /task-plan "desired feature or bug" → creates a new backlog task
+   3. /task-master → prioritizes all open tasks
+   4. /task-hunter <id> → implements the task autonomously
 
-📡 Canli Oturum Izleme:
-   Ayri bir terminal penceresinde oturumlari canli takip edebilirsiniz:
+📡 Live Session Monitor:
+   You can follow sessions live in a separate terminal window:
 
    cd Agentbase && node bin/session-monitor.js
 
-   Dashboard tum aktif Claude Code oturumlarini gosterir:
-   - Hangi task uzerinde calisildigini
-   - Tool kullanim istatistiklerini (read/write/bash)
-   - Teammate spawn durumlarini
-   - Hata sayilarini
-   - Backlog ve git aktivitesini
+   The dashboard shows active sessions for Claude Code as one host
+   (other hosts do not run Claude hooks automatically):
+   - Which task is being worked on
+   - Tool usage statistics (read/write/bash)
+   - Teammate spawn status
+   - Error counts
+   - Backlog and git activity
 
-   Kisayollar: q=cikis, 1-9=detay, r=yenile, c=kapali gizle, h=yardim
+   Shortcuts: q=quit, 1-9=detail, r=refresh, c=hide closed, h=help
 
-[EKLENTI ONERISI BOLUMU — asagiya bkz.]
+[EXTENSION SUGGESTION SECTION — see below]
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-### 7.1 Onboarding Rehberi Olustur (Agentbase ROOT)
+### 7.1 Create Onboarding Guide (Agentbase ROOT)
 
-Tamamlanma raporundan hemen sonra Agentbase root'unda `./onboarding.md` dosyasini olustur. Bu dosya hedef projede yeni baslayan gelistiriciye ilk adimlari anlatir.
+Immediately after the completion report, create `./onboarding.md` at the Agentbase root. This file explains the first steps to a developer new to the target project.
 
-> **KUTSAL KURAL 2 — KONUM:** `onboarding.md` Agentbase ROOT'una yazilir, `.claude/` altina degil. Sebep:
-> - Tum modeller (Claude, Gemini, Antigravity, Codex, Kimi, OpenCode) root context'i okur.
-> - Root `CLAUDE.md` icindeki `@onboarding.md` satiri sayesinde tum modellerin context'ine otomatik enjekte edilir.
-> - `.claude/` altinda sadece **agent runtime** dosyalari (commands, agents, hooks, rules, settings.json, agent-icin CLAUDE.md) yasar — son kullaniciya yonelik dokuman degil.
+> **INVARIANT RULE 2 — LOCATION:** `onboarding.md` is written to the Agentbase ROOT, not under `.claude/`. Reason:
+> - All models (Claude, Gemini, Antigravity, Codex, Kimi, OpenCode) read the root context.
+> - Thanks to the `@onboarding.md` line in root `CLAUDE.md`, it is automatically injected into every model's context.
+> - Under `.claude/` only **agent runtime** files live (commands, agents, hooks, rules, settings.json, agent-facing CLAUDE.md) — not end-user documentation.
 
-Asagidaki sablonu manifest bilgileriyle doldurarak `./onboarding.md` olarak yaz:
+Fill the following template with manifest data and write it as `./onboarding.md`:
 
 ```markdown
 # Onboarding — [manifest.project.name]
 
-## Hedef Codebase
+## Target Codebase
 
-- **Yol:** `[manifest.project.structure]` (Agentbase'den relatif)
-- **Mutlak:** `[abs(Agentbase/../{manifest.project.structure})]`
-- **Tek sozlesme:** `Agentbase/.claude/hooks/shared-hook-utils.js` → `resolveCodebaseRoot()` tum hook'lar tarafindan cagrilir.
+- **Path:** `[manifest.project.structure]` (relative from Agentbase)
+- **Absolute:** `[abs(Agentbase/../{manifest.project.structure})]`
+- **Single contract:** `Agentbase/.claude/hooks/shared-hook-utils.js` → `resolveCodebaseRoot()` is called by all hooks.
 
-### Hedefi Degistirme
+### Changing the Target
 
-| Yontem | Komut | Kapsam |
+| Method | Command | Scope |
 | --- | --- | --- |
-| Runtime override | `export AGENTIC_CODEBASE_DIR=/yeni/yol && claude` | Tek terminal/oturum |
-| Worktree symlink | `rm Codebase && ln -s /yeni/yol Codebase` | Kalici, manifest sabit |
-| Manifest update | `Docbase/agentic/project-manifest.yaml` → `project.structure` + `/workflow-update` | Kalici, regenerate gerekir |
+| Runtime override | `export AGENTIC_CODEBASE_DIR=/new/path && claude` | Single terminal/session |
+| Worktree symlink | `rm Codebase && ln -s /new/path Codebase` | Persistent, manifest fixed |
+| Manifest update | `Docbase/agentic/project-manifest.yaml` → `project.structure` + `/workflow-update` | Persistent, regenerate required |
 
-**Resolution sirasi:** `env AGENTIC_CODEBASE_DIR` > `manifest.project.structure` fallback. Hook'lar her runtime cagrisinda bu zinciri takip eder.
+**Resolution order:** `env AGENTIC_CODEBASE_DIR` > `manifest.project.structure` fallback. Hooks follow this chain on every runtime call.
 
-## Ilk Adimlar
+## First Steps
 
-1. **Git hook'larini etkinlestir:**
+1. **Enable git hooks:**
    ```bash
    cd [manifest.project.structure] && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"
    ```
 
-2. **Backlog'u kontrol et:**
+2. **Check the backlog:**
    ```bash
    backlog board
    ```
 
-3. **Session monitor'u ac (ayri terminal):**
+3. **Open the session monitor (separate terminal):**
    ```bash
    cd Agentbase && node bin/session-monitor.js
    ```
 
-## Ilk Task
+## First Task
 
 ```bash
 /task-hunter 1
 ```
 
-## Gunluk Workflow
+## Daily Workflow
 
 ```
-/task-plan "ozellik veya bug aciklamasi"   → Backlog'a gorev olustur
-/task-hunter <id>                          → Gorevi otonom implement et
-/task-review <id>                          → Degisiklikleri review et
-/task-master                               → Tum gorevleri onceliklendir
-/deep-audit <alan>                         → Domain bazli derin denetim
+/task-plan "feature or bug description"   → Create a backlog task
+/task-hunter <id>                          → Implement the task autonomously
+/task-review <id>                          → Review the changes
+/task-master                               → Prioritize all tasks
+/deep-audit <area>                         → Domain-based deep audit
 ```
 
-## Codex Hedefi
+## Codex Target
 
-[manifest.targets codex iceriyorsa goster:]
+[show if manifest.targets includes codex:]
 
 ```bash
 /codex-verify
 ```
 
-Bu adim opsiyoneldir. Codex icin ayri bootstrap calistirmaz; yalnizca `.codex/skills/` ve `AGENTS.md` hedef yuzeyini denetler.
+This step is optional. A second Codex bootstrap is NOT run; it only inspects the `.codex/skills/` and `AGENTS.md` target surface.
+If only `targets: [claude]` is set, both transform and Codex verify/adapt are skipped
 
-[manifest.targets sadece claude ise bu bolumu ATLA.]
+[SKIP this section if manifest.targets is only claude.]
 
-## Proje Bilgisi
+## Project Info
 
-- **Stack:** [manifest.stack.runtime] [manifest.stack.orm varsa: + manifest.stack.orm]
-- **Aktif Moduller:** [manifest.modules.active listesi]
-- **Otonomi:** [manifest.developer.autonomy]
-- **Guvenlik Seviyesi:** [manifest.project.security_level]
+- **Stack:** [manifest.stack.runtime] [if manifest.stack.orm: + manifest.stack.orm]
+- **Active Modules:** [manifest.modules.active list]
+- **Autonomy:** [manifest.developer.autonomy]
+- **Security Level:** [manifest.project.security_level]
 ```
 
 ---
 
-### 7.2 Eklenti Oneri Sistemi
+### 7.2 Extension Suggestion System
 
-Tamamlanma raporundan sonra, eklenti havuzunu tarayarak projeye uygun eklentileri oner.
+After the completion report, scan the extension pool and suggest extensions that fit the project.
 
-#### Eslesme Mantigi
+#### Matching Logic
 
-1. `templates/extensions-registry.yaml` dosyasini oku
-2. Her eklenti icin `triggers` listesini kontrol et:
-   - `module: X` → `manifest.modules.active` veya `manifest.modules.standalone` icinde `X` var mi?
-   - `stack: [X, Y]` → `manifest.stack.runtime`, `manifest.stack.detected` veya `manifest.modules.active.backend/frontend/mobile` icinde herhangi biri var mi?
-   - `condition: "alan == deger"` → Manifest'teki alan belirtilen degere esit mi?
-   - `condition: "alan >= sayi"` → Manifest'teki alan belirtilen sayidan buyuk veya esit mi?
-3. Herhangi bir trigger eslesiyor → eklentiyi oneri listesine ekle
-4. `conflicts` alani doluysa → uyari ekle ("Agentbase zaten [ozellik] iceriyor")
+1. Read the `templates/extensions-registry.yaml` file
+2. For each extension, check the `triggers` list:
+   - `module: X` → is `X` in `manifest.modules.active` or `manifest.modules.standalone`?
+   - `stack: [X, Y]` → is any of them in `manifest.stack.runtime`, `manifest.stack.detected`, or `manifest.modules.active.backend/frontend/mobile`?
+   - `condition: "field == value"` → does the field in the manifest equal the given value?
+   - `condition: "field >= number"` → is the field in the manifest greater than or equal to the given number?
+3. If any trigger matches → add the extension to the suggestion list
+4. If the `conflicts` field is populated → add a warning ("Agentbase already includes [feature]")
 
-#### Cakisma Kontrolu
+#### Conflict Check
 
-Eklentinin `conflicts` alaninda listelenen Agentbase ozellikleriyle cakisma varsa, oneri yanina uyari ekle:
+If there is a conflict with Agentbase features listed in the extension's `conflicts` field, add a warning next to the suggestion:
 
 ```
-⚠️  Bu eklenti Agentbase'in [ozellik] ozelligi ile cakisabilir.
-    [cakisma aciklamasi]
+⚠️  This extension may conflict with Agentbase's [feature] feature.
+    [conflict description]
 ```
 
-#### Rapor Ciktisi
+#### Report Output
 
-Eslesen eklentiler varsa raporun sonuna ekle:
+If there are matching extensions, append to the end of the report:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🧩 Onerilen Eklentiler (projenize uygun)
+🧩 Suggested Extensions (fit for your project)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  [Kategori]:
-    [Eklenti Adi] — [aciklama]
-      Kurulum: [install komutu]
-      [varsa: ⚠️  Cakisma notu]
+  [Category]:
+    [Extension Name] — [description]
+      Install: [install command]
+      [if any: ⚠️  Conflict note]
 
-  [Baska Kategori]:
+  [Another Category]:
     ...
 
-  Not: Bu oneriler OPSIYONELDIR. Hicbiri Bootstrap icin zorunlu degildir.
-  Eklenti havuzunu genisletmek icin: templates/extensions-registry.yaml
+  Note: These suggestions are OPTIONAL. None are required for Bootstrap.
+  To expand the extension pool: templates/extensions-registry.yaml
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-Eslesen eklenti yoksa bu bolumu ATLA — gereksiz bos bolum gosterme.
+If there are no matching extensions, SKIP this section — do not show an unnecessary empty section.
 
 ---
 
-## ADIM 8 — TAMAMLAMA DOĞRULAMA KAPISI (Verification Gate)
+## STEP 8 — COMPLETION VERIFICATION GATE (Verification Gate)
 
-Bu adım ADIM 0'da tanımlanan **machine-checkable completion condition**'ı uygular. `/goal` modunda evaluator bu adımın sonuçlarına bakarak Claude'u yeni bir tura sokar veya `BOOTSTRAP_COMPLETE` ile sonlandırır.
+This step applies the **machine-checkable completion condition** defined in STEP 0. In `/goal` mode the evaluator looks at this step's results to put Claude into a new turn or end with `BOOTSTRAP_COMPLETE`.
 
-**Bu adımı ASLA atlama** — Bootstrap'ın her çalıştırılışında (yeni, overwrite, merge, incremental) en sonda çalıştırılmalıdır.
+**NEVER skip this step** — it must run at the end of every Bootstrap run (new, overwrite, merge, incremental).
 
-### 8.1 Doğrulama Bash Bloğu
+### 8.1 Verification Bash Block
 
-`cwd = Agentbase` iken aşağıdaki tüm kontrolleri SIRAYLA çalıştır. Her satırın sonucunu konsola bas. Tek bir hata bile FAIL sayılır.
+With `cwd = Agentbase`, run all of the following checks IN ORDER. Print each line's result to the console. Even a single failure counts as FAIL.
 
 ```bash
-# === GATE A: Manifest yazıldı mı? ===
-test -f ../Docbase/agentic/project-manifest.yaml && echo "✅ A1: manifest yazildi" || echo "❌ A1: manifest YOK"
+# === GATE A: Was the manifest written? (manifest_yazildi) ===
+test -f ../Docbase/agentic/project-manifest.yaml && echo "✅ A1: manifest_yazildi" || echo "❌ A1: manifest_yazildi MISSING"
 
-# === GATE B: Root dokümanlar DOĞRU konumda (Agentbase ROOT, .claude/ DEĞİL) ===
-# 10 root doküman: 7 Bootstrap-yonetimli (6 doldurulan + onboarding) + 3 statik (ORCHESTRATION.md, LESSONS.md, BACKLOG.md)
+# === GATE B: Root documents in the CORRECT location (Agentbase ROOT, NOT .claude/) (root_dokumanlar_dogru_konumda) ===
+# 10 root documents: 7 Bootstrap-managed (6 filled + onboarding) + 3 static (ORCHESTRATION.md, LESSONS.md, BACKLOG.md)
 for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md onboarding.md ORCHESTRATION.md LESSONS.md BACKLOG.md; do
-  test -f "./$f" && echo "✅ B-root: $f Agentbase root'unda" || echo "❌ B-root: $f EKSIK (Agentbase root)"
-  test -f "./.claude/$f" && echo "❌ B-claude: $f YANLIŞ KONUMDA (.claude/ altında olmamalı)" || echo "✅ B-claude: .claude/$f yok (doğru)"
+  test -f "./$f" && echo "✅ B-root: $f at Agentbase root (root_dokumanlar_dogru_konumda)" || echo "❌ B-root: $f MISSING (Agentbase root)"
+  test -f "./.claude/$f" && echo "❌ B-claude: $f WRONG LOCATION (must not be under .claude/)" || echo "✅ B-claude: .claude/$f absent (correct)"
 done
 
-# === GATE B2: Root CLAUDE.md TÜM root dokümanlarını @ ile import ediyor mu? ===
-# Enjeksiyon zinciri kontrolü — root CLAUDE.md eksik import varsa diğer modeller (Gemini, Antigravity, Codex, Kimi, OpenCode) context'i alamaz
-# ORCHESTRATION.md ve LESSONS.md statik root dokümanlardır; @ zincirine MUTLAKA dahil edilmeli
-# Claude Code resmi syntax: @<dosya> (boşluksuz, tek token). "@ import X" formu plain text olarak görülür — FAIL.
+# === GATE B2: Does root CLAUDE.md import ALL root documents via @? (root_claude_import_zinciri_tam) ===
+# Injection chain check — if root CLAUDE.md has missing imports, other models (Gemini, Antigravity, Codex, Kimi, OpenCode) cannot get context
+# ORCHESTRATION.md and LESSONS.md are static root documents; they MUST be included in the @ chain
+# Claude Code official syntax: @<file> (no spaces, single token). The "@ import X" form is seen as plain text — FAIL.
 if [ -f ./CLAUDE.md ]; then
   for doc in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md ORCHESTRATION.md LESSONS.md onboarding.md; do
-    # Satır başında veya boşluk sonrasında @<doc> ara; "@ import" gibi boşluklu yanlış formu yakalama
+    # Look for @<doc> at line start or after whitespace; do not match spaced wrong forms like "@ import"
     if grep -Eq "(^|[[:space:]])@${doc//./\\.}([[:space:]]|$)" ./CLAUDE.md 2>/dev/null; then
-      echo "✅ B2-import: root CLAUDE.md → @$doc"
+      echo "✅ B2-import: root CLAUDE.md → @$doc (root_claude_import_zinciri_tam)"
     else
-      echo "❌ B2-import: root CLAUDE.md → @$doc EKSIK (enjeksiyon zinciri kırık)"
+      echo "❌ B2-import: root CLAUDE.md → @$doc MISSING (injection chain broken)"
     fi
   done
 fi
 
-# === GATE C: .claude runtime dosyaları var ===
-test -f ./.claude/settings.json && echo "✅ C1: settings.json var" || echo "❌ C1: settings.json YOK"
-test -d ./.claude/commands && echo "✅ C2: commands/ var" || echo "❌ C2: commands/ YOK"
-test -d ./.claude/agents && echo "✅ C3: agents/ var" || echo "❌ C3: agents/ YOK"
-test -d ./.claude/rules && echo "✅ C4: rules/ var" || echo "❌ C4: rules/ YOK"
+# === GATE C: .claude runtime files present (claude_runtime_dosyalari_var) ===
+test -f ./.claude/settings.json && echo "✅ C1: settings.json present (claude_runtime_dosyalari_var)" || echo "❌ C1: settings.json MISSING"
+test -d ./.claude/commands && echo "✅ C2: commands/ present" || echo "❌ C2: commands/ MISSING"
+test -d ./.claude/agents && echo "✅ C3: agents/ present" || echo "❌ C3: agents/ MISSING"
+test -d ./.claude/rules && echo "✅ C4: rules/ present" || echo "❌ C4: rules/ MISSING"
 
-# === GATE D: .claude-ignore root'ta ===
-test -f ./.claude-ignore && echo "✅ D1: .claude-ignore root'ta" || echo "❌ D1: .claude-ignore YOK"
+# === GATE D: .claude-ignore at root (claude_ignore_rootta) ===
+test -f ./.claude-ignore && echo "✅ D1: .claude-ignore at root (claude_ignore_rootta)" || echo "❌ D1: .claude-ignore MISSING"
 
-# === GATE E: CLAUDE_FILL marker'ları tamamlandı (yarım iş yok) ===
-# Tüm root dokümanları + .claude runtime + onboarding.md taranır
+# === GATE E: CLAUDE_FILL markers completed (no half-done work) (claude_fill_marker_kalmadi) ===
+# All root documents + .claude runtime + onboarding.md are scanned
 remaining=$(grep -rln "CLAUDE_FILL:" ./.claude ./PROJECT.md ./STACK.md ./DEVELOPER.md ./ARCHITECTURE.md ./WORKFLOWS.md ./CLAUDE.md ./onboarding.md 2>/dev/null | head -20)
-if [ -z "$remaining" ]; then echo "✅ E1: CLAUDE_FILL marker kalmadı"; else echo "❌ E1: CLAUDE_FILL marker var → $remaining"; fi
+if [ -z "$remaining" ]; then echo "✅ E1: claude_fill_marker_kalmadi"; else echo "❌ E1: CLAUDE_FILL marker remains → $remaining"; fi
 
-# === GATE F: Backlog init edildi ===
-test -f ./backlog/config.yml && echo "✅ F1: backlog/config.yml var" || echo "❌ F1: backlog init edilmemiş"
+# === GATE F: Backlog initialized (backlog_init_edildi) ===
+test -f ./backlog/config.yml && echo "✅ F1: backlog/config.yml present (backlog_init_edildi)" || echo "❌ F1: backlog not initialized"
 
-# === GATE G: Hiçbir root doküman boş değil ===
-# Statik dokümanlar (ORCHESTRATION.md, LESSONS.md, BACKLOG.md) repo'dan gelir; yine de boş olmamalı
+# === GATE G: No root document is empty (root_dokumanlar_dolu) ===
+# Static documents (ORCHESTRATION.md, LESSONS.md, BACKLOG.md) come from the repo; they must still not be empty
 for f in PROJECT.md STACK.md DEVELOPER.md ARCHITECTURE.md WORKFLOWS.md CLAUDE.md ORCHESTRATION.md LESSONS.md BACKLOG.md; do
   if [ -f "./$f" ]; then
     size=$(wc -c < "./$f")
-    if [ "$size" -gt 100 ]; then echo "✅ G: $f dolu ($size byte)"; else echo "❌ G: $f çok küçük ($size byte) — içerik eksik"; fi
+    if [ "$size" -gt 100 ]; then echo "✅ G: $f filled ($size bytes) (root_dokumanlar_dolu)"; else echo "❌ G: $f too small ($size bytes) — content missing"; fi
   fi
 done
 
-# === GATE H: Codebase'e SIZINTI yok (Kutsal Kural 2) ===
-# AI Import dışında Codebase'de bootstrap-üretimi dosya olmamalı
+# === GATE H: No LEAK into Codebase (Invariant rule 2) (codebase_sizintisi_yok) ===
+# Outside AI Import, there must be no bootstrap-produced files in Codebase
 if [ -f /tmp/bootstrap-start ]; then
-  echo "✅ H0: /tmp/bootstrap-start sentinel var"
+  echo "✅ H0: /tmp/bootstrap-start sentinel"
   leak=$(find ../Codebase -maxdepth 2 \( -name 'PROJECT.md' -o -name 'STACK.md' -o -name 'DEVELOPER.md' -o -name 'ARCHITECTURE.md' -o -name 'WORKFLOWS.md' -o -name 'CLAUDE.md' -o -name 'onboarding.md' -o -name 'ORCHESTRATION.md' -o -name 'LESSONS.md' -o -name 'BACKLOG.md' -o -name 'project-manifest.yaml' \) -newer /tmp/bootstrap-start 2>/dev/null | head -5)
-  if [ -z "$leak" ]; then echo "✅ H1: Codebase'e sızıntı yok"; else echo "❌ H1: Codebase'e SIZINTI: $leak"; fi
+  if [ -z "$leak" ]; then echo "✅ H1: codebase_sizintisi_yok"; else echo "❌ H1: Codebase LEAK: $leak"; fi
 else
-  echo "❌ H0: /tmp/bootstrap-start sentinel YOK — Codebase sızıntı kontrolü güvenilir değil"
+  echo "❌ H0: /tmp/bootstrap-start sentinel MISSING — Codebase leak check is not reliable"
 fi
 
-# === GATE I: basic-memory shared agent memory layer hazır (TASK-236) ===
-# Bootstrap basic-memory'yi zorunlu kıldığı için verification gate'te de doğrulanmalı —
-# sessiz başarısızlığı önler (Teammate 5 vault init talimatı yutulursa BOOTSTRAP_COMPLETE yazılmasın).
-test -f ./.mcp.json && echo "✅ I1: .mcp.json var" || echo "❌ I1: .mcp.json YOK"
+# === GATE I: basic-memory shared agent memory layer ready (TASK-236) ===
+# Because Bootstrap requires basic-memory, it must also be verified in the verification gate —
+# prevents silent failure (if Teammate 5 vault init instructions are swallowed, do not write BOOTSTRAP_COMPLETE).
+test -f ./.mcp.json && echo "✅ I1: .mcp.json present" || echo "❌ I1: .mcp.json MISSING"
 if [ -f ./.mcp.json ]; then
-  grep -q '"basic-memory"' ./.mcp.json && echo "✅ I2: .mcp.json basic-memory entry içeriyor" || echo "❌ I2: .mcp.json basic-memory entry EKSIK"
-  grep -q '"codex"' ./.mcp.json && echo "✅ I3: .mcp.json codex entry içeriyor" || echo "❌ I3: .mcp.json codex entry EKSIK"
+  grep -q '"basic-memory"' ./.mcp.json && echo "✅ I2: .mcp.json basic-memory entry present" || echo "❌ I2: .mcp.json basic-memory entry MISSING"
+  grep -q '"codex"' ./.mcp.json && echo "✅ I3: .mcp.json codex entry present" || echo "❌ I3: .mcp.json codex entry MISSING"
 fi
-test -d ../Docbase/memory && echo "✅ I4: Docbase/memory vault dizini var" || echo "❌ I4: Docbase/memory vault dizini YOK"
-# basic-memory kurulum kalıcılığı (ADIM 1.1.5'te doğrulanan paket hala kurulu mu?)
+test -d ../Docbase/memory && echo "✅ I4: Docbase/memory vault directory present" || echo "❌ I4: Docbase/memory vault directory MISSING"
+# basic-memory install persistence (is the package verified in STEP 1.1.5 still installed?)
 if uv tool list 2>/dev/null | grep -q "^basic-memory "; then
-  echo "✅ I5: basic-memory uv tool olarak kurulu"
+  echo "✅ I5: basic-memory installed as uv tool"
 else
-  echo "❌ I5: basic-memory kuruluş kayboldu (ADIM 1.1.5'te vardı)"
+  echo "❌ I5: basic-memory install was lost (it was present in STEP 1.1.5)"
 fi
 
-# === GATE J: Proje-kökü .gitignore (iki-repo teslimat modeli — ADIM 6.6) ===
-# Üst-kök geliştirici reposu Codebase'i yok saymalı ki müşteriye temiz teslimat mümkün olsun.
-# Dosya her zaman yazılır (git init opt-in olsa da); eksikse ADIM 6.6.1 yutulmuş demektir.
-# grep -q "Codebase" YETERSIZ — yorumda da gecer (false pass). Sentinel + EXACT ignore satiri kontrol et.
+# === GATE J: Project-root .gitignore (Two-repo delivery model — STEP 6.6) ===
+# The parent-root developer repo must ignore Codebase so clean customer delivery is possible.
+# The file is always written (even if git init is opt-in); if missing, STEP 6.6.1 was swallowed.
+# grep -q "Codebase" is INSUFFICIENT — it also matches in comments (false pass). Check sentinel + EXACT ignore lines.
 if [ -f ../.gitignore ] \
    && grep -q "AGENTIC-WORKFLOW-ROOT-GITIGNORE" ../.gitignore \
    && grep -Eq "^/Codebase/?$" ../.gitignore \
    && grep -Eq "^/Codebase-wt-\*/$" ../.gitignore; then
-  echo "✅ J1: proje-kökü .gitignore var; sentinel + root-anchored Codebase + worktree ignore satırları mevcut"
+  echo "✅ J1: project-root .gitignore present; sentinel + root-anchored Codebase + worktree ignore lines exist"
 else
-  echo "❌ J1: proje-kökü ../.gitignore eksik veya sentinel/Codebase/worktree ignore satırı yok (ADIM 6.6.1 yutulmuş olabilir)"
+  echo "❌ J1: project-root ../.gitignore missing or sentinel/Codebase/worktree ignore line absent (STEP 6.6.1 may have been swallowed)"
 fi
 ```
 
-### 8.2 Sonuç Karar Mantığı
+### 8.2 Result Decision Logic
 
-Yukarıdaki tüm satırlardaki `❌` işaretlerini say:
+Count the `❌` marks in all lines above:
 
-- **0 adet ❌** → SUCCESS. Aşağıdaki marker'ı stdout'a bas:
+- **0 × ❌** → SUCCESS. Print the following marker to stdout:
   ```
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ✅ BOOTSTRAP_COMPLETE
-     Tüm gate'ler PASS. /goal evaluator bu marker'ı görünce session'ı sonlandırır.
+     All gates PASS. When the /goal evaluator sees this marker it ends the session.
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ```
 
-- **1+ adet ❌** → FAIL. Aşağıdaki marker'ı stdout'a bas ve **EKSİK ADIMLARI TAMAMLAMAYA DEVAM ET**:
+- **1+ × ❌** → FAIL. Print the following marker to stdout and **CONTINUE COMPLETING THE MISSING STEPS**:
   ```
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ❌ BOOTSTRAP_INCOMPLETE
-     FAIL sayısı: <N>
-     Eksikler:
-       - <her ❌ satırını listele>
-     Sonraki tur: bu eksikleri tamamla, ADIM 8'i tekrar çalıştır.
+     FAIL count: <N>
+     Missing:
+       - <list each ❌ line>
+     Next turn: complete these gaps, run STEP 8 again.
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   ```
 
-### 8.3 `/goal` Modunda Davranış
+### 8.3 Behavior in `/goal` Mode
 
-`/goal /bootstrap until "BOOTSTRAP_COMPLETE"` ile çalıştırılmışsa:
+If run as `/goal /bootstrap until "BOOTSTRAP_COMPLETE"`:
 
-- Her tur sonunda ADIM 8 çalışır. Evaluator `BOOTSTRAP_COMPLETE` marker'ını arar.
-- Marker yoksa Claude yeni tura geçer ve `❌` listesindeki eksikleri kapatır.
-- Marker bulununca `/goal` sonlandırır.
+- STEP 8 runs at the end of every turn. The evaluator looks for the `BOOTSTRAP_COMPLETE` marker.
+- If the marker is absent, Claude starts a new turn and closes the gaps in the `❌` list.
+- When the marker is found, `/goal` ends.
 
-### 8.4 Tek-turlu Modda Davranış (Fail-Loud)
+### 8.4 Behavior in Single-Turn Mode (Fail-Loud)
 
-`/goal` olmadan çalıştırılmışsa ve ADIM 8 FAIL ederse:
+If run without `/goal` and STEP 8 FAILs:
 
 ```
-⚠️  Bootstrap eksik tamamlandı. Tek-turlu modda kaldığı için otomatik retry yapılmadı.
+⚠️  Bootstrap finished incomplete. Because this was single-turn mode, no automatic retry was performed.
 
-   Tam tamamlama için aşağıdaki komutla yeniden çalıştırın:
+   To complete fully, re-run with:
      /goal /bootstrap until "BOOTSTRAP_COMPLETE"
 
-   Bu mod evaluator devreye sokar ve eksikler kapanana kadar çalışır.
+   That mode engages the evaluator and runs until the gaps are closed.
 ```
 
-### 8.5 Idempotency Garantisi
+### 8.5 Idempotency Guarantee
 
-ADIM 8 read-only'dir; dosya yazmaz. Yalnızca `test`, `find`, `grep`, `wc` komutları kullanır. Birden fazla çalıştırma side-effect üretmez.
-
----
-
-## HATA YONETIMI
-
-Bu kurallari tum adimlar boyunca uygula:
-
-1. **Bash komutu basarisiz olursa:** Hatayi kullaniciya goster, mumkunse alternatif dene, degiilse o adimi atlayip devam et (kritik adimlar haric).
-
-2. **Template dosyasi bulunamazsa:** Uyari ver, o dosyayi atla, bos template ile devam et. Bootstrap'i DURDURMA.
-
-3. **Dizin olusturulamazsa:** Hatayi goster ve DUR — dosya sistemi erisim sorunu kritik.
-
-4. **Backlog komutu basarisizsa:** Uyari ver ama bootstrap'i tamamla. Backlog gorevleri sonra manuel olusturulabilir.
-
-5. **Kullanici roportajda gecersiz cevap verirse:** Secenekleri tekrar goster, tekrar sor.
-
-6. **Teammate basarisiz olursa (Adim 5):** Ayni prompt ile 1 kez retry yap. 2. basarisizlikta kullaniciya bildir ve secenek sun (manuel mudahale / atla / iptal). Basarili teammate'lerin ciktilari HER DURUMDA korunur. Kismi basarilarda uretilen dosyalar silinmez, sadece eksikler retry edilir. Detaylar icin bkz. Adim 5.2.3.
+STEP 8 is read-only; it writes no files. It only uses `test`, `find`, `grep`, and `wc`. Multiple runs produce no side effects.
 
 ---
 
-## TEKRAR CALISTIRMA DAVRANISI
+## ERROR HANDLING
 
-`/bootstrap` tekrar calistirildiginda (manifest zaten mevcutsa):
+Apply these rules across all steps:
 
-1. Adim 1.3'te manifest uyumlulugunu kontrol et ve kullaniciya `overwrite` / `merge` / `incremental` / `iptal` menusu sun.
-2. `manifest.version` ayni major surumdeyse `merge` ve `incremental` izinli; degilse yalnizca `overwrite` veya `iptal`.
-3. `.claude/custom/` kullaniciya aittir; Bootstrap bu dizine yazmaz ve buradaki dosyalari korur.
-4. Yonetilen dosyalarda checksum farki varsa dosyayi sessizce ezme:
-   - `overwrite` modunda once rescue kopyasi al, sonra yeniden uret
-   - `merge` / `incremental` modunda aday ciktiyi rescue alanina yaz ve kullaniciya raporla
-5. `merge` modunda manifest cevaplarini koru, yeni modulleri ekle, artik tespit edilmeyen leaf'leri `modules.skipped` altina tasi.
-6. `incremental` modunda yalnizca template'i veya ilgili manifest girdisi degisen dosyalari yeniden uret.
-7. Backlog'a yeni bootstrap init gorevleri EKLEME (zaten mevcut backlog korunur).
+1. **If a Bash command fails:** Show the error to the user, try an alternative if possible, otherwise skip that step and continue (except critical steps).
+
+2. **If a template file is not found:** Warn, skip that file, continue with an empty template. Do NOT STOP Bootstrap.
+
+3. **If a directory cannot be created:** Show the error and STOP — a filesystem access problem is critical.
+
+4. **If a Backlog command fails:** Warn but complete bootstrap. Backlog tasks can be created manually later.
+
+5. **If the user gives an invalid answer in the interview:** Show the options again and ask again.
+
+6. **If a Teammate fails (Step 5):** Retry once with the same prompt. On a 2nd failure, notify the user and offer options (manual intervention / skip / cancel). Outputs of successful teammates are ALWAYS preserved. On partial success, produced files are not deleted; only gaps are retried. See Step 5.2.3 for details.
+
+---
+
+## RE-RUN BEHAVIOR
+
+When `/bootstrap` is run again (manifest already exists):
+
+1. In Step 1.3 check manifest compatibility and present the user with an `overwrite` / `merge` / `incremental` / `cancel` menu.
+2. If `manifest.version` is on the same major version, `merge` and `incremental` are allowed; otherwise only `overwrite` or `cancel`.
+3. `.claude/custom/` belongs to the user; Bootstrap does not write to this directory and preserves files there.
+4. If a checksum differs on managed files, do not silently overwrite the file:
+   - In `overwrite` mode take a rescue copy first, then regenerate
+   - In `merge` / `incremental` mode write the candidate output to the rescue area and report to the user
+5. In `merge` mode keep manifest answers, add new modules, move leaves no longer detected under `modules.skipped`.
+6. In `incremental` mode regenerate only files whose template or related manifest entry changed.
+7. Do NOT ADD new bootstrap init tasks to the backlog (the existing backlog is preserved).

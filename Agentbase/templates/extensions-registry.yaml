@@ -1,24 +1,24 @@
 # Extensions Registry — Agentic Workflow
 #
-# Bootstrap proje analizinden sonra bu havuzu tarar ve uygun eklentileri onerir.
-# Bootstrap KURMAZ — sadece onerir.
+# After project analysis, Bootstrap scans this pool and recommends matching extensions.
+# Bootstrap does NOT install — it only recommends.
 #
-# Yeni eklenti eklemek icin asagidaki formati kullan:
+# To add a new extension, use the format below:
 #
-#   - name: "Eklenti Adi"
-#     repo: "github-kullanici/repo-adi"
+#   - name: "Extension Name"
+#     repo: "github-user/repo-name"
 #     url: "https://github.com/..."
 #     agent: claude | gemini | codex | all
 #     category: security | workflow | multi-agent | memory | quality | devops | management
-#     install: "npm i -g paket-adi"  # veya baska kurulum komutu
-#     description: "Tek satirlik aciklama"
-#     triggers:                       # Bu eklentiyi hangi kosullarda oner
-#       - module: modul-adi           # Aktif modul eslesmesi
-#       - stack: [tech1, tech2]       # Stack eslesmesi (herhangi biri)
-#       - condition: "alan > deger"   # Manifest alan kontrolu
-#     conflicts:                      # Agentbase ozellikleriyle cakisma
-#       - feature: "ozellik-adi"
-#         note: "Cakisma aciklamasi"
+#     install: "npm i -g package-name"  # or another install command
+#     description: "One-line description"
+#     triggers:                       # When to recommend this extension
+#       - module: module-name         # Active module match
+#       - stack: [tech1, tech2]       # Stack match (any one)
+#       - condition: "field > value"  # Manifest field check
+#     conflicts:                      # Conflicts with Agentbase features
+#       - feature: "feature-name"
+#         note: "Conflict explanation"
 
 extensions:
 
@@ -29,8 +29,8 @@ extensions:
     url: "https://github.com/trailofbits/skills"
     agent: claude
     category: security
-    install: "Repo'yu klonlayip CLAUDE.md'ye skill path ekleyin"
-    description: "Guvenlik arastirmasi ve zafiyet tespiti icin profesyonel skill koleksiyonu"
+    install: "Clone the repo and add the skill path to CLAUDE.md"
+    description: "Professional skill collection for security research and vulnerability detection"
     triggers:
       - module: security
       - stack: [express, django, laravel, fastapi, nestjs]
@@ -44,7 +44,7 @@ extensions:
     agent: claude
     category: security
     install: "npm i -g @harish-garg/security-scanner-plugin"
-    description: "GitHub verilerini kullanarak guvenlik acigi tarama"
+    description: "Vulnerability scanning using GitHub data"
     triggers:
       - condition: "project.security_level == high"
       - condition: "project.security_level == critical"
@@ -56,7 +56,7 @@ extensions:
     agent: claude
     category: security
     install: "npm i -g parry"
-    description: "Prompt enjeksiyon tarayicisi, veri sizintisi algilama"
+    description: "Prompt-injection scanner, data-leak detection"
     triggers:
       - condition: "project.security_level == critical"
     conflicts: []
@@ -69,7 +69,7 @@ extensions:
     agent: claude
     category: multi-agent
     install: "npm i -g claude-squad"
-    description: "Birden fazla Claude Code ornegini tmux'ta yonetme"
+    description: "Manage multiple Claude Code instances in tmux"
     triggers:
       - module: monorepo
       - condition: "project.subprojects.length >= 3"
@@ -81,7 +81,7 @@ extensions:
     agent: all
     category: multi-agent
     install: "npm i -g parallel-code"
-    description: "Claude, Codex, Gemini'yi ayri worktree'lerde yan yana calistirma"
+    description: "Run Claude, Codex, and Gemini side by side in separate worktrees"
     triggers:
       - module: monorepo
       - condition: "project.subprojects.length >= 2"
@@ -93,24 +93,13 @@ extensions:
     agent: claude
     category: multi-agent
     install: "npm i -g ccswarm"
-    description: "Git worktree izolasyonu ile coklu agent orkestrasyon"
+    description: "Multi-agent orchestration with git worktree isolation"
     triggers:
       - module: monorepo
     conflicts: []
 
   # ─── MEMORY / CONTEXT ───
 
-  - name: "Context Mode"
-    repo: "mksglu/context-mode"
-    url: "https://github.com/mksglu/context-mode"
-    agent: claude
-    category: memory
-    install: "npm i -g context-mode"
-    description: "Tool ciktilarini sandbox'ta isleyip context'e sadece gerekli kismi gonderiyor — %98 context tasarrufu"
-    triggers:
-      - condition: "project.type == monorepo"
-      - condition: "project.subprojects.length >= 3"
-    conflicts: []
 
   - name: "Memorix"
     repo: "AVIDS2/memorix"
@@ -118,7 +107,7 @@ extensions:
     agent: all
     category: memory
     install: "npm i -g memorix"
-    description: "Agent'lar arasi paylasimli hafiza — MCP tabanli"
+    description: "Shared memory across agents — MCP-based"
     triggers:
       - condition: "project.team_size == large-team"
     conflicts: []
@@ -128,8 +117,8 @@ extensions:
     url: "https://github.com/safishamsi/graphify"
     agent: all
     category: memory
-    install: "Repo'yu klonlayip CLAUDE.md'ye skill path ekleyin"
-    description: "Herhangi bir klasoru (kod, dokuman, gorsel, video) sorgulanabilir knowledge graph'a donusturen skill"
+    install: "Clone the repo and add the skill path to CLAUDE.md"
+    description: "Skill that turns any folder (code, docs, images, video) into a queryable knowledge graph"
     triggers:
       - condition: "project.team_size == large-team"
       - condition: "project.type == monorepo"
@@ -141,8 +130,8 @@ extensions:
     url: "https://github.com/rtk-ai/rtk"
     agent: all
     category: memory
-    install: "Repo'daki kurulum talimatini takip edin (Rust binary). Hook tabanli — Claude Code bash cagrilarini otomatik rewrite eder."
-    description: "Bash komutlarini (git, ls, cat vb.) hook ile rewrite ederek dev islemlerinde %60-90 token tasarrufu saglayan CLI proxy"
+    install: "Follow the install instructions in the repo (Rust binary). Hook-based — automatically rewrites Claude Code bash calls."
+    description: "CLI proxy that rewrites bash commands (git, ls, cat, etc.) via hooks for ~60-90% token savings on dev operations"
     triggers:
       - condition: "project.team_size == large-team"
       - condition: "project.type == monorepo"
@@ -156,13 +145,13 @@ extensions:
     url: "https://github.com/maxritter/claude-codepro"
     agent: claude
     category: workflow
-    install: "Repo'yu klonlayip CLAUDE.md'ye entegre edin"
-    description: "Spec-driven workflow ve TDD zorunlulugu"
+    install: "Clone the repo and integrate into CLAUDE.md"
+    description: "Spec-driven workflow and TDD enforcement"
     triggers:
       - condition: "workflows.test_strategy == tdd"
     conflicts:
       - feature: "task-hunter TDD/Red-Green modifier"
-        note: "Agentbase task-hunter zaten TDD modifier iceriyor. Cift zorunluluk gereksiz olabilir."
+        note: "Agentbase task-hunter already includes a TDD modifier. Double enforcement may be unnecessary."
 
   # ─── CODE QUALITY ───
 
@@ -172,7 +161,7 @@ extensions:
     agent: claude
     category: quality
     install: "go install github.com/Veraticus/cc-tools@latest"
-    description: "Go ile yazilmis yuksek performansli hook'lar"
+    description: "High-performance hooks written in Go"
     triggers:
       - stack: [go]
     conflicts: []
@@ -182,8 +171,8 @@ extensions:
     url: "https://github.com/anthropics/claude-code-action"
     agent: claude
     category: quality
-    install: "GitHub Actions workflow dosyasina ekleyin"
-    description: "Resmi GitHub Action — PR review, guvenlik denetimi"
+    install: "Add to a GitHub Actions workflow file"
+    description: "Official GitHub Action — PR review, security audit"
     triggers:
       - module: github-actions
       - condition: "project.team_size == small-team"
@@ -198,7 +187,7 @@ extensions:
     agent: all
     category: devops
     install: "npm i -g container-use"
-    description: "Guvenli konteyner gelistirme ortamlari"
+    description: "Secure container development environments"
     triggers:
       - module: docker
     conflicts: []
@@ -211,10 +200,10 @@ extensions:
     agent: claude
     category: management
     install: "npm i -g ccpm"
-    description: "GitHub Issues + worktree ile paralel agent yonetimi"
+    description: "Parallel agent management with GitHub Issues + worktrees"
     triggers:
       - module: github-actions
       - condition: "project.team_size == large-team"
     conflicts:
       - feature: "Backlog.md CLI"
-        note: "Agentbase zaten Backlog.md ile gorev yonetimi yapiyor. CCPM ayri bir gorev sistemi kullanir."
+        note: "Agentbase already manages tasks with Backlog.md. CCPM uses a separate task system."

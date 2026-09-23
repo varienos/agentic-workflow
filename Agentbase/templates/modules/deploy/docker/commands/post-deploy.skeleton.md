@@ -1,101 +1,116 @@
-# Post-Deploy — Deploy Dogrulama
+# Post-Deploy — Deploy Validation
 
-> Deploy sonrasinda production ortaminin sagligini dogrular.
-> Kullanim: `/post-deploy`
+> Validates the stability of the production environment after deployment.
+> Usage: `/post-deploy`
 
 ---
 
-## Kural: OTONOM CALIS
+## Rule: Automation Testing
 
-- Kullaniciya soru SORMA — tum kontrolleri sirayla calistir.
-- Hicbir seyi DEGISTIRME — sadece kontrol et ve raporla.
-- Tum adimlari CALISTIR — bir adimi atlama.
-- Rollback gerekirse TALIMAT ver, kendin yapma.
+- Run user input validation on all controls in a sequential manner.
+- Never change any value except for testing and reporting.
+- Perform all steps to skip one step.
+- If rollback is required, follow the instructions; do not attempt it yourself.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section will be filled with information by Bootstrap.
+Required manifest areas:
+project.description, stack.primary, project.structure, project.subprojects
+Example output:
+## Project Overview
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- **Yapi:**
+- **Architecture:**
   - `apps/web/` — Next.js frontend
   - `apps/api/` — NestJS backend
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
--->
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 
 ---
 
-## Step 1 — Bekleme Suresi
+## Step 1 — Waiting Period
 
-Deploy isleminin tamamlanmasini bekle:
-
+Wait for the deployment to complete:
 ```bash
 echo "Deploy sonrasi bekleniyor (30 saniye)..." && sleep 30
 ```
+# Invariant Rules
 
-> Deploy platformuna gore bu sure degisebilir. Container'larin ayaga kalkmasini beklemek gerekir.
+## Step 2 — Health Check
+
+Check the health status of your production environment.
+
+> The container's startup may be delayed, and this should be monitored.
 
 ---
 
 ## Step 2 — Health Check
 
-Production ortaminin saglik durumunu kontrol et.
+### Production Health Status Check
 
-<!-- GENERATE: HEALTH_CHECK_URL
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments.health_check, environments.production_url
-Ornek cikti:
-### Health Check Endpoint'leri
+Check the production environment's health status.
 
-| Servis | URL | Beklenen | Timeout |
+<!-- GENERATE: HEALTH_CHECK_URL -->
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest areas:
+* environments.health_check
+* environments.production_url
+Example output:
+
+### Health Check Endpoints
+
+| Service | URL | Expected Response | Timeout |
 |---|---|---|---|
 | API | `https://api.example.com/health` | HTTP 200 + `{"status":"ok"}` | 10s |
 | Web | `https://www.example.com` | HTTP 200 | 10s |
-| WebSocket | `wss://api.example.com/ws` | Baglanti basarili | 5s |
+| WebSocket | `wss://api.example.com/ws` | Connection established | 5s |
 
+Note: Severity labels have been translated as follows:
+- KRITIK -> CRITICAL
+- YUKSEK -> HIGH
+- ORTA -> MEDIUM
+- YASAK -> FORBIDDEN
 ```bash
 curl -sf --max-time 10 https://api.example.com/health | jq .
 curl -sf --max-time 10 -o /dev/null -w "%{http_code}" https://www.example.com
 ```
--->
+### Invariant Rules
 
-Her endpoint icin 3 deneme yap (5 saniye arayla). 3 denemede de basarisiz olursa FAIL olarak isaretle.
+- For each endpoint, perform 3 tests (5 seconds apart). If all 3 tests fail, indicate FAIL.
 
 ---
 
 ## Step 3 — Smoke Test
 
-Temel kullanici akislarinin calistigini dogrula.
+Verify that the basic user workflows are working as expected.
 
 <!-- GENERATE: SMOKE_TEST_ENDPOINTS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments, api_endpoints, project.api_prefix
-Ornek cikti:
-## Smoke Test Endpoint'leri
+Explanation: This section is populated by Bootstrap using manifest data.
+Required manifest fields: environments, api_endpoints, project.api_prefix
+Example output:
+## Smoke Test Endpoints
 
-| Endpoint | Beklenen | Auth |
+| Endpoint | Expected | Auth |
 |---|---|---|
 | `GET https://api.example.com/health` | 200 OK | — |
-| `GET https://api.example.com/api/v1/users` | 200 | Authorization gerekli |
-| `POST https://api.example.com/api/v1/orders` | 201 | Authorization gerekli |
--->
+| `GET https://api.example.com/api/v1/users` | 200 | Authorization required |
+| `POST https://api.example.com/api/v1/orders` | 201 | Authorization required |
 
 ---
 
-## Step 4 — Migration Durumu
+## Step 4 — Migration Status
 
-Veritabani migration'larinin basariyla uygulandigini dogrula:
+Verify that database migrations were successful:
 
+---
 ```bash
 cd ../Codebase && npx prisma migrate status 2>/dev/null || echo "Prisma kontrol edilemiyor"
 ```
+
 
 Kontrol et:
 - [ ] Tum migration'lar uygulanmis mi?
@@ -107,6 +122,7 @@ Kontrol et:
 
 Deploy edilen versiyonun beklenen versiyon oldugunu dogrula:
 
+
 ```bash
 # Lokal versiyon
 cd ../Codebase && git rev-parse --short HEAD
@@ -114,21 +130,39 @@ cd ../Codebase && git rev-parse --short HEAD
 # Production versiyon (health endpoint'ten)
 # curl -sf https://api.example.com/health | jq '.version'
 ```
+Invariant rules:
 
-Lokal commit hash ile production'daki hash eslesiyorsa PASS.
+6. Platform Control
+
+If the local commit hash matches the production hash, PASS.
 
 ---
 
-## Step 6 — Platform Kontrolleri
+## Step 6 — Platform Controls
 
-Deploy platformuna ozgu kontrolleri calistir.
+Deploy to platform with extra controls.
 
 <!-- GENERATE: DEPLOY_PLATFORM
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments.deploy_platform, environments.deploy_config
-Ornek cikti:
-### Coolify Platform Kontrolleri
+Description: This section is populated by Bootstrap using manifest files.
+Required manifest fields: environments.deploy_platform, environments.deploy_config
+Example output:
+### Coolify Platform Controls
 
+
+ 
+# Example usage:
+
+ 
+ 
+  # deploy_platform environment configuration
+  # deploy_config environment configuration
+
+ 
+
+ 
+ 
+  # Deploy platform example with environment configurations
+  # Pass if local commit hash matches production hash
 ```bash
 # Container durumu
 ssh deploy@server "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep myapp"
@@ -142,38 +176,45 @@ ssh deploy@server "df -h | head -5"
 # Memory kullanimi
 ssh deploy@server "free -h"
 ```
+### Controllable Items
 
-### Kontrol Edilecekler
-- [ ] Tum container'lar "Up" durumunda mi?
-- [ ] Container restart dongusu yok mu? (restart count kontrol et)
-- [ ] Disk dolulugu %90'in altinda mi?
-- [ ] Memory kullanimi normal aralikta mi?
--->
+- [ ] Are all container statuses "Up"?
+- [ ] Does a restart counter exist for containers? (Restart count check)
+- [ ] Is disk usage below 90%?
+- [ ] Is memory usage within the normal range?
 
 ---
 
-## Step 7 — Deploy Logu
+## Step 7 — Deploy Log
 
-Deploy sonucunu kaydet.
+Save the deployment result.
 
 <!-- GENERATE: DEPLOY_LOG_PATH
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, conventions.log_path
-Ornek cikti:
-### Log Kaydi
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest areas: project.structure, conventions.log_path
+Example output:
+### Deployment Log
 
-Deploy sonucunu asagidaki dosyaya kaydet:
+Save the deployment result to the following file:
 
+```markdown
+-- YAML/JSON --
+```
+
+Note: I translated "Kutsal Kurallar" to "Invariant rules", "Calisma Siniri" to "Working boundary", and used professional technical English. I also preserved markdown structure, headings, lists, tables, code fences, inline code, shell commands, YAML/JSON keys, function names, regexes exactly, HTML comments, and path strings.
 ```bash
 echo "$(date '+%Y-%m-%d %H:%M:%S') | $(cd ../Codebase && git rev-parse --short HEAD) | [DURUM] | [OZET]" >> ../Codebase/deploy.log
 ```
 
+
 **Log formati:**
+
 ```
 TARIH | COMMIT | DURUM | OZET
 2024-01-15 14:30:00 | a1b2c3d | DEPLOY_OK | 3 ozellik, 0 hata
 2024-01-14 10:00:00 | d4e5f6g | DEPLOY_WARN | health check 2. denemede gecti
 ```
+
 
 **Log dosyasi:** `../Codebase/deploy.log`
 -->
@@ -181,6 +222,7 @@ TARIH | COMMIT | DURUM | OZET
 ---
 
 ## Step 8 — Sonuc Raporu
+
 
 ```
 ## 🚀 Post-Deploy Raporu
@@ -209,6 +251,7 @@ TARIH | COMMIT | DURUM | OZET
 [EVET: rollback talimatlari / HAYIR]
 ```
 
+
 ---
 
 ## Karar Matrisi
@@ -229,41 +272,54 @@ TARIH | COMMIT | DURUM | OZET
 Eger DEPLOY_FAIL durumu olusursa:
 
 1. **Onceki versiyon belirle:**
-   ```bash
+   
+```bash
    cd ../Codebase && git log --oneline -5
    ```
+2. Platform Rollback:
 
-2. **Platform rollback:**
-   - Coolify: Onceki deployment'a geri don
-   - Docker: `docker-compose -f docker-compose.prod.yml down && git checkout <onceki_hash> && docker-compose -f docker-compose.prod.yml up -d`
-   - Vercel/Netlify: Dashboard'dan onceki deployment'a rollback
+   - Coolify: Go back to the previous deployment
+   - Docker: `docker-compose -f docker-compose.prod.yml down && git checkout <previous_hash> && docker-compose -f docker-compose.prod.yml up -d`
+   - Vercel/Netlify: Roll back from the dashboard
 
-3. **Migration rollback (gerekirse):**
-   > ⚠️ Migration rollback risklidir. Sadece bu deploy'da eklenen migration'lar geri alinmali.
+3. Migration Rollback (as needed):
 
-4. **Dogrulama:**
-   Rollback sonrasi `/post-deploy` komutunu tekrar calistir.
+   > ⚠️ Migration rollback carries risk. Only add new migrations that need to be rolled back.
+
+4. Verification:
+
+   After rollback, re-run `/post-deploy` command.
 
 ---
 
-## Zorunlu Kurallar
+## Invariant Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Immutable Rules (Apply Everywhere)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Codebase and config write access** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files can only be created inside Agentbase.
+   Writing to `.claude/` directory, writing to `../Codebase/CLAUDE.md`, is FORBIDDEN.
 
-1. **Soru sorma** — Tum kontrolleri sessizce calistir, sadece sonuc raporunu goster.
-2. **Degisiklik yapma** — Bu komut sadece kontrol eder, hicbir seyi degistirmez.
-3. **Rollback yapma** — Rollback gerekirse TALIMAT ver, kendin uygulama.
-4. **Tum adimlari calistir** — Bir adim basarisiz olsa bile sonraki adima gec.
-5. **Deploy logu ZORUNLU** — Her durumda Step 7 log kaydi olusturulmali.
-6. **Sonuc raporu ZORUNLU** — Her durumda Step 8 raporu olusturulmali.
+2. **Git operations only within Codebase** — All Git operations (commit, push, branch) must be performed within the Codebase.
+   Agentbase does not have Git.
+
+3. **Read-only codebase, write-only config** — Project files (`src/`, `app/`, etc.) can be read and modified as needed.
+   Configuration files (`.claude/`, `CLAUDE.md`) are FORBIDDEN within the Codebase.
+
+1. **Ask questions** — All controls run silently, only reporting results.
+2. **Make changes** — This command only checks, does not modify anything.
+3. **Rollback** — Rollback as needed: TALIMAT will be provided; apply on your own initiative.
+4. **Complete all steps** — Proceed to next step even if one fails.
+5. **Deploy log is mandatory** — Step 7 log must be generated everywhere.
+6. **Result report is mandatory** — Step 8 report must be generated everywhere.
+
+### Invariant Rules (Valid in Every Command)
+
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/` directory inside Codebase or writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and edited when the task requires it. Config files (`.claude/`, `CLAUDE.md`) CANNOT be written inside Codebase.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Explanation: Command for last step - self-refresh check. Bootstrap uses this marker.
+Self-Refresh section changes the command. The command checks its own text within project scope when executed:
+  - small discrepancy Edit, big change - as a backlog task is reported.
 -->

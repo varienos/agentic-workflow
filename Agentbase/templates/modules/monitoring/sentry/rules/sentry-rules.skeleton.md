@@ -1,93 +1,93 @@
-# Sentry Kurallari
+# Sentry Rules
 
-> Bu kurallar Sentry entegrasyonu kullanan projeler icin gecerlidir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules apply to projects that use Sentry integration.
+> All developers and agents MUST follow these rules.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Ornek cikti:
-## Proje Baglami
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.name, project.description, project.structure
+Example output:
+## Project Context
 
-- **Proje:** MyApp — E-ticaret platformu
-- **Yapi:** Monorepo (`apps/web/` + `apps/api/`)
+- **Project:** MyApp — E-commerce platform
+- **Structure:** Monorepo (`apps/web/` + `apps/api/`)
 - **Sentry SDK:** @sentry/react + @sentry/node
-- **DSN:** Env variable uzerinden (`NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`)
+- **DSN:** Via env variable (`NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_DSN`)
 - **Environment:** development | staging | production
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Error Boundary Kurallari
+## Error Boundary Rules
 
-React ve React Native projelerinde her sayfa/screen icin error boundary ZORUNLUDUR.
+An error boundary is MANDATORY for every page/screen in React and React Native projects.
 
 ```typescript
-// DOGRU — Sentry Error Boundary ile sarmalama
+// CORRECT — Wrap with Sentry Error Boundary
 import * as Sentry from '@sentry/react';
 
 function FallbackUI({ error, resetError }) {
   return (
     <div role="alert">
-      <h2>Bir hata olustu</h2>
+      <h2>Something went wrong</h2>
       <p>{error.message}</p>
-      <button onClick={resetError}>Tekrar Dene</button>
+      <button onClick={resetError}>Try Again</button>
     </div>
   );
 }
 
-// Her sayfa/screen'de Error Boundary kullan
+// Use Error Boundary on every page/screen
 export default Sentry.withErrorBoundary(MyPageComponent, {
   fallback: FallbackUI,
-  showDialog: false, // Production'da kullaniciya dialog gosterme
+  showDialog: false, // Do not show a dialog to the user in production
 });
 ```
 
 ```typescript
-// DOGRU — React Native icin screen-level error boundary
+// CORRECT — Screen-level error boundary for React Native
 import * as Sentry from '@sentry/react-native';
 
 const WrappedScreen = Sentry.wrap(MyScreen);
 ```
 
-### Error Boundary Kurallar Tablosu
+### Error Boundary Rules Table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Her sayfa/screen'de error boundary | Yakalanmayan hatalar Sentry'ye otomatik raporlanir |
-| Fallback UI ZORUNLU | Kullaniciya anlamli hata mesaji goster |
-| Nested boundary | Kritik component'ler (form, odeme) icin ayri boundary ekle |
-| `componentDidCatch` YASAK | Sentry.ErrorBoundary veya `withErrorBoundary` kullan |
+| Error boundary on every page/screen | Uncaught errors are reported to Sentry automatically |
+| Fallback UI MANDATORY | Show a meaningful error message to the user |
+| Nested boundary | Add a separate boundary for critical components (form, payment) |
+| `componentDidCatch` FORBIDDEN | Use Sentry.ErrorBoundary or `withErrorBoundary` |
 
 ---
 
-## Sentry Konfigurasyonu
+## Sentry Configuration
 
 ```typescript
-// DOGRU — sentry.config.ts
-import * as Sentry from '@sentry/react'; // veya @sentry/node, @sentry/react-native
+// CORRECT — sentry.config.ts
+import * as Sentry from '@sentry/react'; // or @sentry/node, @sentry/react-native
 
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN, // DSN her zaman env'den alinir
-  environment: process.env.NODE_ENV,        // Environment dogru ayarlanmali
-  release: process.env.SENTRY_RELEASE,      // Release versiyonu deploy'dan gelir
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN, // DSN always comes from env
+  environment: process.env.NODE_ENV,        // Environment must be set correctly
+  release: process.env.SENTRY_RELEASE,      // Release version comes from deploy
 
-  // Production'da dusuk sample rate
+  // Low sample rate in production
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-  // Development'ta Sentry'yi devre disi birakabilirsin
+  // You may disable Sentry in development
   enabled: process.env.NODE_ENV !== 'development',
 
-  // PII verisi GONDERME
+  // Do NOT send PII
   sendDefaultPii: false,
 
-  // Hassas URL'leri filtrele
+  // Filter sensitive URLs
   beforeSend(event) {
     if (event.request?.cookies) {
       delete event.request.cookies;
@@ -97,24 +97,24 @@ Sentry.init({
 });
 ```
 
-### Konfigurasyon Kurallar Tablosu
+### Configuration Rules Table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| DSN env variable'dan alinir | Hardcoded DSN YASAK |
-| `environment` dogru ayarlanir | `development`, `staging`, `production` ayrimini yap |
-| `tracesSampleRate` production'da dusuk | Production'da `0.1`-`0.2`, development'ta `1.0` |
-| `sendDefaultPii: false` | Kisisel veri gondermeme varsayilan |
-| `enabled` ortama gore | Development'ta opsiyonel devre disi |
+| DSN comes from env variable | Hardcoded DSN FORBIDDEN |
+| `environment` set correctly | Separate `development`, `staging`, `production` |
+| Low `tracesSampleRate` in production | `0.1`-`0.2` in production, `1.0` in development |
+| `sendDefaultPii: false` | Default is not to send personal data |
+| `enabled` by environment | Optionally disabled in development |
 
 ---
 
-## Source Map Yonetimi
+## Source Map Management
 
-Deploy sirasinda source map'ler Sentry'ye upload edilmelidir.
+Source maps must be uploaded to Sentry during deploy.
 
 ```bash
-# DOGRU — sentry-cli ile source map upload
+# CORRECT — source map upload with sentry-cli
 npx @sentry/cli sourcemaps upload \
   --release=$SENTRY_RELEASE \
   --org=$SENTRY_ORG \
@@ -123,38 +123,38 @@ npx @sentry/cli sourcemaps upload \
 ```
 
 ```javascript
-// DOGRU — Webpack/Vite plugin ile otomatik upload
-// next.config.js (Next.js ornegi)
+// CORRECT — Automatic upload with Webpack/Vite plugin
+// next.config.js (Next.js example)
 const { withSentryConfig } = require('@sentry/nextjs');
 
 module.exports = withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   silent: true,
-  hideSourceMaps: true, // Production'da source map'leri gizle
+  hideSourceMaps: true, // Hide source maps in production
 });
 ```
 
-### Source Map Kurallar Tablosu
+### Source Map Rules Table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Her deploy'da source map upload | Hata stack trace'leri okunabilir olmali |
-| `sentry-cli` veya framework plugin | Manuel upload yerine CI/CD entegrasyonu tercih et |
-| `hideSourceMaps: true` | Production build'de source map'leri public'e acma |
-| Release ile eslestir | Source map'ler dogru release versiyonuyla iliskilendirilmeli |
+| Upload source maps on every deploy | Error stack traces must be readable |
+| `sentry-cli` or framework plugin | Prefer CI/CD integration over manual upload |
+| `hideSourceMaps: true` | Do not expose source maps publicly in production builds |
+| Match with release | Source maps must be associated with the correct release version |
 
 ---
 
-## Breadcrumb ve Context
+## Breadcrumb and Context
 
-Onemli kullanici aksiyonlarinda breadcrumb eklenmeli ve user context set edilmelidir.
+Breadcrumbs should be added on important user actions and user context should be set.
 
 ```typescript
-// DOGRU — Kullanici aksiyonunda breadcrumb ekle
+// CORRECT — Add breadcrumb on user action
 Sentry.addBreadcrumb({
   category: 'user.action',
-  message: 'Sepete urun ekledi',
+  message: 'Added product to cart',
   level: 'info',
   data: {
     productId: product.id,
@@ -162,17 +162,17 @@ Sentry.addBreadcrumb({
   },
 });
 
-// DOGRU — User context set et (login sonrasi)
+// CORRECT — Set user context (after login)
 Sentry.setUser({
   id: user.id,
-  email: user.email, // Sadece gerekiyorsa, PII kurallarina dikkat
+  email: user.email, // Only if needed; watch PII rules
   username: user.username,
 });
 
-// DOGRU — Logout'ta user context temizle
+// CORRECT — Clear user context on logout
 Sentry.setUser(null);
 
-// DOGRU — Ek context bilgisi
+// CORRECT — Extra context
 Sentry.setContext('order', {
   orderId: order.id,
   total: order.total,
@@ -180,76 +180,85 @@ Sentry.setContext('order', {
 });
 ```
 
-### Breadcrumb Kurallar Tablosu
+### Breadcrumb Rules Table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Kritik aksiyonlarda breadcrumb | Odeme, form submit, navigasyon gibi islemlerde ekle |
-| User context login sonrasi set | Hatalari kullaniciya bagla |
-| Logout'ta `setUser(null)` | Kullanici context'ini temizle |
-| PII kurallarina uy | Hassas veri breadcrumb'a ekleme |
+| Breadcrumb on critical actions | Add on payment, form submit, navigation, etc. |
+| Set user context after login | Tie errors to the user |
+| `setUser(null)` on logout | Clear user context |
+| Follow PII rules | Do not put sensitive data in breadcrumbs |
 
 ---
 
 ## Release Tracking
 
-Her deploy'da Sentry release olusturulmali ve commit bilgisi eklenmelidir.
+A Sentry release must be created on every deploy and commit info must be attached.
 
 ```bash
-# DOGRU — CI/CD pipeline'da release olustur
+# CORRECT — Create release in CI/CD pipeline
 export SENTRY_RELEASE=$(git rev-parse --short HEAD)
 
-# Release olustur
+# Create release
 npx @sentry/cli releases new $SENTRY_RELEASE \
   --org=$SENTRY_ORG \
   --project=$SENTRY_PROJECT
 
-# Commit bilgisi ekle
+# Attach commit info
 npx @sentry/cli releases set-commits $SENTRY_RELEASE \
   --auto --org=$SENTRY_ORG
 
-# Deploy bilgisi ekle
+# Attach deploy info
 npx @sentry/cli releases deploys $SENTRY_RELEASE new \
   --env=production --org=$SENTRY_ORG
 
-# Release'i sonlandir
+# Finalize release
 npx @sentry/cli releases finalize $SENTRY_RELEASE \
   --org=$SENTRY_ORG
 ```
 
-### Release Kurallar Tablosu
+### Release Rules Table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Her deploy'da release olustur | Hatalari deploy versiyonuyla iliskilendir |
-| Commit bilgisi ekle | `set-commits --auto` ile suspect commit tespiti |
-| Deploy environment belirt | `production`, `staging` ayrimini yap |
-| Release finalize | Deploy tamamlandiktan sonra release'i kapat |
+| Create release on every deploy | Associate errors with the deploy version |
+| Attach commit info | Suspect commit detection with `set-commits --auto` |
+| Specify deploy environment | Separate `production`, `staging` |
+| Finalize release | Close the release after deploy completes |
 
 ---
 
-## Yasak Pratikler (Anti-pattern)
+## Forbidden Practices (Anti-patterns)
 
-| # | Yasak | Neden | Dogru Alternatif |
+| # | Forbidden | Why | Correct Alternative |
 |---|---|---|---|
-| 1 | `console.error(err)` ile hata loglama | Sentry'ye raporlanmaz, hata kaybolur | `Sentry.captureException(err)` kullan |
-| 2 | `try-catch` icinde sessiz yutma | Hata gizlenir, debug imkansizlasir | Catch blogu icinde `Sentry.captureException` cagir |
-| 3 | PII veri gonderme | KVKK/GDPR ihlali riski | `beforeSend` ile filtrele, `sendDefaultPii: false` |
-| 4 | Hardcoded DSN | Farkli ortamlarda yanlis DSN kullanilir | Env variable kullan (`SENTRY_DSN`) |
-| 5 | Production'da yuksek `tracesSampleRate` | Gereksiz maliyet ve performans etkisi | Production'da `0.1`-`0.2` kullan |
-| 6 | Source map upload'suz deploy | Stack trace okunamaz, debug imkansiz | CI/CD'de source map upload ekle |
-| 7 | `Sentry.captureMessage` hata icin | Hata context'i kaybolur (stack trace yok) | `Sentry.captureException` kullan |
-| 8 | Her hatada `Sentry.captureException` + `throw` | Ayni hata iki kez raporlanir | Ya yakala ya firsat, ikisini birden yapma |
+| 1 | Logging errors with `console.error(err)` | Not reported to Sentry; error is lost | Use `Sentry.captureException(err)` |
+| 2 | Silently swallowing in `try-catch` | Error is hidden; debugging becomes impossible | Call `Sentry.captureException` inside the catch block |
+| 3 | Sending PII | KVKK/GDPR violation risk | Filter with `beforeSend`; `sendDefaultPii: false` |
+| 4 | Hardcoded DSN | Wrong DSN used across environments | Use env variable (`SENTRY_DSN`) |
+| 5 | High `tracesSampleRate` in production | Unnecessary cost and performance impact | Use `0.1`-`0.2` in production |
+| 6 | Deploy without source map upload | Stack traces unreadable; debugging impossible | Add source map upload in CI/CD |
+| 7 | `Sentry.captureMessage` for errors | Error context is lost (no stack trace) | Use `Sentry.captureException` |
+| 8 | `Sentry.captureException` + `throw` on every error | Same error reported twice | Either catch or rethrow; do not do both |
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-1. **DSN env variable'dan** — Hardcoded DSN YASAK, ortam bazli env variable kullan.
-2. **Error boundary her sayfada** — React/RN projelerinde her sayfa/screen `Sentry.ErrorBoundary` ile sarmalanir.
-3. **Source map her deploy'da** — Source map upload olmadan deploy YASAK.
-4. **Release tracking** — Her deploy'da Sentry release olusturulur ve commit bilgisi eklenir.
-5. **PII gonderme** — `sendDefaultPii: false`, hassas verileri `beforeSend` ile filtrele.
-6. **`captureException` kullan** — `console.error` yerine `Sentry.captureException` ile raporla.
-7. **Breadcrumb ekle** — Kritik kullanici aksiyonlarinda breadcrumb ile context zenginlestir.
-8. **`tracesSampleRate` ayarla** — Production'da `0.1`-`0.2`, development'ta `1.0`.
+1. **DSN from env variable** — Hardcoded DSN FORBIDDEN; use environment-based env variables.
+2. **Error boundary on every page** — Every page/screen in React/RN projects is wrapped with `Sentry.ErrorBoundary`.
+3. **Source maps on every deploy** — Deploy without source map upload is FORBIDDEN.
+4. **Release tracking** — A Sentry release is created on every deploy and commit info is attached.
+5. **Do not send PII** — `sendDefaultPii: false`; filter sensitive data with `beforeSend`.
+6. **Use `captureException`** — Report with `Sentry.captureException` instead of `console.error`.
+7. **Add breadcrumbs** — Enrich context with breadcrumbs on critical user actions.
+8. **Set `tracesSampleRate`** — `0.1`-`0.2` in production, `1.0` in development.
+
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

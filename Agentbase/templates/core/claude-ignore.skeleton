@@ -1,7 +1,7 @@
-# Agentbase template dosyalari (uretim sonrasi gereksiz)
+# Agentbase template files (unnecessary after generation)
 templates/
 
-# Genel
+# General
 .DS_Store
 *.log
 .env
@@ -18,8 +18,8 @@ Thumbs.db
 # Java → target/, *.class
 # General → coverage/, .nyc_output/, .turbo/, .cache/
 #
-# Bootstrap bu blogu tespit edilen stack'e gore doldurur.
-# Ornek (Node.js + Expo projesi icin):
+# Bootstrap fills this block from the detected stack.
+# Example (Node.js + Expo project):
 #
 # Node.js
 # node_modules/

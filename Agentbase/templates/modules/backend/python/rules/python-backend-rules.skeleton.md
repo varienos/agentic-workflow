@@ -1,28 +1,27 @@
-# Python Backend Ortak Kurallari
+# Python Backend Shared Rules
 
-> Bu kurallar tum Python backend leaf'leri icin gecerlidir.
-> Framework-spesifik kurallar bu dosyaya EK olarak uygulanir.
+> These rules apply to all Python backend leaves.
+> Framework-specific rules apply in addition to this file.
 
-## Ortam ve Bagimlilik Yonetimi
+## Environment and Dependency Management
 
-- Sanal ortam/packaging stratejisi (`venv`, Poetry, uv, pip-tools) ekipte tek bir standarda baglanmali.
-- Bagimliliklar uygulama kodundan degil dependency manifest'inden yonetilmeli.
-- Yeni runtime bagimliligini eklerken versiyon ve uyumluluk etkisini not et.
+- The virtualenv/packaging strategy (`venv`, Poetry, uv, pip-tools) must follow a single team standard.
+- Dependencies must be managed from the dependency manifest, not from application code.
+- When adding a new runtime dependency, note version and compatibility impact.
 
-## Konfigurasyon ve Secret Yonetimi
+## Configuration and Secret Management
 
-- Secret degerleri kod icine hardcode etme.
-- Ayarlar merkezi bir settings/config katmaninda toplanmali.
-- Ortam bazli davranis farklari (`local`, `test`, `production`) acik ve test edilebilir olmali.
+- Do not hardcode secret values in code.
+- Settings must be collected in a central settings/config layer.
+- Environment-based behavior differences (`local`, `test`, `production`) must be explicit and testable.
 
-## Tipler ve Yapi
+## Types and Structure
 
-- Yeni backend kodunda tip ipuclari kullan; public fonksiyonlar ve servis sinirlari ozellikle tiplenmeli.
-- Route/view katmani ile domain/is logigi birbirinden ayrilmali.
-- Uzun fonksiyonlar yerine okunabilir, testlenebilir servis/parca tasarimi tercih et.
+- Use type hints in new backend code; public functions and service boundaries especially must be typed.
+- The route/view layer and domain/business logic must be separated.
+- Prefer readable, testable service/piece design over long functions.
 
 ## Verification Convention
 
-- Final dogrulamada en azindan test ve lint/format adimlari dusunulmeli; ekip kullaniyorsa type check de eklenmeli.
-- Async ve sync kodun karistigi durumlarda event loop veya bloklayici I/O riskleri ayrica gozden gecirilmeli.
-
+- Final verification should at least consider test and lint/format steps; add type check if the team uses it.
+- When async and sync code are mixed, also review event-loop or blocking I/O risks.

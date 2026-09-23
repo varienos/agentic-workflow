@@ -1,87 +1,87 @@
-# Prisma Kurallari
+# Prisma Rules
 
-> Bu kurallar Prisma ORM kullanan projeler icin gecerlidir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
-
----
-
-## Yasaklar
-
-### 🚫 `prisma db push` YASAK
-
-`prisma db push` komutu HER KOSULDA YASAKTIR.
-
-**Neden:** Migration dosyasi olusturmadan veritabani semasini degistirir. Bu durum:
-- Migration gecmisini bozar
-- Takim uyelerinin senkronizasyonunu kaybettirir
-- Production deploy'larda geri donulemez sorunlara yol acar
-
-**Dogru alternatif:** `npx prisma migrate dev --name <degisiklik_aciklamasi>`
+> These rules apply to projects that use Prisma ORM.
+> All developers and agents MUST follow these rules.
 
 ---
 
-## Schema Degisiklik Akisi
+## Prohibitions
+
+### 🚫 `prisma db push` is FORBIDDEN
+
+The `prisma db push` command is FORBIDDEN under ALL CONDITIONS.
+
+**Why:** It changes the database schema without creating a migration file. This:
+- Breaks migration history
+- Causes teammates to lose synchronization
+- Leads to irreversible problems in production deploys
+
+**Correct alternative:** `npx prisma migrate dev --name <change_description>`
+
+---
+
+## Schema Change Flow
 
 ```
-schema.prisma duzenle
+edit schema.prisma
         ↓
 npx prisma validate
-        ↓ (basarili)
-npx prisma migrate dev --name <aciklama>
+        ↓ (success)
+npx prisma migrate dev --name <description>
         ↓
-migration.sql dosyasini incele
-        ↓ (yikici degisiklik varsa)
-Veri yedegi planla + kullaniciyla onayla
+inspect migration.sql
+        ↓ (if destructive change exists)
+Plan data backup + confirm with user
         ↓
 npx prisma generate
         ↓
-Uygulama kodunu guncelle
+Update application code
         ↓
-Testleri calistir
+Run tests
         ↓
-Commit (schema.prisma + migration dosyasi BIRLIKTE)
+Commit (schema.prisma + migration file TOGETHER)
 ```
 
 ---
 
-## Migration Risk Tablosu
+## Migration Risk Table
 
-| Islem | Risk | Dikkat Edilmesi Gerekenler |
+| Operation | Risk | Things to Watch |
 |---|---|---|
-| ADD COLUMN (nullable) | 🟢 Dusuk | Guvenli, mevcut verileri etkilemez |
-| ADD COLUMN (required + default) | 🟢 Dusuk | Default deger tum satirlara uygulanir |
-| ADD COLUMN (required, no default) | 🔴 Kritik | Mevcut satirlar hata verir, YAPMA |
-| CREATE TABLE | 🟢 Dusuk | Guvenli, yeni tablo olusturur |
-| DROP TABLE | 🔴 Kritik | VERI KAYBI — yedek olmadan YAPMA |
-| DROP COLUMN | 🟠 Yuksek | Kolon verisi kaybolur |
-| ALTER COLUMN (tip degisikligi) | 🟡 Orta | Veri truncation/donusum hatasi olabilir |
-| RENAME COLUMN | 🟡 Orta | Uygulama kodu guncellenmeli |
-| ADD INDEX | 🟢 Dusuk | Guvenli, performans iyilestirme |
-| DROP INDEX | 🟡 Orta | Performans etkilenebilir |
-| ADD RELATION | 🟢 Dusuk | Foreign key constraint eklenir |
-| REMOVE RELATION | 🟠 Yuksek | Referans butunlugu kaybolur |
+| ADD COLUMN (nullable) | 🟢 Low | Safe; does not affect existing data |
+| ADD COLUMN (required + default) | 🟢 Low | Default value is applied to all rows |
+| ADD COLUMN (required, no default) | 🔴 Critical | Existing rows fail; DO NOT DO THIS |
+| CREATE TABLE | 🟢 Low | Safe; creates a new table |
+| DROP TABLE | 🔴 Critical | DATA LOSS — DO NOT without backup |
+| DROP COLUMN | 🟠 High | Column data is lost |
+| ALTER COLUMN (type change) | 🟡 Medium | Data truncation/conversion errors possible |
+| RENAME COLUMN | 🟡 Medium | Application code must be updated |
+| ADD INDEX | 🟢 Low | Safe; performance improvement |
+| DROP INDEX | 🟡 Medium | Performance may be affected |
+| ADD RELATION | 🟢 Low | Foreign key constraint is added |
+| REMOVE RELATION | 🟠 High | Referential integrity is lost |
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-1. **Schema + Migration BIRLIKTE commit edilir.** `schema.prisma` degisikligi migration dosyasi olmadan commit'lenemez.
-2. **Her migration anlamli isimlendirilir.** `--name add_user_email_column` gibi, `--name migration1` gibi DEGIL.
-3. **Migration SQL incelenir.** Otomatik olusturulan SQL dosyasini commit'lemeden once oku ve dogrula.
-4. **Yikici migration'larda veri yedegi ZORUNLU.** DROP TABLE/COLUMN iceren migration'lardan once yedek plani olustur.
-5. **`prisma generate` unutulmaz.** Migration sonrasi client'i yeniden olustur.
-6. **Seed data guncel tutulur.** Yeni model eklendiyse `prisma/seed.ts` guncellenir.
-7. **Enum degisiklikleri dikkatle yapilir.** Enum'dan deger silmek mevcut veritabani kayitlarini bozar.
+1. **Schema + Migration are committed TOGETHER.** A `schema.prisma` change cannot be committed without a migration file.
+2. **Every migration is named meaningfully.** Like `--name add_user_email_column`, NOT like `--name migration1`.
+3. **Migration SQL is inspected.** Read and verify the auto-generated SQL file before committing.
+4. **Data backup is REQUIRED for destructive migrations.** Create a backup plan before migrations that contain DROP TABLE/COLUMN.
+5. **Do not forget `prisma generate`.** Recreate the client after migration.
+6. **Keep seed data up to date.** If a new model was added, update `prisma/seed.ts`.
+7. **Make enum changes carefully.** Removing a value from an enum breaks existing database records.
 
 ---
 
 <!-- GENERATE: PRISMA_PATH
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, project.subprojects
-Ornek cikti:
-## Prisma Dosya Konumlari
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.structure, project.subprojects
+Example output:
+## Prisma File Locations
 
-| Dosya | Yol |
+| File | Path |
 |---|---|
 | Schema | `../Codebase/apps/api/prisma/schema.prisma` |
 | Migrations | `../Codebase/apps/api/prisma/migrations/` |
@@ -91,22 +91,22 @@ Ornek cikti:
 -->
 
 <!-- GENERATE: MIGRATION_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, project.scripts, project.subprojects
-Ornek cikti:
-## Migration Komutlari
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.structure, project.scripts, project.subprojects
+Example output:
+## Migration Commands
 
-Bu proje icin kullanilacak tam komutlar:
+Full commands to use for this project:
 
-| Islem | Komut |
+| Operation | Command |
 |---|---|
-| Schema dogrulama | `cd ../Codebase/apps/api && npx prisma validate` |
-| Migration olustur | `cd ../Codebase/apps/api && npx prisma migrate dev --name <aciklama>` |
-| Migration durumu | `cd ../Codebase/apps/api && npx prisma migrate status` |
-| Client olustur | `cd ../Codebase/apps/api && npx prisma generate` |
-| DB sifirla (DEV) | `cd ../Codebase/apps/api && npx prisma migrate reset` |
-| Seed calistir | `cd ../Codebase/apps/api && npx prisma db seed` |
-| Studio ac | `cd ../Codebase/apps/api && npx prisma studio` |
+| Schema validation | `cd ../Codebase/apps/api && npx prisma validate` |
+| Create migration | `cd ../Codebase/apps/api && npx prisma migrate dev --name <description>` |
+| Migration status | `cd ../Codebase/apps/api && npx prisma migrate status` |
+| Generate client | `cd ../Codebase/apps/api && npx prisma generate` |
+| Reset DB (DEV) | `cd ../Codebase/apps/api && npx prisma migrate reset` |
+| Run seed | `cd ../Codebase/apps/api && npx prisma db seed` |
+| Open Studio | `cd ../Codebase/apps/api && npx prisma studio` |
 
-> **UYARI:** `migrate reset` SADECE gelistirme ortaminda kullanilir. Production'da ASLA.
+> **WARNING:** `migrate reset` is used ONLY in the development environment. NEVER in production.
 -->

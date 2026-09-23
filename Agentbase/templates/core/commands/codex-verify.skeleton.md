@@ -1,108 +1,107 @@
 # Codex Verify — Codex Target Verify/Adapt Pass
 
-> Transform sonrasi Codex hedef yuzeyini denetler; ikinci bootstrap yapmaz.
-> Kullanim: `/codex-verify`
+> After transform, audits the Codex target surface; does not run a second bootstrap.
+> Usage: `/codex-verify`
 
 ---
 
-## Amac
+## Purpose
 
-Bu komut, `/bootstrap` ve `transform.js` sonrasinda Codex hedefinin kullanilabilir olup olmadigini kontrol eder.
+This command checks whether the Codex target is usable after `/bootstrap` and `transform.js`.
 
-**Bu bir bootstrap degildir.** Manifest, backlog veya Claude canonical ciktilari yeniden uretilmez. Komut yalnizca mevcut manifesti ve Codex target ciktilarini okur; gerekirse sadece Codex hedef yuzeyi icin rapor veya kucuk adaptasyon onerisi hazirlar.
+**This is not a bootstrap.** Manifest, backlog, or Claude canonical outputs are not regenerated. The command only reads the existing manifest and Codex target outputs; if needed it prepares a report or a small adaptation suggestion for the Codex target surface only.
 
-## Girisler
+## Inputs
 
 - Manifest: `../Docbase/agentic/project-manifest.yaml`
-- Claude canonical kaynak: `.claude/`
-- Codex target ciktilari: `.agents/skills/*/SKILL.md`, `AGENTS.md`
-- Yardimci dokumanlar: README, onboarding veya bootstrap tamamlanma raporu
+- Claude canonical source: `.claude/`
+- Codex target outputs: `.agents/skills/*/SKILL.md`, `AGENTS.md`
+- Supporting docs: README, onboarding, or bootstrap completion report
 
-## Step 1 — Manifest ve Target Kontrolu
+## Step 1 — Manifest and Target Check
 
-1. `../Docbase/agentic/project-manifest.yaml` dosyasini oku.
-2. `manifest.targets` alanini kontrol et.
-3. `codex` hedefi yoksa raporla ve dur:
+1. Read `../Docbase/agentic/project-manifest.yaml`.
+2. Check the `manifest.targets` field.
+3. If the `codex` target is missing, report and stop:
 
 ```markdown
-Codex verify/adapt atlandi: manifest.targets icinde `codex` yok.
-Sadece Claude Code hedefi secildiyse transform ve Codex verify/adapt calismaz.
+Codex verify/adapt skipped: `codex` is not in manifest.targets.
+If only the Claude Code target was selected, transform and Codex verify/adapt do not run.
 ```
 
-4. `codex` hedefi varsa devam et.
+4. If the `codex` target exists, continue.
 
-## Step 2 — Cikti Varlik Kontrolu
+## Step 2 — Output Existence Check
 
-Asagidaki dosya ve dizinleri kontrol et:
+Check these files and directories:
 
 - `.agents/skills/`
 - `.agents/skills/*/SKILL.md`
 - `AGENTS.md`
 
-Eksikse yeniden bootstrap onerme. Kullaniciya yalnizca transform komutunu oner:
+If missing, do not suggest re-bootstrap. Suggest only the transform command:
 
 ```bash
 node transform.js ../Docbase/agentic/project-manifest.yaml --targets codex --verbose
 ```
 
-## Step 3 — Codex Skill Kalite Kontrolu
+## Step 3 — Codex Skill Quality Check
 
-Her `SKILL.md` icin sunlari denetle:
+For each `SKILL.md`, audit:
 
-- YAML frontmatter var.
-- `name` ve `description` alanlari dolu.
-- Komut cagirma ornekleri Codex hedefinde `$komut` formatina adapte edilmis.
-- `.claude/commands/` veya `.claude/agents/` referanslari hedef skill yoluna donusmus.
-- `.claude/hooks/`, `.claude/tracking/` ve `settings.json` gibi Claude-only runtime iddialari Codex hedefinde otomatik calisiyor gibi anlatilmiyor.
+- YAML frontmatter exists.
+- `name` and `description` fields are filled.
+- Command invoke examples are adapted to `$command` format for the Codex target.
+- `.claude/commands/` or `.claude/agents/` references have been converted to the target skill path.
+- Claude-only runtime claims such as `.claude/hooks/`, `.claude/tracking/`, and `settings.json` are not described as running automatically on the Codex target.
 
-## Step 4 — AGENTS.md Kontrolu
+## Step 4 — AGENTS.md Check
 
-`AGENTS.md` icin sunlari denetle:
+For `AGENTS.md`, audit:
 
-- Proje baglami ve kurallar okunabilir.
-- `.claude/rules/` icerigi inline aktarilmis veya context icinde temsil edilmis.
-- Hook parity iddiasi yok: Codex ciktilari Claude Code hook runtime'ini otomatik tasir gibi anlatilmamali.
-- Agentbase/Codebase sinirlari korunuyor.
+- Project context and rules are readable.
+- `.claude/rules/` content is inlined or represented in context.
+- No hook parity claim: Codex outputs must not be described as automatically carrying the Claude Code hook runtime.
+- Agentbase/Codebase boundaries are preserved.
 
-## Step 5 — Adaptasyon Karari
+## Step 5 — Adaptation Decision
 
-Karari dar tut:
+Keep the decision narrow:
 
-- **Rapor yeterli:** Eksikler davranissal degilse sadece rapor yaz.
-- **Kucuk hedef yuzey duzeltmesi:** Sadece `.agents/skills/` veya `AGENTS.md` icinde Codex'e ozel path/invoke metni duzelt.
-- **Buyuk sorun:** Transform veya template degisikligi gerekiyorsa backlog task olustur; mevcut bootstrap'i tekrar calistirma.
+- **Report is enough:** If gaps are not behavioral, write only a report.
+- **Small target-surface fix:** Fix only Codex-specific path/invoke text inside `.agents/skills/` or `AGENTS.md`.
+- **Large problem:** If a transform or template change is needed, create a backlog task; do not re-run the existing bootstrap.
 
-## Step 6 — Rapor
+## Step 6 — Report
 
-Raporu su formatta ver:
+Give the report in this format:
 
 ```markdown
-## Codex Verify/Adapt Raporu
+## Codex Verify/Adapt Report
 
-- Manifest target: [codex var/yok]
-- Skill sayisi: [sayi]
-- AGENTS.md: [var/yok]
-- Bulgu: [liste]
-- Uygulanan adaptasyon: [yok veya dosya listesi]
-- Sonraki adim: [Codex'te kullan / transform'u tekrar calistir / backlog task]
+- Manifest target: [codex present/absent]
+- Skill count: [count]
+- AGENTS.md: [present/absent]
+- Findings: [list]
+- Applied adaptation: [none or file list]
+- Next step: [use in Codex / re-run transform / backlog task]
 ```
 
-## Zorunlu Kurallar
+## Required Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `.agents/`, `.codex/`, `CLAUDE.md`, `AGENTS.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/`, `.agents/` veya `.codex/` dizini olusturma, `../Codebase/CLAUDE.md` veya `../Codebase/AGENTS.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir. Config dosyalari (`.claude/`, `.agents/`, `.codex/`, `CLAUDE.md`, `AGENTS.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — `.claude/`, `.agents/`, `.codex/`, `CLAUDE.md`, `AGENTS.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/`, `.agents/`, or `.codex/` directory inside Codebase, or writing `../Codebase/CLAUDE.md` or `../Codebase/AGENTS.md`, is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read. Config files (`.claude/`, `.agents/`, `.codex/`, `CLAUDE.md`, `AGENTS.md`) cannot be written inside Codebase.
 
-1. **Ikinci bootstrap yok** — Codex icin ayri bootstrap calistirma, manifest/backlog'u yeniden baslatma.
-2. **Canonical kaynak Claude ciktilaridir** — Codex hedefi `.claude/` kaynak ciktilarindan transform ile uretilir.
-3. **Hook parity iddiasi yok** — Claude Code hook runtime'i Codex'e otomatik tasinmis gibi raporlama.
-4. **Dar adaptasyon** — Duzeltme gerekiyorsa sadece Codex hedef yuzeyine dokun.
+1. **No second bootstrap** — Do not run a separate bootstrap for Codex; do not restart the manifest/backlog.
+2. **Canonical source is Claude outputs** — The Codex target is produced from `.claude/` source outputs via transform.
+3. **No hook parity claim** — Do not report the Claude Code hook runtime as automatically carried to Codex.
+4. **Narrow adaptation** — If a fix is needed, touch only the Codex target surface.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->

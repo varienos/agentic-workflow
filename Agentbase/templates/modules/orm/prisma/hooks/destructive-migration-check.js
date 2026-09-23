@@ -4,10 +4,10 @@
  * destructive-migration-check.js
  * PostToolUse (Bash) hook
  *
- * `prisma migrate dev` calistirildiktan sonra:
- * 1. En son migration dizinini bulur
- * 2. migration.sql icinde yikici degisiklikleri tarar
- * 3. Bulunursa ciddiyet seviyesine gore uyari verir
+ * After `prisma migrate dev` is run:
+ * 1. Finds the latest migration directory
+ * 2. Scans migration.sql for destructive changes
+ * 3. If found, warns according to severity level
  */
 
 const path = require('path');
@@ -18,26 +18,26 @@ const { readStdin, resolveCodebaseRoot } = require(path.join(__dirname, 'shared-
 const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
 /**
- * Yikici SQL ifadeleri ve ciddiyet seviyeleri
+ * Destructive SQL expressions and severity levels
  */
 const DESTRUCTIVE_PATTERNS = [
-  { pattern: /DROP\s+TABLE/gi, label: 'DROP TABLE', severity: 'KRITIK' },
-  { pattern: /DROP\s+COLUMN/gi, label: 'DROP COLUMN', severity: 'YUKSEK' },
-  { pattern: /ALTER\s+COLUMN/gi, label: 'ALTER COLUMN', severity: 'ORTA' },
-  { pattern: /MODIFY\s+COLUMN/gi, label: 'MODIFY COLUMN', severity: 'ORTA' },
-  { pattern: /RENAME\s+COLUMN/gi, label: 'RENAME COLUMN', severity: 'ORTA' },
-  { pattern: /DROP\s+INDEX/gi, label: 'DROP INDEX', severity: 'ORTA' },
+  { pattern: /DROP\s+TABLE/gi, label: 'DROP TABLE', severity: 'CRITICAL' },
+  { pattern: /DROP\s+COLUMN/gi, label: 'DROP COLUMN', severity: 'HIGH' },
+  { pattern: /ALTER\s+COLUMN/gi, label: 'ALTER COLUMN', severity: 'MEDIUM' },
+  { pattern: /MODIFY\s+COLUMN/gi, label: 'MODIFY COLUMN', severity: 'MEDIUM' },
+  { pattern: /RENAME\s+COLUMN/gi, label: 'RENAME COLUMN', severity: 'MEDIUM' },
+  { pattern: /DROP\s+INDEX/gi, label: 'DROP INDEX', severity: 'MEDIUM' },
 ];
 
 /**
- * Codebase icinde prisma/migrations dizinini arar.
+ * Searches for the prisma/migrations directory inside Codebase.
  */
 function findMigrationsDir() {
   const candidates = [
     path.join(CODEBASE_ROOT, 'prisma', 'migrations'),
   ];
 
-  // Alt dizinlerde ara
+  // Search subdirectories
   const searchDirs = ['apps', 'packages', 'src'];
   for (const dir of searchDirs) {
     const base = path.join(CODEBASE_ROOT, dir);
@@ -50,7 +50,7 @@ function findMigrationsDir() {
         candidates.push(path.join(base, entry.name, 'prisma', 'migrations'));
       }
     } catch {
-      // Erisilemezse gec
+      // Skip if inaccessible
     }
   }
 
@@ -64,8 +64,8 @@ function findMigrationsDir() {
 }
 
 /**
- * En son migration dizinini bulur (tarih sirasina gore).
- * Prisma migration dizinleri YYYYMMDDHHMMSS_name formatindadir.
+ * Finds the latest migration directory (by date order).
+ * Prisma migration directories are in YYYYMMDDHHMMSS_name format.
  */
 function findLatestMigration(migrationsDir) {
   try {
@@ -93,7 +93,7 @@ function findLatestMigration(migrationsDir) {
 }
 
 /**
- * SQL iceriginde yikici pattern'leri tarar.
+ * Scans SQL content for destructive patterns.
  */
 function scanForDestructiveChanges(sql) {
   const findings = [];
@@ -101,7 +101,7 @@ function scanForDestructiveChanges(sql) {
   for (const { pattern, label, severity } of DESTRUCTIVE_PATTERNS) {
     const matches = sql.match(pattern);
     if (matches && matches.length > 0) {
-      // Eslesen satiri bul
+      // Eslesen linei bul
       const lines = sql.split('\n');
       const matchingLines = lines
         .map((line, idx) => ({ line: line.trim(), lineNum: idx + 1 }))
@@ -114,7 +114,7 @@ function scanForDestructiveChanges(sql) {
         label,
         severity,
         count: matches.length,
-        lines: matchingLines.slice(0, 5) // En fazla 5 satir goster
+        lines: matchingLines.slice(0, 5) // En fazla 5 line goster
       });
     }
   }
@@ -124,9 +124,9 @@ function scanForDestructiveChanges(sql) {
 
 function severityEmoji(severity) {
   switch (severity) {
-    case 'KRITIK': return '🔴';
-    case 'YUKSEK': return '🟠';
-    case 'ORTA': return '🟡';
+    case 'CRITICAL': return '🔴';
+    case 'HIGH': return '🟠';
+    case 'MEDIUM': return '🟡';
     default: return '⚪';
   }
 }
@@ -152,17 +152,17 @@ async function main() {
     const findings = scanForDestructiveChanges(latest.sql);
     if (findings.length === 0) return;
 
-    // Ciddiyet siralama: KRITIK > YUKSEK > ORTA
-    const severityOrder = { 'KRITIK': 0, 'YUKSEK': 1, 'ORTA': 2 };
+    // Severity order: CRITICAL > HIGH > MEDIUM
+    const severityOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2 };
     findings.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
     const maxSeverity = findings[0].severity;
 
-    let message = `⚠️ **YIKICI MIGRATION TESPIT EDILDI**\n\n`;
+    let message = `⚠️ **DESTRUCTIVE MIGRATION DETECTED**\n\n`;
     message += `**Migration:** \`${latest.name}\`\n`;
-    message += `**En Yuksek Ciddiyet:** ${severityEmoji(maxSeverity)} ${maxSeverity}\n\n`;
+    message += `**Highest Severity:** ${severityEmoji(maxSeverity)} ${maxSeverity}\n\n`;
     message += `### Tespit Edilen Degisiklikler\n\n`;
-    message += `| Ciddiyet | Islem | Adet | Ornekler |\n`;
+    message += `| Severity | Operation | Count | Examples |\n`;
     message += `|---|---|---|---|\n`;
 
     for (const finding of findings) {
@@ -174,15 +174,15 @@ async function main() {
 
     message += `\n### Onerilen Aksiyonlar\n\n`;
 
-    if (maxSeverity === 'KRITIK') {
+    if (maxSeverity === 'CRITICAL') {
       message += `1. **DURMA** — Bu migration veri kaybina yol acabilir.\n`;
-      message += `2. Etkilenen tablolardaki verilerin yedegininin alindigini dogrula.\n`;
+      message += `2. Verify that a backup of data in affected tables has been taken.\n`;
       message += `3. Eger kasitli degilse migration'i geri al: \`npx prisma migrate reset\` (DIKKAT: tum veritabanini sifirlar)\n`;
-      message += `4. Kasitli ise kullanicidan onay al.\n`;
-    } else if (maxSeverity === 'YUKSEK') {
+      message += `4. Kasitli ise kullanicidan get approval.\n`;
+    } else if (maxSeverity === 'HIGH') {
       message += `1. Silinen kolon(lar)daki verilerin baska bir yerde korunup korunmadigini kontrol et.\n`;
       message += `2. Uygulama kodunun bu kolon(lar)a referans vermediginden emin ol.\n`;
-      message += `3. Production'da bu migration'i uygulamadan once veri yedegi al.\n`;
+      message += `3. Take a data backup before applying this migration in production.\n`;
     } else {
       message += `1. Degisikliklerin mevcut veriyle uyumlu oldugunu kontrol et.\n`;
       message += `2. Kolon tip degisiklikleri veri truncation'ina yol acabilir — mevcut veriyi dogrula.\n`;
@@ -193,7 +193,7 @@ async function main() {
     };
     process.stdout.write(JSON.stringify(result));
   } catch (e) {
-    // Hook hatalari sessizce yutulur
+    // Hook errors are swallowed silently
   }
 }
 

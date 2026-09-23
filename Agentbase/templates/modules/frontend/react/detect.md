@@ -1,4 +1,4 @@
-# React SPA Modul Tespiti
+# React SPA Module Detection
 
 ## Checks
 
@@ -16,6 +16,6 @@
 
 ## Affects Core
 
-- code-review: React hook kurallari, component pattern ve anti-pattern kontrolu eklenir
-- task-hunter: IMPLEMENTATION_RULES'a React SPA rendering ve state yonetim kurallari eklenir
-- settings.json: React/TypeScript plugin konfigurasyonu eklenir
+- code-review: React hook rules, component pattern, and anti-pattern checks are added
+- task-hunter: React SPA rendering and state management rules are added to IMPLEMENTATION_RULES
+- settings.json: React/TypeScript plugin configuration is added

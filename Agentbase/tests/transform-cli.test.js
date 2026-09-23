@@ -72,7 +72,7 @@ describe('transform.js CLI entegrasyon', () => {
     const result = runTransform(rootDir, []);
 
     assert.equal(result.status, 1);
-    assert.match(result.stderr, /Kullanim:/);
+    assert.match(result.stderr, /Usage:/);
   });
 
   it('manifest dosyasi yoksa exit 1 ve hata mesaji', t => {
@@ -80,7 +80,7 @@ describe('transform.js CLI entegrasyon', () => {
     const result = runTransform(rootDir, ['olmayan-dosya.yaml']);
 
     assert.equal(result.status, 1);
-    assert.match(result.stderr, /bulunamadi/);
+    assert.match(result.stderr, /not found/);
   });
 
   it('bozuk YAML manifest ile exit 1 ve parse hata mesaji', t => {
@@ -90,7 +90,7 @@ describe('transform.js CLI entegrasyon', () => {
     const result = runTransform(rootDir, [manifestPath]);
 
     assert.equal(result.status, 1);
-    assert.match(result.stderr, /YAML parse hatasi/);
+    assert.match(result.stderr, /YAML parse error/);
   });
 
   it('bos manifest (null) ile exit 1', t => {
@@ -100,7 +100,7 @@ describe('transform.js CLI entegrasyon', () => {
     const result = runTransform(rootDir, [manifestPath]);
 
     assert.equal(result.status, 1);
-    assert.match(result.stderr, /bos veya gecersiz/);
+    assert.match(result.stderr, /empty or invalid/);
   });
 
   it('gecersiz target ile exit 1 ve hata detayi', t => {
@@ -111,7 +111,7 @@ describe('transform.js CLI entegrasyon', () => {
     const result = runTransform(rootDir, [manifestPath, '--targets', 'olmayan_cli']);
 
     assert.equal(result.status, 1);
-    assert.match(result.stderr, /gecersiz transform target/);
+    assert.match(result.stderr, /invalid transform target/);
     assert.match(result.stderr, /olmayan_cli/);
   });
 
@@ -123,7 +123,7 @@ describe('transform.js CLI entegrasyon', () => {
     const result = runTransform(rootDir, [manifestPath]);
 
     assert.equal(result.status, 0);
-    assert.match(result.stdout, /Transform hedefi yok/);
+    assert.match(result.stdout, /No transform target/);
   });
 
   it('basarili dry-run: exit 0, Transform Raporu ve DRY RUN etiketi', t => {
@@ -132,7 +132,7 @@ describe('transform.js CLI entegrasyon', () => {
     const result = runTransform(rootDir, [manifestPath, '--targets', 'gemini', '--dry-run']);
 
     assert.equal(result.status, 0, `stderr: ${result.stderr}`);
-    assert.match(result.stdout, /Transform Raporu/);
+    assert.match(result.stdout, /Transform report/);
     assert.match(result.stdout, /DRY RUN/);
     assert.match(result.stdout, /gemini/);
   });
@@ -145,11 +145,11 @@ describe('transform.js CLI entegrasyon', () => {
     const result = runTransform(rootDir, [manifestPath, '--targets', 'gemini', '--dry-run']);
 
     assert.equal(result.status, 0, `stderr: ${result.stderr}`);
-    assert.match(result.stdout, /Transform Raporu/);
+    assert.match(result.stdout, /Transform report/);
     assert.match(result.stdout, /gemini/);
     // Dosya sayisi 0'dan buyuk olmali
-    assert.match(result.stdout, /Toplam: \d+ dosya/);
-    assert.doesNotMatch(result.stdout, /Toplam: 0 dosya/);
+    assert.match(result.stdout, /Total: \d+ files/);
+    assert.doesNotMatch(result.stdout, /Total: 0 files/);
   });
 
   it('verbose modda dosya listesi ciktida gorunur', t => {

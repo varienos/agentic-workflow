@@ -1,93 +1,93 @@
-# GraphQL Kurallari
+# GraphQL Rules
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.name, project.description, project.structure
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Schema Standartlari
+## Schema Standards
 
-### Yaklasim Secimi
-- Proje basinda **schema-first** veya **code-first** yaklasimdan biri secilmeli ve tutarli uygulanmalidir.
-- Schema-first: `.graphql` dosyalari tek kaynak (source of truth) olarak kabul edilir.
-- Code-first: Decorator/annotation tabanli schema uretimi kullanilir (ornegin `type-graphql`, `@nestjs/graphql`).
+### Approach Selection
+- At project start, choose either **schema-first** or **code-first** and apply it consistently.
+- Schema-first: `.graphql` files are treated as the single source of truth.
+- Code-first: Decorator/annotation-based schema generation is used (for example `type-graphql`, `@nestjs/graphql`).
 
 ### Naming Convention
-| Oge | Kural | Ornek |
+| Item | Rule | Example |
 |-----|-------|-------|
 | Type | PascalCase | `User`, `OrderItem` |
 | Field | camelCase | `firstName`, `createdAt` |
-| Enum | PascalCase (deger UPPER_SNAKE_CASE) | `OrderStatus { PENDING, COMPLETED }` |
-| Query | camelCase, fiil ile baslama | `users`, `orderById` |
-| Mutation | camelCase, fiil ile basla | `createUser`, `updateOrder` |
+| Enum | PascalCase (values UPPER_SNAKE_CASE) | `OrderStatus { PENDING, COMPLETED }` |
+| Query | camelCase, do not start with a verb | `users`, `orderById` |
+| Mutation | camelCase, start with a verb | `createUser`, `updateOrder` |
 | Input | PascalCase + `Input` suffix | `CreateUserInput` |
 
-### Description Zorunlulugu
-- Her **type**, **query**, **mutation** ve **enum** icin `description` alani **zorunludur**.
-- Aciklama, alanin amacini ve kullanimini kisa sekilde belirtmelidir.
+### Description Requirement
+- Every **type**, **query**, **mutation**, and **enum** must have a `description` field.
+- The description should briefly state the field's purpose and usage.
 
 ---
 
-## Resolver Kurallari
+## Resolver Rules
 
-### N+1 Query Onleme
-- Iliskili verileri ceken resolver'larda **DataLoader** kullanimi **zorunludur**.
-- Her request icin yeni DataLoader instance'i olusturulmalidir (request-scoped).
-- DataLoader olmadan iliskili veri ceken resolver tespit edildiginde code-review'da **bloklayici** olarak isaretlenir.
+### N+1 Query Prevention
+- Resolvers that fetch related data **must** use **DataLoader**.
+- A new DataLoader instance must be created per request (request-scoped).
+- A resolver that fetches related data without DataLoader is marked **blocking** in code review.
 
 ### Error Handling
-- Resolver'larda try-catch blogu ile hata yakalanmalidir.
-- Kullaniciya donulen hatalar anlamli mesajlar icermelidir.
-- Dahili hata detaylari (stack trace, SQL hatalari) **production'da** kullaniciya gosterilmemelidir.
-- GraphQL error'lari `extensions` alani ile hata kodu icermelidir:
+- Resolvers must catch errors with a try-catch block.
+- Errors returned to the user must include meaningful messages.
+- Internal error details (stack traces, SQL errors) must **not** be shown to users in **production**.
+- GraphQL errors must include an error code in the `extensions` field:
   ```graphql
   {
-    "message": "Kullanici bulunamadi",
+    "message": "User not found",
     "extensions": { "code": "USER_NOT_FOUND" }
   }
   ```
 
-### Authorization Kontrolu
-- Her mutation ve hassas query'de **authorization kontrolu** yapilmalidir.
-- Authorization mantigi resolver'in basinda, is mantigi oncesinde calistirilmalidir.
-- Guard/middleware/directive tabanli merkezi authorization tercih edilmelidir.
+### Authorization Check
+- Every mutation and sensitive query must perform an **authorization check**.
+- Authorization logic must run at the start of the resolver, before business logic.
+- Prefer centralized authorization via guard/middleware/directive.
 
 ---
 
 ## Type Safety
 
 ### Input Validation
-- Mutation input'lari icin **ayri Input type** tanimlanmalidir (`CreateUserInput`, `UpdateOrderInput`).
-- Input field'larinda gerekli validasyon kurallari uygulanmalidir (min/max length, format, vb.).
-- Validation hatalarinda anlamli hata mesajlari dondurulmelidir.
+- Mutation inputs must define a **separate Input type** (`CreateUserInput`, `UpdateOrderInput`).
+- Required validation rules must be applied on input fields (min/max length, format, etc.).
+- Validation failures must return meaningful error messages.
 
-### Nullable Field Politikasi
-- Field'lar varsayilan olarak **non-nullable** (`!`) tanimlanmalidir.
-- Nullable field yalnizca verinin gercekten opsiyonel oldugu durumlarda kullanilmalidir.
-- Liste field'lari `[Type!]!` seklinde tanimlanmalidir (liste de elemanlar da non-nullable).
+### Nullable Field Policy
+- Fields must be defined as **non-nullable** (`!`) by default.
+- Nullable fields should be used only when the data is truly optional.
+- List fields must be defined as `[Type!]!` (both the list and its elements are non-nullable).
 
-### Custom Scalar Kullanimi
-- `DateTime`, `JSON`, `URL` gibi ozel tipler icin **custom scalar** tanimlanmalidir.
-- Custom scalar'lar merkezi bir dosyada tanimlanip tum schema'dan referans verilmelidir.
-- Serialization/parsing mantigi dokumante edilmelidir.
+### Custom Scalar Usage
+- Special types such as `DateTime`, `JSON`, and `URL` must define a **custom scalar**.
+- Custom scalars must be defined in a central file and referenced from the entire schema.
+- Serialization/parsing logic must be documented.
 
 ---
 
-## Anti-Pattern'ler
+## Anti-Patterns
 
-| Anti-Pattern | Dogru Yaklasim |
+| Anti-Pattern | Correct Approach |
 |-------------|----------------|
-| Resolver icinde dogrudan SQL/ORM sorgusu (N+1) | DataLoader kullanin |
-| Tum field'larin nullable olmasi | Varsayilan non-nullable, sadece gerektiginde nullable |
-| Tek buyuk `Query` type'i | Mantiksal gruplara bolerek modularize edin |
-| Error'larin string olarak dondurulmesi | GraphQL error format'i + `extensions.code` kullanin |
-| Authorization kontrolunun is mantigi icinde yapilmasi | Guard/middleware/directive ile merkezi kontrol |
-| Input type yerine scalar argumanlar | Birden fazla arguman varsa Input type tanimlayin |
-| Schema'da description olmamasi | Her type, field ve enum'a description ekleyin |
-| Pagination olmadan liste dondurme | Cursor-based veya offset-based pagination uygulyin |
+| Direct SQL/ORM query inside a resolver (N+1) | Use DataLoader |
+| Making all fields nullable | Default non-nullable; nullable only when needed |
+| One large `Query` type | Modularize into logical groups |
+| Returning errors as strings | Use GraphQL error format + `extensions.code` |
+| Performing authorization inside business logic | Centralized control via guard/middleware/directive |
+| Scalar arguments instead of Input types | Define an Input type when there are multiple arguments |
+| Missing descriptions in the schema | Add a description to every type, field, and enum |
+| Returning lists without pagination | Apply cursor-based or offset-based pagination |

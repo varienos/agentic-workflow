@@ -1,261 +1,300 @@
-# Bug Review — Hata Duzeltme Kalite Kontrolu
+# Bug Review — Quality Control for Fix Commit
 
-> Bug fix commit'ini 3 perspektifle inceler: kod kalitesi, sessiz hatalar, regresyon riski.
-> Kullanim: `/bug-review`, `/bug-review <commit_hash>`, `/bug-review HEAD~2..HEAD`
+> View bug fix commit in three perspectives: code quality, silent errors, and regression risk.
+> Usage: `/bug-review`, `/bug-review <commit_hash>`, `/bug-review HEAD~2..HEAD`
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section will be populated with data from Bootstrap's manifest files.
+Required manifest fields: project.description, stack.primary, project.structure
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- Review sirasinda stack-spesifik kurallari goz onunde bulundur.
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+- Review the stack-specific rules in mind during the review process.
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Step 1 — Diff Cikar
+## Step 1 — Extract Diff
 
-### 1.1 — Arguman Cozumleme
+### 1.1 — Argument Resolution
 
-| Girdi | Davranis |
+| Input | Action |
 |---|---|
-| Bos | Son commit: `cd ../Codebase && git diff HEAD~1..HEAD` |
+| Empty | Son commit: `cd ../Codebase && git diff HEAD~1..HEAD` |
 | Commit hash | Belirtilen commit: `cd ../Codebase && git show <hash>` |
 | Range | Aralik: `cd ../Codebase && git diff <range>` |
 
-### 1.2 — Diff Analizi
+### 1.2 — Diff Analysis
 
-Diff'ten cikar:
-- Degisen dosya listesi
-- Her dosyadaki eklenen/silinen satirlar
-- Degisikliklerin turu (duzeltme, test, config)
-- Bug fix'e ozel: hangi satirlar "fix" icin eklendi, hangileri "test" icin?
+Diff output:
+- List of changed files
+- Added/removed lines in each file
+- Change history (update, test, config)
+- Bug fix-specific: which lines were added for "fix", which for "test"? 
 
-> **KURAL:** Diff bossa "Incelenecek degisiklik yok" deyip DUR.
+>>>
+> **Rule:** Don't say "There are no changes to be made" and just wait.
 
 ---
 
-## Step 2 — 3 Ajan Spawn Et
+## Step 2 — 3 Agent Spawn
 
-Asagidaki 3 ajanin HER BIRINI paralel olarak calistir.
+Train each of the three agents in parallel.
 
-### Ajan 1 — Kod Inceleyici (Bug Fix Perspektifi)
+### Agent 1 — Code Reviewer (Bug Fix Perspective)
 
-**Gorev:** Bug fix'in kalitesini ve dogru uygulanip uygulanmadigini kontrol et.
+**Task:** Verify the quality and correctness of bug fixes.
 
-**Bug Fix Kontrol Listesi (Sabit Cekirdek):**
+**Bug Fix Control List (Fixed Framework):**
 
-- [ ] **Kok neden duzeltilmis mi?** Belirtiyi mi yoksa kok nedeni mi duzeltmis?
-- [ ] **Minimal degisiklik mi?** Sadece hata duzeltilmis mi yoksa gereksiz refactor da yapilmis mi?
-- [ ] **Ayni hata baska yerlerde de var mi?** Benzer pattern baska dosyalarda da geciyorsa onlar da duzeltilmis mi?
-- [ ] **Regresyon testi yazilmis mi?** Hatanin tekrarlanmadigini dogrulayan test var mi?
-- [ ] **Yan etkisi var mi?** Duzeltme baska islevsellik bozuyor mu?
-- [ ] **Hata yonetimi uygun mu?** Try-catch, error boundary, null check yeterli mi?
-- [ ] **Edge case dusunulmus mu?** Sinir degerleri, null, bos dizi, concurrent erisim
+- [ ] **Why was this change made?** Was it a fix or just a cosmetic change?
+- [ ] **Was it a minimal change?** Was it just a single line change or a full refactor?
+- [ ] **Are there similar issues elsewhere?** Are there similar patterns in other files?
+- [ ] **Has the regression test been written?** Has a test been written to verify that the fix doesn't introduce new errors?
+- [ ] **Is there any side effect?** Does the change break any existing functionality?
+- [ ] **Is error handling adequate?** Are try-catch blocks, error boundaries, and null checks sufficient?
+- [ ] **Have edge cases been considered?** Have we considered edge cases such as null values, empty arrays, concurrent access?
 
 <!-- GENERATE: REVIEW_CHECKLIST
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: stack.primary, stack.conventions, project.rules
-Ornek cikti:
-**Stack-Spesifik Kontroller:**
+Description: This section will be filled in by Bootstrap using manifest data.
+Required manifest fields: stack.primary, stack.conventions, project.rules
+Example output:
+**Stack-Specific Checks:**
 
-- [ ] **DB schema:** Schema/model/kolon/tablo degisikligi varsa migration dosyasi var mi, dry-run gecti mi, rollback/down script hazir mi? Detay: `.claude/rules/db-migration-discipline.md`
-- [ ] **Prisma:** Transaction kullanilmasi gereken yerde kullanilmis mi?
-- [ ] **NestJS:** Exception filter dogru uygulanmis mi? HttpException turleri dogru mu?
-- [ ] **NestJS:** DTO validasyonu hala dogru calisiyor mu?
-- [ ] **Next.js:** Server/Client component ayrimi bozulmamis mi?
-- [ ] **Expo:** Theme hook'u dogru kullaniliyor mu?
-- [ ] **Guvenlik:** Fix sonrasi IDOR, injection riski olusmamis mi?
-- [ ] **API:** Error response formati standarda uyuyor mu?
+- [ ] **DB schema:** Is there a migration file for schema/model/field/table changes? Was it run dry-run or rollback/down script available?
+- [ ] **Prisma:** Are transactions being used in places where they should be?
+- [ ] **NestJS:** Are exception filters correctly applied? Are HTTP exceptions properly handled?
+- [ ] **NestJS:** Is DTO validation still working correctly?
+- [ ] **Next.js:** Has the server/client component separation been preserved?
+- [ ] **Expo:** Is the theme hook being used correctly?
+- [ ] **Security:** Does the fix prevent IDOR and injection risks?
+- [ ] **API:** Are error responses conforming to a standard format?
 -->
+**Task:** Verify that the bug fix does not create its own silent error.
 
-### Ajan 2 — Sessiz Hata Avcisi (Silent Failure Hunter)
+**8-Point Control List:**
 
-**Gorev:** Bug fix'in kendisinin sessiz hata yaratip yaratmadigini kontrol et.
+1. **Silent catch**: Is there a `catch(e) {}` in the fix? Has the error been swallowed?
+2. **Missing await**: Have new async blocks forgotten to include `await`?
+3. **Incorrect comparison**: Are `==` vs `===` used incorrectly in conditions within the fix?
+4. **Missing return**: Is there a `return` statement where it should be?
+5. **State inconsistency**: Has the fix updated one place but not related places?
+6. **Race condition**: Does the fix create a timing issue with asynchronous operations?
+7. **Expected value consistency**: Are `||` vs `??` usage correct?
+8. **Copied-but-not-applied code**: Is there copied code from another location that hasn't been updated?
 
-**8 Noktali Kontrol Listesi:**
+### Agent 3 — Regression Analyst
 
-1. **Sessiz catch:** Fix icinde `catch(e) {}` var mi? Hata yutulmus mu?
-2. **Eksik await:** Yeni eklenen async cagrilarda `await` unutulmus mu?
-3. **Yanlis karsilastirma:** Fix'teki kosullarda `==` vs `===`, falsy deger tuzagi var mi?
-4. **Kayip return:** Fix icinde return etmesi gereken yerde return yok mu?
-5. **State tutarsizligi:** Fix bir yeri guncelledi ama iliskili yerleri GUNCELLENMEDI mi?
-6. **Race condition:** Fix asenkron islemlerde siralama sorunu yaratir mi?
-7. **Varsayilan deger tuzagi:** `||` vs `??` kullanimi dogru mu?
-8. **Kopyala-yapistir artigi:** Fix'te baska yerden kopyalanmis ama uyarlanmamis kod var mi?
+**Task:** Evaluate the risk of disruption to existing functionality.
 
-### Ajan 3 — Regresyon Analizcisi
+**Control Areas:**
 
-**Gorev:** Bug fix'in mevcut islevselligi bozma riskini degerlendir.
-
-**Kontrol Alanlari:**
-
-1. **Kaldirilan kod:** Fix sirasinda silinen satirlar baska yerlerde kullaniliyor mu?
-2. **Degisiklik yayilimi:** Degistirilen fonksiyon/tip/arayuz baska dosyalarda import ediliyor mu?
-3. **Davranis degisikligi:** Fix, fix edilen alan disinda davranis degisikligi yaratir mi?
-4. **Test kapsami:** Fix'in tum senaryolari test edilmis mi? Sadece "happy path" mi?
-5. **Veri bütunlugu:** Fix veritabani islemleri icerir mi? Mevcut veri etkilenir mi?
-6. **Config etkisi:** Ortam degiskeni degisikligi tum ortamlarda gecerli mi?
+1. **Removed code**: Are removed lines still being used elsewhere in the codebase?
+2. **Changes propagation**: Does a change in one function/type/namespace affect other files through import?
+3. **Behavioral changes**: Does the fix introduce behavior changes outside the fixed area?
+4. **Test coverage**: Have all scenarios of the fix been tested? Only "happy path"?
+5. **Data integrity**: Does the fix touch database operations? Affect existing data?
+6. **Configuration impact**: Do environment variables change affect the entire environment?
 
 ---
 
-## Step 3 — Bulgulari Degerlendir
+## Step 3 — Findings Evaluation
 
-### 3.1 — Sonsuz Dongu Korumasi
+### 3.1 — Infinite Loop Detection
 
-> **KURAL:** Her ajan sadece 1 iterasyon yapar. Bulgu bulduysa raporlar, TEKRAR CALISTIRMAZ.
+> **RULE:** Each agent only performs one iteration. Report findings, NO REPEAT.
 
-### 3.2 — Karar Agaci
+### 3.2 — Decision Tree
 
-Her bulgu icin:
+For each finding:
 
 ```
-Bulgu var mi?
-├── HAYIR → Temiz rapor
-└── EVET → Gercek sorun mu?
-    ├── HAYIR (False Positive) → Rapordan cikar
-    └── EVET → Diff'in kendi kodunda mi?
-        ├── EVET → Duzeltilmesi GEREKEN bulgu
-        └── HAYIR → Onceden var olan sorun mu?
-            ├── EVET → Backlog gorev olustur, diff'e DOKUNMA
-            └── HAYIR → Diff'in dolayli etkisi, raporda belirt
+>>>
+Is there a solution?
+```
+├── NO → Clean report
+└── YES → Is it a real issue?
+    ├── NO (False Positive) → Remove from report
+    └── YES → Is the issue in the code itself?
+        ├── YES → Mark as needing improvement
+        └── NO → Was there an existing problem?
+            ├── YES → Create backlog task, do not touch diff
+            └── NO → Describe the indirect effect on the report
 ```
 
-### 3.3 — False Positive Filtreleme
+### 3.3 — False Positive Filtering
 
-Bug fix review icin ozel false positive kontrolleri:
-- Fix, mevcut pattern'e uygun sekilde yapilmis (framework convention)
-- Kasitli trade-off: acil fix icin gecici cozum (eger acikca belirtilmisse)
-- Test scope: fix sadece spesifik case'i duzeltiyorsa, genel testi kapsamasi gerekmez
+Special false positive controls for bug fix review:
+- Fix should be done in accordance with framework conventions (consistent)
+- Trade-off: temporary solution for urgent fix (if explicitly stated)
+- Test scope: fix only affects specific case, general test is not necessary
 
-### 3.4 — Onceden Var Olan Bulgu Kurali
+### 3.4 — Pre-existing Issue Rule
 
-Diff disinda bulunan sorunlar icin:
+For issues outside the diff:
 ```
-backlog task create "Bug review bulgusu: <sorun_ozeti>" --description "<detay>" --priority "medium" --labels "tech-debt"
+backlog task create "Bug review issue: <issue summary>" --description "<detail>" --priority "medium" --labels "tech-debt"
 ```
 
-> **KURAL:** Onceden var olan sorunu DUZELTME. Backlog'a gorev olustur, devam et.
+> **RULE:** Fix existing problem. Create a backlog task, proceed.
 
 ---
 
-## Step 4 — Dogrulama Kapisi (Duzeltme Sonrasi)
+## Step 4 — Verification Gate (After Improvement)
 
-Eger Step 3'te "duzeltilmesi gereken" bulgu ciktiysa:
+If a "improvement needed" bug was found:
 
-### 4.1 — Duzeltmeyi Uygula
+### 4.1 — Apply the Fix
 
-Bulguyu duzelt. Minimal degisiklik ilkesine uy.
+Fix the issue. Follow minimal change principle.
 
-### 4.2 — Testleri Calistir
+### 4.2 — Run Tests
 
-Etkilenen alt projenin testlerini calistir (VERIFICATION_COMMANDS'dan).
+Run tests for affected sub-project (from `VERIFICATION_COMMANDS`).
 
-### 4.3 — Test Sonucu
+>>>
+### 4.3 — Test Results
 
-- Testler gecti → Step 5'e gec
-- Testler basarisiz → Duzeltmeyi revize et (max 3 deneme)
-- 3 denemede cozulmediyse → kullaniciya bildir
+- Tests completed → Proceed to Step 5
+- Tests failed → Review and revise fixes (max 3 attempts)
+- Failed after 3 attempts → Inform user
 
 ---
 
-## Step 5 — Rapor Olustur
+## Step 5 — Report Generation
 
 ```
-## Bug Fix Inceleme Raporu
+## Bug Fix Analysis Report
 
-### Incelenen Degisiklikler
-- **Commit/Range:** <hash veya range>
-- **Dosya sayisi:** <sayi>
-- **Fix turu:** [kok neden duzeltmesi / belirtisi duzeltmesi / workaround]
+### Analyzed Changes
+- **Commit/Range:** `<hash or range>`
+- **Number of files:** `<number>`
+- **Fix type:** [why fix / fix description / workaround]
 
 ---
 
-### Kod Inceleyici Bulgulari
-| # | Dosya | Satir | Sorun | Ciddiyet | Durum |
+### Code Review Findings
+| # | File | Line | Issue | Severity | Status |
 |---|---|---|---|---|---|
-| 1 | `user.service.ts` | 42 | Kok neden degil, belirtisi duzeltilmis | Yuksek | Duzeltildi |
+| 1 | `user.service.ts` | 42 | Why not fixed, fix applied | High | Fixed |
 
-### Sessiz Hata Avcisi Bulgulari
-| # | Dosya | Satir | Sorun | Ciddiyet | Durum |
+### Silent Error Detector Findings
+| # | File | Line | Issue | Severity | Status |
 |---|---|---|---|---|---|
-| — | — | — | Bulgu yok | — | Temiz |
+| — | — | — | No finding | — | Cleaned |
 
-### Regresyon Analizcisi Bulgulari
-| # | Dosya | Sorun | Risk | Durum |
+### Regression Analysis Findings
+| # | File | Issue | Risk | Status |
 |---|---|---|---|---|
-| 1 | `order.service.ts` | Fix edilen fonksiyon 3 yerde import ediliyor | Orta | Kontrol edildi |
+| 1 | `order.service.ts` | Fix applied function imported in 3 places | Medium | Monitored |
 
 ---
 
-### 📋 Onceden Var Olan Sorunlar
-| # | Sorun | Olusturulan Task |
+### Previous Issues
+| # | Issue | Created Task |
+
+>>>
 |---|---|---|
-| 1 | `legacy.utils.ts` icinde null check eksik | Task #52 |
+| 1 | `legacy.utils.ts` contains missing null check | Task #52 |
 
-### Genel Degerlendirme
-**Fix kalitesi:** ⭐⭐⭐⭐ / ⭐⭐⭐⭐⭐
-**Kok neden duzeltildi mi?** Evet / Hayir / Kismen
-**Regresyon riski:** Dusuk / Orta / Yuksek
-**Sonuc:** ✅ Onaylandi / ⚠️ Kucuk duzeltmelerle onaylandi / ❌ Yeniden duzeltme gerekli
+### General Evaluation
+**Fix quality:** ⭐⭐⭐⭐ / ⭐⭐⭐⭐⭐
+**Was the fix made?** Yes / No / Partially
+**Regression risk:** Low / Medium / High
+**Result:** ✅ Approved / ⚠️ Small fixes approved / ❌ Further fix required
 
-[Genel yorum ve oneriler]
+[General comments and suggestions]
 ```
 
-### 5.1 — Duzeltme Commit'i
+### 5.1 — Fix Commit
 
-Eger review sonucu duzeltme yapildiysa:
+If a review-based fix was applied:
 
 <!-- GENERATE: COMMIT_CONVENTION
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: conventions.commit_language, conventions.commit_format
-Ornek cikti:
-### Commit Format (Bug Review Duzeltmeleri)
+Description: This section will be filled by Bootstrap with manifest data.
+Required manifest fields: conventions.commit_language, conventions.commit_format
+Example output:
+### Commit Format (Bug Review Fixes)
 
 ```
-fix: bug-review bulgusu — <sorun_ozeti>
+fix: bug-review description — <fix_description>
 ```
 
-**Dil:** Turkce
-**Ornek:** `fix: bug-review bulgusu — eksik null check duzeltildi`
+**Language:** Turkish
+**Example:** `fix: bug-review description — missing null check fixed`
 -->
 
-> **KURAL:** Review duzeltme commit'i ayri olmali. Orijinal fix commit'ini DEGISTIRME.
+> **RULE:** The fix commit should be separate. Do not modify the original fix commit.
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — Only `.claude/`, `CLAUDE.md`, `.mcp.json`, and `.claude-ignore` files can be created inside Agentbase. Creating a `.claude/` directory in the codebase, writing to `../Codebase/CLAUDE.md`, is PROHIBITED.
+2. **Git runs only in Codebase** — All Git operations (commit, push, branch) must be performed inside the codebase. Git is NOT ALLOWED on Agentbase.
+### 3. Codebase Readability and Configuration Separation
 
-1. **3 ajan paralel calisir** — Birinin sonucunu beklemeden hepsini baslat.
-2. **1 iterasyon limiti** — Hicbir ajan ikinci kez calismaz.
-3. **Karar agacini takip et** — Her bulgu icin false positive / diff kodu / onceden var olan siralamasini uygula.
-4. **Onceden var olan sorunlari duzeltme** — Backlog'a gorev olustur, diff'e dokunma.
-5. **Kok neden kontrolu** — Fix gercekten kok nedeni mi duzeltmis, yoksa belirtiyi mi?
-6. **Minimal duzeltme** — Review duzeltmeleri de minimal olmali, ek refactor YASAK.
-7. **Regresyon testi kontrolu** — Fix'e regresyon testi yazilmis mi mutlaka kontrol et.
-8. **Duzeltme commit'i ayri** — Review duzeltmeleri icin yeni commit at, amend yapma.
-9. **Bos diff kontrolu** — Diff bossa inceleme yapma.
-10. **Backlog CLI kullan** — Onceden var olan sorunlari `backlog task create` ile kaydet.
-11. **Codebase yolu** — Tum dosya erisimleri `../Codebase/` uzerinden.
-12. **Guvenlik** — Hassas veri diff'te varsa KRITIK olarak raporla.
+#### 1. **Codebase is readable; config is not written there**
+
+- The codebase should be readable and maintainable (`src/`, `app/`, etc.). If necessary, it can be refactored.
+- Configuration files (`.claude/`, `CLAUDE.md`) should not be part of the codebase.
+
+### 2. **3-Agency Parallel Execution**
+
+- All agencies should run in parallel without waiting for one another's results.
+
+### 3. **1 Iteration Limit**
+
+- No agency should execute more than once.
+
+### 4. **Following Decision Trees**
+
+- Each finding should apply false positives/diff codes or previous ordering.
+
+### 5. **Prioritizing Fixes**
+
+- Prioritize fixes based on whether they actually fix the issue or just correct a typo.
+
+### 6. **Minimal Refactoring**
+
+- Minimal refactoring is allowed, but excessive refactorings are discouraged (YASAK).
+
+### 7. **Regression Testing Control**
+
+- If a regression test exists for a fix, it must be run.
+
+### 8. **Separate Commit for Review Changes**
+
+- New commits should be made specifically for review changes; do not amend existing commits.
+
+### 9. **Diff Boss Inspection**
+
+- Diff inspection is required (BOSSA).
+
+### 10. **Using Backlog CLI**
+
+- Prior issues should be recorded using `backlog task create`.
+
+### 11. **Codebase Path**
+
+- All file access should come from the `../Codebase/` path.
+
+### 12. **Security**
+
+- If there are sensitive data in a diff, it is reported as CRITICAL.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap this marker.
+Self-Refresh section changes the command's content. The command itself looks at the project's current state: small discrepancies Edit or big changes backlog task-i olarak rapor edilir.
 -->
+
+- [ ] **DB schema:** Schema/model/kolon/tablo degisikligi varsa migration dosyasi var mi, dry-run gecti mi, rollback/down script hazir mi? Detay: `.claude/rules/db-migration-discipline.md`

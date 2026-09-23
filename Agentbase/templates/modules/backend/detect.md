@@ -1,10 +1,10 @@
-# Backend Kategori Tespiti
+# Backend Category Detection
 
-Bu kategori backend runtime ailelerine, framework-spesifik guard hook'larina ve kodlama kurallarina ait katkilari saglar.
+This category contributes backend runtime families, framework-specific guard hooks, and coding rules.
 
 ## Variants
 
-| Aile | Tespit Dosyasi | Leaf Kontrol Sirasi |
+| Family | Detection File | Leaf Check Order |
 |------|----------------|---------------------|
 | Node.js | `backend/nodejs/detect.md` | NestJS → Fastify → Express |
 | PHP | `backend/php/detect.md` | Laravel → CodeIgniter 4 |
@@ -12,15 +12,15 @@ Bu kategori backend runtime ailelerine, framework-spesifik guard hook'larina ve 
 
 ## Provides
 
-- Aile seviyesinde ortak backend/runtime kurallari
-- Framework'e ozgu tehlikeli komut korumalari
-- Ortam degiskeni ve konfigurasyon yonetimi
-- Test, lint, typecheck ve build convention'lari
-- Guvenlik ve mimari best practice'leri
+- Shared backend/runtime rules at the family level
+- Framework-specific dangerous command protections
+- Environment variable and configuration management
+- Test, lint, typecheck, and build conventions
+- Security and architecture best practices
 
 ## Affects Core
 
-- task-hunter: VERIFICATION_COMMANDS'a runtime ve framework dogrulamalari eklenir
-- workflow-lifecycle: Backend hata ve rollback notlari eklenir
-- CLAUDE.md: Backend aile + framework kurallari bolumu eklenir
-- settings.json: Framework hook tanimlari eklenir
+- task-hunter: Runtime and framework verifications added to VERIFICATION_COMMANDS
+- workflow-lifecycle: Backend failure and rollback notes added
+- CLAUDE.md: Backend family + framework rules section added
+- settings.json: Framework hook definitions added

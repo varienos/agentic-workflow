@@ -1,26 +1,26 @@
-# Eklentiler ve Araçlar
+# Extensions and Tools
 
-Claude Code / AI agent'lar için kullanışlı eklenti ve MCP araçlarının referans listesi.
+Reference list of useful extensions and MCP tools for Claude Code / AI agents.
 
-## MCP Sunucuları
+## MCP Servers
 
-| Araç | Açıklama | Kaynak |
+| Tool | Description | Source |
 |---|---|---|
-| **Context7** | Kütüphane dokümantasyonunu güncel olarak çeker | [Upstash](https://context7.com) |
-| **Memorix** | Agent'lar arası paylaşımlı bellek katmanı | [GitHub](https://github.com/AVIDS2/memorix) |
-| **Filesystem** | Dosya sistemi erişimi | Anthropic |
-| **GitHub** | GitHub API erişimi | Anthropic |
+| **Context7** | Fetches up-to-date library documentation | [Upstash](https://context7.com) |
+| **Memorix** | Shared memory layer across agents | [GitHub](https://github.com/AVIDS2/memorix) |
+| **Filesystem** | Filesystem access | Anthropic |
+| **GitHub** | GitHub API access | Anthropic |
 
-## Claude Code Uzantıları
+## Claude Code Extensions
 
-| Uzantı | Açıklama |
+| Extension | Description |
 |---|---|
-| **Hooks** | Pre/post-tool-use event'leri için özel script'ler |
-| **Commands** | `/` ile çağrılan özel komut dosyaları |
-| **Agents** | Görev odaklı alt-agent tanımları |
+| **Hooks** | Custom scripts for pre/post-tool-use events |
+| **Commands** | Custom command files invoked with `/` |
+| **Agents** | Task-focused sub-agent definitions |
 
-## Notlar
+## Notes
 
-- Skill/plugin seçimini geliştirici değil, Bootstrap aşamasında Opus yapsın.
-- Her şeyi yüklemek context'i şişirir ve agent performansını düşürür.
-- Az ama doğru eklenti > çok ama gereksiz eklenti.
+- Let Opus choose skills/plugins during Bootstrap — not the developer.
+- Loading everything inflates context and hurts agent performance.
+- Few correct extensions > many unused extensions.

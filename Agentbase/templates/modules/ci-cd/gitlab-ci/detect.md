@@ -1,4 +1,4 @@
-# GitLab CI Modul Tespiti
+# GitLab CI Module Detection
 
 ## Checks
 
@@ -16,5 +16,5 @@
 
 ## Affects Core
 
-- workflow-lifecycle: GitLab CI pipeline entegrasyonu
-- CLAUDE.md: GitLab CI best practice kurallari
+- workflow-lifecycle: GitLab CI pipeline integration
+- CLAUDE.md: GitLab CI best practice rules

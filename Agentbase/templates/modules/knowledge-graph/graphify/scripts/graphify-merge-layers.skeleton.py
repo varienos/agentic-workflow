@@ -43,7 +43,7 @@ ROOT = Path.cwd().resolve()
 # Tek-katman projelerde liste bos kalir ve script'in main()'i erken hata firlatir.
 LAYERS = [
 # GENERATE: GRAPHIFY_LAYERS_PY
-# Aciklama: Bootstrap manifest.project.subprojects icinden tuple satirlari uretir.
+# Aciklama: Bootstrap manifest.project.subprojects icinden tuple linelari uretir.
 # Gerekli manifest alanlari: project.subprojects, modules.active (monorepo bayragi)
 # Ornek cikti (monorepo aktif, dev.aps gibi):
 #     ("backend", ROOT / "backend.aps.test/app/graphify-out/graph.json"),

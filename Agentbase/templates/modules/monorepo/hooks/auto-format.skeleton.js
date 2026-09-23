@@ -4,12 +4,12 @@
  * auto-format.skeleton.js
  * PostToolUse (Edit|Write) hook
  *
- * Dosya duzenlendikten sonra otomatik formatlama uygular.
+ * Applies automatic formatting after a file is edited.
  * - Akilli tirnak duzeltme (curly → straight quotes)
  * - Alt projeye gore formatter tespit
- * - Formatter calistirma (prettier, biome, vb.)
+ * - Run formatter (prettier, biome, etc.)
  *
- * GENERATE bolumleri Bootstrap tarafindan doldurulur.
+ * GENERATE sections are filled by Bootstrap.
  */
 
 const path = require('path');
@@ -17,15 +17,15 @@ const fs = require('fs');
 const { execFileSync } = require('child_process');
 const { resolveCodebaseRoot } = require(path.join(__dirname, 'shared-hook-utils.js'));
 
-// Hedef kok: env (AGENTIC_CODEBASE_DIR) > manifest fallback. Symlink'lerde realpath ile cozulur.
+// Target root: env (AGENTIC_CODEBASE_DIR) > manifest fallback. Resolved with realpath for symlinks.
 const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
-// ─── GENERATE BOLUMU BASLANGIC ───
+// ─── GENERATE SECTION START ───
 
 /* GENERATE: SUBPROJECT_CONFIGS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, project.formatters
-Ornek cikti: */
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.subprojects, project.formatters
+Example output: */
 const SUBPROJECT_CONFIGS = [
   // { path: 'apps/api', configFile: '.prettierrc', formatter: 'prettier' },
   // { path: 'apps/web', configFile: '.prettierrc', formatter: 'prettier' },
@@ -35,18 +35,18 @@ const SUBPROJECT_CONFIGS = [
 /* END GENERATE */
 
 /* GENERATE: CODE_EXTENSIONS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: stack.primary, stack.file_extensions
-Ornek cikti: */
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: stack.primary, stack.file_extensions
+Example output: */
 const CODE_EXTENSIONS = [
   // '.ts', '.tsx', '.js', '.jsx', '.json', '.css', '.scss', '.html', '.md'
 ];
 /* END GENERATE */
 
-// ─── GENERATE BOLUMU BITIS ───
+// ─── GENERATE SECTION END ───
 
 /**
- * Curly (akilli) tirnaklari straight tirnaklara cevirir.
+ * Converts curly (smart) quotes to straight quotes.
  * Word, Google Docs vb. kaynaklardan kopyalanan metinlerde olusur.
  */
 function fixSmartQuotes(content) {
@@ -60,7 +60,7 @@ function fixSmartQuotes(content) {
 }
 
 /**
- * Dosyanin hangi alt projeye ait oldugunu tespit eder.
+ * Detects which subproject the file belongs to.
  */
 function detectSubproject(filePath) {
   const relativePath = path.relative(CODEBASE_ROOT, filePath);
@@ -75,7 +75,7 @@ function detectSubproject(filePath) {
 }
 
 /**
- * Dosya uzantisinin formatlanabilir olup olmadigini kontrol eder.
+ * Checks whether the file extension is formattable.
  */
 function isFormattableFile(filePath) {
   const ext = path.extname(filePath).toLowerCase();
@@ -83,19 +83,19 @@ function isFormattableFile(filePath) {
 }
 
 /**
- * Formatter config dosyasini bulur.
- * Once alt proje dizininde, sonra kok dizinde arar.
+ * Finds the formatter config file.
+ * Searches first in the subproject directory, then in the root directory.
  */
 function findFormatterConfig(subproject) {
   if (!subproject || !subproject.configFile) return null;
 
-  // Alt proje dizininde ara
+  // Search in the subproject directory
   const subprojectConfig = path.join(CODEBASE_ROOT, subproject.path, subproject.configFile);
   if (fs.existsSync(subprojectConfig)) {
     return subprojectConfig;
   }
 
-  // Kok dizinde ara
+  // Search in the root directory
   const rootConfig = path.join(CODEBASE_ROOT, subproject.configFile);
   if (fs.existsSync(rootConfig)) {
     return rootConfig;
@@ -105,7 +105,7 @@ function findFormatterConfig(subproject) {
 }
 
 /**
- * Dosyayi formatter ile formatlar.
+ * Formats the file with the formatter.
  */
 function runFormatter(filePath, subproject) {
   if (!subproject) return;
@@ -130,7 +130,7 @@ function runFormatter(filePath, subproject) {
         break;
 
       default:
-        // Bilinmeyen formatter, sessizce gec
+        // Unknown formatter; skip silently
         return;
     }
 
@@ -140,7 +140,7 @@ function runFormatter(filePath, subproject) {
       stdio: ['pipe', 'pipe', 'pipe']
     });
   } catch {
-    // Formatlama hatasi sessizce yutulur — workflow'u bloklamamali
+    // Formatting errors are swallowed silently — must not block the workflow
   }
 }
 
@@ -153,13 +153,13 @@ async function main() {
 
     const filePath = parsed?.tool_input?.file_path || parsed?.tool_input?.path || '';
 
-    // Dosya codebase icinde mi?
+    // Is the file inside the codebase?
     if (!filePath.startsWith(CODEBASE_ROOT)) return;
 
-    // Dosya formatlanabilir mi?
+    // Is the file formattable?
     if (!isFormattableFile(filePath)) return;
 
-    // Dosya mevcut mu?
+    // Does the file exist?
     if (!fs.existsSync(filePath)) return;
 
     // 1. Akilli tirnak duzeltme
@@ -176,9 +176,9 @@ async function main() {
       runFormatter(filePath, subproject);
     }
 
-    // Sessiz basari — cikti uretme
+    // Silent success — produce no output
   } catch {
-    // Hook hatalari sessizce yutulur
+    // Hook errors are swallowed silently
   }
 }
 

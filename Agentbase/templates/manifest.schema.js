@@ -1,25 +1,25 @@
 'use strict';
 
 /**
- * manifest.schema.js — project-manifest.yaml sozlesmesi (Contract)
+ * manifest.schema.js — project-manifest.yaml contract
  *
- * Elle yazilmis JS validator. JSON Schema + ajv yerine: proje yalnizca
- * js-yaml'a baglidir, yeni validation bagimliligi eklenmez (minimal-deps).
+ * Hand-written JS validator. Instead of JSON Schema + ajv: the project only
+ * depends on js-yaml; no new validation dependency is added (minimal-deps).
  *
- * Iki taraf da kullanir:
- *   - bin/init.js   : manifest YAZMADAN once validate (fail-loud)
- *   - bootstrap.md  : manifest OKUMADAN once validate (gecersizse legacy/uyari)
+ * Used by both sides:
+ *   - bin/init.js   : validate BEFORE writing the manifest (fail-loud)
+ *   - bootstrap.md  : validate BEFORE reading the manifest (legacy/warn if invalid)
  *
- * Kullanim:
+ * Usage:
  *   const { validateManifest } = require('./templates/manifest.schema');
  *   const { valid, errors, warnings } = validateManifest(manifestObj);
  *
- * Donus: { valid: boolean, errors: string[], warnings: string[] }
- *   - errors   : manifest gecersiz; uretim DURMALI (fail-loud).
- *   - warnings : manifest gecerli ama dikkat gerektiren noktalar.
+ * Return: { valid: boolean, errors: string[], warnings: string[] }
+ *   - errors   : manifest is invalid; production MUST STOP (fail-loud).
+ *   - warnings : manifest is valid but has points that need attention.
  */
 
-// --- Izinli deger kumeleri (bootstrap.md ADIM 4 manifest sablonuyla hizali) ---
+// --- Allowed value sets (aligned with bootstrap.md STEP 4 manifest template) ---
 
 const ENUMS = {
   projectType: ['single', 'monorepo'],
@@ -34,13 +34,13 @@ const ENUMS = {
   experience: ['junior', 'mid', 'senior', 'new-to-stack'],
 };
 
-// detected.* bloklarinin beklenen alanlari (TASK-207 semasi).
+// Expected fields on detected.* blocks (TASK-207 schema).
 const DETECTED_FIELDS = [
   'test_framework', 'formatter', 'linter', 'orm', 'migration',
   'auth_method', 'design_system', 'deploy_platform', 'commit_convention',
 ];
 
-// --- Yardimcilar ---
+// --- Helpers ---
 
 function isObject(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -50,17 +50,17 @@ function isNonEmptyString(v) {
   return typeof v === 'string' && v.trim().length > 0;
 }
 
-/** Placeholder kalintisi mi? ("[...]" veya "{{...}}" veya bos). */
+/** Is this a leftover placeholder? ("[...]" or "{{...}}" or empty). */
 function isPlaceholder(v) {
   if (!isNonEmptyString(v)) return true;
   const s = v.trim();
   return /^\[.*\]$/.test(s) || /\{\{.*\}\}/.test(s);
 }
 
-// --- Ana validator ---
+// --- Main validator ---
 
 /**
- * @param {object} manifest - js-yaml ile parse edilmis manifest objesi.
+ * @param {object} manifest - Manifest object parsed with js-yaml.
  * @returns {{ valid: boolean, errors: string[], warnings: string[] }}
  */
 function validateManifest(manifest) {
@@ -71,146 +71,146 @@ function validateManifest(manifest) {
   const warn = (msg) => warnings.push(msg);
 
   if (!isObject(manifest)) {
-    return { valid: false, errors: ['manifest bir obje değil (parse edilemedi veya boş).'], warnings };
+    return { valid: false, errors: ['manifest is not an object (could not parse or empty).'], warnings };
   }
 
   // --- version ---
   if (!isNonEmptyString(manifest.version)) {
-    warn('manifest.version eksik — sürüm uyumluluğu kontrol edilemez.');
+    warn('manifest.version missing — version compatibility cannot be checked.');
   } else if (!/^\d+\.\d+\.\d+/.test(manifest.version)) {
-    warn(`manifest.version semver formatında değil: "${manifest.version}".`);
+    warn(`manifest.version is not semver format: "${manifest.version}".`);
   }
 
-  // --- project (zorunlu) ---
+  // --- project (required) ---
   const project = manifest.project;
   if (!isObject(project)) {
-    err('manifest.project eksik veya obje değil.');
+    err('manifest.project missing or not an object.');
   } else {
     if (!isNonEmptyString(project.name) || isPlaceholder(project.name)) {
-      err('manifest.project.name eksik veya placeholder.');
+      err('manifest.project.name missing or placeholder.');
     }
     if (!ENUMS.projectType.includes(project.type)) {
-      err(`manifest.project.type geçersiz: "${project.type}" (beklenen: ${ENUMS.projectType.join('|')}).`);
+      err(`manifest.project.type invalid: "${project.type}" (expected: ${ENUMS.projectType.join('|')}).`);
     }
     if (!isNonEmptyString(project.language) || isPlaceholder(project.language)) {
-      warn('manifest.project.language eksik veya placeholder.');
+      warn('manifest.project.language missing or placeholder.');
     }
     if (project.team_size != null && !ENUMS.teamSize.includes(project.team_size)) {
-      warn(`manifest.project.team_size tanınmıyor: "${project.team_size}".`);
+      warn(`manifest.project.team_size unrecognized: "${project.team_size}".`);
     }
     if (project.security_level != null && !ENUMS.securityLevel.includes(project.security_level)) {
-      warn(`manifest.project.security_level tanınmıyor: "${project.security_level}".`);
+      warn(`manifest.project.security_level unrecognized: "${project.security_level}".`);
     }
 
-    // Monorepo ise subprojects zorunlu ve dolu olmali.
+    // For monorepo, subprojects is required and must be non-empty.
     if (project.type === 'monorepo') {
       if (!Array.isArray(project.subprojects) || project.subprojects.length === 0) {
-        err('manifest.project.type "monorepo" ama project.subprojects boş veya yok.');
+        err('manifest.project.type is "monorepo" but project.subprojects is empty or missing.');
       } else {
         project.subprojects.forEach((sp, i) => {
-          if (!isObject(sp)) { err(`subprojects[${i}] obje değil.`); return; }
-          if (!isNonEmptyString(sp.name) || isPlaceholder(sp.name)) err(`subprojects[${i}].name eksik/placeholder.`);
-          if (!isNonEmptyString(sp.path) || isPlaceholder(sp.path)) err(`subprojects[${i}].path eksik/placeholder.`);
+          if (!isObject(sp)) { err(`subprojects[${i}] is not an object.`); return; }
+          if (!isNonEmptyString(sp.name) || isPlaceholder(sp.name)) err(`subprojects[${i}].name missing/placeholder.`);
+          if (!isNonEmptyString(sp.path) || isPlaceholder(sp.path)) err(`subprojects[${i}].path missing/placeholder.`);
         });
       }
     }
   }
 
-  // --- stack (zorunlu) ---
+  // --- stack (required) ---
   const stack = manifest.stack;
   if (!isObject(stack)) {
-    err('manifest.stack eksik veya obje değil.');
+    err('manifest.stack missing or not an object.');
   } else {
-    // runtime generate.js ve hook uretimi icin kritik.
+    // runtime is critical for generate.js and hook production.
     if (!ENUMS.runtime.includes(stack.runtime)) {
-      // test_commands/primary ile gelen eski/minimal manifestler runtime tasimayabilir.
+      // Older/minimal manifests coming via test_commands/primary may not carry runtime.
       if (stack.runtime == null) {
-        warn('manifest.stack.runtime eksik — generate.js bazı varsayılanlara düşebilir.');
+        warn('manifest.stack.runtime missing — generate.js may fall back to some defaults.');
       } else {
-        err(`manifest.stack.runtime geçersiz: "${stack.runtime}" (beklenen: ${ENUMS.runtime.join('|')}).`);
+        err(`manifest.stack.runtime invalid: "${stack.runtime}" (expected: ${ENUMS.runtime.join('|')}).`);
       }
     }
     if (stack.file_extensions != null && !Array.isArray(stack.file_extensions)) {
-      err('manifest.stack.file_extensions bir dizi olmalı.');
+      err('manifest.stack.file_extensions must be an array.');
     }
   }
 
   // --- targets ---
   if (manifest.targets != null) {
     if (!Array.isArray(manifest.targets) || manifest.targets.length === 0) {
-      err('manifest.targets boş olmamalı (en az ["claude"]).');
+      err('manifest.targets must not be empty (at least ["claude"]).');
     } else {
       const unknown = manifest.targets.filter((t) => !ENUMS.target.includes(t));
-      if (unknown.length) warn(`manifest.targets tanınmayan hedef(ler): ${unknown.join(', ')}.`);
+      if (unknown.length) warn(`manifest.targets unrecognized target(s): ${unknown.join(', ')}.`);
       if (!manifest.targets.includes('claude')) {
-        warn('manifest.targets "claude" içermiyor — claude canonical kaynaktır; transform zinciri bozulabilir.');
+        warn('manifest.targets does not include "claude" — claude is the canonical source; the transform chain may break.');
       }
     }
   } else {
-    warn('manifest.targets eksik — varsayılan ["claude"] kabul edilir.');
+    warn('manifest.targets missing — default ["claude"] is assumed.');
   }
 
-  // --- detected.* (varsa TASK-207 semasi) ---
+  // --- detected.* (if present, TASK-207 schema) ---
   if (manifest.detected != null) {
     if (!isObject(manifest.detected)) {
-      err('manifest.detected obje olmalı.');
+      err('manifest.detected must be an object.');
     } else {
       for (const field of DETECTED_FIELDS) {
         const d = manifest.detected[field];
-        if (d == null) continue; // detected alanlari opsiyonel (greenfield'da bos)
-        if (!isObject(d)) { err(`manifest.detected.${field} { value, confidence, source } objesi olmalı.`); continue; }
-        if (!('value' in d)) err(`manifest.detected.${field}.value eksik.`);
+        if (d == null) continue; // detected fields are optional (empty in greenfield)
+        if (!isObject(d)) { err(`manifest.detected.${field} must be a { value, confidence, source } object.`); continue; }
+        if (!('value' in d)) err(`manifest.detected.${field}.value missing.`);
         if (!ENUMS.confidence.includes(d.confidence)) {
-          err(`manifest.detected.${field}.confidence geçersiz: "${d.confidence}" (beklenen: ${ENUMS.confidence.join('|')}).`);
+          err(`manifest.detected.${field}.confidence invalid: "${d.confidence}" (expected: ${ENUMS.confidence.join('|')}).`);
         }
       }
     }
   }
 
-  // --- workflows (varsa) ---
+  // --- workflows (if present) ---
   const wf = manifest.workflows;
   if (wf != null) {
     if (!isObject(wf)) {
-      err('manifest.workflows obje olmalı.');
+      err('manifest.workflows must be an object.');
     } else {
       if (wf.branch_model != null && !ENUMS.branchModel.includes(wf.branch_model)) {
-        warn(`manifest.workflows.branch_model tanınmıyor: "${wf.branch_model}".`);
+        warn(`manifest.workflows.branch_model unrecognized: "${wf.branch_model}".`);
       }
       if (wf.commit_convention != null && !ENUMS.commitConvention.includes(wf.commit_convention)) {
-        warn(`manifest.workflows.commit_convention tanınmıyor: "${wf.commit_convention}".`);
+        warn(`manifest.workflows.commit_convention unrecognized: "${wf.commit_convention}".`);
       }
     }
   }
 
-  // --- developer (varsa) ---
+  // --- developer (if present) ---
   const dev = manifest.developer;
   if (dev != null && isObject(dev)) {
     if (dev.autonomy != null && !ENUMS.autonomy.includes(dev.autonomy)) {
-      warn(`manifest.developer.autonomy tanınmıyor: "${dev.autonomy}".`);
+      warn(`manifest.developer.autonomy unrecognized: "${dev.autonomy}".`);
     }
     if (dev.experience != null && !ENUMS.experience.includes(dev.experience)) {
-      warn(`manifest.developer.experience tanınmıyor: "${dev.experience}".`);
+      warn(`manifest.developer.experience unrecognized: "${dev.experience}".`);
     }
   }
 
-  // --- rules.forbidden (varsa) ---
+  // --- rules.forbidden (if present) ---
   if (manifest.rules != null && isObject(manifest.rules) && manifest.rules.forbidden != null) {
     if (!Array.isArray(manifest.rules.forbidden)) {
-      err('manifest.rules.forbidden bir dizi olmalı.');
+      err('manifest.rules.forbidden must be an array.');
     } else {
       manifest.rules.forbidden.forEach((f, i) => {
-        if (!isObject(f) || !isNonEmptyString(f.command)) err(`rules.forbidden[${i}].command eksik.`);
+        if (!isObject(f) || !isNonEmptyString(f.command)) err(`rules.forbidden[${i}].command missing.`);
       });
     }
   }
 
-  // --- environments (varsa) ---
+  // --- environments (if present) ---
   if (manifest.environments != null) {
     if (!Array.isArray(manifest.environments)) {
-      err('manifest.environments bir dizi olmalı.');
+      err('manifest.environments must be an array.');
     } else {
       manifest.environments.forEach((e, i) => {
-        if (!isObject(e) || !isNonEmptyString(e.name)) err(`environments[${i}].name eksik.`);
+        if (!isObject(e) || !isNonEmptyString(e.name)) err(`environments[${i}].name missing.`);
       });
     }
   }

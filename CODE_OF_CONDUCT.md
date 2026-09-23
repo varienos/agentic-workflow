@@ -1,31 +1,31 @@
-# Davranis Kurallari
+# Code of Conduct
 
-## Taahhudumuz
+## Our Pledge
 
-Acik ve misafirperver bir ortam olusturma amaciyla, katkilar ve bakim yapanlar olarak projemize katilimi yas, beden olcusu, engellilik, etnik koken, cinsiyet kimlik ve ifadesi, deneyim duzeyi, milliyet, kisisel gorunum, irk, din veya cinsel kimlik ve yonelim fark etmeksizin herkes icin tacizden uzak bir deneyim haline getirmeyi taahhut ediyoruz.
+In the interest of fostering an open and welcoming environment, we as contributors and maintainers pledge to make participation in our project a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
 
-## Standartlarimiz
+## Our Standards
 
-Olumlu bir ortam yaratmaya katki saglayan davranislara ornekler:
+Examples of behavior that contributes to a positive environment include:
 
-- Karsilayici ve kapsayici bir dil kullanmak
-- Farkli bakis acilarina ve deneyimlere saygi gostermek
-- Yapici elestiriyi nazikce kabul etmek
-- Topluluk icin en iyisine odaklanmak
-- Diger topluluk uyelerine empati gostermek
+- Using welcoming and inclusive language
+- Being respectful of differing viewpoints and experiences
+- Gracefully accepting constructive criticism
+- Focusing on what is best for the community
+- Showing empathy toward other community members
 
-Kabul edilemez davranislara ornekler:
+Examples of unacceptable behavior include:
 
-- Cinsellestirilmis dil veya gorsellerin kullanimi
-- Trolleme, asagilayici yorumlar ve kisisel veya siyasi saldirilar
-- Kamusal veya ozel taciz
-- Baskalarinin fiziksel veya elektronik adres gibi ozel bilgilerini acik izin olmadan yayinlamak
-- Profesyonel bir ortamda makul olarak uygunsuz kabul edilebilecek diger davranislar
+- The use of sexualized language or imagery
+- Trolling, insulting comments, and personal or political attacks
+- Public or private harassment
+- Publishing others' private information, such as a physical or electronic address, without explicit permission
+- Other conduct which could reasonably be considered inappropriate in a professional setting
 
-## Iletisim
+## Contact
 
-Kural ihlali durumunda hello@varien.software adresine ulasabilirsiniz.
+Report violations to hello@varien.software.
 
-## Kaynak
+## Source
 
-Bu davranis kurallari [Contributor Covenant](https://www.contributor-covenant.org) sürüm 2.1'den uyarlanmistir.
+This code of conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org) version 2.1.

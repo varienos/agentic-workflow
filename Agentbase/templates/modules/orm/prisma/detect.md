@@ -1,4 +1,4 @@
-# Prisma Modul Tespiti
+# Prisma Module Detection
 
 ## Checks
 
@@ -19,7 +19,7 @@
 
 ## Affects Core
 
-- task-hunter: VERIFICATION_COMMANDS'a `prisma validate` eklenir
-- workflow-lifecycle: Migration fail protokolu eklenir
-- CLAUDE.md: Prisma kurallari bolumu eklenir
-- settings.json: 3 hook tanimi eklenir
+- task-hunter: `prisma validate` is added to VERIFICATION_COMMANDS
+- workflow-lifecycle: Migration fail protocol is added
+- CLAUDE.md: Prisma rules section is added
+- settings.json: 3 hook definitions are added

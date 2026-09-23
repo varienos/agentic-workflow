@@ -1,4 +1,4 @@
-# Django ORM Modul Tespiti
+# Django ORM Module Detection
 
 ## Checks
 
@@ -17,7 +17,7 @@
 
 ## Affects Core
 
-- task-hunter: VERIFICATION_COMMANDS'a `python manage.py showmigrations` eklenir
-- workflow-lifecycle: Migration fail protokolu eklenir
-- CLAUDE.md: Django ORM kurallari bolumu eklenir
-- settings.json: 1 hook tanimi eklenir
+- task-hunter: `python manage.py showmigrations` is added to VERIFICATION_COMMANDS
+- workflow-lifecycle: Migration fail protocol is added
+- CLAUDE.md: Django ORM rules section is added
+- settings.json: 1 hook definition is added

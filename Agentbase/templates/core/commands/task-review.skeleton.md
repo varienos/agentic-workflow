@@ -1,269 +1,255 @@
-# Task Review — 3+1 Ajanli Kod Inceleme
+# Task Review — 3+1 Agent-Based Code Inspection
 
-> Son commit veya belirtilen diff'i 3 paralel ajanla inceler. Guvenlik/auth/odeme/API/migration degisikliklerinde opsiyonel 4. ajan (devils-advocate) eklenir.
-> Kullanim: `/task-review`, `/task-review <commit_hash>`, `/task-review HEAD~3..HEAD`
+> Inspect the last commit or specified diff with at least 3 parallel agents. Add an optional 4th agent (devils-advocate) for security/auth/odeme/API/migration changes.
+
+> Usage: `/task-review`, `/task-review <commit_hash>`, `/task-review HEAD~3..HEAD`
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- Review sirasinda stack-spesifik kurallari goz onunde bulundur.
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+- Review in sequence to scrutinize stack-specific rules.
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Step 1 — Diff Cikar
+## Step 1 — Extract Diff
 
-### 1.1 — Arguman Cozumleme
+### 1.1 — Argument Resolution
 
-| Girdi | Davranis |
+| Input | Behavior |
 |---|---|
-| Bos | Son commit: `cd ../Codebase && git diff HEAD~1..HEAD` |
+| Empty | Son commit: `cd ../Codebase && git diff HEAD~1..HEAD` |
 | Commit hash | Belirtilen commit: `cd ../Codebase && git show <hash>` |
 | Range | Aralik: `cd ../Codebase && git diff <range>` |
 
-### 1.2 — Diff Analizi
+### 1.2 — Diff Analysis
 
-Diff'ten asagidaki bilgileri cikar:
-- Degisen dosya listesi
-- Her dosyadaki eklenen/silinen satirlar
-- Degisikliklerin turu (yeni dosya, degisiklik, silme)
-
-> **KURAL:** Diff bossa veya sadece whitespace degisikligi varsa, "Incelenecek degisiklik yok" deyip DUR.
+Extract the following information from the diff:
+- List of changed files
+- Added/deleted lines in each file
+- Type of changes (new file, modification, deletion)
+> **Rule:** If only diff is bossa or whitespace changes, say "No changes to be applied" and STOP.
 
 ---
 
-## Step 2 — 3 Ajan Spawn Et
+## Step 2 — 3 Agent Spawn
 
-Asagidaki 3 ajanin HER BIRINI paralel olarak calistir. Her ajan diff'in tamami uzerinde calisir.
+Perform the following three agents in parallel. Each agent will work on the entire diff.
 
-### Ajan 1 — Kod Inceleyici (Code Reviewer)
+### Agent 1 — Code Reviewer
 
-**Gorev:** Kod kalitesi, yapi, best practice kontrolu.
+**Task:** Quality control of code, architecture, best practices.
 
-**Kontrol Listesi (Sabit Cekirdek):**
+**Control List (Fixed Foundation):**
 
-- [ ] **Mantik hatasi:** Yanlis kosul, eksik null check, off-by-one, yanlis operator
-- [ ] **Hata yonetimi:** Try-catch eksikligi, hata yutma, generic catch, hata mesajlarinin bilgi icermemesi
-- [ ] **Isimlendirme:** Degisken/fonksiyon isimleri anlamsiz, tutarsiz, yaniltici
-- [ ] **Tekrar (Duplication):** Ayni kod birden fazla yerde, cikarilabilecek ortak fonksiyon
-- [ ] **Performans:** Gereksiz dongu, N+1 query, eksik index kullanimi, gereksiz re-render
-- [ ] **Guvenlik:** SQL injection, XSS, CSRF, yetkisiz erisim, hassas veri loglama
-- [ ] **Tip guvenligi:** `any` kullanimi, eksik tip, yanlis tip assertion
-- [ ] **Edge case:** Bos dizi, null/undefined, sinir degerleri, race condition
+- [ ] **Logical Error:** Incorrect condition, missing null check, off-by-one, wrong operator
+- [ ] **Error Handling:** Missing try-catch block, error swallowing, generic catch, lack of informative error messages
+- [ ] **Naming Conventions:** Variable/function names unclear, inconsistent, misleading
+- [ ] **Duplication (Code Repeat):** Same code in multiple places, extractable common function
+- [ ] **Performance:** Unnecessary loop, N+1 query, missing index usage, unnecessary re-render
+- [ ] **Security:** SQL injection, XSS, CSRF, unauthorized access, sensitive data logging
+- [ ] **Type Security:** `any` usage, missing type, wrong type assertion
+- [ ] **Edge Case:** Empty array, null/undefined, edge values, race condition
 
-<!-- GENERATE: REVIEW_CHECKLIST
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: stack.primary, stack.conventions, project.rules
-Ornek cikti:
-**Stack-Spesifik Kontroller:**
+<!-- GENERATED: REVIEW_CHECKLIST
+Description: This section will be filled by Bootstrap with manifest data.
+Required manifest fields: stack.primary, stack.conventions, project.rules
+Example output:
+**Stack-Specific Controls:**
 
-- [ ] **Prisma:** Schema degisikligi varsa migration olusturulmus mu?
-- [ ] **Prisma:** `findUnique` yerine `findFirst` gereksiz kullanilmis mi?
-- [ ] **NestJS:** DTO validasyonu var mi? `class-validator` decorator'leri dogru mu?
-- [ ] **NestJS:** Guard/Interceptor dogru uygulanmis mi?
-- [ ] **Next.js:** Server/Client component ayrimi dogru mu? Gereksiz `'use client'` var mi?
-- [ ] **Next.js:** `useEffect` icinde fetch yerine Server Component veya Route Handler kullanilabilir mi?
-- [ ] **Expo:** Hardcoded renk var mi? `useTheme()` kullanilmis mi?
-- [ ] **Expo:** Platform-spesifik kod `Platform.select()` ile mi yapilmis?
-- [ ] **Guvenlik:** IDOR (Insecure Direct Object Reference) acigi var mi? Kullanici baska kullanicinin verisine erisebilir mi?
-- [ ] **API:** Response format tutarli mi? Error response standarda uygun mu?
+- [ ] **Prisma:** Is a migration created when schema changes?
+- [ ] **Prisma:** Is `findUnique` unnecessarily used instead of `findFirst`?
+- [ ] **NestJS:** Does validation exist for DTOs? Are `class-validator` decorators correctly applied?
+- [ ] **NestJS:** Are guards/interceptors correctly implemented?
+- [ ] **Next.js:** Is the server/client component separation correct? Is there unnecessary `'use client'`?
+- [ ] **Next.js:** Can `useEffect` contain fetch instead of Server Component or Route Handler?
+- [ ] **Expo:** Is a hardcoded color present? Is `useTheme()` used?
+- [ ] **Expo:** Are platform-specific codes using `Platform.select()`?
+- [ ] **Security:** Is IDOR (Insecure Direct Object Reference) vulnerability present? Can another user access another user's data?
+- [ ] **API:** Is the response format consistent? Is it in line with the standard error response?
 -->
+### Silent Failure Hunter — Agent 2
 
-### Ajan 2 — Sessiz Hata Avcisi (Silent Failure Hunter)
+**Task:** Find silent errors in code without throwing exceptions.
 
-**Gorev:** Hata vermeden sessizce yanlis calisan kodlari bul.
+#### 8-Point Control List:
 
-**8 Noktali Kontrol Listesi:**
+1. **Silent catch**: `catch(e) {}` or `catch(e) { console.log(e) }` — Has the error been swallowed?
+2. **Missing await**: Async function called but `await` forgotten? Is the promise unhandled?
+3. **Incorrect comparison**: `==` vs `===`, falsy value semantics (`0`, `""`, `false` vs `null`/`undefined`)
+4. **Missing return**: Does the function return where it should? Is early return missing?
+5. **State inconsistency**: Is something being updated but related areas not updating?
+6. **Race condition**: Are concurrent asynchronous operations writing to the same value, guaranteed for order?
+7. **Expected default value semantics**: Should `|| defaultValue` be used instead of `?? defaultValue` (`0` and `""` have different implications)?
+8. **Copied-but-not-updated variable/string**: Is there a copied but not updated variable/string?
 
-1. **Sessiz catch:** `catch(e) {}` veya `catch(e) { console.log(e) }` — hata yutulmus mu?
-2. **Eksik await:** Async fonksiyon cagirilmis ama `await` unutulmus mu? Promise unhandled mi?
-3. **Yanlis karsilastirma:** `==` vs `===`, falsy deger tuzagi (`0`, `""`, `false` vs `null`/`undefined`)
-4. **Kayip return:** Fonksiyon return etmesi gereken yerde etmiyor mu? Early return eksik mi?
-5. **State tutarsizligi:** Bir yer guncelleniyor ama iliskili yerler guncellenmiyor mu?
-6. **Race condition:** Iki asenkron islem ayni veriye yaziyorsa siralama garanti mi?
-7. **Varsayilan deger tuzagi:** `|| defaultValue` yerine `?? defaultValue` kullanilmali mi? (`0` ve `""` icin fark var)
-8. **Kopyala-yapistir artigi:** Kopyalanmis ama guncellenmemis degisken/string var mi?
+### Regression Analyzer — Agent 3
 
-### Ajan 3 — Regresyon Analizcisi (Regression Analyzer)
+**Task:** Evaluate the risk of breaking existing code with changes.
 
-**Gorev:** Degisikliklerin mevcut kodu bozma riskini degerlendir.
+#### Control Areas:
 
-**Kontrol Alanlari:**
+1. **Removed code**: Are removed lines being used elsewhere?
+2. **Change propagation**: Does the changed function/type propagate to other files via import?
+3. **API contract**: If the endpoint signature is changed, do consumers get affected?
+4. **Database**: Does a schema change affect existing data? Is migration necessary?
+5. **Configuration**: Has an environment variable been added or changed, affecting all environments?
+6. **Test scope**: Is there a test for the change? Are current tests updated?
 
-1. **Kaldirilan kod:** Silinen satirlar baska yerlerde kullaniliyor mu?
-2. **Degisiklik yayilimi:** Degistirilen fonksiyon/tip baska dosyalarda import ediliyor mu?
-3. **API kontrati:** Endpoint imzasi degistiyse consumer'lar etkilenir mi?
-4. **Veritabani:** Schema degisikligi mevcut veriyi etkiler mi? Migration gerekli mi?
-5. **Konfigurasyon:** Ortam degiskeni eklendi/degistiyse tum ortamlar guncellenmis mi?
-6. **Test kapsami:** Degisikligin test'i var mi? Mevcut testler guncellenmis mi?
+### Optional: Devils Advocate Analysis (Agent 4)
 
-### Opsiyonel: Devils Advocate Analizi (Ajan 4)
+If the change affects any of the following areas, trigger the `devils-advocate` agent:
+* Security/auth/authorization files
+* Payment/finance/hot data processing
+* Public-facing API endpoints
+* Database schema/migration
+* `manifest.project.security_level == "high"` or `"critical"`
 
-Degisiklik asagidaki alanlardan birini etkiliyorsa `devils-advocate` agent'ini cagir:
-- Guvenlik/auth/yetkilendirme dosyalari
-- Odeme/finans/hassas veri isleme
-- API endpoint'leri (public-facing)
-- Veritabani schema/migration
-- manifest.project.security_level == "high" veya "critical"
+If none of these conditions are met, skip this step.
+**Task:** Identify points of entry from an adversarial perspective and identify security vulnerabilities.
 
-Yukaridaki kosullardan HICBIRI saglanmiyorsa bu adimi ATLA.
+**Control Areas:**
 
-**Gorev:** Adversarial perspektiften kirilma noktalarini ve guvenlik aciklari bul.
+1. **Edge Cases:** Handling NULL, empty, large, negative, Unicode input values
+2. **Input Fuzzing:** Malformed data, unexpected types, boundary values
+3. **Vulnerability Assessment:** N+1 queries, memory leaks, deadlocks, 10x load
+4. **Dependency Vulnerabilities:** What happens when the database/API/cache is compromised? Is there a retry/fallback mechanism?
+5. **Security Attack Surface:** IDOR, injection, privilege escalation, data vulnerabilities
 
-**Kontrol Alanlari:**
-
-1. **Edge case'ler:** NULL, bos, buyuk, negatif, unicode girdilerle kirilma
-2. **Input fuzzing:** Malformed veri, beklenmeyen tipler, boundary degerler
-3. **Olceklenebilirlik:** N+1 sorgu, bellek sizintisi, darbogazlar, 10x yuk
-4. **Bagimlilk kirilganligi:** DB/API/cache cokerse ne olur? Retry/fallback var mi?
-5. **Guvenlik saldiri yuzeyi:** IDOR, injection, yetki yukseltme, veri sizintisi
-
-> **NOT:** Bu ajan diger 3 ajandan SONRA calistirilabilir (paralel olmasi zorunlu degil). Bulguları CRITICAL/HIGH/MEDIUM/LOW severity ile raporlar.
+> **NOTE:** This agent can run after the other three (parallel execution is not required). Report findings as CRITICAL, HIGH, MEDIUM, or LOW.
 
 ---
 
-## Step 3 — Bulgulari Degerlendir
+## Step 3 — Evaluating Findings
 
-### 3.1 — Sonsuz Dongu Korumasi
+### 3.1 — Infinite Loop Protection
 
-> **KURAL:** Her ajan sadece 1 iterasyon yapar. Bulgu bulduysa raporlar, TEKRAR CALISTIRMAZ.
+> **RULE:** Each agent only performs one iteration. If a finding is made, report it; do not repeat the process.
 
-### 3.2 — Karar Agaci
+### 3.2 — Decision Tree
 
-Her bulgu icin su siralamayi uygula:
-
-```
-Bulgu var mi?
-├── HAYIR → Temiz rapor
-└── EVET → Bu bulgu gercek bir sorun mu?
-    ├── HAYIR (False Positive) → Yanlis alarm, rapordan cikar
-    └── EVET → Bu sorun diff'in kendi kodunda mi?
-        ├── EVET → Duzeltilmesi GEREKEN bulgu
-        └── HAYIR → Onceden var olan sorun mu?
-            ├── EVET → Backlog'a gorev olustur, diff'e DOKUNMA
-            └── HAYIR → Diff'in dolayli etkisi, raporda belirt
-```
-
-### 3.3 — False Positive Filtreleme
-
-Asagidakiler genelde false positive'dir:
-- Mevcut pattern'e uyan kod (proje zaten boyle yapiyor)
-- Framework'un kendi pattern'i (orn. NestJS'de boilerplate)
-- Kasitli trade-off (basitlik icin bilinc tercihi)
-
-### 3.4 — Onceden Var Olan Bulgu Kurali
-
-Diff'te olmayip onceden var olan sorunlar icin:
+For each finding, apply the following sequence:
 
 ```
-backlog task create "Review bulgusu: <sorun_ozeti>" --description "<detay>" --priority "low" --labels "tech-debt"
+Is there a finding?
+├── NO → Clean report
+└── YES → Is this a real issue?
+    ├── NO (False Positive) → False alarm, remove from report
+    └── YES → Is this a bug in our own code?
+        ├── YES → This is a critical bug
+        └── NO → Is this an existing issue?
+            ├── YES → Create a backlog item for the task, do not touch the diff
+            └── NO → Describe the impact of the diff on the report
 ```
 
-> **KURAL:** Onceden var olan sorunu DUZELTME. Backlog'a gorev olustur, raporla, devam et.
+### 3.3 — False Positive Filtering
+
+The following are generally false positives:
+- Existing code that matches the pattern (the project already has this implementation)
+
+>>>
+### 3.4 — Pre-existing Issue Rules
+
+In diffs, for pre-existing issues:
+
+```
+backlog task create "Review evidence: <issue summary>" --description "<detail>" --priority "low" --labels "tech-debt"
+```
+
+> **RULE:** Fix pre-existing issue. Create a task in the backlog to review and resolve it.
 
 ---
 
-## Step 4 — Rapor Olustur
+## Step 4 — Report Generation
 
-### 4.1 — Rapor Formati
+### 4.1 — Report Format
 
 ```
-## Kod Inceleme Raporu
+## Code Review Report
 
-### Incelenen Degisiklikler
-- **Commit/Range:** <hash veya range>
-- **Dosya sayisi:** <sayi>
-- **Eklenen satirlar:** <sayi>
-- **Silinen satirlar:** <sayi>
+### Changes Inspected
+- **Commit/Range:** `<hash or range>`
+- **Number of files:** `<number>`
+- **Added lines:** `<number>`
+- **Deleted lines:** `<number>`
 
 ---
 
-### 🔴 Kritik Bulgular (Duzeltilmeli)
-| # | Ajan | Dosya | Satir | Sorun | Ciddiyet |
+### 🔴 Critical Issues (Must be fixed)
+| # | Agent | File | Line | Issue | Severity |
 |---|---|---|---|---|---|
-| 1 | Kod Inceleyici | `user.service.ts` | 42 | Eksik null check | Yuksek |
-| 2 | Sessiz Hata | `auth.controller.ts` | 18 | Sessiz catch | Orta |
+| 1 | Code Reviewer | `user.service.ts` | 42 | Missing null check | High |
+| 2 | Idle Error | `auth.controller.ts` | 18 | Sessiz catch | Medium |
 
-### 🟡 Uyarilar (Dikkate Alinmali)
-| # | Ajan | Dosya | Satir | Sorun |
+### 🟡 Warnings (Should be noted)
+| # | Agent | File | Line | Issue |
 |---|---|---|---|---|
-| 1 | Regresyon | `api.module.ts` | — | Yeni import eklenip test yazilmamis |
+| 1 | Regression | `api.module.ts` | — | New import added without testing |
+```
 
-### 🟢 Temiz Alanlar
-- [x] Guvenlik kontrolu gecti
-- [x] Tip guvenligi uygun
-- [x] Performans sorunu yok
+>>>
+### Clean Areas
+- [x] Security control passed
+- [x] Type security is compliant
+- [x] Performance issue is resolved
 
-### 📋 Onceden Var Olan Sorunlar (Backlog'a eklendi)
-| # | Sorun | Olusturulan Task |
+### Previous Issues (Added to Backlog)
+| # | Issue | Created Task |
 |---|---|---|
-| 1 | `legacy.service.ts` icinde SQL injection riski | Task #45 |
+| 1 | SQL injection risk in `legacy.service.ts` | Task #45 |
 
-### Genel Degerlendirme
-**Sonuc:** ✅ Onaylandi / ⚠️ Kucuk duzeltmelerle onaylandi / ❌ Duzeltme gerekli
+### General Evaluation
+**Result:** 
 
-[Genel yorum ve oneriler]
+[General comments and suggestions]
 ```
 
-### 4.2 — Duzeltme Islemleri
+### 4.2 — Changes
 
-Eger "Duzeltme gerekli" bulgular varsa:
+If "Fix Required" indicators are present:
 
-1. Bulguyu duzelt
-2. Dogrulama kapisi uygula (test calistir)
-3. Commit at:
-
-<!-- GENERATE: COMMIT_CONVENTION
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: conventions.commit_language, conventions.commit_format
-Ornek cikti:
-### Commit Format (Review Duzeltmeleri)
-
+1. Fix the indicator
+2. Validate the application (test run)
+3. Commit:
+```markdown
+fix: review indicator — <issue summary>
 ```
-fix: review bulgusu — <sorun_ozeti>
-```
+**Language:** Turkish
+**Example:** `fix: review indicator — incomplete null check fixed`
 
-**Dil:** Turkce
-**Ornek:** `fix: review bulgusu — eksik null check duzeltildi`
--->
+> **RULE:** Review fix commit should be separate. Do not modify original commit (amend).
 
-> **KURAL:** Review duzeltme commit'i ayri olmali. Orijinal commit'i DEGISTIRME (amend etme).
+>>>
+## Mandatory Rules
 
----
+### Invariant rules (apply to every command)
 
-## Zorunlu Kurallar
+1. **Do not write config into Codebase** — Only `.claude/`, `CLAUDE.md`, `.mcp.json`, and `.claude-ignore` files should be created within the Agentbase directory. Creating a `.claude/` directory in the Codebase or writing to `../Codebase/CLAUDE.md` is NOT ALLOWED.
+2. **Git runs only in Codebase** — All Git operations (commit, push, branch) should be performed within the `../Codebase/` directory. The Agentbase does not have Git installed.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) are readable and can be formatted as needed. Config files (`.claude/`, `CLAUDE.md`) should NOT be written in the Codebase.
 
-### Kutsal Kurallar (Her Komutta Gecerli)
-
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
-
-1. **3 ajan paralel calisir** — Birinin sonucunu beklemeden hepsini baslat.
-2. **1 iterasyon limiti** — Hicbir ajan ikinci kez calismaz.
-3. **Karar agacini takip et** — Her bulgu icin false positive / diff kodu / onceden var olan siralamasini uygula.
-4. **Onceden var olan sorunlari duzeltme** — Backlog'a gorev olustur, diff'e dokunma.
-5. **Rapor formatini koru** — Kritik / Uyari / Temiz / Onceden Var Olan kategorileri zorunlu.
-6. **Duzeltme commit'i ayri** — Review duzeltmeleri icin yeni commit at, amend yapma.
-7. **Bos diff kontrolu** — Diff bossa veya sadece whitespace ise inceleme yapma.
-8. **False positive filtrele** — Mevcut pattern'e uyan, framework boilerplate olan bulgulari eleminasyon.
-9. **Backlog CLI kullan** — Onceden var olan sorunlari `backlog task create` ile kaydet.
-10. **Guvenlik** — Hassas veri (credential, token) diff'te varsa KRITIK olarak raporla.
-11. **Codebase yolu** — Tum dosya erisimleri `../Codebase/` uzerinden.
+1. **Three agents run concurrently** — Run all agents without waiting for one another to complete.
+2. **One iteration limit** — No agent will attempt a second iteration.
+3. **Follow the decision tree** — Apply false positives, diffs, and previous ordering when encountering new issues.
+4. **Fix existing issues first** — Create backlog tasks based on outstanding issues, avoiding diffs.
+5. **Maintain report format** — Enforce critical, warning, clean, and previously existing categories.
+6. **Separate commit for changes** — Make a new commit for review-only changes; do not amend the previous commit.
+7. **Control whitespace diff** — Inspect only bossa or whitespace diffs; otherwise, investigate further.
+8. **Filter false positives** — Eliminate issues matching the current pattern and framework boilerplate.
+9. **Use Backlog CLI** — Record outstanding issues using `backlog task create`.
+10. **Security** — Report critical sensitive data (credentials, tokens) in diffs.
+11. **Codebase path** — All file access should be through `../Codebase/`.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap this marker to modify the Self-Refresh section. The command is reviewed within the project's context: small inconsistency Edit or large change backlog task is reported.
 -->

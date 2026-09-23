@@ -169,7 +169,7 @@ function detectDeployPlatform(root) {
   if (exists(path.join(root, 'Dockerfile')) || exists(path.join(root, 'docker-compose.yml'))) {
     return det('docker', 'medium', 'Dockerfile/docker-compose.yml');
   }
-  return det('none', 'low', 'CI/deploy dosyası bulunamadı');
+  return det('none', 'low', 'No CI/deploy file found');
 }
 
 // --- node ekosistem tespiti (deps tabanli) ---
@@ -232,13 +232,13 @@ function detect(codebasePath) {
   } else {
     // Node disi: detected alanlarini bos/dusuk guvenle birak (greenfield benzeri).
     for (const f of ['test_framework', 'formatter', 'linter', 'orm', 'auth_method', 'design_system']) {
-      detected[f] = det(null, 'low', `${runtime || 'bilinmeyen'} runtime — otomatik tespit kapsamı dışında`);
+      detected[f] = det(null, 'low', `${runtime || 'unknown'} runtime — outside automatic detection`);
     }
   }
 
-  detected.migration = det(detected.orm && detected.orm.value ? 'orm' : 'none', detected.orm && detected.orm.value ? 'medium' : 'low', 'detected.orm türevli');
+  detected.migration = det(detected.orm && detected.orm.value ? 'orm' : 'none', detected.orm && detected.orm.value ? 'medium' : 'low', 'derived from detected.orm');
   detected.deploy_platform = detectDeployPlatform(root);
-  detected.commit_convention = det('unknown', 'low', 'git log heuristic init kapsamı dışında (--yes default: free)');
+  detected.commit_convention = det('unknown', 'low', 'git log heuristic is outside init (--yes default: free)');
 
   const { isMonorepo, subprojects } = detectMonorepo(root, pkg);
   const projectType = isMonorepo ? 'monorepo' : 'single';

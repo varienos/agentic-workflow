@@ -4,10 +4,10 @@
  * eloquent-migration-check.js
  * PostToolUse (Edit|Write) hook
  *
- * Laravel migration dosyasi duzenlendiginde:
- * 1. Yikici operasyonlari tarar (dropColumn, dropTable, renameColumn vb.)
- * 2. Ciddiyet seviyesine gore uyari verir
- * 3. `php artisan migrate` calistirmayi hatirlatir
+ * When a Laravel migration file is edited:
+ * 1. Scans for destructive operations (dropColumn, dropTable, renameColumn, etc.)
+ * 2. Warns according to severity level
+ * 3. Reminds to run `php artisan migrate`
  */
 
 const path = require('path');
@@ -18,27 +18,27 @@ const { readStdin, resolveCodebaseRoot } = require(path.join(__dirname, 'shared-
 const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
 /**
- * Laravel migration dosyasindaki yikici PHP ifadeleri ve ciddiyet seviyeleri
+ * Destructive PHP expressions in Laravel migration files and severity levels
  */
 const DESTRUCTIVE_PATTERNS = [
-  { pattern: /Schema::drop\s*\(/g, label: 'Schema::drop()', severity: 'KRITIK' },
-  { pattern: /Schema::dropIfExists\s*\(/g, label: 'Schema::dropIfExists()', severity: 'KRITIK' },
-  { pattern: /->dropColumn\s*\(/g, label: '$table->dropColumn()', severity: 'YUKSEK' },
-  { pattern: /->dropMorphs\s*\(/g, label: '$table->dropMorphs()', severity: 'YUKSEK' },
-  { pattern: /->dropRememberToken\s*\(/g, label: '$table->dropRememberToken()', severity: 'ORTA' },
-  { pattern: /->dropSoftDeletes\s*\(/g, label: '$table->dropSoftDeletes()', severity: 'YUKSEK' },
-  { pattern: /->dropTimestamps\s*\(/g, label: '$table->dropTimestamps()', severity: 'ORTA' },
-  { pattern: /->dropForeign\s*\(/g, label: '$table->dropForeign()', severity: 'ORTA' },
-  { pattern: /->dropIndex\s*\(/g, label: '$table->dropIndex()', severity: 'ORTA' },
-  { pattern: /->dropPrimary\s*\(/g, label: '$table->dropPrimary()', severity: 'YUKSEK' },
-  { pattern: /->dropUnique\s*\(/g, label: '$table->dropUnique()', severity: 'ORTA' },
-  { pattern: /Schema::rename\s*\(/g, label: 'Schema::rename()', severity: 'YUKSEK' },
-  { pattern: /->renameColumn\s*\(/g, label: '$table->renameColumn()', severity: 'YUKSEK' },
+  { pattern: /Schema::drop\s*\(/g, label: 'Schema::drop()', severity: 'CRITICAL' },
+  { pattern: /Schema::dropIfExists\s*\(/g, label: 'Schema::dropIfExists()', severity: 'CRITICAL' },
+  { pattern: /->dropColumn\s*\(/g, label: '$table->dropColumn()', severity: 'HIGH' },
+  { pattern: /->dropMorphs\s*\(/g, label: '$table->dropMorphs()', severity: 'HIGH' },
+  { pattern: /->dropRememberToken\s*\(/g, label: '$table->dropRememberToken()', severity: 'MEDIUM' },
+  { pattern: /->dropSoftDeletes\s*\(/g, label: '$table->dropSoftDeletes()', severity: 'HIGH' },
+  { pattern: /->dropTimestamps\s*\(/g, label: '$table->dropTimestamps()', severity: 'MEDIUM' },
+  { pattern: /->dropForeign\s*\(/g, label: '$table->dropForeign()', severity: 'MEDIUM' },
+  { pattern: /->dropIndex\s*\(/g, label: '$table->dropIndex()', severity: 'MEDIUM' },
+  { pattern: /->dropPrimary\s*\(/g, label: '$table->dropPrimary()', severity: 'HIGH' },
+  { pattern: /->dropUnique\s*\(/g, label: '$table->dropUnique()', severity: 'MEDIUM' },
+  { pattern: /Schema::rename\s*\(/g, label: 'Schema::rename()', severity: 'HIGH' },
+  { pattern: /->renameColumn\s*\(/g, label: '$table->renameColumn()', severity: 'HIGH' },
 ];
 
 /**
- * Dosyanin Laravel migration dosyasi olup olmadigini kontrol eder.
- * Genellikle database/migrations/ altinda ve YYYY_MM_DD_HHMMSS_ prefix'i ile baslar.
+ * Checks whether the file is a Laravel migration file.
+ * Usually under database/migrations/ and starts with a YYYY_MM_DD_HHMMSS_ prefix.
  */
 function isLaravelMigration(filePath) {
   if (!filePath) return false;
@@ -48,7 +48,7 @@ function isLaravelMigration(filePath) {
 }
 
 /**
- * PHP migration iceriginde yikici pattern'leri tarar.
+ * Scans PHP migration content for destructive patterns.
  */
 function scanForDestructiveChanges(content) {
   const findings = [];
@@ -58,9 +58,9 @@ function scanForDestructiveChanges(content) {
     pattern.lastIndex = 0;
     const matches = content.match(pattern);
     if (matches && matches.length > 0) {
-      // Eslesen satirlari bul
+      // Find matching lines
       const lines = content.split('\n');
-      // Pattern'i her satir icin yeni olustur (lastIndex reset)
+      // Recreate the pattern for each line (lastIndex reset)
       const testPattern = new RegExp(pattern.source, pattern.flags.replace('g', ''));
       const matchingLines = lines
         .map((line, idx) => ({ line: line.trim(), lineNum: idx + 1 }))
@@ -80,9 +80,9 @@ function scanForDestructiveChanges(content) {
 
 function severityEmoji(severity) {
   switch (severity) {
-    case 'KRITIK': return '\ud83d\udd34';
-    case 'YUKSEK': return '\ud83d\udfe0';
-    case 'ORTA': return '\ud83d\udfe1';
+    case 'CRITICAL': return '\ud83d\udd34';
+    case 'HIGH': return '\ud83d\udfe0';
+    case 'MEDIUM': return '\ud83d\udfe1';
     default: return '\u26aa';
   }
 }
@@ -94,10 +94,10 @@ async function main() {
 
     const filePath = parsed?.tool_input?.file_path || parsed?.tool_input?.path || '';
 
-    // Laravel migration dosyasi mi kontrol et
+    // Check whether it is a Laravel migration file
     if (!isLaravelMigration(filePath)) return;
 
-    // Dosya icerigini oku
+    // Read file content
     let content = '';
     try {
       content = fs.readFileSync(filePath, 'utf8');
@@ -109,17 +109,17 @@ async function main() {
     const messages = [];
 
     if (findings.length > 0) {
-      // Ciddiyet siralama: KRITIK > YUKSEK > ORTA
-      const severityOrder = { 'KRITIK': 0, 'YUKSEK': 1, 'ORTA': 2 };
+      // Severity order: CRITICAL > HIGH > MEDIUM
+      const severityOrder = { 'CRITICAL': 0, 'HIGH': 1, 'MEDIUM': 2 };
       findings.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
       const maxSeverity = findings[0].severity;
 
-      let message = `\u26a0\ufe0f **YIKICI MIGRATION TESPIT EDILDI**\n\n`;
-      message += `**Dosya:** \`${path.basename(filePath)}\`\n`;
-      message += `**En Yuksek Ciddiyet:** ${severityEmoji(maxSeverity)} ${maxSeverity}\n\n`;
+      let message = `\u26a0\ufe0f **DESTRUCTIVE MIGRATION DETECTED**\n\n`;
+      message += `**File:** \`${path.basename(filePath)}\`\n`;
+      message += `**Highest Severity:** ${severityEmoji(maxSeverity)} ${maxSeverity}\n\n`;
       message += `### Tespit Edilen Degisiklikler\n\n`;
-      message += `| Ciddiyet | Islem | Adet | Ornekler |\n`;
+      message += `| Severity | Operation | Count | Examples |\n`;
       message += `|---|---|---|---|\n`;
 
       for (const finding of findings) {
@@ -131,14 +131,14 @@ async function main() {
 
       message += `\n### Onerilen Aksiyonlar\n\n`;
 
-      if (maxSeverity === 'KRITIK') {
+      if (maxSeverity === 'CRITICAL') {
         message += `1. **DURMA** \u2014 Bu migration veri kaybina yol acabilir.\n`;
-        message += `2. Etkilenen tablolardaki verilerin yedegininin alindigini dogrula.\n`;
-        message += `3. Kasitli ise kullanicidan onay al.\n`;
-      } else if (maxSeverity === 'YUKSEK') {
-        message += `1. Silinen kolon/constraint'lerin baska yerde korunup korunmadigini kontrol et.\n`;
+        message += `2. Verify that a backup of data in affected tables has been taken.\n`;
+        message += `3. Kasitli ise kullanicidan get approval.\n`;
+      } else if (maxSeverity === 'HIGH') {
+        message += `1. Check whether deleted columns/constraints are still referenced elsewhere.\n`;
         message += `2. Uygulama kodunun bu elemanlara referans vermediginden emin ol.\n`;
-        message += `3. Production'da bu migration'i uygulamadan once veri yedegi al.\n`;
+        message += `3. Take a data backup before applying this migration in production.\n`;
       } else {
         message += `1. Degisikliklerin mevcut veriyle uyumlu oldugunu kontrol et.\n`;
         message += `2. Index/constraint degisiklikleri performansi etkileyebilir.\n`;
@@ -147,20 +147,20 @@ async function main() {
       messages.push(message);
     }
 
-    // Her durumda migration sonrasi hatirlatma
+    // Post-migration reminder in all cases
     messages.push(
-      `\ud83d\udca1 **Hatirlatma:** Migration dosyasi duzenlendikten sonra \`php artisan migrate\` calistirmayi unutmayin.\n` +
+      `\ud83d\udca1 **Hatirlatma:** After the migration file is edited \`php artisan migrate\` do not forget to run.\n` +
       `Migration durumunu kontrol etmek icin: \`php artisan migrate:status\``
     );
 
     if (messages.length > 0) {
       const result = {
-        systemMessage: '\ud83d\udd0d **Eloquent Migration Kontrolu**\n\n' + messages.join('\n\n---\n\n')
+        systemMessage: '\ud83d\udd0d **Eloquent Migration Check**\n\n' + messages.join('\n\n---\n\n')
       };
       process.stdout.write(JSON.stringify(result));
     }
   } catch (e) {
-    // Hook hatalari sessizce yutulur
+    // Hook errors are swallowed silently
   }
 }
 

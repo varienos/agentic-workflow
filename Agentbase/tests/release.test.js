@@ -91,7 +91,7 @@ describe('bumpVersion', () => {
   });
 
   it('bilinmeyen tip → Error', () => {
-    assert.throws(() => bumpVersion('1.0.0', 'invalid'), /Bilinmeyen bump tipi/);
+    assert.throws(() => bumpVersion('1.0.0', 'invalid'), /Unknown bump type/);
   });
 });
 

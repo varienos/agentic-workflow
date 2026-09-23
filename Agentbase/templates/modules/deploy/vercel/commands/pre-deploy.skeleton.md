@@ -1,42 +1,46 @@
-# Pre-Deploy — Vercel Production Push Kontrolu
+# Pre-Deploy — Vercel Production Push Control
 
-> Vercel'e deploy oncesi tum kontrolleri calistirir, sonuc raporunu sunar.
-> Kullanim: `/pre-deploy`
+> Verifies all pre-deploy checks and displays the result.
+> Usage: `/pre-deploy`
 
 ---
 
-## Kural: OTONOM CALIS
+## Invariant Rule: Autonomy Test
 
-- Kullaniciya soru SORMA — tum kontrolleri sirayla calistir.
-- Hic bir seyi PUSH etme — sadece kontrol et ve raporla.
-- Hata bulursan DUZELTME — raporla ve kullaniciya birak.
-- Tum adimlari CALISTIR — bir adimi atlama.
+- User Input Validation — runs tests in sequence.
+- Only PUSH operation — only test and report.
+- Error occurs — reports and leaves user alone.
+- Runs all steps — skips a step.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** SaaS dashboard (Next.js + Tailwind)
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure, project.subprojects
+Example output:
+## Project Overview
+- **Project:** SaaS dashboard (Next.js + Tailwind)
 - **Stack:** TypeScript, Next.js, Prisma, PostgreSQL
-- **Yapi:**
+- **Architecture:**
   - `src/` — Next.js app directory
-  - `prisma/` — Veritabani semasi
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
--->
+  - `prisma/` — Database schema
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Git repository operates only on Codebase -->
 
 ---
 
-## Step 1 — Baslangic Kontrolu
+## Step 1 — Initial Control
 
+- 
+- 
+-
 ```bash
 cd ../Codebase && git status
 ```
+
 
 Kontrol et:
 - [ ] Commit edilmemis degisiklik var mi?
@@ -44,125 +48,118 @@ Kontrol et:
 - [ ] Remote ile senkron mu?
 
 Eger commit edilmemis degisiklik varsa:
+
 ```
 ⚠️ Commit edilmemis degisiklikler var. Once commit atilmali.
 ```
+### Step 2 — TypeScript / Build Control
 
----
-
-## Step 2 — TypeScript / Build Kontrolu
-
-Tip hatalarini kontrol et:
+Control tip errors:
 
 <!-- GENERATE: BUILD_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, project.scripts, stack.primary
-Ornek cikti:
-### Derleme Komutlari
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest areas: project.subprojects, project.scripts, stack.primary
+Example output:
+#### Build Commands
 
-| Kontrol | Komut | Beklenen Sonuc |
+| Control | Command | Expected Outcome |
 |---|---|---|
-| TypeScript | `cd ../Codebase && npx tsc --noEmit` | Tip hatasi yok |
-| ESLint | `cd ../Codebase && npm run lint` | Lint hatasi yok |
--->
+| TypeScript | `cd ../Codebase && npx tsc --noEmit` | No type error |
+| ESLint | `cd ../Codebase && npm run lint` | Lint error is not found |
 
-Her komutu calistir. Hata varsa kaydet, durma — sonraki adima gec.
+Run each command. If an error occurs, record it and proceed to the next step.
 
 ---
 
-## Step 3 — Test Suiti
+### Step 3 — Test Suite
 
-Tum testleri calistir.
+Run all tests.
 
 <!-- GENERATE: TEST_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, project.scripts, stack.test_framework
-Ornek cikti:
-### Test Komutlari
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest areas: project.subprojects, project.scripts, stack.test_framework
+Example output:
+#### Test Commands
 
-| Test | Komut | Tip |
+| Test | Command | Type |
 |---|---|---|
-| Birim testler | `cd ../Codebase && npm run test` | Jest/Vitest birim testleri |
-| E2E testler | `cd ../Codebase && npm run test:e2e` | Playwright/Cypress testleri |
--->
+| Unit tests | `cd ../Codebase && npm run test` | Jest/Vitest unit tests |
+| End-to-End tests | `cd ../Codebase && npm run test:e2e` | Playwright/Cypress tests |
 
-Her testi calistir. Basarisiz testleri kaydet, durma — sonraki adima gec.
+Run each test. Record failed tests and proceed to the next step.
 
 ---
 
-## Step 4 — Ortam Degiskeni Senkronizasyonu
+### Step 4 — Environment Variable Synchronization
 
-Vercel ortam degiskenleri ile lokal `.env.local` dosyasini karsilastir:
+Synchronize Vercel environment variables with local `.env.local` file:
 
+ 
+Note: The generated code snippet is truncated as it was not provided in the original text, only the translation of the given part.
 ```bash
 # .env.local veya .env dosyasindaki degiskenleri listele
 cd ../Codebase && grep -E '^[A-Z_]+=' .env.local 2>/dev/null | cut -d= -f1 | sort || echo ".env.local bulunamadi"
 ```
+Control:
+- [ ] Are all environment variables in `.env.local` defined on the Vercel dashboard?
+- [ ] Are `NEXT_PUBLIC_` prefixed environment variables correct? (will be displayed client-side)
+- [ ] Are sensitive information (API key, secret) only available server-side? (`NEXT_PUBLIC_` should not be used)
 
-Kontrol et:
-- [ ] `.env.local`'deki tum degiskenler Vercel dashboard'da tanimli mi?
-- [ ] `NEXT_PUBLIC_` prefix'li degiskenler dogru mu? (client-side'da gorunur olacaklar)
-- [ ] Hassas bilgiler (API key, secret) sadece server-side mi? (`NEXT_PUBLIC_` ile baslaMAMALI)
+> **NOT:** The `vercel env pull` command can retrieve Vercel environment variables. However, this command does not automate testing — it is recommended for use only when there are inconsistencies.
 
-> **NOT:** `vercel env pull` komutu ile Vercel'deki env degiskenleri cekilebilir. Ancak bu komut otomatik calistirilMAZ — sadece uyumsuzluk varsa kullaniciya onerilir.
+## Step 5 — Edge Function Validation (If Applicable)
 
----
-
-## Step 5 — Edge Function Dogrulama (Uygulanabilirse)
-
-Edge runtime kullanan dosyalari kontrol et:
-
+Control Edge runtime using files:
 ```bash
 cd ../Codebase && grep -rl "runtime.*=.*'edge'" src/ app/ --include="*.ts" --include="*.tsx" 2>/dev/null || echo "Edge runtime kullanilmiyor"
 ```
+Here is the translated text:
 
-Eger edge function varsa kontrol et:
-- [ ] Node.js API'leri kullanilmiyor mu? (`fs`, `path`, `child_process` gibi — edge'de calismaz)
-- [ ] Desteklenmeyen paketler yok mu? (edge runtime sinirli npm destegi sunar)
-- [ ] `export const runtime = 'edge'` dogru dosyalarda mi?
+In case of an edge function, verify:
 
-Edge function yoksa bu adimi ATLA, raporda "N/A" olarak isaretle.
+- Are Node.js APIs being used? (`fs`, `path`, `child_process` etc. - do not work on edge)
+- Is there no unsupported package? (edge runtime provides weak npm support)
+- Is the correct line `export const runtime = 'edge'` present in files?
 
----
+Edge function - If this step is skipped, indicate "N/A" in the report.
 
-## Step 6 — Vercel Build Testi
+## Step 6 — Vercel Build Test
 
 <!-- GENERATE: VERCEL_CONFIG
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments.deploy_platform, project.scripts, stack.framework
-Ornek cikti:
-### Vercel Yapilandirmasi
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: environments.deploy_platform, project.scripts, stack.framework
+Example output:
+### Vercel Deployment
 
-**Build komutu:** `npm run build` veya `next build`
-**Output dizini:** `.next`
+**Build command:** `npm run build` or `next build`
+**Output directory:** `.next`
 **Framework:** Next.js
 
-### Build Testi
+### Build Test
 ```bash
 cd ../Codebase && npm run build
 ```
 
+
 ### vercel.json Kontrolu
+
 ```bash
 cd ../Codebase && cat vercel.json 2>/dev/null || echo "vercel.json yok (varsayilan ayarlar kullanilacak)"
 ```
+### Invariant Rules
+- [ ] Is the `regions` property defined in `vercel.json` file? (important for performance)
+- [ ] Are `headers`, `redirects`, and `rewrites` correct?
+- [ ] Is the `functions` configuration (maxDuration, memory) suitable?
 
-### Kontrol Edilecekler
-- [ ] `vercel.json` dosyasinda `regions` tanimli mi? (performans icin onemli)
-- [ ] `headers`, `redirects`, `rewrites` dogru mu?
-- [ ] `functions` konfigurasyonu (maxDuration, memory) uygun mu?
--->
+Run build command. Fail if unsuccessful. Mark as FAIL.
 
-Build komutunu calistir. Basarisiz olursa FAIL olarak isaretle.
-
-> **NOT:** Build uzun surebilir. Eger `SKIP_BUILD_TEST` flag'i varsa bu adimi atla.
+> **NOT:** Build may take a long time. If the `SKIP_BUILD_TEST` flag is set, skip this step.
 
 ---
 
-## Step 7 — Sonuc Raporu
+## Step 7 — Result Report
 
-Tum adimlarin sonuclarini asagidaki formatta raporla:
-
+Report the results of all steps in the following format:
 ```
 ## 📋 Pre-Deploy Raporu (Vercel)
 
@@ -189,41 +186,43 @@ Tum adimlarin sonuclarini asagidaki formatta raporla:
 ### Oneriler
 [varsa aksiyonlar]
 ```
-
 ---
 
-## Karar Matrisi
+## Invariant Rules
 
-| Durum | Karar | Aksiyon |
+| Condition | Rule | Action |
 |---|---|---|
-| Tum adimlar PASS | ✅ PASS | Deploy edilebilir |
-| Testler FAIL | ❌ FAIL | Deploy edilemez, testler duzeltilmeli |
-| TypeScript FAIL | ❌ FAIL | Deploy edilemez, tip hatalari duzeltilmeli |
-| Build FAIL | ❌ FAIL | Deploy edilemez, build hatasi giderilmeli |
-| Env eksik/uyumsuz | ⚠️ WARN | Vercel env degiskenleri kontrol edilmeli |
-| Edge function uyarisi | ⚠️ WARN | Edge uyumluluk sorunu incelenmeli |
-| Commit edilmemis degisiklik | ❌ FAIL | Once commit atilmali |
+| All steps PASS | PASS | Deployable |
+| Tests FAIL | ❌ FAIL | Deploy not possible, tests need to be improved |
+| TypeScript FAIL | ❌ FAIL | Deploy not possible, type errors need to be fixed |
+| Build FAIL | ❌ FAIL | Deploy not possible, build error needs to be resolved |
+| Env missing/uncompatible | ⚠️ WARN | Vercel env variables need to be controlled |
+| Edge function adaptation | ⚠️ WARN | Edge compatibility issue needs to be investigated |
+| Uncommitted changes | ❌ FAIL | Once commit is made |
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant Rules (Applicable Everywhere)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Write to codebase config** — Only `.claude/`, `CLAUDE.md`, `.mcp.json`, and `.claude-ignore` files can be created inside Agentbase. Creating the `.claude/` directory or writing to `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git only in Codebase** — All Git operations (commit, push, branch) must be performed inside `../Codebase/`. Agentbase does not have Git.
+3. **Codebase readable but config writable** — Project files (`src/`, `app/`, etc.) are readable and can be adjusted if necessary. Config files (`*.claude/`, `CLAUDE.md`) cannot be written to within Codebase.
 
-1. **Soru sorma** — Tum kontrolleri sessizce calistir, sadece sonuc raporunu goster.
-2. **Push etme** — Bu komut sadece kontrol eder, hicbir seyi push etmez.
-3. **Deploy etme** — `vercel deploy` gibi komutlari CALISTIRMA.
-4. **Duzeltme yapma** — Hata bulursan raporla, duzeltmeye calisma.
-5. **Tum adimlari calistir** — Bir adim basarisiz olsa bile sonraki adima gec.
-6. **Sonuc raporu ZORUNLU** — Her durumda Step 7 raporu olusturulmali.
+1. **Ask questions** — All controls run silently, only showing the result report.
+2. **Push** — This command only checks and does not push anything.
+3. **Deploy** — Execute commands like `vercel deploy`.
+4. **Fix errors** — If an error is found, report it and fix it.
+5. **Run all steps** — Even if one step fails, proceed to the next step.
+6. **Result report MANDATORY** — A result report must be generated everywhere.
+
+### Invariant Rules (Valid in Every Command)
+
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/` directory inside Codebase or writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and edited when the task requires it. Config files (`.claude/`, `CLAUDE.md`) CANNOT be written inside Codebase.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command performs self-refresh check in the last step - Bootstrap marker. Self-Refresh section changes this marker. The command looks at its own content in front of project execution: small inconsistency Edit or big change backlog task is reported.
 -->

@@ -16,7 +16,7 @@ const fs = require('fs');
 const path = require('path');
 
 // ─── GENERATE BOLUMU BASLANGIC ───
-// Bootstrap bu bolumu manifest'teki stack bilgisine gore doldurur.
+// Bootstrap fills this section from stack info in the manifest.
 // Manuel duzenleme yapmayin — degisiklikler Bootstrap tarafindan ezilir.
 
 // Guvenlik pattern'leri — stack'e gore genisletilir
@@ -57,7 +57,7 @@ const SECURITY_PATTERNS = [
   /* END GENERATE */
 ];
 
-// Isimlendirme konvansiyonu kontrol pattern'leri
+// Naming-convention check patterns
 const NAMING_PATTERNS = [
   /* GENERATE: NAMING_PATTERNS
    * Bootstrap manifest.conventions.naming alanina gore isimlendirme kontrolu ekler.
@@ -72,7 +72,7 @@ const NAMING_PATTERNS = [
   /* END GENERATE */
 ];
 
-// Kontrol edilecek dosya uzantilari
+// File extensions to check
 const FILE_EXTENSIONS = [
   /* GENERATE: FILE_EXTENSIONS
    * Bootstrap tespit edilen stack'e gore dosya uzantilarini doldurur.
@@ -154,24 +154,24 @@ async function main() {
         process.exit(0);
       }
 
-      // .env dosyalari her zaman taranir (extname bos veya yanlis doner)
+      // .env files are always scanned (extname may be empty or wrong)
       const basename = path.basename(filePath);
       const isEnvFile = basename === '.env' || basename.startsWith('.env.');
 
-      // Dosya uzantisi kontrol listesinde degilse ve .env degilse — gecir
+      // If extension is not in the check list and not .env — skip
       const ext = path.extname(filePath).toLowerCase();
       if (!isEnvFile && FILE_EXTENSIONS.length > 0 && !FILE_EXTENSIONS.includes(ext)) {
         console.log(inputData);
         process.exit(0);
       }
 
-      // Dosya mevcut degilse — gecir (yeni olusturulacak olabilir)
+      // If file does not exist — skip (may be newly created)
       if (!fs.existsSync(filePath)) {
         console.log(inputData);
         process.exit(0);
       }
 
-      // Dosya icerigini tara
+      // Scan file contents
       const content = fs.readFileSync(filePath, 'utf8');
       const issues = collectIssues(content);
 
@@ -183,8 +183,8 @@ async function main() {
       if (importantIssues.length > 0) {
         console.error('');
         console.error('━'.repeat(60));
-        console.error('[Code Review] Guvenlik uyarilari tespit edildi');
-        console.error(`  Dosya: ${filePath}`);
+        console.error('[Code Review] Security warnings detected');
+        console.error(`  File: ${filePath}`);
         console.error('━'.repeat(60));
 
         importantIssues.slice(0, 5).forEach(issue => {
@@ -194,7 +194,7 @@ async function main() {
         });
 
         if (importantIssues.length > 5) {
-          console.error(`  ... ve ${importantIssues.length - 5} uyari daha`);
+          console.error(`  ... and ${importantIssues.length - 5} more warnings`);
         }
 
         console.error('━'.repeat(60));
@@ -210,7 +210,7 @@ async function main() {
       // Her zaman orijinal input'u stdout'a yaz
       console.log(inputData);
     } catch {
-      // Parse hatasi veya beklenmedik hata — sessizce gecir
+      // Parse error or unexpected error — skip silently
       console.log(inputData);
     }
 

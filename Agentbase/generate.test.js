@@ -202,7 +202,7 @@ test desc
 
     const result = fillBlocks(content, 'md', testManifest);
     assert.ok(result.filled.includes('COMMIT_CONVENTION'));
-    assert.ok(result.content.includes('## Commit Konvansiyonu'));
+    assert.ok(result.content.includes('## Commit convention'));
     assert.ok(result.content.includes('`feat:`'));
     assert.ok(!result.content.includes('<!-- GENERATE:'));
   });
@@ -926,13 +926,13 @@ describe('Graphify modulu generate akisi', () => {
         modules: { active: { monorepo: true } },
       };
       const out = SIMPLE_GENERATORS.GRAPHIFY_LAYERS_PY(m);
-      assert.match(out, /UYARLAMA GEREKLI/);
+      assert.match(out, /Adapt the list/);
     });
 
     it('monorepo yokken uyarlama gerekli yorumu doner', () => {
       const out = SIMPLE_GENERATORS.GRAPHIFY_LAYERS_PY(singleLayerManifest);
-      assert.match(out, /UYARLAMA GEREKLI/);
-      assert.match(out, /SADECE monorepo/);
+      assert.match(out, /Adapt the list/);
+      assert.match(out, /only needed for a monorepo/);
     });
   });
 
@@ -998,7 +998,7 @@ describe('Graphify modulu generate akisi', () => {
 describe('SIMPLE_GENERATORS', () => {
   it('COMMIT_CONVENTION markdown tablosu uretir', () => {
     const result = SIMPLE_GENERATORS.COMMIT_CONVENTION(testManifest, 'md');
-    assert.ok(result.includes('## Commit Konvansiyonu'));
+    assert.ok(result.includes('## Commit convention'));
     assert.ok(result.includes('`feat:`'));
     assert.ok(result.includes('`fix:`'));
     assert.ok(result.includes('conventional'));
@@ -1044,7 +1044,7 @@ describe('SIMPLE_GENERATORS', () => {
     const result = SIMPLE_GENERATORS.MIGRATION_COMMANDS(testManifest, 'md');
     assert.ok(result.includes('prisma migrate'));
     assert.ok(result.includes('prisma generate'));
-    assert.ok(result.includes('UYARI'));
+    assert.ok(result.includes('WARNING'));
   });
 
   it('db migration discipline skeleton Prisma dry-run ve rollback bloklarini uretir', () => {
@@ -1068,8 +1068,8 @@ describe('SIMPLE_GENERATORS', () => {
     assert.ok(filled.includes('MIGRATION_COMMANDS'));
     assert.ok(filled.includes('DRY_RUN_COMMAND'));
     assert.ok(filled.includes('ROLLBACK_COMMAND'));
-    assert.ok(outputContent.includes('npx prisma migrate dev --name <aciklama>'));
-    assert.ok(outputContent.includes('npx prisma migrate dev --create-only --name <aciklama>'));
+    assert.ok(outputContent.includes('npx prisma migrate dev --name <description>'));
+    assert.ok(outputContent.includes('npx prisma migrate dev --create-only --name <description>'));
     assert.ok(outputContent.includes('npx prisma migrate resolve --rolled-back <migration_name>'));
   });
 
@@ -1099,9 +1099,9 @@ describe('SIMPLE_GENERATORS', () => {
     assert.ok(filled.includes('MIGRATION_COMMANDS'));
     assert.ok(filled.includes('DRY_RUN_COMMAND'));
     assert.ok(filled.includes('ROLLBACK_COMMAND'));
-    assert.ok(outputContent.includes('Raw SQL fallback kullanilir'));
-    assert.ok(outputContent.includes('EXPLAIN < db/migrations/<timestamp>_<aciklama>.up.sql'));
-    assert.ok(outputContent.includes('psql "$DATABASE_URL" -f db/migrations/<timestamp>_<aciklama>.down.sql'));
+    assert.ok(outputContent.includes('Raw SQL is the fallback'));
+    assert.ok(outputContent.includes('EXPLAIN < db/migrations/<timestamp>_<description>.up.sql'));
+    assert.ok(outputContent.includes('psql "$DATABASE_URL" -f db/migrations/<timestamp>_<description>.down.sql'));
   });
 
   it('FILE_EXTENSIONS JS formatinda dogru uretir', () => {
@@ -1222,7 +1222,7 @@ describe('SIMPLE_GENERATORS', () => {
 
   it('HEALTH_CHECK_URL environment yoksa placeholder doner', () => {
     const result = SIMPLE_GENERATORS.HEALTH_CHECK_URL({}, 'md');
-    assert.ok(result.includes('<PROJE_URL>/health'));
+    assert.ok(result.includes('<PROJECT_URL>/health'));
   });
 
   it('SMOKE_TEST_ENDPOINTS production endpoint\'lerini uretir', () => {
@@ -1270,7 +1270,7 @@ describe('SIMPLE_GENERATORS', () => {
     };
     const result = SIMPLE_GENERATORS.SMOKE_TEST_ENDPOINTS(manifest);
     assert.ok(result.includes('/api/v1/users'), 'users endpoint olmali');
-    assert.ok(result.includes('Authorization gerekli'), 'auth notu olmali');
+    assert.ok(result.includes('Authorization required'), 'auth note should be present');
     assert.ok(result.includes('201'), 'POST beklenen status olmali');
     assert.ok(!result.includes('/status'), 'fallback status olmamali');
   });
@@ -1347,7 +1347,7 @@ describe('SIMPLE_GENERATORS', () => {
 
   it('TEST_FILE_TABLE markdown tablosu uretir', () => {
     const result = SIMPLE_GENERATORS.TEST_FILE_TABLE(testManifest);
-    assert.ok(result.includes('Kaynak Pattern'), 'tablo baslik olmali');
+    assert.ok(result.includes('Source pattern'), 'table header should be present');
     assert.ok(result.includes('__tests__'), 'test dizin yolu olmali');
   });
 
@@ -1417,10 +1417,10 @@ Aciklama: Commit kurallari
     // DATA_FLOW → CLAUDE_FILL (narrative, generator yok)
     assert.ok(result.content.includes('CLAUDE_FILL: DATA_FLOW'));
     // VERIFICATION_COMMANDS → deterministik
-    assert.ok(result.content.includes('## Dogrulama Komutlari'));
+    assert.ok(result.content.includes('## Verification commands'));
     assert.ok(result.content.includes('api'));
     // COMMIT_CONVENTION → deterministik
-    assert.ok(result.content.includes('## Commit Konvansiyonu'));
+    assert.ok(result.content.includes('## Commit convention'));
     assert.ok(result.content.includes('`feat:`'));
 
     assert.strictEqual(result.filled.length, 2);
@@ -1995,7 +1995,7 @@ describe('Bozuk YAML hata mesaji', () => {
       } catch (execErr) {
         stderr = execErr.stderr || '';
       }
-      assert.ok(stderr.includes('bos veya gecersiz'), 'bos manifest icin anlasilir hata mesaji olmali');
+      assert.ok(stderr.includes('empty or invalid'), 'empty manifest must produce a clear error');
     } finally {
       fs.unlinkSync(tmpFile);
     }
@@ -2160,13 +2160,13 @@ describe('sanitizeShellCommand', () => {
 
   it('$() iceren komutu reddeder', () => {
     const result = sanitizeShellCommand('npm test && $(rm -rf /)');
-    assert.ok(result.includes('UYARI'));
+    assert.ok(result.includes('WARNING'));
     assert.ok(result.includes('exit 1'));
   });
 
   it('backtick iceren komutu reddeder', () => {
     const result = sanitizeShellCommand('npm test `id`');
-    assert.ok(result.includes('UYARI'));
+    assert.ok(result.includes('WARNING'));
   });
 
   it('null/undefined icin bos string dondurur', () => {
@@ -2232,7 +2232,7 @@ describe('GIT hook generatorlari', () => {
   it('GIT_PRECOMMIT_TEST guvenli olmayan testCmd reddediyor', () => {
     const badManifest = { ...nodeManifest, project: { scripts: { test: 'npm test && $(id)' } } };
     const result = SIMPLE_GENERATORS.GIT_PRECOMMIT_TEST(badManifest);
-    assert.ok(result.includes('UYARI'), 'UYARI icermeli');
+    assert.ok(result.includes('WARNING'), 'WARNING should be present');
   });
 
   it('GIT_PRECOMMIT_LINT eslint staged dosya kontrolu', () => {
@@ -2374,14 +2374,14 @@ describe('SIMPLE_GENERATORS.SELF_REFRESH', () => {
   it('uretilen bolum "Self-Refresh" basligi, karar agaci ve sinirlar icerir', () => {
     const out = SIMPLE_GENERATORS.SELF_REFRESH({});
     assert.match(out, /## Self-Refresh/);
-    assert.match(out, /Kucuk/i);
-    assert.match(out, /Buyuk/i);
+    assert.match(out, /Small/i);
+    assert.match(out, /Large/i);
     assert.match(out, /_evolution\.log/);
     assert.match(out, /backlog task create/);
-    assert.match(out, /Commit atma/);
-    assert.match(out, /git add.+yapma/);
-    assert.match(out, /hipotetik ekleme YASAK/i);
-    assert.match(out, /Emin degilsen no-op/i);
+    assert.match(out, /Commit completed non-sensitive work/);
+    assert.match(out, /Do not push unless the user asks/);
+    assert.match(out, /Do not invent hypothetical additions/i);
+    assert.match(out, /If unsure, no-op/i);
   });
 
   it('task-plan pilot skeleton SELF_REFRESH marker icerir', () => {

@@ -1,4 +1,4 @@
-# React Native (Plain) Modul Tespiti
+# React Native (Plain) Module Detection
 
 ## Checks
 
@@ -16,6 +16,6 @@
 
 ## Affects Core
 
-- code-review: RN pattern ve anti-pattern kontrolu eklenir
-- task-hunter: IMPLEMENTATION_RULES'a React Native kurallari eklenir
-- settings.json: React Native plugin konfigurasyonu eklenir
+- code-review: RN pattern and anti-pattern check is added
+- task-hunter: React Native rules are added to IMPLEMENTATION_RULES
+- settings.json: React Native plugin configuration is added

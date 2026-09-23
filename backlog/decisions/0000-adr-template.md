@@ -1,4 +1,4 @@
-# ADR-0000: Karar Basligi
+# ADR-0000: Decision Title
 
 - **Status:** Proposed | Accepted | Superseded
 - **Date:** YYYY-MM-DD
@@ -7,26 +7,26 @@
 
 ## Context
 
-Hangi mimari problem cozuluyor? Mevcut durum, kisitlar ve karar baskisi nedir?
+Which architectural problem is being solved? What is the current state, the constraints, and the decision pressure?
 
 ## Decision
 
-Alinan karar nedir? Karari tek ve net bir ifade ile yaz.
+What decision was made? State the decision in a single clear sentence.
 
 ## Alternatives Considered
 
-- **Secenek A:** Neden elendi veya neden secilmedi?
-- **Secenek B:** Neden elendi veya neden secilmedi?
+- **Option A:** Why was it eliminated or not chosen?
+- **Option B:** Why was it eliminated or not chosen?
 
 ## Consequences
 
-- Olumlu etkiler
-- Negatif etkiler veya trade-off'lar
-- Dokunulmasi gereken workflow, test, dokuman veya migration alanlari
+- Positive effects
+- Negative effects or trade-offs
+- Workflow, test, documentation, or migration areas that must be touched
 
 ## Rollback / Revisit Trigger
 
-Bu karar hangi sinyalde geri alinacak, tekrar degerlendirilecek veya yeni ADR ile supersede edilecek?
+Under which signal will this decision be rolled back, re-evaluated, or superseded by a new ADR?
 
 ## Related Tasks / Links
 

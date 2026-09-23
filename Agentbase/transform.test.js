@@ -317,7 +317,7 @@ describe('parseClaudeOutput', () => {
   });
 
   it('.claude/ yoksa hata firlatir', () => {
-    assert.throws(() => parseClaudeOutput('/nonexistent/.claude'), /bulunamadi/);
+    assert.throws(() => parseClaudeOutput('/nonexistent/.claude'), /not found/);
   });
 });
 
@@ -728,7 +728,7 @@ describe('loadExternalCapabilities', () => {
   it('explicit config dosyasi yoksa hata firlatir', () => {
     assert.throws(
       () => loadExternalCapabilities('/nonexistent/config.yaml'),
-      /CLI config bulunamadi/
+      /CLI config not found/
     );
   });
 

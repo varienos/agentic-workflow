@@ -94,7 +94,7 @@ describe('session-tracker observability', () => {
     assert.equal(state.waiting_on, 'test');
     assert.equal(state.errors.count, 1);
     assert.match(state.last_meaningful_action, /test/i);
-    assert.match(state.recent_events.at(-1).label, /basarisiz/i);
+    assert.match(state.recent_events.at(-1).label, /Test failed/i);
   });
 
   it('records teammate completion in the event stream', t => {
@@ -133,7 +133,7 @@ describe('session-tracker observability', () => {
     assert.ok(state.backlog_activity.tasks_completed.includes('TASK-42'));
     assert.equal(state.current_focus.status, 'Done');
     assert.equal(state.phase, 'done');
-    assert.match(state.last_meaningful_action, /tamamlandi/i);
+    assert.match(state.last_meaningful_action, /completed/i);
   });
 
   it('backlog task create komutu tasks_created listesini gunceller', t => {
@@ -144,7 +144,7 @@ describe('session-tracker observability', () => {
 
     const state = readSessionState(projectRoot);
     assert.ok(state.backlog_activity.tasks_created.some(t => t.includes('Yeni ozellik')));
-    assert.match(state.last_meaningful_action, /olusturuldu/i);
+    assert.match(state.last_meaningful_action, /created/i);
     assert.equal(state.recent_events.at(-1).kind, 'backlog');
   });
 
@@ -158,7 +158,7 @@ describe('session-tracker observability', () => {
     assert.ok(
       state.backlog_activity.tasks_created.some(task => task.includes('Tek tirnakli baslik'))
     );
-    assert.match(state.last_meaningful_action, /olusturuldu/i);
+    assert.match(state.last_meaningful_action, /created/i);
     assert.equal(state.recent_events.at(-1).kind, 'backlog');
   });
 
@@ -199,7 +199,7 @@ describe('session-tracker observability', () => {
     assert.equal(state.phase, 'testing');
     assert.equal(state.waiting_on, 'none');
     assert.equal(state.errors.count, 0);
-    assert.match(state.recent_events.at(-1).label, /test calisti/i);
+    assert.match(state.recent_events.at(-1).label, /Test ran/i);
   });
 
   it('Write tool event phase=implementing ve dosya yazildi mesaji uretir', t => {
@@ -214,7 +214,7 @@ describe('session-tracker observability', () => {
     const state = readSessionState(projectRoot);
     assert.equal(state.phase, 'implementing');
     assert.equal(state.waiting_on, 'none');
-    assert.match(state.last_meaningful_action, /yazildi/i);
+    assert.match(state.last_meaningful_action, /written/i);
     assert.equal(state.recent_events.at(-1).kind, 'write');
     assert.ok(state.files.written.some(f => f.includes('utils.js')));
   });

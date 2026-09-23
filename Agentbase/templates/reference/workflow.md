@@ -1,284 +1,284 @@
 # Workflow
 
-## Geliştirme Akışı
+## Development Flow
 
 ```
-Bootstrap → Planner → Hunter → Review (ops.) → Quality → Push
+Bootstrap → Planner → Hunter → Review (opt.) → Quality → Push
     │           │          │          │               │        │
     │           │          │          │               │        └── pre-push hook:
-    │           │          │          │               │            son kapı (lint, test, standards)
-    │           │          │          │               └── Standartlara uygun mu?
+    │           │          │          │               │            final gate (lint, test, standards)
+    │           │          │          │               └── Meets standards?
     │           │          │          │                   (naming, docblock, lint, conventions)
-    │           │          │          └── Kod doğru çalışıyor mu?
-    │           │          │              (mantık, edge case, test)
-    │           │          └── Task'ı uygular
-    │           └── Task oluşturur (metod + model + review kararı)
-    └── Proje init (röportaj → workspace → backlog → ilk task'lar)
+    │           │          │          └── Does the code work correctly?
+    │           │          │              (logic, edge case, test)
+    │           │          └── Applies the task
+    │           └── Creates the task (method + model + review decision)
+    └── Project init (interview → workspace → backlog → first tasks)
 ```
 
-| Adım | Kim? | Komut | Ne yapar? | Zorunlu mu? |
+| Step | Who? | Command | What it does | Required? |
 |---|---|---|---|---|
-| **Bootstrap** | Opus-class | `/bootstrap` | Röportaj, workspace oluşturma, backlog init, eklenti seçimi | Proje başında 1 kere |
-| **Master** | Opus-class | `/task-master` | Backlog'u skorlayıp öncelik sıralaması çıkarır | İsteğe bağlı |
-| **Planner** | **Opus-class (yüksek reasoning)** | `/task-plan` | Task oluşturur, derin analiz, model önerisi, kapsam bölme, review kararı | Her task |
-| **Hunter** | Sonnet-class | `/task-hunter` | Task'ı uygular — kod yazar, test yazar, doğrular, commit eder | Her task |
-| **Review** | Sonnet-class (temiz) | `/task-review` | 3+1 agent: code-reviewer + silent-failure-hunter + regression-analyzer + kosullu devils-advocate | Opsiyonel — planner karar verir |
-| **Quality** | Sonnet-class (temiz) | — | Standartlara uygunluk: CONVENTIONS.md, naming, docblock, lint | Review → otomatik, tek başına da tetiklenebilir |
-| **Bug Hunter** | Sonnet-class | `/bug-hunter` | Root cause bul, düzelt, test yaz, commit et | Bug bildirimi geldiğinde |
-| **Bug Review** | Sonnet-class (temiz) | `/bug-review` | Paralel 3 agent: kalite + sessiz hata + regresyon | Bug fix sonrası |
-| **Deep Audit** | Sonnet-class (paralel) | `/deep-audit` | Modülü uçtan uca denetler — paralel uzman agent'lar, iki boyutlu değerlendirme, basitse fix karmaşıksa backlog | Modül olgunlaşınca veya isteğe bağlı |
-| **Pre-push hook** | Sistem | — | Son kapı — lint, test suite, static analysis | Her zaman zorunlu |
+| **Bootstrap** | Opus-class | `/bootstrap` | Interview, workspace creation, backlog init, extension selection | Once at project start |
+| **Master** | Opus-class | `/task-master` | Scores the backlog and produces a priority order | Optional |
+| **Planner** | **Opus-class (high reasoning)** | `/task-plan` | Creates task, deep analysis, model suggestion, scope split, review decision | Every task |
+| **Hunter** | Sonnet-class | `/task-hunter` | Applies the task — writes code, writes tests, verifies, commits | Every task |
+| **Review** | Sonnet-class (clean) | `/task-review` | 3+1 agents: code-reviewer + silent-failure-hunter + regression-analyzer + conditional devils-advocate | Optional — planner decides |
+| **Quality** | Sonnet-class (clean) | — | Standards compliance: CONVENTIONS.md, naming, docblock, lint | Auto after Review; can also run alone |
+| **Bug Hunter** | Sonnet-class | `/bug-hunter` | Find root cause, fix, write test, commit | When a bug report arrives |
+| **Bug Review** | Sonnet-class (clean) | `/bug-review` | Parallel 3 agents: quality + silent failure + regression | After bug fix |
+| **Deep Audit** | Sonnet-class (parallel) | `/deep-audit` | End-to-end module audit — parallel specialist agents, two-axis evaluation; fix if simple, backlog if complex | When a module matures or optional |
+| **Pre-push hook** | System | — | Final gate — lint, test suite, static analysis | Always required |
 
-> **Quality tetiklenme kuralları:**
-> - Review tetiklendiyse → Quality otomatik tetiklenir
-> - Review tetiklenmese bile → Quality tek başına tetiklenebilir (planner kararı)
-> - Her iki durumda da → Pre-push hook son kapı olarak standartları zorlar
+> **Quality trigger rules:**
+> - If Review was triggered → Quality triggers automatically
+> - Even if Review was not triggered → Quality can run alone (planner decision)
+> - In both cases → Pre-push hook enforces standards as the final gate
 
 ---
 
-## Task Planlama
+## Task Planning
 
-Her task'a başlamadan önce iki şey belirle:
-1. **Metod** — Görevin tipine göre hangi workflow metodu kullanılacak _(bkz. [methods.md](methods.md))_
-2. **Model** — Görevin karmaşıklığına göre hangi model kullanılacak _(bkz. [models.md](models.md))_ — token/maliyet optimizasyonu için kritik
+Before starting every task, decide two things:
+1. **Method** — which workflow method fits the task type _(see [methods.md](methods.md))_
+2. **Model** — which model fits the task complexity _(see [models.md](models.md))_ — critical for token/cost optimization
 
-| Görev tipi | Önerilen metod |
+| Task type | Suggested method |
 |---|---|
-| Yeni feature geliştirme | RPI (Research → Plan → Implement) |
-| Büyük / çok dosyalı feature | Orchestrator Pattern veya Fan-Out/Gather |
-| Spec'i belli, kodu belirsiz | Spec-Driven Development |
-| Bug fix | AECA (hata → düzelt → test → doğrula) |
-| Otonom tekrarlayan görev | Ralph Wiggum Loop |
-| Kod kalitesi / review | Dual-Pass, Cross-Model Review veya Generator-Critic |
-| Karmaşık problem, belirsiz çözüm | Ultrathink + Plan-Act-Reflect |
-| Uzun süren görev (context tükenir) | Context Cycling + Compact Pattern |
-| CI/CD pipeline otomasyonu | Headless / CI Agent |
-| Agent takılıyor / kalitesiz çıktı | Model Musical Chairs |
-| Tam proje yaşam döngüsü (SDLC) | BMAD Method veya SPARC |
-| Sprint planlama (hangi görev agent'a uygun?) | AI-Augmented Scrum |
+| New feature development | RPI (Research → Plan → Implement) |
+| Large / multi-file feature | Orchestrator Pattern or Fan-Out/Gather |
+| Spec clear, code unclear | Spec-Driven Development |
+| Bug fix | AECA (error → fix → test → verify) |
+| Autonomous repeating task | Ralph Wiggum Loop |
+| Code quality / review | Dual-Pass, Cross-Model Review, or Generator-Critic |
+| Complex problem, unclear solution | Ultrathink + Plan-Act-Reflect |
+| Long-running task (context runs out) | Context Cycling + Compact Pattern |
+| CI/CD pipeline automation | Headless / CI Agent |
+| Agent stuck / low-quality output | Model Musical Chairs |
+| Full project lifecycle (SDLC) | BMAD Method or SPARC |
+| Sprint planning (which tasks suit an agent?) | AI-Augmented Scrum |
 
 ---
 
 ## Version Control / Git Workflow
 
-- `main` / `master` → canlıya yakın
-- `develop` → geliştirme
-- `feature/...` → yeni özellik
-- `hotfix/...` → acil düzeltme
+- `main` / `master` → near production
+- `develop` → development
+- `feature/...` → new feature
+- `hotfix/...` → urgent fix
 
 ---
 
-## Merge Conflict Yönetimi
+## Merge Conflict Management
 
-Çoklu agent/worktree çalışmasında conflict kaçınılmaz. 3 katmanlı savunma:
+In multi-agent/worktree work, conflicts are inevitable. 3-layer defense:
 
-### Katman 1: Önleme (Planner seviyesi)
+### Layer 1: Prevention (Planner level)
 
-- Planner task oluştururken **dosya etki analizi** yapmalı
-- Aynı dosyaya dokunan task'lar aynı anda farklı worktree'lere atanmamalı
-- Task metadata'ya `affected_files` alanı ekle — planner bunu doldurur, orchestrator çakışma kontrolü yapar
+- Planner must do **file impact analysis** when creating a task
+- Tasks that touch the same file must not be assigned to different worktrees at the same time
+- Add an `affected_files` field to task metadata — planner fills it; orchestrator checks for collisions
 
-### Katman 2: Tespit (Hook/script seviyesi)
+### Layer 2: Detection (Hook/script level)
 
 ```bash
-# Pre-push hook: main ile trial merge
+# Pre-push hook: trial merge with main
 git fetch origin main
 git merge-tree $(git merge-base HEAD origin/main) HEAD origin/main
 
-# Conflict varsa → push engellenir, agent uyarılır
+# If conflict → push is blocked, agent is warned
 ```
 
-- Agent push öncesi main ile trial merge çalıştırır
-- Conflict tespit edilirse push engellenir
+- Agent runs a trial merge with main before push
+- If a conflict is detected, push is blocked
 
-### Katman 3: Çözüm (Agent davranışı)
+### Layer 3: Resolution (Agent behavior)
 
-Conflict tespit edildiğinde agent'ın 3 seçeneği:
+When a conflict is detected, the agent has 3 options:
 
-| Durum | Aksiyon |
+| Situation | Action |
 |---|---|
-| **Basit conflict** (aynı dosya, farklı bölümler) | Agent otomatik resolve eder, test çalıştırır, devam eder |
-| **Karmaşık conflict** (aynı satırlar, mantık çakışması) | Agent durur, insan çağırır, backlog'a `CONFLICT` task açar |
-| **Kendi değişikliği önemsiz** | Agent kendi değişikliğini geri alır, main'den günceller, task'ı yeniden uygular |
+| **Simple conflict** (same file, different sections) | Agent auto-resolves, runs tests, continues |
+| **Complex conflict** (same lines, logic clash) | Agent stops, calls a human, opens a `CONFLICT` backlog task |
+| **Own change is unimportant** | Agent reverts its change, updates from main, re-applies the task |
 
-### Agent disiplin kuralı
+### Agent discipline rule
 
-- Her task başında `git pull origin main` — güncel başla
-- Task bittiğinde hemen merge et — uzun süre açık bırakma
-- Push öncesi trial merge zorunlu
+- At the start of every task: `git pull origin main` — start current
+- Merge as soon as the task finishes — do not leave it open long
+- Trial merge before push is mandatory
 
 ---
 
-## Agent Hata Takibi
+## Agent Error Tracking
 
-Agent'ların yaptığı hatalar `shared/errors.md` dosyasında takip edilmeli. Amaç: aynı hatanın tekrarlanmaması ve hatalardan öğrenilmesi.
+Errors made by agents should be tracked in `shared/errors.md`. Goal: prevent repeats and learn from mistakes.
 
-### Hata Kayıt Formatı
+### Error Record Format
 
 ```markdown
-## [HATA-001] Kısa başlık
+## [ERR-001] Short title
 
-- **Tarih:** 2026-03-15
+- **Date:** 2026-03-15
 - **Agent:** Claude Sonnet-class
-- **Görev:** Login endpoint refactoring
-- **Hata:** Service katmanında doğrudan DB query yazıldı, repository pattern atlandı
-- **Etki:** Mimari ihlal, separation of concerns bozuldu
-- **Kök neden:** CLAUDE.md'de repository pattern kuralı tanımlı değildi
-- **Çözüm:** CONVENTIONS.md'ye repository pattern kuralı eklendi
-- **Ders:** Agent'a mimari kurallar açıkça belirtilmezse varsayılan olarak en kısa yolu seçer
+- **Task:** Login endpoint refactoring
+- **Error:** Wrote a DB query directly in the service layer; skipped the repository pattern
+- **Impact:** Architecture violation; separation of concerns broken
+- **Root cause:** Repository pattern rule was not defined in CLAUDE.md
+- **Fix:** Added repository pattern rule to CONVENTIONS.md
+- **Lesson:** If architecture rules are not stated explicitly, the agent defaults to the shortest path
 ```
 
-### Hata Kategorileri
+### Error Categories
 
-| Kategori | Açıklama |
+| Category | Description |
 |---|---|
-| `MIMARI` | Katman ihlali, pattern atlanması, yanlış bağımlılık |
-| `KALITE` | Test eksik, docblock unutulmuş, lint hatası |
-| `MANTIK` | Yanlış iş kuralı uygulaması, edge case kaçırma |
-| `CONTEXT` | Agent projeyi yanlış anlamış, yanlış dosyayı değiştirmiş |
-| `GÜVENLIK` | Hassas veri sızıntısı, input validation eksik |
-| `CONVENTION` | Naming hatası, format uyumsuzluğu, commit mesajı yanlış |
+| `ARCHITECTURE` | Layer violation, skipped pattern, wrong dependency |
+| `QUALITY` | Missing test, forgotten docblock, lint error |
+| `LOGIC` | Wrong business-rule application, missed edge case |
+| `CONTEXT` | Agent misunderstood the project, changed the wrong file |
+| `SECURITY` | Sensitive data leak, missing input validation |
+| `CONVENTION` | Naming error, format mismatch, wrong commit message |
 
-### Süreç
+### Process
 
-1. Hata fark edildiğinde `shared/errors.md`'ye kayıt formatında eklenir
-2. Kök neden analiz edilir — agent mi hatalı, context mi eksik?
-3. Çözüm uygulanır (genellikle CLAUDE.md veya CONVENTIONS.md güncellenir)
-4. Ders çıkarılır ve tekrarı engellenir
+1. When an error is noticed, add it to `shared/errors.md` in the record format
+2. Analyze root cause — was the agent wrong, or was context missing?
+3. Apply the fix (usually update CLAUDE.md or CONVENTIONS.md)
+4. Extract the lesson and prevent repeats
 
-> **Uyarı:** Bu dosyayı bürokratik hale getirme. Her küçük typo veya formatlama hatasını kaydetme — sadece **tekrarlama riski olan yapısal hataları** kaydet. Amaç arşiv değil, öğrenme.
-
----
-
-## Agent Geliştirme Disiplini
-
-- **Dalkavukluk yapma.** Hata varsa söyle, fikir kötüyse söyle, kod kalitesi düşükse söyle. Geliştiricinin duymak istediğini değil, bilmesi gerekeni söyle. Dalkavukluk geliştiricinin en çok yanıldığı ve en geç fark ettiği problem kaynağı.
-- **Mimari kararlar insana ait.** Agent kod yazabilir, test yazabilir, review yapabilir — ama mimari sınır koyamaz, "bu olmasın" diyemez, beklenmedik bir mantıksızlığı kendi başına fark edip düzeltemez. Agent verilen mimariyi uygular, mimariyi tasarlamaz. Planner task oluşturur ama mimari değişiklikler geliştirici onayı olmadan yapılmaz.
-- Her görev tamamlandığında ihtiyaca göre test yazılmalı ve testler çalıştırılarak hatasız olduğu doğrulanmalı
-- Her dosya kaydedilmeden önce dosya tipine uygun syntax doğrulaması yapılmalı (lint/parse)
-- Her fonksiyon için standart açıklama (docblock/docstring) eklenmeli
-- Kod okunabilirliği öncelikli tutulmalı — anlaşılır isimlendirme, küçük fonksiyonlar, net akış
+> **Warning:** Do not make this file bureaucratic. Do not record every tiny typo or formatting mistake — record only **structural errors with repeat risk**. The goal is learning, not an archive.
 
 ---
 
-## API Geliştirme
+## Agent Development Discipline
 
-- Her API endpoint'i için OpenAPI (Swagger) tanımı zorunlu — önce spec yazılır, sonra kod üretilir veya doğrulanır
-- API testi otomatik olmalı — OpenAPI spec'inden otomatik test üretimi (Schemathesis, Dredd vb.)
-- Postman Collection export'u zorunlu — her API sürümünde güncel collection paylaşılmalı
-- Sıra: **OpenAPI spec → Kod → Otomatik test → Postman export**
+- **Do not flatter.** If there is an error, say so; if an idea is bad, say so; if code quality is low, say so. Tell the developer what they need to know, not what they want to hear. Flattery is the problem source developers miss longest and notice latest.
+- **Architecture decisions belong to humans.** An agent can write code, write tests, and review — but it cannot set architecture boundaries, say "this must not happen," or independently notice and fix unexpected nonsense. The agent applies the given architecture; it does not design it. The planner creates tasks, but architecture changes are not made without developer approval.
+- When each task completes, write tests as needed and verify they pass
+- Before every file save, run syntax validation appropriate to the file type (lint/parse)
+- Add a standard description (docblock/docstring) for every function
+- Prioritize readability — clear naming, small functions, clear flow
 
 ---
 
-## Test / Kalite Güvencesi
+## API Development
 
-_"Yaptığımız şey gerçekten doğru çalışıyor mu?"_
+- OpenAPI (Swagger) definition is mandatory for every API endpoint — write the spec first, then generate or verify code
+- API tests should be automatic — auto-generate tests from the OpenAPI spec (Schemathesis, Dredd, etc.)
+- Postman Collection export is mandatory — share an up-to-date collection with every API version
+- Order: **OpenAPI spec → Code → Automated test → Postman export**
+
+---
+
+## Test / Quality Assurance
+
+_"Does what we built actually work correctly?"_
 
 ### TDD — Test Driven Development
 
-1. Önce testi yaz
-2. Testi geçecek kadar kod yaz
-3. Refactor et
+1. Write the test first
+2. Write just enough code to pass the test
+3. Refactor
 
-Bu model özellikle kritik iş mantığında güçlüdür.
+This model is especially strong for critical business logic.
 
 ### BDD — Behavior Driven Development
 
-İş kuralları davranış diliyle yazılır: Given → When → Then
+Business rules are written in behavior language: Given → When → Then
 
-İş birimi ile teknik ekip arasında köprü kurar.
+It bridges the business unit and the technical team.
 
 ### Test Pyramid
 
-- Çok sayıda unit test
-- Daha az integration test
-- Daha da az E2E test
+- Many unit tests
+- Fewer integration tests
+- Even fewer E2E tests
 
-### Tam Döngü: Kod Değişikliği → Test → Commit → CI
+### Full Loop: Code Change → Test → Commit → CI
 
-**3 savunma hattı:**
+**3 defense lines:**
 
-| Hat | Ne zaman | Kim için | Davranış |
+| Line | When | For whom | Behavior |
 |---|---|---|---|
-| **test-enforcer hook** | Her Edit/Write | Agent | systemMessage ile test yazma/guncelleme talimati verir. Test dosyasi yoksa olusturulmasini, varsa guncellenmesini ister |
-| **Doğrulama kapısı + pre-commit** | Commit anı | Agent + İnsan | Agent: syntax → derleme → test çalıştırır, TESTS_VERIFIED=1 bayrağı koyar. İnsan: hook testleri koşar + baseline comparison |
-| **CI pipeline** | Push/PR | Herkes | Paralel job'lar, fail → merge engellenir. Son savunma hattı |
+| **test-enforcer hook** | Every Edit/Write | Agent | Instructs via systemMessage to write/update tests. Asks to create a test file if missing, or update if present |
+| **Verification gate + pre-commit** | At commit | Agent + Human | Agent: syntax → build → run tests, sets TESTS_VERIFIED=1. Human: hook runs tests + baseline comparison |
+| **CI pipeline** | Push/PR | Everyone | Parallel jobs; fail → merge blocked. Last defense line |
 
-**Pre-existing hata yönetimi:**
+**Pre-existing failure handling:**
 
-Agent test fail ile karşılaştığında:
-1. `git stash` → baseline test çalıştır → `git stash pop`
-2. Baseline da kırık mı? → **Evet:** pre-existing hata, backlog task oluştur, TESTS_VERIFIED=1 ile commit'e devam et
-3. Baseline OK ama senin değişikliğin kırıyor mu? → **Düzelt**, tekrar test et
+When the agent hits a test failure:
+1. `git stash` → run baseline tests → `git stash pop`
+2. Is baseline also broken? → **Yes:** pre-existing failure; create a backlog task; continue commit with TESTS_VERIFIED=1
+3. Baseline OK but your change breaks it? → **Fix**, re-test
 
 ```
-Agent pre-existing hata buldu
-  → Backlog task: "Pre-existing test hatası: XyzTest"
-  → Sonraki task-hunter çalıştığında bu task listeye girer
-  → Düzeltildiğinde baseline temizlenir
+Agent found a pre-existing failure
+  → Backlog task: "Pre-existing test failure: XyzTest"
+  → Next task-hunter run picks this task up
+  → When fixed, baseline is clean
 ```
 
-**Eski vs yeni davranış:**
+**Old vs new behavior:**
 
-| Eski | Yeni |
+| Old | New |
 |---|---|
-| Agent: "Test fail, benim değişikliğim değil, commit yapamam" → DURUYOR | Agent: baseline kontrol → pre-existing mi? → backlog task → DEVAM EDİYOR |
-| Pre-existing hata kayboluyor, kimse düzeltmiyor | Pre-existing hata backlog'a giriyor → takip ediliyor → düzeltiliyor |
+| Agent: "Test fail, not my change, cannot commit" → STOPS | Agent: baseline check → pre-existing? → backlog task → CONTINUES |
+| Pre-existing failure vanishes; nobody fixes it | Pre-existing failure enters backlog → tracked → fixed |
 
 ---
 
-## Dağıtım / DevOps / Canlıya Alma
+## Deployment / DevOps / Go-Live
 
-_"Bunu güvenli ve sürdürülebilir şekilde nasıl yayınlarız?"_
+_"How do we ship this safely and sustainably?"_
 
-| Kavram | Ne işe yarar? |
+| Concept | What it is for |
 |---|---|
-| CI | Kod birleşince otomatik test/build |
-| CD | Otomatik dağıtım |
-| IaC | Altyapıyı kodla yönetme |
-| Containerization | Ortam tutarlılığı sağlar |
-| Rollback | Sorunlu yayını geri çekme |
+| CI | Automatic test/build when code merges |
+| CD | Automatic deployment |
+| IaC | Manage infrastructure as code |
+| Containerization | Environment consistency |
+| Rollback | Pull back a bad release |
 
-### Prensipler
+### Principles
 
-- Küçük ve sık deploy
-- Ortam tutarlılığı
-- Otomatik test + build
-- Gözlemlenebilirlik
+- Small and frequent deploys
+- Environment consistency
+- Automated test + build
+- Observability
 
-### Araçlar
+### Tools
 
-- **Docker** → uygulamayı paketleme
-- **CI/CD pipelines** → GitHub Actions, GitLab CI vb.
+- **Docker** → packaging the app
+- **CI/CD pipelines** → GitHub Actions, GitLab CI, etc.
 - **Env management** → `.env`, secrets
-- **Blue-Green / Canary Deployment** → risksiz geçiş
+- **Blue-Green / Canary Deployment** → lower-risk cutover
 
 ---
 
-## Bakım / İzleme / Sürekli İyileştirme
+## Maintenance / Monitoring / Continuous Improvement
 
-_"Sistem canlıda sağlıklı mı ve nasıl iyileştiririz?"_
+_"Is the system healthy in production, and how do we improve it?"_
 
-| Kavram | Ne işe yarar? |
+| Concept | What it is for |
 |---|---|
-| Monitoring | Sistem ayakta mı? |
-| Logging | Hataları analiz etme |
-| APM | Performans gözlemleme |
-| SLA / SLO / SLI | Hizmet seviyesi hedefleri ve ölçüm metrikleri |
-| Postmortem | Hata neden oldu, tekrar nasıl önlenir? |
+| Monitoring | Is the system up? |
+| Logging | Analyzing errors |
+| APM | Observing performance |
+| SLA / SLO / SLI | Service-level targets and measurement metrics |
+| Postmortem | Why did it fail, how do we prevent a repeat? |
 
-Ölçmediğin şeyi yönetemezsin.
+You cannot manage what you do not measure.
 
 ---
 
-## Hızlı Eşleştirme — Hangi Aşamada Hangi Prensip Kritik?
+## Quick Mapping — Which Principle Matters at Which Stage?
 
-| Aşama | En kritik yaklaşım / prensip |
+| Stage | Most critical approach / principle |
 |---|---|
-| İhtiyaç Analizi | MVP, YAGNI, net scope |
-| Planlama | Agile / Scrum / Kanban, backlog yönetimi |
-| Tasarım | SOLID, DRY, SoC, doğru mimari |
-| Geliştirme | Clean Code, code review, refactoring |
+| Needs analysis | MVP, YAGNI, clear scope |
+| Planning | Agile / Scrum / Kanban, backlog management |
+| Design | SOLID, DRY, SoC, correct architecture |
+| Development | Clean Code, code review, refactoring |
 | Test | TDD, test pyramid, regression |
-| Dağıtım | CI/CD, otomasyon, rollback |
-| Bakım | Monitoring, logging, postmortem |
+| Deployment | CI/CD, automation, rollback |
+| Maintenance | Monitoring, logging, postmortem |

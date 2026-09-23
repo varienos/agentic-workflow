@@ -1,4 +1,4 @@
-# FastAPI Modul Tespit Kurallari
+# FastAPI Module Detection Rules
 
 ## Checks
 
@@ -16,5 +16,5 @@
 
 ## Affects Core
 
-- task-hunter: VERIFICATION_COMMANDS'a `pytest` eklenir
-- CLAUDE.md: FastAPI kodlama kurallari bolumu eklenir
+- task-hunter: `pytest` is added to VERIFICATION_COMMANDS
+- CLAUDE.md: FastAPI coding rules section is added

@@ -1,50 +1,50 @@
-# Review Module — Derin Modul Incelemesi
+# Review Module — Deep Module Review
 
-> Belirli bir modulu/ozelligi tum katmanlardan derinlemesine inceler, sorunlari bulur, basit olanlari duzeltir, karmasik olanlari backlog'a kaydeder.
-> Kullanim: `/review-module <modul_adi>`, `/review-module auth`, `/review-module payments`
+> Deeply reviews a specific module/feature across all layers, finds issues, fixes simple ones, and records complex ones in the backlog.
+> Usage: `/review-module <module_name>`, `/review-module auth`, `/review-module payments`
 
 ---
 
-## Kural: OTONOM CALIS
+## Rule: WORK AUTONOMOUSLY
 
-- Kullaniciya soru SORMA — modulu belirle, incele, raporla.
-- Basit sorunlari (typo, eksik import, yanlis tip, unused variable) DIREKT duzelt.
-- Karmasik sorunlari (mimari degisiklik, yeni ozellik, buyuk refactor) backlog'a KAYDET.
-- Tum adimlari CALISTIR — bir adimi atlama.
+- Do NOT ask the user questions — determine the module, review, and report.
+- Fix simple issues (typo, missing import, wrong type, unused variable) DIRECTLY.
+- RECORD complex issues (architectural change, new feature, large refactor) in the backlog.
+- RUN every step — do not skip a step.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure, project.subprojects
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- **Yapi:**
+- **Structure:**
   - `apps/web/` — Next.js frontend
   - `apps/api/` — NestJS backend
   - `apps/mobile/` — Expo React Native
-  - `packages/shared/` — Paylasilan tipler ve yardimcilar
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+  - `packages/shared/` — Shared types and helpers
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Step 1 — Modul Tespiti ve Kapsam Belirleme
+## Step 1 — Module Detection and Scope
 
-Kullanicinin verdigi modul adini codebase'deki dosyalara esle.
+Map the user-provided module name to files in the codebase.
 
 <!-- GENERATE: MODULE_MAPPING
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, project.subprojects, project.modules
-Ornek cikti:
-### Modul → Dosya Esleme Tablosu
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.structure, project.subprojects, project.modules
+Example output:
+### Module → File Mapping Table
 
-| Modul Adi | Katman | Dosya Desenleri |
+| Module Name | Layer | File Patterns |
 |---|---|---|
 | auth | API | `apps/api/src/modules/auth/**` |
 | auth | Web | `apps/web/src/app/(auth)/**`, `apps/web/src/components/auth/**` |
@@ -56,337 +56,349 @@ Ornek cikti:
 | payments | API | `apps/api/src/modules/payments/**` |
 | payments | Web | `apps/web/src/app/checkout/**` |
 
-**Esleme bulunamazsa:** Glob ile codebase'i tara:
+**If no mapping is found:** Scan the codebase with Glob:
 ```bash
-cd ../Codebase && find . -path '*/node_modules' -prune -o -name "*<modul_adi>*" -print
+cd ../Codebase && find . -path '*/node_modules' -prune -o -name "*<module_name>*" -print
 ```
 -->
 
-Modulu tum katmanlardan topla. Kapsam:
-- Ana dosyalar (controller, service, component, screen)
-- Iliskili dosyalar (DTO, tip, yardimci, test)
-- Konfigürasyon dosyalari (route, middleware, navigation)
+Collect the module across all layers. Scope:
+- Main files (controller, service, component, screen)
+- Related files (DTO, type, helper, test)
+- Configuration files (route, middleware, navigation)
+
+This is a monorepo review across the mapped layers.
 
 ---
 
-## Step 2 — Buyuk Resim: Katmanlar Arasi Iliski Haritasi
+## Step 2 — Big Picture: Cross-Layer Relationship Map
 
 <!-- GENERATE: SUBPROJECT_LAYERS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, stack.primary
-Ornek cikti:
-### Katman Yapisi
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.subprojects, stack.primary
+Example output:
+### Layer Structure
 
-| Katman | Dizin | Rol | Stack |
+| Layer | Directory | Role | Stack |
 |---|---|---|---|
-| API | `apps/api/` | Backend, REST API, is mantigi | NestJS, Prisma |
-| Web | `apps/web/` | Frontend, kullanici arayuzu | Next.js, React |
-| Mobile | `apps/mobile/` | Mobil uygulama | Expo, React Native |
-| Shared | `packages/shared/` | Paylasilan tipler, DTO'lar | TypeScript |
+| API | `apps/api/` | Backend, REST API, business logic | NestJS, Prisma |
+| Web | `apps/web/` | Frontend, user interface | Next.js, React |
+| Mobile | `apps/mobile/` | Mobile application | Expo, React Native |
+| Shared | `packages/shared/` | Shared types, DTOs | TypeScript |
 
-### Katmanlar Arasi Veri Akisi
+### Cross-Layer Data Flow
 ```
 Mobile/Web → API → Prisma → PostgreSQL
      ↑                ↓
-  Shared (tipler, DTO'lar)
+  Shared (types, DTOs)
 ```
 -->
 
-Her katmandaki modul dosyalarini oku ve iliskileri cikar:
-- API endpoint'leri hangi service'leri kullaniyor?
-- Frontend hangi API endpoint'lerini cagiriyor?
-- Paylasilan tipler dogru mu?
-- DTO'lar senkron mu?
+Read module files in each layer and extract relationships:
+- Which services do API endpoints use?
+- Which API endpoints does the frontend call?
+- Are shared types correct?
+- Are DTOs in sync?
 
 ---
 
-## Step 3 — Paralel Inceleme Agent'lari
+## Step 3 — Parallel Review Agents
 
-4 paralel inceleme agent'i spawn et. Her biri farkli bir perspektiften inceler.
+Spawn 4 parallel review agents. Each reviews from a different perspective.
 
 <!-- GENERATE: REVIEW_AGENTS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: stack.primary, project.conventions, project.rules
-Ornek cikti:
-### Agent 1 — Kod Kalitesi Incelemesi
-**Perspektif:** Clean code, SOLID, DRY, tip guvenligi
-**Kontrol listesi:**
-- [ ] Tekrarlanan kod bloklari (DRY ihlali)
-- [ ] Eksik veya yanlis TypeScript tipleri
-- [ ] `any` tipi kullanimi
-- [ ] Kullanilmayan import/degisken/fonksiyon
-- [ ] Fonksiyon karmasikligi (10+ satir uyar)
-- [ ] Hata yonetimi eksikligi (try/catch, error boundary)
-- [ ] Magic number/string kullanimi
-- [ ] Yanlis isimlendirme
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: stack.primary, project.conventions, project.rules
+Example output:
+### Agent 1 — Code Quality Review
+**Perspective:** Clean code, SOLID, DRY, type safety
+**Checklist:**
+- [ ] Repeated code blocks (DRY violation)
+- [ ] Missing or wrong TypeScript types
+- [ ] Use of `any` type
+- [ ] Unused import/variable/function
+- [ ] Function complexity (warn at 10+ lines)
+- [ ] Missing error handling (try/catch, error boundary)
+- [ ] Magic number/string usage
+- [ ] Wrong naming
 
-### Agent 2 — Guvenlik Incelemesi
-**Perspektif:** OWASP, yetkilendirme, veri guvenligi
-**Kontrol listesi:**
-- [ ] IDOR aciklari (ID ile erisim kontrolu)
-- [ ] SQL injection riski
-- [ ] XSS riski
-- [ ] Eksik yetkilendirme kontrolu
-- [ ] Hassas veri loglama
+### Agent 2 — Security Review
+**Perspective:** OWASP, authorization, data security
+**Checklist:**
+- [ ] IDOR vulnerabilities (ID-based access control)
+- [ ] SQL injection risk
+- [ ] XSS risk
+- [ ] Missing authorization check
+- [ ] Sensitive data logging
 - [ ] Hardcoded credential
-- [ ] Rate limiting eksikligi
+- [ ] Missing rate limiting
 
-### Agent 3 — Performans Incelemesi
-**Perspektif:** N+1 query, gereksiz render, memory leak
-**Kontrol listesi:**
-- [ ] N+1 query problemi (Prisma include eksik)
-- [ ] Gereksiz veritabani sorgusu
-- [ ] Frontend'de gereksiz re-render
-- [ ] Buyuk payload donusu (pagination eksik)
-- [ ] Cache kullanilmayan tekrarli islemler
-- [ ] Memory leak potansiyeli (event listener temizleme)
+### Agent 3 — Performance Review
+**Perspective:** N+1 query, unnecessary render, memory leak
+**Checklist:**
+- [ ] N+1 query problem (missing Prisma include)
+- [ ] Unnecessary database query
+- [ ] Unnecessary re-render on frontend
+- [ ] Large payload return (missing pagination)
+- [ ] Repeated work without cache
+- [ ] Memory leak potential (event listener cleanup)
 
-### Agent 4 — Mimari Uyumluluk Incelemesi
-**Perspektif:** Proje pattern'leri, katman uyumu, convention
-**Kontrol listesi:**
-- [ ] Katman ihlali (frontend'de is mantigi, controller'da DB sorgusu)
-- [ ] Import path convention ihlali
-- [ ] Dosya isimlendirme convention ihlali
-- [ ] Eksik barrel export
-- [ ] Paylasilan tiplerin senkronizasyonu
-- [ ] Test dosyasi eksikligi
+### Agent 4 — Architecture Compatibility Review
+**Perspective:** Project patterns, layer fit, convention
+**Checklist:**
+- [ ] Layer violation (business logic in frontend, DB query in controller)
+- [ ] Import path convention violation
+- [ ] File naming convention violation
+- [ ] Missing barrel export
+- [ ] Shared type synchronization
+- [ ] Missing test file
 -->
 
-Her agent icin teammate spawn et:
+Spawn a teammate for each agent:
 
 ```
-## Teammate Gorevi: <agent_adi>_review
-- Hedef dosyalar: [modul icindeki ilgili dosyalar]
-- Perspektif: [yukaridaki perspektif]
-- Kontrol listesi: [yukaridaki liste]
-- Cikti: JSON formatinda bulgular listesi
+## Teammate Task: <agent_name>_review
+- Target files: [relevant files inside the module]
+- Perspective: [perspective above]
+- Checklist: [list above]
+- Output: findings list in JSON format
 ```
 
 ---
 
-## Step 4 — Bulgularin Siniflandirilmasi
+## Step 4 — Finding Classification
 
-Tum agent'larin bulgularini topla ve iki boyutlu siniflandir:
+Collect all agent findings and classify in two dimensions:
 
-### Etki Seviyesi (Impact Level)
+### Impact Level
 
-| Seviye | Aciklama | Ornekler |
+| Level | Description | Examples |
 |---|---|---|
-| KRITIK | Guvenlik acigi, veri kaybi riski, crash | IDOR, SQL injection, unhandled error |
-| YUKSEK | Fonksiyonel hata, performans sorunu | Yanlis is mantigi, N+1 query |
-| ORTA | Kod kalitesi, convention ihlali | DRY ihlali, tip eksikligi, isimlendirme |
-| DUSUK | Kozmetik, iyilestirme onerisi | Yorum eksikligi, log mesaji |
+| CRITICAL | Security hole, data-loss risk, crash | IDOR, SQL injection, unhandled error |
+| HIGH | Functional bug, performance issue | Wrong business logic, N+1 query |
+| MEDIUM | Code quality, convention violation | DRY violation, missing type, naming |
+| LOW | Cosmetic, improvement suggestion | Missing comment, log message |
 
-### Aksiyon Turu
+### Action Type
 
-| Tur | Aciklama | Karar |
+| Type | Description | Decision |
 |---|---|---|
-| DIREKT_FIX | Basit, riski dusuk, tek dosya | Simdi duzelt |
-| BACKLOG | Karmasik, coklu dosya, mimari | Gorev olustur |
-| BILGI | Oneri, iyilestirme | Raporla |
+| DIRECT_FIX | Simple, low risk, single file | Fix now |
+| BACKLOG | Complex, multi-file, architectural | Create task |
+| INFO | Suggestion, improvement | Report |
 
-### Karar Matrisi
+### Decision Matrix
 
-| Etki \ Aksiyon | DIREKT_FIX | BACKLOG |
+| Impact \ Action | DIRECT_FIX | BACKLOG |
 |---|---|---|
-| KRITIK | Hemen duzelt + kullaniciyi bilgilendir | Gorev olustur (P1) |
-| YUKSEK | Duzelt | Gorev olustur (P2) |
-| ORTA | Duzelt | Gorev olustur (P3) |
-| DUSUK | Duzelt (zaman varsa) | Raporla (gorev olusturma) |
+| CRITICAL | Fix immediately + notify user | Create task (P1) |
+| HIGH | Fix | Create task (P2) |
+| MEDIUM | Fix | Create task (P3) |
+| LOW | Fix (if time allows) | Report (do not create task) |
 
 ---
 
-## Step 5 — Katmanlar Arasi Etki Analizi
+## Step 5 — Cross-Layer Impact Analysis
 
-Moduldeki bir sorunun diger katmanlari nasil etkiledigini analiz et:
+Analyze how an issue in the module affects other layers:
 
 ```
-Ornek: API'deki auth endpoint yanlis tip donuyorsa:
-  → Shared'daki DTO guncel mi?
-  → Web'deki API client dogru tipi bekliyor mu?
-  → Mobile'daki API client dogru tipi bekliyor mu?
+Example: If an auth endpoint in the API returns the wrong type:
+  → Is the Shared DTO up to date?
+  → Does the Web API client expect the correct type?
+  → Does the Mobile API client expect the correct type?
 ```
 
-Cross-layer sorunlari KRITIK olarak isaretle cunku birden fazla katmani etkiler.
+Mark cross-layer issues as CRITICAL because they affect multiple layers.
 
 ---
 
-## Step 6 — Direkt Duzeltmeler
+## Step 6 — Direct Fixes
 
-DIREKT_FIX olarak isaretlenen bulgulari simdi duzelt.
+Fix findings marked DIRECT_FIX now.
 
-### Duzeltme Karar Agaci
+### Fix Decision Tree
 
 ```
-Bulgu DIREKT_FIX mi?
-├── EVET
-│   ├── Tek dosya mi?
-│   │   ├── EVET → Duzelt
-│   │   └── HAYIR → Dosyalar ayni katmanda mi?
-│   │       ├── EVET → Duzelt
-│   │       └── HAYIR → BACKLOG'a tasi
-│   └── Risk seviyesi?
-│       ├── DUSUK → Duzelt
-│       ├── ORTA → Duzelt + test calistir
-│       └── YUKSEK → Duzelt + test yaz + calistir
-└── HAYIR → Step 7'ye gec
+Is the finding DIRECT_FIX?
+├── YES
+│   ├── Single file?
+│   │   ├── YES → Fix
+│   │   └── NO → Are the files in the same layer?
+│   │       ├── YES → Fix
+│   │       └── NO → Move to BACKLOG
+│   └── Risk level?
+│       ├── LOW → Fix
+│       ├── MEDIUM → Fix + run tests
+│       └── HIGH → Fix + write test + run
+└── NO → Go to Step 7
 ```
 
-### Duzeltme Kurallari
+### Fix Rules
 
-1. Mevcut pattern'i takip et — yeni convention icat etme.
-2. Minimal degisiklik yap — sadece sorunu duzelt, refactor YAPMA.
-3. Ayni dosyada birden fazla duzeltme varsa hepsini tek seferde yap.
-4. Import/export degisikliklerinde bagimliliklari kontrol et.
+1. Follow the existing pattern — do not invent a new convention.
+2. Make a minimal change — only fix the issue; do NOT refactor.
+3. If there are multiple fixes in the same file, do them in one pass.
+4. Check dependents when import/export changes.
 
 ---
 
-## Step 7 — Dogrulama Kapisi
+## Step 7 — Verification Gate
 
-Yapilan duzeltmelerin hicbir seyi bozmedigini dogrula.
+Verify that the fixes did not break anything.
 
 <!-- GENERATE: VERIFICATION_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, project.scripts, stack.test_framework
-Ornek cikti:
-### Dogrulama Komutlari
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.subprojects, project.scripts, stack.test_framework
+Example output:
+### Verification Commands
 
-| Kontrol | Komut |
+| Check | Command |
 |---|---|
-| API tip kontrolu | `cd ../Codebase/apps/api && npx tsc --noEmit` |
-| API testler | `cd ../Codebase/apps/api && npm run test -- --passWithNoTests` |
-| Web tip kontrolu | `cd ../Codebase/apps/web && npx tsc --noEmit` |
+| API type check | `cd ../Codebase/apps/api && npx tsc --noEmit` |
+| API tests | `cd ../Codebase/apps/api && npm run test -- --passWithNoTests` |
+| Web type check | `cd ../Codebase/apps/web && npx tsc --noEmit` |
 | Web build | `cd ../Codebase/apps/web && npm run build` |
-| Mobile tip kontrolu | `cd ../Codebase/apps/mobile && npx tsc --noEmit` |
-| Shared tip kontrolu | `cd ../Codebase/packages/shared && npx tsc --noEmit` |
+| Mobile type check | `cd ../Codebase/apps/mobile && npx tsc --noEmit` |
+| Shared type check | `cd ../Codebase/packages/shared && npx tsc --noEmit` |
 | Lint | `cd ../Codebase && npm run lint` |
 -->
 
-Tum dogrulama komutlarini calistir. Basarisiz olanlar varsa:
-- Bu review'dan kaynaklaniyorsa → duzelt
-- Onceden var olan hata ise → yoksay ve raporla
+Run all verification commands. If any fail:
+- If caused by this review → fix
+- If a pre-existing error → ignore and report
 
 ---
 
-## Step 8 — Duzeltme Kalite Kapisi
+## Step 8 — Fix Quality Gate
 
-Yapilan duzeltmelerin kalitesini kontrol et:
+Check the quality of the fixes:
 
-- [ ] Her duzeltme mevcut pattern'i takip ediyor mu?
-- [ ] Gereksiz degisiklik yapilmadi mi?
-- [ ] Import/export zincirleri saglikli mi?
-- [ ] Tip uyumlulugu korunuyor mu?
+- [ ] Does each fix follow the existing pattern?
+- [ ] Were unnecessary changes avoided?
+- [ ] Are import/export chains healthy?
+- [ ] Is type compatibility preserved?
 
 ---
 
-## Step 9 — Degisiklikleri Commit Et
+## Step 9 — Commit Changes
 
-Duzeltme yapildiysa commit at:
+If fixes were made, create a commit:
 
 ```bash
-git add <duzeltilen_dosyalar>
-git commit -m "refactor(<modul_adi>): review bulgulari duzeltildi"
+git add <fixed_files>
+git commit -m "refactor(<module_name>): review findings fixed"
 ```
 
-> Duzeltme yapilmadiysa bu adimi ATLA.
+> If no fixes were made, SKIP this step.
+
+Commit completed non-sensitive work in the same session without asking. Do not push unless the user asks.
 
 ---
 
-## Step 10 — Backlog Gorev Olusturma
+## Step 10 — Create Backlog Tasks
 
-BACKLOG olarak isaretlenen bulgular icin gorev olustur:
+Create a task for findings marked BACKLOG:
 
 ```bash
-backlog task create "<bulgu_ozeti>" --description "<detayli_aciklama>" --priority <high|medium|low> --labels "review-finding"
+backlog task create "<finding_summary>" --description "<detailed_description>" --priority <high|medium|low> --labels "review-finding"
 ```
 
-Her bulgu icin ayri gorev olustur. Gorev aciklamasinda:
-- Sorunun ne oldugu
-- Hangi dosyalarda oldugu
-- Neden simdi duzeltilmedigi
-- Onerilen cozum yaklasimi
+Create a separate task per finding. In the task description include:
+- What the issue is
+- Which files it is in
+- Why it was not fixed now
+- Suggested solution approach
 
 ---
 
-## Step 11 — Sonuc Raporu
+## Step 11 — Result Report
 
 ```
-## 🔍 Modul Review Raporu — <modul_adi>
+## 🔍 Module Review Report — <module_name>
 
-### Kapsam
-- **Taranan dosya sayisi:** X
-- **Taranan katmanlar:** API, Web, Mobile, Shared
+### Scope
+- **Files scanned:** X
+- **Layers scanned:** API, Web, Mobile, Shared
 
-### Bulgular Ozeti
+### Findings Summary
 
-| Seviye | Bulgu | Direkt Fix | Backlog | Bilgi |
+| Level | Finding | Direct Fix | Backlog | Info |
 |---|---|---|---|---|
-| 🔴 KRITIK | X | Y | Z | - |
-| 🟠 YUKSEK | X | Y | Z | - |
-| 🟡 ORTA | X | Y | Z | - |
-| 🟢 DUSUK | X | Y | Z | W |
-| **Toplam** | **X** | **Y** | **Z** | **W** |
+| 🔴 CRITICAL | X | Y | Z | - |
+| 🟠 HIGH | X | Y | Z | - |
+| 🟡 MEDIUM | X | Y | Z | - |
+| 🟢 LOW | X | Y | Z | W |
+| **Total** | **X** | **Y** | **Z** | **W** |
 
-### Yapilan Duzeltmeler
-| # | Dosya | Degisiklik | Etki |
+### Fixes Applied
+| # | File | Change | Impact |
 |---|---|---|---|
-| 1 | `<yol>` | <aciklama> | <seviye> |
+| 1 | `<path>` | <description> | <level> |
 
-### Olusturulan Backlog Gorevleri
-| # | Baslik | Oncelik | Neden Simdi Duzeltilmedi |
+### Backlog Tasks Created
+| # | Title | Priority | Why Not Fixed Now |
 |---|---|---|---|
-| 1 | <baslik> | P2 | <sebep> |
+| 1 | <title> | P2 | <reason> |
 
-### Katmanlar Arasi Bulgular
-[varsa cross-layer sorunlari]
+### Cross-Layer Findings
+[cross-layer issues if any]
 
 ### Dead Code
-[varsa kullanilmayan dosya/fonksiyon/degisken listesi]
+[unused file/function/variable list if any]
 
 ### Commit
-`<hash>` — `<mesaj>` (veya "Duzeltme yapilmadi")
+`<hash>` — `<message>` (or "No fixes applied")
 
-### Genel Degerlendirme
-[modulun genel sagligi hakkinda 2-3 cumle]
+### Overall Assessment
+[2-3 sentences about the module's overall health]
 ```
 
 ---
 
-## Dead Code Tespit Metodolojisi
+## Dead Code Detection Methodology
 
-Modul icindeki kullanilmayan kodlari tespit et:
+Detect unused code inside the module:
 
-1. **Export edilen ama import edilmeyen fonksiyonlar:** Glob + Grep ile kontrol
-2. **Tanimli ama cagrilmayan fonksiyonlar:** AST analizi (basit grep ile)
-3. **Kullanilmayan dosyalar:** Hicbir yerden import edilmeyen dosyalar
-4. **Yorum satiri haline getirilen kod bloklari:** `// ` veya `/* */` icindeki kod
+1. **Exported but never imported functions:** Check with Glob + Grep
+2. **Defined but never called functions:** AST analysis (simple grep)
+3. **Unused files:** Files never imported from anywhere
+4. **Commented-out code blocks:** Code inside `// ` or `/* */`
 
-Dead code bulgusu varsa BILGI seviyesinde raporla. Silme karari kullaniciya birakilir.
+If dead code is found, report at INFO level. Deletion is left to the user.
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Do not create a `.claude/` directory inside Codebase; writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and edited when the task requires it. Config files (`.claude/`, `CLAUDE.md`) CANNOT be written inside Codebase.
 
-1. **Otonom calis** — Soru sorma, modul sinirlarini belirle ve incele.
-2. **Once oku, sonra yaz** — Duzeltme yapmadan once mevcut kodu anla.
-3. **Pattern takip et** — Mevcut convention'lari takip et, yeni icat etme.
-4. **Minimal degisiklik** — Sadece bulguyu duzelt, ek refactor YAPMA.
-5. **Test calistir** — Duzeltme sonrasi mutlaka dogrulama yap.
-6. **Cross-layer kontrol** — Bir katmandaki degisikligin diger katmanlari etkilemedigini dogrula.
-7. **Backlog kaydi** — Duzeltilemeyen bulguları backlog'a kaydet.
-8. **Rapor ZORUNLU** — Her durumda sonuc raporu olustur.
-9. **Dead code raporla** — Kullanilmayan kodu sil DEGIL, raporla.
-10. **Codebase yolu** — Tum proje dosyalarina `../Codebase/` uzerinden eris.
+1. **Work autonomously** — Do not ask questions; determine module boundaries and review.
+2. **Read first, write later** — Understand existing code before fixing.
+3. **Follow patterns** — Follow existing conventions; do not invent new ones.
+4. **Minimal change** — Only fix the finding; do NOT add extra refactor.
+5. **Run tests** — Always verify after a fix.
+6. **Cross-layer check** — Verify a change in one layer does not break others.
+7. **Backlog record** — record findings that were not fixed.
+8. **Report is MANDATORY** — Always produce a result report.
+9. **Report dead code** — Do NOT delete unused code; report it.
+10. **Codebase path** — Access all project files via `../Codebase/`.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->
+
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

@@ -83,7 +83,7 @@ function bumpVersion(current, type) {
     case 'major': return `${parts[0] + 1}.0.0`;
     case 'minor': return `${parts[0]}.${parts[1] + 1}.0`;
     case 'patch': return `${parts[0]}.${parts[1]}.${parts[2] + 1}`;
-    default: throw new Error(`Bilinmeyen bump tipi: ${type}`);
+    default: throw new Error(`Unknown bump type: ${type}`);
   }
 }
 

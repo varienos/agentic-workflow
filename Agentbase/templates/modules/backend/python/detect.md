@@ -1,4 +1,4 @@
-# Python Backend Ailesi Tespit Kurallari
+# Python Backend Family Detection Rules
 
 ## Checks
 
@@ -12,7 +12,7 @@
 
 ## Variants
 
-| Framework | Tespit Dosyasi | Oncelik |
+| Framework | Detection File | Priority |
 |-----------|----------------|---------|
 | Django | `backend/python/django/detect.md` | 1 |
 | FastAPI | `backend/python/fastapi/detect.md` | 2 |
@@ -23,5 +23,5 @@
 
 ## Affects Core
 
-- task-hunter: `pytest` veya proje test komutlari icin verification convention'i eklenir
-- CLAUDE.md: Python backend ortak kurallari bolumu eklenir
+- task-hunter: Verification convention for `pytest` or project test commands is added
+- CLAUDE.md: Python backend shared rules section is added

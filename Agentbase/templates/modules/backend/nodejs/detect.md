@@ -1,4 +1,4 @@
-# Node.js Backend Ailesi Tespit Kurallari
+# Node.js Backend Family Detection Rules
 
 ## Checks
 
@@ -12,7 +12,7 @@
 
 ## Variants
 
-| Framework | Tespit Dosyasi | Oncelik |
+| Framework | Detection File | Priority |
 |-----------|----------------|---------|
 | NestJS | `backend/nodejs/nestjs/detect.md` | 1 |
 | Fastify | `backend/nodejs/fastify/detect.md` | 2 |
@@ -24,5 +24,5 @@
 
 ## Affects Core
 
-- task-hunter: `npm`/`pnpm`/`yarn` tabanli lint-test-typecheck convention'lari eklenir
-- CLAUDE.md: Node.js backend ortak kurallari bolumu eklenir
+- task-hunter: `npm`/`pnpm`/`yarn` based lint-test-typecheck conventions are added
+- CLAUDE.md: Node.js backend shared rules section is added

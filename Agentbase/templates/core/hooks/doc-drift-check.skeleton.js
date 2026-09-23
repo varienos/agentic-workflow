@@ -4,7 +4,7 @@
  * doc-drift-check.skeleton.js
  * PostToolUse (Edit|Write) hook
  *
- * Kod dosyasi degistiginde hedef dokumanlarin mtime degerini kontrol eder.
+ * When a code file changes, checks the mtime of target documents.
  * Dokuman koddan eskiyse blocking olmayan systemMessage uretir.
  */
 
@@ -24,25 +24,25 @@ const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
 const DOC_TARGET_PATHS = [
 /* GENERATE: DOC_TARGET_PATHS
-Aciklama: project.structure.documents[] veya project.documents[]; yoksa README.md + CHANGELOG.md. OpenAPI aktifse project.api_docs.spec_paths[] eklenir.
-Gerekli manifest alanlari: project.structure.documents, project.documents, project.api_docs.spec_paths, modules.active.api_docs
-Ornek cikti: */
+Description: project.structure.documents[] veya project.documents[]; yoksa README.md + CHANGELOG.md. OpenAPI aktifse project.api_docs.spec_paths[] eklenir.
+Required manifest fields: project.structure.documents, project.documents, project.api_docs.spec_paths, modules.active.api_docs
+Example output: */
 /* END GENERATE */
 ];
 
 const CODE_PATH_PATTERNS = [
 /* GENERATE: CODE_PATH_PATTERNS
-Aciklama: project.subprojects[].path alanlarindan Codebase-relative regex prefixleri uretir; yoksa yaygin kaynak dizinleri fallback olur.
-Gerekli manifest alanlari: project.subprojects
-Ornek cikti: */
+Description: project.subprojects[].path alanlarindan Codebase-relative regex prefixleri uretir; yoksa yaygin kaynak dizinleri fallback olur.
+Required manifest fields: project.subprojects
+Example output: */
 /* END GENERATE */
 ];
 
 const CODE_EXTENSIONS = [
 /* GENERATE: CODE_EXTENSIONS
-Aciklama: Stack'e gore kod uzantilari; config ve dokuman uzantilari haric.
-Gerekli manifest alanlari: stack.primary, stack.detected, stack.file_extensions
-Ornek cikti: */
+Description: Stack'e gore kod uzantilari; config ve dokuman uzantilari haric.
+Required manifest fields: stack.primary, stack.detected, stack.file_extensions
+Example output: */
 /* END GENERATE */
 ];
 
@@ -127,7 +127,7 @@ function collectStaleDocs(codeFilePath, state) {
 
 function buildSystemMessage(staleDocs) {
   return [
-    'Kod degisti, su dokumanlari guncellemeyi dusunun:',
+    'Code changed; consider updating these documents:',
     ...staleDocs.map(docPath => `- ${docPath}`),
     'Detayli analiz: service-documentation agent.',
   ].join('\n');

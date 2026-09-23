@@ -1,126 +1,129 @@
-# Task Plan — Yuksek Baglamli Gorev Olusturucu
+# Task Plan — High-Level Task Creator
 
-> Codebase'i derinlemesine analiz ederek kaliteli, uygulanabilir gorev olusturur.
-> Kullanim: `/task-plan <istek>`, `/task-plan "login sayfasina remember me ekle"`
+> Analyzes the codebase deeply to create high-quality tasks.
+> Usage: `/task-plan <request>`, `/task-plan "login page remember me add"`
 
-**ULTRATHINK MODE — Bu komut maksimum dusunme derinligi ile calisir.**
+**ULTRATHINK MODE — This command works with maximum comprehension depth.**
 
-- ACELE ETME. Her adimda once dusun, sonra hareket et.
-- Yuzeysel analiz YASAK. Varsayimlarini sorgula, alternatiflerini degerlendir.
-- Bir sey "bariz" gorunuyorsa, neden bariz oldugunu kanitla.
-- Ilk aklina gelen cozum muhtemelen eksik — en az 3 alternatif dusun.
-- Bu komut OPUS modeli ile calistirilmalidir. Sonnet ile task-plan calistirmak YASAKTIR.
+- TAKE YOUR TIME. Think before acting.
+- Superficial analysis IS PROHIBITED. Verify assumptions and consider alternatives.
+- If something appears "obvious", prove why it's obvious.
+- If the first solution that comes to mind is likely incomplete, think of at least three alternative solutions.
+- This command should be executed with the OPUS model. Using Sonnet for task-plan execution IS PROHIBITED.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section is filled by Bootstrap using manifest data.
+Required manifest fields: project.description, stack.primary, project.structure, project.subprojects
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- **Yapi:**
+- **Structure:**
   - `apps/web/` — Next.js frontend
   - `apps/api/` — NestJS backend
   - `apps/mobile/` — Expo React Native
-  - `packages/shared/` — Paylasilan tipler ve yardimcilar
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+  - `packages/shared/` — Shared types and utilities
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Step 0 — Ultrathink: Derin Dusunme Fazi
+## Step 0 — Ultrathink: Deep Comprehension Phase
 
-**Bu faz ZORUNLUDUR. Atlanamaz. Ciktisi kullaniciya gosterilmez ama tum sonraki adimlari yonlendirir.**
+**This phase IS MANDATORY. It cannot be skipped. The result will not be shown to the user, but it will guide subsequent steps.**
 
-Codebase'e dokunmadan ONCE, sadece dusun:
+Codebase without touching ONCE, just think:
 
-### 0.1 — Hipotez Uretimi
+>>>
+### 0.1 — Hypothesis Generation
 
-Istegin en az 3 farkli yorumunu uret:
-- **Hipotez A:** En bariz yorum — kullanici buyuk ihtimalle bunu kastetmistir
-- **Hipotez B:** Alternatif yorum — belki farkli bir aci var
-- **Hipotez C:** En az bariz ama olasi yorum — gozden kacabilecek perspektif
+Provide at least three distinct hypotheses:
+- **Hypothesis A:** Most likely interpretation - The user probably meant this
+- **Hypothesis B:** Alternative interpretation - Maybe there's a different pain point
+- **Hypothesis C:** Least likely but possible interpretation - Something that could be seen from the perspective
 
-Her hipotez icin: "Bu dogruysa ne yapilmali?" sorusunu cevapla.
+For each hypothesis: Answer the question "What should you do if this is correct?"
 
-### 0.2 — Varsayim Sorgulamasi
+### 0.2 — Assumption Testing
 
-Her hipotezdeki gizli varsayimlari cikar ve sorgula:
-- Hangi dosyalarin var oldugunu varsayiyorsun? (henuz dogrulamadin)
-- Hangi pattern'lerin kullanildigini varsayiyorsun? (henuz okumadin)
-- Kullanicinin gercekten ne istedigini varsayiyorsun? (kendi yorumun mu?)
-- Kapsamin ne oldugunu varsayiyorsun? (belirtilmemis sinirlari eklemedin mi?)
+Extract and test assumptions for each hypothesis:
+- What files are assumed to exist? (Not yet validated)
+- Which patterns are assumed to be used? (Not yet read)
+- What does the user actually want? (Is it your own comment?)
+- What is the scope of this change? (Are undefined boundaries added?)
 
 ### 0.3 — Devil's Advocate
 
-En guclu hipotezi sec, sonra onu kirmaya calis:
-- Bu yaklasimin en buyuk riski ne?
-- Hangi durumda tamamen yanlis olur?
-- Daha basit bir cozum var mi ki karmasikligi gereksiz yere artiriyorsun?
-- Gozden kacirdgin bir bagimlilik veya yan etki var mi?
+Choose the strongest hypothesis and try to poke holes in it:
+- What is the biggest risk associated with this approach?
+- In what situations would it be completely wrong?
+- Is there a simpler solution that wouldn't unnecessarily complicate things?
+- Are there any dependencies or side effects that could be seen from the outside?
 
-### 0.4 — Edge Case Taramasi
+### 0.4 — Edge Case Analysis
 
-Sistematik olarak dusun:
-- Bu degisiklik mevcut islevselliMgi kirar mi?
-- Hangi sinir durumlari var?
-- Baska hangi dosyalar dolayli etkilenir?
-- Test edilmesi zor olan bir durum var mi?
+Systematically think through:
+- Does this change affect the functionality of the system?
+- What are the relevant stress scenarios?
+- Which other files might be affected indirectly?
+- Is there a difficult-to-test situation?
 
-### 0.5 — Kapsam Karari
+### 0.5 — Scope Decision
 
-Net bir karar ver ve yazili olarak ifade et:
-- Bu tek bir task mi, yoksa bolunmeli mi?
-- Kapsam cok genis mi? Daraltilmali mi?
-- Kapsam cok dar mi? Genisletilmeli mi?
-- Kesin kapsam tanimi: "[X] yapilacak, [Y] YAPILMAYACAK"
+Make a clear decision and write it down in words:
+- Is this a single task or should it be broken down into smaller tasks?
+- Is the scope too broad? Should it be narrowed down?
+- Is the scope too narrow? Should it be expanded?
 
-**Step 0 tamamlanmadan sonraki adimlara GECME. Step 0'in ciktilari sonraki adimlarin kalitesini belirler.**
+>>>
+- **CLOSING STATEMENT:** "Step 0 must be completed before proceeding to the next steps. Step 0's results determine the quality of subsequent steps."
 
 ---
 
-## Step 1 — Istek Analizi
+## Step 1 — Request Analysis
 
-> **DUSUNME KAPISI:** Step 0'daki varsayimlarin hala gecerli mi? Bu adima gecmeden once Step 0'in ciktisini sorgula. Yeni bilgi varsayimlarini degistirdiyse Step 0'a don.
+> **DECISION POINT:** Are the assumptions made in Step 0 still valid? Before proceeding with this step, review the output of Step 0.
 
-### 1.1 — Istegi Cozumle
+### 1.1 — Problem Resolution
 
-Kullanicinin istegindan asagidakileri cikar:
-- **Ne isteniyor?** (ozellik, duzeltme, iyilestirme, refactor)
-- **Nerede?** (hangi alt proje, hangi modul)
-- **Neden?** (kullanici degeri, teknik gereklilik)
-- **Sinirlar** (varsa: "sadece backend", "mobilde gerekmiyor" gibi)
+Extract the following from the user's request:
+- **What is being requested?** (e.g., improvement, enhancement, refactoring)
+- **Where is it located?** (e.g., which sub-project, which module)
+- **Why is it needed?** (e.g., user value, technical requirement)
+- **Constraints** (if any): "only backend", "not required for mobile"
 
-### 1.2 — Istek Turu Siniflandirmasi
+### 1.2 — Request Classification
 
-| Tur | Tanimlama | Ornek |
+| Type | Description | Example |
 |---|---|---|
-| **Feature** | Yeni islevsellik | "Siparis takip sayfasi ekle" |
-| **Enhancement** | Mevcut ozelligin gelistirilmesi | "Login sayfasina remember me ekle" |
-| **Bug Fix** | Hata duzeltme | "Odeme sonrasi sayfa yenilenmiyor" |
-| **Refactor** | Yapi degisikligi, davranis ayni | "Auth modulu yeniden yapilandir" |
-| **Infra** | Altyapi, konfigurasyon | "CI/CD pipeline kur" |
+| **Feature** | New functionality | "Add a tracking page for orders" |
+| **Enhancement** | Improvement of existing feature | "Add a 'remember me' option to the login page" |
+| **Bug Fix** | Error correction | "Fix the payment page not refreshing after completion" |
+| **Refactor** | Code improvement, same behavior | "Reorganize the Auth module" |
+| **Infra** | Infrastructure, configuration | "Set up a CI/CD pipeline" |
 
 ---
 
-## Step 2 — Derin Analiz
+## Step 2 — Deep Analysis
 
-> **DUSUNME KAPISI:** Step 0'daki varsayimlarin hala gecerli mi? Bu adima gecmeden once bir onceki adimin ciktisini sorgula. Yeni bilgi varsayimlarini degistirdiyse Step 0'a don.
+> **DECISION POINT:** Are the assumptions made in Step 0 still valid? Before proceeding with this step, review the output of a previous step. If new information has changed the assumptions, return to Step 0.
 
-### 2.1 — Dosya Tespiti
+### 2.1 — File Detection
 
 <!-- GENERATE: FILE_DETECTION_PATTERNS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, stack.primary, project.subprojects
-Ornek cikti:
-Istege gore aranacak dosya desenleri:
+Description: This section will be populated by Bootstrap using manifest data.
+Required manifest fields: project.structure, stack.primary, project.subprojects
+Example output:
 
-| Kod Turu | Aranacak Dizinler | Dosya Desenleri |
+>>>
+### Current File Designs to be Analyzed:
+
+| Code Type | Searchable Directories | File Designs |
 |---|---|---|
 | Controller/Route | `apps/api/src/modules/` | `*.controller.ts`, `*.router.ts` |
 | Service/Logic | `apps/api/src/modules/` | `*.service.ts`, `*.usecase.ts` |
@@ -131,250 +134,220 @@ Istege gore aranacak dosya desenleri:
 | Mobile Screen | `apps/mobile/src/screens/` | `*.screen.tsx` |
 | Mobile Component | `apps/mobile/src/components/` | `*.tsx` |
 | Shared Type | `packages/shared/src/` | `*.types.ts`, `*.interface.ts` |
-| Config | proje koku | `*.config.ts`, `*.config.js` |
+| Config | project settings | `*.config.ts`, `*.config.js` |
 | Test | `__tests__/`, `*.test.ts`, `*.spec.ts` | `*.test.ts`, `*.spec.ts` |
+>>>
 -->
 
-### 2.2 — Mevcut Kod Analizi
+### 2.2 — Current Code Analysis
 
-Istekle ilgili alanlarda:
-1. Mevcut dosyalari oku
-2. Kullanilan pattern'leri anla (naming, structure, imports)
-3. Benzer islev varsa onu referans al
-4. Bagimli modulleri tespit et (import chain)
+In the relevant areas:
+1. Read existing files
+2. Understand used patterns (naming, structure, imports)
+3. Identify similar functions to reference them
+4. Detect protected modules (import chain)
 
-### 2.3 — Etki Analizi
+### 2.3 — Effect Analysis
 
-Degisikligin etkili oldugu alanlari belirle:
-- **Dogrudan etkilenen dosyalar** (degisecek)
-- **Dolayli etkilenen dosyalar** (import eden, kullanan)
-- **Test dosyalari** (guncellenmesi veya yazilmasi gereken)
-- **Konfigurasyon** (eklenmesi gereken env, route, permission)
+Determine affected areas of change:
+- **Directly affected files** (to be changed)
+- **Indirectly affected files** (importing, using)
+- **Test files** (to be updated or created)
+- **Configuration** (required env, route, permission)
 
-**ONEMLI:** Dogrudan etkilenen dosyalarin listesini `affected_files` olarak sakla — bu liste hem gorev aciklamasina hem de backlog metadata'sina yazilacak. task-conductor bu listeyi kullanarak paralel gorevler arasindaki cakismalari tespit eder.
+**IMPORTANT:** List directly affected files as `affected_files` — this list will be used for task assignment and to detect parallel tasks.
 
 ---
 
-## Step 3 — Uygulama Plani
+## Step 3 — Application Plan
 
-> **DUSUNME KAPISI:** Step 0'daki varsayimlarin hala gecerli mi? Bu adima gecmeden once bir onceki adimin ciktisini sorgula. Yeni bilgi varsayimlarini degistirdiyse Step 0'a don.
+> **DECISION POINT:** Is the assumption still valid? Check once more before proceeding with this step. If new information changes assumptions, go back to Step 0.
 
-### 3.1 — Karmasiklik Puanlama
+>>>
+### 3.1 — Cyclic Complexity Scoring
 
-| Puan | Seviye | Kriter |
-|---|---|---|
-| 1-3 | **Basit** | 1-2 dosya, net degisiklik, mevcut pattern'i takip |
-| 4-6 | **Orta** | 3-5 dosya, yeni fonksiyon/component, mevcut modulu genisletme |
-| 7-8 | **Karmasik** | 6-10 dosya, yeni modul, entegrasyon, migration |
-| 9-10 | **Cok Karmasik** | 10+ dosya, mimari degisiklik, birden fazla alt proje |
+| Score | Level | Criteria |
+| --- | --- | --- |
+| 1-3 | **Simple** | 1-2 files, minimal changes, following existing pattern |
+| 4-6 | **Moderate** | 3-5 files, new function/component, extending existing module |
+| 7-8 | **Cyclic** | 6-10 files, new module, integration, migration |
+| 9-10 | **Very Cyclic** | 10+ files, architectural changes, multiple sub-projects |
 
-### 3.1b — Mimari Karar / ADR Kontrolu
+### 3.1b — Architecture Decision / ADR Check
 
-Task metninde `architecture`, `mimari`, `katman`, `boundary`, `veri akisi`, `runtime`, `deploy`, `framework`, `entegrasyon`, `auth`, `security`, `observability` kelimeleri geciyorsa veya plan mevcut katman siniri / public kontrat / cross-cutting policy degistiriyorsa ADR kontrolu ekle.
+Add ADR check if the task contains keywords like `architecture`, `design`, `layer`, `boundary`, `data flow`, `runtime`, `deploy`, `framework`, `integration`, `auth`, `security`, or `observability`. If the plan changes the existing layer boundary / public contract / cross-cutting policy, add ADR check.
 
-ADR yeni dosya olabilir veya mevcut ADR'ye referans olabilir. Kucuk refactor, typo, test ekleme ve mevcut karari uygulayan dar bug fix icin yeni ADR acma; task notunda "ADR gerekmedi" gerekcesi yeterlidir.
+ADR can be a new file or reference an existing one. For small refactor, typo, test addition, and fix for existing decision, adding a new ADR is sufficient. The task note should indicate whether ADR is required or not.
 
 ```
-## Kabul Kriterleri
-- [ ] Mimari karar etkisi degerlendirildi; ADR gerekiyor mu/gerekmiyor mu gerekcesi task notunda yazildi
-- [ ] Gerekliyse `backlog/decisions/YYYYMMDD-kebab-case-karar-basligi.md` ADR dosyasi yazildi veya mevcut ADR dosyasina referans verildi
-- [ ] ADR minimum alanlari tamamlandi: context, decision, alternatives, consequences, rollback/revisit trigger, related tasks
+## Acceptance Criteria
+- [ ] Architecture decision impact was evaluated; did ADR need to be added?
+- [ ] If necessary, `backlog/decisions/YYYYMMDD-kebab-case-karar-basligi.md` ADR file was written or referenced the existing one
+- [ ] If necessary, ADR minimum requirements were completed: context, decision, alternatives, consequences, rollback/revisit trigger, related tasks
 ```
 
-### 3.2 — Model Oneri Matrisi
+### 3.2 — Model Recommendation Matrix
 
-Karmasikliga gore hangi agent modeli kullanilmali:
+Which agent model should be used based on cyclic complexity:
 
-| Karmasiklik | Onerilen Model | Gerekcesi |
-|---|---|---|
-| 1-3 | Opus (minimum) | Planlama kalite-kritik, dusuk karmasiklik bile derin analiz gerektirir |
-| 4-6 | Opus | Pattern takibi + karar verme, kalite oncelikli |
-| 7-8 | Opus | Karmasik karar verme, coklu dosya analizi gerekli |
-| 9-10 | Opus + Teammate | Bolunmus calisma, paralel uygulama |
+| Cyclic Complexity | Recommended Model | Necessity |
+| --- | --- | --- |
+| 1-3 | Opus (minimum) | Planning quality-critical, minimal cyclic complexity requires deep analysis |
+| 4-6 | Opus | Pattern tracking + decision-making, high-quality planning |
+| 7-8 | Opus | Cyclic decision-making, complex file analysis required |
+| 9-10 | Opus + Teammate | Distributed work, parallel application |
 
-### 3.3 — Teammate Oneri Matrisi
+### 3.3 — Teammate Recommendation Matrix
 
-Gorevi uygulamak icin teammate gerekli mi?
+Is a teammate necessary for the task?
 
-| Durum | Teammate Onerisi |
-|---|---|
-| Tek alt proje, 1-4 dosya | Gerek yok |
-| Tek alt proje, 5-8 dosya | Opsiyonel (2 teammate) |
-| Birden fazla alt proje | Onerilen (alt proje basina 1) |
-| 10+ dosya | Zorunlu (dosya gruplarina gore bol) |
+| Situation | Teammate Recommendation |
+| --- | --- |
 
-### 3.4 — Kapsam Bolme Stratejisi
+>>>
+### 3.4 — Scope Division Strategy
 
-Karmasiklik 7+ ise gorevi alt gorevlere bol:
+If the complexity is 7+, tasks are divided into subtasks:
 
-**Bolme Kriterleri:**
-1. **Alt proje bazli:** Her alt proje (API, Web, Mobile) ayri gorev
-2. **Katman bazli:** Data model → Backend logic → API endpoint → Frontend
-3. **Ozellik bazli:** Her bagimsiz is parcasi ayri gorev
+**Division Criteria:**
+1. **Project-based:** Each project (API, Web, Mobile) has separate tasks
+2. **Layer-based:** Data model → Backend logic → API endpoint → Frontend
+3. **Feature-based:** Each independent feature has separate tasks
 
-**Bagimllik Sirasi:**
+**Dependency Order:**
 ```
-1. DB/Model degisiklikleri (en once)
-2. Backend is mantigi
-3. API endpoint'leri
+1. DB/Model changes (most critical)
+2. Backend logic implementation
+3. API endpoints
 4. Frontend/Mobile UI
-5. Testler
-6. Dokumantasyon
+5. Testing
+6. Documentation
 ```
 
 ---
 
-## Step 4 — Kalite Kontrolu
+## Step 4 — Quality Control
 
-> **DUSUNME KAPISI:** Step 0'daki varsayimlarin hala gecerli mi? Bu adima gecmeden once bir onceki adimin ciktisini sorgula. Yeni bilgi varsayimlarini degistirdiyse Step 0'a don.
+> **CHECKPOINT:** Before proceeding to this step, verify if the assumptions made in Step 0 are still valid? Check the output of the previous step before moving on.
 
-### 4.1 — Gorev Kalite Kontrol Listesi
+### 4.1 — Task Quality Control Checklist
 
-Gorevi olusturmadan once dogrula:
+Verify tasks before creating them:
 
-- [ ] **Net baslik:** Gorevi okuyan kisi ne yapilacagini anliyor mu?
-- [ ] **Yeterli baglam:** AC'ler spesifik mi yoksa belirsiz mi?
-- [ ] **Uygulanabilir:** Mevcut codebase'de uygulanabilir mi?
-- [ ] **Test kriterleri:** AC'lerde test beklentisi var mi?
-- [ ] **Bagimlliklar:** Onkosuller belirtilmis mi?
-- [ ] **Kapsam:** Tek gorevde makul mu, bolunmesi mi gerekiyor?
+- [ ] **Clear task title:** Does the person reading the task know what needs to be done?
+- [ ] **Specific scope:** Are ACs specific or vague?
+- [ ] **Applicability:** Is it applicable to the current codebase?
+- [ ] **Test criteria:** Are test expectations defined in ACs?
+- [ ] **Dependencies:** Are oncosules specified?
+- [ ] **Scope:** Is the task reasonable for a single task, or should it be split?
 
-### 4.2 — Anti-Pattern Kontrolu
+>>>
+### 4.2 — Anti-Pattern Prevention
 
-Asagidaki anti-pattern'lerden kacin:
+Prevent the following anti-patterns:
 
-- ❌ "Sistemi iyilestir" — cok genis, olculemez
-- ❌ AC olmayan gorev — tamamlanma kriteri belirsiz
-- ❌ Birden fazla bagimsiz isi tek gorevde birlestirme
-- ❌ Uygulama detaylarini AC'ye koyma (nasil yapilacagini degil, ne yapilacagini yaz)
-- ❌ Dogrulanamayen AC: "Daha hizli olmali" (ne kadar?), "Iyi gorunmeli" (neye gore?)
+- ❌ "System Improvement" — too broad, unachievable
+- ❌ AC-only task — unclear completion criteria
+- ❌ Overlapping independent tasks merged into a single task
+- ❌ Applying application details to AC (what does it mean?)
+- ❌ Unclear AC: "Faster" or "Better-looking" (how much?, what for?)
 
 ---
 
-## Step 5 — Backlog Gorevi Olustur
+## Step 5 — Creating a Backlog Item
 
-> **DUSUNME KAPISI:** Step 0'daki varsayimlarin hala gecerli mi? Bu adima gecmeden once bir onceki adimin ciktisini sorgula. Yeni bilgi varsayimlarini degistirdiyse Step 0'a don.
+> **DECISION POINT:** Is the assumption still valid from Step 0? Before proceeding with this step, review the outcome of the previous step. If new information changes the assumptions, return to Step 0.
 
-### 5.1 — Kabul Kriterleri Sablonlari
+### 5.1 — Acceptance Criteria Templates
 
-Gorev turune gore AC sablonu kullan:
+Use AC templates based on the type of task:
 
 **Feature/Enhancement:**
 ```
-## Kabul Kriterleri
-- [ ] [Fonksiyonel kriter 1]
-- [ ] [Fonksiyonel kriter 2]
+## Acceptance Criteria
+- [ ] [Functional criterion 1]
+- [ ] [Functional criterion 2]
 - [ ] [Edge case]
-- [ ] Birim test yazilmali — [neyin test edildigi]
-- [ ] [Varsa entegrasyon testi]
+- [ ] Unit test must be written for [specificity]
+- [ ] [Any integration test]
 ```
 
 **Bug Fix:**
 ```
-## Kabul Kriterleri
-- [ ] [Hata artik olusmuyor: senaryo]
-- [ ] [Yan etki kontrolu]
-- [ ] Hatanin tekrarlanmadigini dogrulayan test yazilmali
+## Acceptance Criteria
+- [ ] [Error condition resolved: scenario]
+- [ ] [Side effect control]
+- [ ] Test written to verify that the error is not repeated
 ```
 
 **Refactor:**
+
+>>>
+## Acceptance Criteria
+- [ ] Migration file created and will be committed with schema/model changes
+- [ ] Dry-run/preview command executed and result written to task notes
+- [ ] Rollback/down script or file path is ready
+- [ ] Destructive flag validation performed; risk exists, backup/revert plan was written
+
+<!-- AC Templates
+Description: This section will be filled by Bootstrap with manifest data.
+Required manifest fields: stack.primary, project.conventions, project.subprojects
+Example output:
+**Stack-Specific AC Examples:**
+
+API Endpoint for:
 ```
-## Kabul Kriterleri
-- [ ] [Eski davranis korunuyor]
-- [ ] [Yeni yapi: aciklama]
-- [ ] Mevcut testler gecmeye devam ediyor
-- [ ] [Varsa yeni testler]
+- [ ] `POST /api/v1/orders` endpoint created
+- [ ] Request body DTO is validated
+- [ ] Unauthorized access returns 401
+- [ ] Successful operation returns 201 + order object
+- [ ] Unit test: service layer test should be performed
+- [ ] E2E test: endpoint-to-endpoint test should be performed
 ```
 
-**DB Schema Degisikligi:**
+Frontend Page for:
+```
+- [ ] `/orders` page created
+- [ ] Implemented as Server Component
+>>>
+### 5.2 — Task Creation
 
-Task metninde `schema`, `migration`, `model`, `kolon`, `tablo`, `column`, `table`, `database` kelimeleri geciyorsa veya manifest'te ORM/database tespiti bu taskla iliskiliyse asagidaki AC'leri otomatik ekle. Detay kural: `.claude/rules/db-migration-discipline.md`.
+#### Backlog Task Create
 
-```
-## Kabul Kriterleri
-- [ ] Migration dosyasi olusturuldu ve schema/model degisikligiyle birlikte commitlenecek
-- [ ] Dry-run/preview komutu calisti ve sonucu task notuna yazildi
-- [ ] Rollback/down script veya dosya yolu hazir
-- [ ] Destructive flag taramasi yapildi; risk varsa backup/geri donus plani yazildi
-```
-
-<!-- GENERATE: AC_TEMPLATES
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: stack.primary, project.conventions, project.subprojects
-Ornek cikti:
-**Stack-Spesifik AC Ornekleri:**
-
-API Endpoint icin:
-```
-- [ ] `POST /api/v1/orders` endpointi olusturuldu
-- [ ] Request body DTO ile validate ediliyor
-- [ ] Yetkisiz erisimde 401 donuyor
-- [ ] Basarili islemde 201 + order objesi donuyor
-- [ ] Birim test: service katmani test edilmeli
-- [ ] E2E test: endpoint uctan uca test edilmeli
-```
-
-Frontend Sayfa icin:
-```
-- [ ] `/orders` sayfasi olusturuldu
-- [ ] Server Component olarak implement edildi
-- [ ] Loading state var
-- [ ] Error state var
-- [ ] Responsive tasarim (mobile + desktop)
-- [ ] Component testi yazilmali
-```
-
-Mobile Ekran icin:
-```
-- [ ] `OrdersScreen` olusturuldu
-- [ ] `useTheme()` ile tema renkleri kullaniliyor
-- [ ] Hardcoded renk yok
-- [ ] Pull-to-refresh var
-- [ ] Bos durum (empty state) var
-```
--->
-
-### 5.2 — Gorev Olusturma
-
-```
+```markdown
 backlog task create \
-  "<baslik>" \
-  --description "<detayli_aciklama>" \
+  "<title>" \
+  --description "<detailed explanation>" \
   --priority "<high|medium|low>" \
   --labels "<feature|bug|refactor|infra>"
 ```
 
-Aciklama icerigi:
-```
-## Baglam
-[Neden bu gorev gerekli]
+**Description**
 
-## Etkilenen Alanlar
-- [dosya/modul listesi]
+*   **Reason for this task**: [Insert reason]
+*   **Affected Areas**: 
+    -   [List of files/directories affected]
+*   **Affected Files**:
+    -   [List of directly affected files, as per Step 2.3 — conflict resolution]
+        -   `api/src/controllers/auth.controller.ts`
+        -   `api/src/middleware/auth.ts`
+        -   `api/src/routes/auth.routes.ts`
+## Application Notes
+- Reference: [similar existing implementation]
+- Warning: [potential risks]
+- Suggestion: [model/teammate suggestion]
 
-## Affected Files
-[Step 2.3'teki dogrudan etkilenen dosyalarin tam yol listesi — task-conductor conflict tespiti icin]
-- api/src/controllers/auth.controller.ts
-- api/src/middleware/auth.ts
-- api/src/routes/auth.routes.ts
-
-## Uygulama Notlari
-- Referans: [benzer mevcut implementasyon]
-- Dikkat: [potansiyel riskler]
-- Oneri: [model/teammate onerisi]
-
-## Kabul Kriterleri
+## Acceptance Criteria
 - [ ] [AC 1]
 - [ ] [AC 2]
-- [ ] [Test kriteri]
-```
+- [ ] [Test criteria]
 
-> **KURAL:** `Affected Files` bolumu ZORUNLU. Bu bolum olmadan task-conductor cakisma tespiti yapamaz.
-> **KURAL:** Dosya yollari Codebase-relative olmali (ornekin `api/src/...`, `mobile/app/...`).
+**RULE:** The `Affected Files` section is MANDATORY. This section must be provided for task-conductor to detect issues.
+**RULE:** File paths must be relative to the codebase (e.g., `api/src/...`, `mobile/app/...`).
 
-### 5.3 — Coklu Gorev (Bolunmus Kapsam)
+### 5.3 — Multi-Task (Split Scope)
 
-Gorev bolundugunyse her alt gorev icin ayri olustur ve bagimlilik belirt:
+If a scope is split, create separate tasks for each sub-task and specify dependency:
 
 ```
 backlog task create "feat: Order modeli ve migration (#ana_gorev)" --priority "high" --labels "feature"
@@ -385,63 +358,72 @@ backlog task create "feat: Order listesi frontend sayfasi (#ana_gorev)" --priori
 
 ---
 
-## Step 6 — Kullanici Raporu
+## Step 6 — User Report
 
-> **DUSUNME KAPISI:** Step 0'daki varsayimlarin hala gecerli mi? Bu adima gecmeden once bir onceki adimin ciktisini sorgula. Yeni bilgi varsayimlarini degistirdiyse Step 0'a don.
+> **DECISION POINT:** Is the assumption still valid from Step 0? Check the outcome of the previous step before proceeding to this step. If new information changes the assumptions, go back to Step 0.
 
 ```
-## Gorev Plani Raporu
+## Task Plan Report
 
-### Istek
-[kullanicinin orijinal istegi]
+### Request
+[original user request]
 
-### Analiz Ozeti
-- **Tur:** Feature / Enhancement / Bug Fix / Refactor
-- **Karmasiklik:** <puan>/10 — <seviye>
-- **Etkilenen alt projeler:** [liste]
-- **Tahmini dosya sayisi:** <sayi>
+### Analysis Summary
+- **Type:** Feature / Enhancement / Bug Fix / Refactor
+- **Complexity:** <score>/10 — <level>
 
-### Olusturulan Gorevler
-| # | ID | Baslik | Oncelik | Bagimlilik |
+>>>
+### Affected Projects
+| List |
+| --- |
+
+### Estimated File Count
+<Number>
+
+### Created Tasks
+| # | ID | Title | Priority | Dependence |
 |---|---|---|---|---|
-| 1 | #45 | Order modeli ve migration | High | — |
-| 2 | #46 | Order service katmani | High | #45 |
-| 3 | #47 | Order API endpoint'leri | Medium | #46 |
-| 4 | #48 | Order listesi frontend | Medium | #47 |
+| 1 | #45 | Order model and migration | High | — |
+| 2 | #46 | Order service layer | High | #45 |
+| 3 | #47 | Order API endpoints | Medium | #46 |
+| 4 | #48 | Order list frontend | Medium | #47 |
 
-### Oneriler
-- **Model:** <Sonnet/Opus> oneriliyor
-- **Teammate:** <gerekli/opsiyonel/gerek yok>
-- **Siralama:** [bagimllik sirasina gore yol haritasi]
+### Recommendations
+- **Model:** <Sonnet/Opus> recommended
+- **Teammate:** <required/optional/not required>
+- **Dependency Chart:** [dependency chart in order of dependence]
 
-### Referans Dosyalar
-[incelenmesi gereken mevcut dosyalar]
+### Reference Files
+[files to be analyzed]
 ```
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — Only `.claude/`, `CLAUDE.md`, `.mcp.json`, and `.claude-ignore` files are allowed in the Agentbase directory. Writing `.claude/` directory or `../Codebase/CLAUDE.md` is NOT ALLOWED.
+2. **Git runs only in Codebase** — All Git operations (commit, push, branch) should be performed within the `../Codebase/` directory. The Agentbase does not have Git.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) are readable and can be modified if necessary. Config files (`.claude/`, `CLAUDE.md`) should NOT be written in the Codebase.
 
-1. **Once analiz et** — Codebase'i okumadan gorev olusturma. Mevcut yapiyi anla.
-2. **Spesifik AC yaz** — "Iyilestir", "Duzelt" gibi belirsiz kriterler YASAK. Olculebilir olmali.
-3. **Test kriteri zorunlu** — Her gorevde en az bir test AC'si olmali.
-4. **Kapsam kontrolu** — Tek gorev cok genisse bol. Cok darsa birlestir.
-5. **Bagimlilik belirt** — Alt gorevler arasindaki bagimliligi acikca yaz.
-6. **Mevcut pattern'i referans goster** — Benzer implementasyon varsa AC'de referans ver.
-7. **Anti-pattern'lerden kacin** — Belirsiz, olculemeyen, cok genis gorevler olusturma.
-8. **Backlog CLI kullan** — Gorevleri SADECE `backlog task create` ile olustur.
-9. **Model/Teammate onerisi** — Her gorev icin uygun model ve teammate onerisi ver.
-10. **Codebase yolu** — Tum dosya analizleri `../Codebase/` uzerinden.
-
+1. **Analyze once** — Create tasks without reading the Codebase first. Understand the existing code.
+2. **Specify AC clearly** — "Improve", "Refactor" like vague criteria are NOT ALLOWED. They must be specific and measurable.
+3. **Test criterion is mandatory** — Each task should have at least one test criterion.
+4. **Scope control** — Avoid creating too broad tasks. Too many tasks can lead to duplication.
+5. **Dependence specify clearly** — Clearly specify the dependence between tasks.
+6. **Refer to existing pattern** — If a similar implementation exists, refer to it in the task description.
+7. **Avoid anti-patterns** — Avoid creating vague, unmeasurable, or too broad tasks.
+8. **Use Backlog CLI** — Create tasks only using `backlog task create`.
+9. **Model/Teammate recommendation** — Specify an appropriate model and teammate for each task.
+10. **Codebase path** — All file analysis should be performed within the `../Codebase/` directory.
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Last step - self-refresh check. Common to Bootstrap
+Self-Refresh section changes the command. The command looks through the project's content:
+small inconsistency Edit, large change backlog
+is reported as a task.
 -->
+
+### 3.1b — Architecture decision / ADR check
+
+Task metninde `schema`, `migration`, `model`, `kolon`, `tablo`, `column`, `table`, `database` kelimeleri geciyorsa veya manifest'te ORM/database tespiti bu taskla iliskiliyse asagidaki AC'leri otomatik ekle. Detay kural: `.claude/rules/db-migration-discipline.md`.

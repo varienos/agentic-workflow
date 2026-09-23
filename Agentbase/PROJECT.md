@@ -1,6 +1,6 @@
 # Project
 
-<!-- Bu dosya Bootstrap tarafindan doldurulur. -->
-<!-- Icerik: Proje tanimi, dizin yapisi, ortamlar, onemli notlar -->
-<!-- Kaynak: project-manifest.yaml + Codebase analizi -->
-<!-- Tum agent context'lerine @ ile enjekte edilir -->
+<!-- This file is filled by Bootstrap. -->
+<!-- Content: project definition, directory layout, environments, important notes -->
+<!-- Source: project-manifest.yaml + Codebase analysis -->
+<!-- Injected into all agent contexts via @ -->

@@ -1,53 +1,53 @@
 # Lessons
 
-> Bu dosya ajanların **öz-gelişim döngüsünü** taşır. `ORCHESTRATION.md` "Bölüm 3 — Öz-Gelişim Döngüsü"
-> kurallarına göre her düzeltmeden sonra burada bir ders kaydı tutulur.
-> Root `CLAUDE.md` üzerinden `@LESSONS.md` satırı (Claude Code resmi import syntax'ı — boşluksuz) ile context'e enjekte edilir.
+> This file carries the agents' **self-improvement loop**. Per `ORCHESTRATION.md` "Section 3 — Self-Improvement Loop",
+> a lesson record is kept here after every correction.
+> It is injected into context via the `@LESSONS.md` line in root `CLAUDE.md` (Claude Code official import syntax — no spaces).
 
-<!-- Bu dosya zamanla ajanlar tarafindan doldurulur. -->
-<!-- Icerik: Kullanicidan gelen duzeltmelerin kalibi, tekrar etmemesi icin yazilan kurallar -->
-<!-- Kaynak: Oturum icindeki feedback'ler, /memorize akisi, kullanici uyarilari -->
-<!-- Tum agent context'lerine @ ile enjekte edilir -->
+<!-- This file is filled over time by agents. -->
+<!-- Content: patterns from user corrections, and rules written so they do not repeat -->
+<!-- Source: in-session feedback, /memorize flow, user warnings -->
+<!-- Injected into all agent contexts via @ -->
 
 ---
 
-## Ders Kayıt Formatı
+## Lesson Record Format
 
-Her ders aşağıdaki yapıyı izler:
+Every lesson follows this structure:
 
 ```markdown
-### [YYYY-MM-DD] — Kısa başlık
+### [YYYY-MM-DD] — Short title
 
-**Bağlam:** Hatanın yapıldığı durum — hangi task, hangi katman, hangi komut.
+**Context:** Situation where the mistake happened — which task, layer, or command.
 
-**Yanlış davranış:** Ne yapıldı (kısa, suçlama yok).
+**Wrong behavior:** What was done (short, no blame).
 
-**Doğru kural:** Bir dahaki sefere ne yapılmalı (imperative cümle — "şunu kontrol et", "şunu yapmadan önce şunu sor").
+**Correct rule:** What to do next time (imperative — "check X", "ask Y before doing Z").
 
-**Why:** Neden bu kural önemli (kayba neden olan kök).
+**Why:** Why this rule matters (the root that caused loss).
 
-**How to apply:** Hangi tetikleyici görüldüğünde devreye girer.
+**How to apply:** Which trigger brings this rule into play.
 
-**Etiketler:** `bootstrap`, `backlog`, `git`, `codebase-leak`, `agent-spawn`, vb.
+**Tags:** `bootstrap`, `backlog`, `git`, `codebase-leak`, `agent-spawn`, etc.
 ```
 
 ---
 
-## Dersler
+## Lessons
 
-<!-- Yeni dersler buraya tarihten yeni → eski sırayla eklenir. -->
-<!-- İlk ders eklenene kadar bu bölüm boş kalır. -->
+<!-- New lessons are added here newest → oldest. -->
+<!-- This section stays empty until the first lesson is added. -->
 
-### [2026-05-31] — Teslimat modeli ifadelerini tum yuzeylerde tara
+### [2026-05-31] — Scan delivery-model wording on every surface
 
-**Bağlam:** TASK-237/TASK-238 iki-repo teslimat modeli review'unde README ve bootstrap metni duzeltilmisken `root-gitignore.skeleton` ayni eski klonlama iddiasini tasimaya devam ediyordu.
+**Context:** During the TASK-237/TASK-238 two-repo delivery model review, README and bootstrap text were fixed while `root-gitignore.skeleton` still carried the same old cloning claim.
 
-**Yanlış davranış:** Sadece gorunur README/bootstrap yuzeyi kontrol edilirse, kaynak skeleton yorumlarindaki kullaniciya donuk yanlis model anlatimi kacabilir.
+**Wrong behavior:** Checking only the visible README/bootstrap surface lets user-facing wrong model wording in source skeleton comments slip through.
 
-**Doğru kural:** Teslimat/repo modeli gibi kontrat ifadeleri degistiginde README, bootstrap komutu, skeleton kaynaklari ve regresyon testleri birlikte taranmalidir.
+**Correct rule:** When contract wording such as delivery/repo model changes, scan README, the bootstrap command, skeleton sources, and regression tests together.
 
-**Why:** Bootstrap'in uretecegi hedef dosyalar skeleton kaynaklarindan beslendigi icin dokumantasyon duzelse bile uretilen model yanlis kalabilir.
+**Why:** Target files Bootstrap generates are fed by skeleton sources, so the generated model can stay wrong even after documentation is fixed.
 
-**How to apply:** `Codebase`, `iki-repo`, `submodule`, `gitignore`, `klon` veya `clone` ifadeleri degistiginde `rg` ile tum yuzeylerde stale ifade taramasi yap.
+**How to apply:** When phrases like `Codebase`, `two-repo`, `submodule`, `gitignore`, `clone`, or `klon` change, run `rg` across all surfaces for stale wording.
 
-**Etiketler:** `bootstrap`, `git`, `two-repo`, `skeleton`, `review`
+**Tags:** `bootstrap`, `git`, `two-repo`, `skeleton`, `review`

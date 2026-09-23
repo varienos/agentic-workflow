@@ -1,5 +1,5 @@
 # Workflows
 
-<!-- Bu dosya Bootstrap tarafindan doldurulur. -->
-<!-- Icerik: Git flow, PR sureci, deploy adimlari, commit convention -->
-<!-- Kaynak: Bootstrap roportaji Faz 2 + tespit edilen CI/CD -->
+<!-- This file is filled by Bootstrap. -->
+<!-- Content: Git flow, PR process, deploy steps, commit convention -->
+<!-- Source: Bootstrap interview Phase 2 + detected CI/CD -->

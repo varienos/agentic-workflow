@@ -1,32 +1,28 @@
-# Express Kodlama Kurallari
+# Express Coding Rules
 
-> Bu kurallar Express kullanan projeler icin gecerlidir.
-> `backend/nodejs` aile kurallari bu dosyayla birlikte uygulanir.
+> These rules apply to projects that use Express.
+> `backend/nodejs` family rules apply together with this file.
 
-## Yapi ve Sorumluluklar
+## Structure and Responsibilities
 
-- Route dosyalari routing ve middleware baglama isiyle sinirli kalmali.
-- Controller/handler katmani request'i normalize eder, service katmani is logigini tasir.
-- Veri erisim ve dis servis cagrilarini handler icine gomerek buyuk fonksiyonlar olusturma.
+- Route files should be limited to routing and middleware wiring.
+- The controller/handler layer normalizes the request; the service layer carries business logic.
+- Do not create large functions by embedding data access and external service calls inside handlers.
 
-## Middleware Zinciri
+## Middleware Chain
 
-- Kimlik dogrulama, yetki, rate-limit ve validation middleware'leri acik sirayla baglanmali.
-- Global error middleware zincirin sonunda tek yerde tanimlanmali.
-- Middleware icinde response gonderildiyse `next()` cagrilmaz.
+- Authentication, authorization, rate-limit, and validation middleware must be wired in an explicit order.
+- Global error middleware must be defined once at the end of the chain.
+- If a middleware already sent a response, do not call `next()`.
 
-## Async Hata Akisi
+## Async Error Flow
 
-- `async` handler'lari merkezi hata middleware'ine dusurecek bir wrapper veya utility kullan.
-- Promise rejection'larini yutarak sessiz basari gorunumu olusturma.
+- Use a wrapper or utility that routes `async` handlers into the central error middleware.
+- Do not swallow promise rejections and create a silent success appearance.
 
 ```ts
-// Tercih edilen desen
+// Preferred pattern
 router.post('/users', validate(createUserSchema), asyncHandler(userController.create));
 ```
 
-## Validation ve Response
-
-- `req.body`, `req.query` ve `req.params` validation olmadan kullanilmaz.
-- Basarili ve hatali response formatlari tutarli olmali; ozellikle API'lerde ortak response contract tercih edilir.
-
+>>>

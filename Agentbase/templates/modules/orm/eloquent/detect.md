@@ -1,4 +1,4 @@
-# Eloquent (Laravel) Modul Tespiti
+# Eloquent (Laravel) Module Detection
 
 ## Checks
 
@@ -18,7 +18,7 @@
 
 ## Affects Core
 
-- task-hunter: VERIFICATION_COMMANDS'a `php artisan migrate:status` eklenir
-- workflow-lifecycle: Migration fail protokolu eklenir
-- CLAUDE.md: Eloquent kurallari bolumu eklenir
-- settings.json: 2 hook tanimi eklenir
+- task-hunter: `php artisan migrate:status` is added to VERIFICATION_COMMANDS
+- workflow-lifecycle: Migration fail protocol is added
+- CLAUDE.md: Eloquent rules section is added
+- settings.json: 2 hook definitions are added

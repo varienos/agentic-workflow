@@ -209,21 +209,13 @@ test('ensureGraphify: graphify kuruluysa kurulum atlanir (idempotent)', () => {
   assert.ok(!spawn.calls.some((c) => c.startsWith('uv ')), 'uv tool install cagrilmamali');
 });
 
-test('ensureGraphify: graphify yoksa uv tool install graphifyy calisir', () => {
+test('ensureGraphify: graphify yoksa kurulum yapmaz ve init devam eder', () => {
   const spawn = fakeSpawn((cmd) =>
     cmd === 'which' ? { status: 1, stdout: '' } : { status: 0 });
   const r = ensureGraphify({ spawn });
-  assert.equal(r.action, 'installed');
-  assert.ok(spawn.calls.includes('uv tool install graphifyy'), 'dogru kurulum komutu cagrilmali');
-  // options dogrulugu: which probe encoding'li, uv install stdio:inherit'li cagrilmali
-  assert.equal(spawn.opts[0].encoding, 'utf8', 'which probe encoding:utf8 ile cagrilmali');
-  assert.equal(spawn.opts[1].stdio, 'inherit', 'uv install stdio:inherit ile cagrilmali');
-});
-
-test('ensureGraphify: kurulum basarisizsa firlatir (fail-loud)', () => {
-  const spawn = fakeSpawn((cmd) =>
-    cmd === 'which' ? { status: 1, stdout: '' } : { status: 1 });
-  assert.throws(() => ensureGraphify({ spawn }), /kurulumu başarısız/);
+  assert.equal(r.action, 'absent-optional');
+  assert.ok(!spawn.calls.some((c) => c.startsWith('uv ')), 'graphify absence must not install anything');
+  assert.equal(spawn.opts[0].encoding, 'utf8');
 });
 
 test('ensureGraphify: dry-run hicbir komut calistirmaz', () => {
@@ -235,12 +227,12 @@ test('ensureGraphify: dry-run hicbir komut calistirmaz', () => {
 
 // --- zorunlu modul: assemble her zaman knowledge-graph/graphify aktive eder ---
 
-test('assemble: knowledge-graph/graphify her projede aktif (zorunlu modul)', () => {
+test('assemble: graphify is optional and stays inactive when it is not detected', () => {
   const detection = detect(tmpProject({ 'package.json': {} }));
   const answers = collectDefaults(QUESTIONS, detection, {});
   const manifest = assemble(detection, answers, {});
-  assert.deepEqual(manifest.modules.active['knowledge-graph'], ['graphify']);
-  // manifest hala gecerli olmali
+  assert.equal(manifest.modules.active['knowledge-graph'], undefined);
+  assert.equal(manifest.developer.communication_language, 'en');
   const { valid, errors } = validateManifest(manifest);
   assert.equal(valid, true, JSON.stringify(errors));
 });

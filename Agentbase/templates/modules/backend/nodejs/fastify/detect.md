@@ -1,4 +1,4 @@
-# Fastify Modul Tespit Kurallari
+# Fastify Module Detection Rules
 
 ## Checks
 
@@ -16,5 +16,5 @@
 
 ## Affects Core
 
-- task-hunter: Fastify route/schema testlerinin calistirilmasi beklenir
-- CLAUDE.md: Fastify plugin ve schema-first kurallari eklenir
+- task-hunter: Fastify route/schema tests are expected to run
+- CLAUDE.md: Fastify plugin and schema-first rules are added

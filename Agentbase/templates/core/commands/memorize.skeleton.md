@@ -1,155 +1,154 @@
-# Memorize — Oturum Ogrenme Kaydedici
+# Memorize — Session Learning Recorder
 
-> Mevcut oturumdaki onemli ogrenimleri analiz eder ve hafizaya kaydeder.
-> Kullanim: `/memorize`, `/memorize "auth modulu icin ogrenilenler"`
-
----
-
-## Felsefe
-
-Her sey kaydetmeye deger degildir. Hafiza, gelecekte TEKRAR KARSILASILDACAK bilgileri saklar.
-"Bunu bilseydim daha hizli yapardim" testini gec: ileride ayni durumla karsilasan ajan bu bilgiden faydalanir mi?
+> Analyzes important learnings from the current session and records them to memory.
+> Usage: `/memorize`, `/memorize "learnings for the auth module"`
 
 ---
 
-## Step 1 — Oturum Analizi
+## Philosophy
 
-Mevcut konusmadaki tum etkilesimleri analiz et:
-
-1. Hangi dosyalar uzerinde calisildi?
-2. Hangi sorunlarla karsilasildi?
-3. Nasil cozulduler?
-4. Beklenmedik durumlar oldu mu?
-5. Kullanici ozel tercihler belirtti mi?
+Not everything is worth recording. Memory stores information that will be ENCOUNTERED AGAIN later.
+Pass the "I would have been faster if I had known this" test: will an agent facing the same situation later benefit from this?
 
 ---
 
-## Step 2 — Ogrenimleri Siniflandir
+## Step 1 — Session Analysis
 
-### Kaydetmeye Deger Kategoriler
+Analyze all interactions in the current conversation:
 
-| Kategori | Aciklama | Ornek |
+1. Which files were worked on?
+2. Which problems were encountered?
+3. How were they solved?
+4. Were there unexpected situations?
+5. Did the user state special preferences?
+
+---
+
+## Step 2 — Classify Learnings
+
+### Categories Worth Recording
+
+| Category | Description | Example |
 |---|---|---|
-| **Cozum Deseni** | Belirli bir sorun icin bulunan cozum | "Prisma N+1 sorunu `include` ile cozuldu" |
-| **Proje Konvansiyonu** | Kod tabanindaki kesfedilen gizli kural | "Service'ler hep `Result<T>` donuyor" |
-| **Hata Tuzagi** | Kolay dusulen, zor bulunan hata | "useEffect cleanup'i eksik olunca memory leak" |
-| **Mimari Karar** | Neden boyle yapilandirilmis | "Auth, gateway'de degil her service'de ayri" |
-| **Kullanici Tercihi** | Kullanicinin belirttigi calisma tercihi | "PR aciklamalari Turkce olsun" |
-| **Arac Kullanimi** | Belirli bir aracin kullanim detayi | "backlog CLI'da --set flag'i tirnak ister" |
+| **Solution Pattern** | Solution found for a specific problem | "Prisma N+1 solved with `include`" |
+| **Project Convention** | Hidden rule discovered in the codebase | "Services always return `Result<T>`" |
+| **Pitfall** | Easy to fall into, hard to find | "Memory leak when useEffect cleanup is missing" |
+| **Architecture Decision** | Why it is structured this way | "Auth is per service, not at the gateway" |
+| **User Preference** | Working preference stated by the user | "PR descriptions should be in English" |
+| **Tool Usage** | Usage detail for a specific tool | "backlog CLI `--set` flag needs quotes" |
 
-### Kaydetmeye Deger OLMAYAN Seyler
+### Things NOT Worth Recording
 
-- Genel programlama bilgisi (herkes bilir)
-- Tek seferlik islemler (tekrarlanmayacak)
-- Kisisel bilgiler (kullanici hakkinda spesifik olmayan)
-- Cok spesifik debug adimlari (baglamsiz anlamsiz)
-- Zaten dokumantasyonda olan bilgiler
+- General programming knowledge (everyone knows)
+- One-off operations (will not repeat)
+- Personal information (not project-specific about the user)
+- Overly specific debug steps (meaningless without context)
+- Information already in documentation
 
 ---
 
-## Step 3 — Hafiza Dosyalari Olustur
+## Step 3 — Create Memory Files
 
-### 3.1 — Dosya Formati
+### 3.1 — File Format
 
-Her ogrenme icin ayri bir hafiza dosyasi olustur:
+Create a separate memory file for each learning:
 
-**Kutsal Yol Kurali:**
-- Agentbase .claude/memory/ dizini icine yaz
-- Codebase icine hafiza dosyasi YAZMA
+**Invariant Path Rule:**
+- Write into the Agentbase .claude/memory/ directory
+- Do not write memory files into Codebase
 
 <!-- GENERATE: MEMORY_PATH
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: paths.memory
-Ornek cikti:
-**Hafiza dizini:** `.claude/memory/`
+Description: This section is filled by Bootstrap from manifest data.
+Required manifest fields: paths.memory
+Example output:
+**Memory directory:** `.claude/memory/`
 
-Dosya yolu: `.claude/memory/<kategori>/<kebab-case-isim>.md`
+File path: `.claude/memory/<category>/<kebab-case-name>.md`
 
-Kategori dizinleri:
-- `.claude/memory/patterns/` — Cozum desenleri
-- `.claude/memory/conventions/` — Proje konvansiyonlari
-- `.claude/memory/pitfalls/` — Hata tuzaklari
-- `.claude/memory/decisions/` — Mimari kararlar
-- `.claude/memory/preferences/` — Kullanici tercihleri
-- `.claude/memory/tools/` — Arac kullanimi
+Category directories:
+- `.claude/memory/patterns/` — Solution patterns
+- `.claude/memory/conventions/` — Project conventions
+- `.claude/memory/pitfalls/` — Pitfalls
+- `.claude/memory/decisions/` — Architecture decisions
+- `.claude/memory/preferences/` — User preferences
+- `.claude/memory/tools/` — Tool usage
 -->
 
-### 3.2 — Dosya Icerigi
+### 3.2 — File Content
 
-Her hafiza dosyasi asagidaki formatta olmali:
+Every memory file must use this format:
 
 ```markdown
 ---
-name: <kisa_isim>
-description: <tek_cumle_aciklama>
+name: <short_name>
+description: <one_sentence_description>
 type: <pattern|convention|pitfall|decision|preference|tool>
-created: <tarih>
-context: <hangi_gorev_veya_oturumda_orenildi>
+created: <date>
+context: <which_task_or_session_it_was_learned_in>
 ---
 
-## Ogrenme
+## Learning
 
-[Ogrenilenin net aciklamasi — gelecekte karsilasan ajan bunu okuyup hemen anlayabilmeli]
+[Clear explanation of what was learned — a future agent should understand immediately]
 
-## Baglam
+## Context
 
-[Hangi durumda karsilasildi, neden onemli]
+[In which situation it was encountered, why it matters]
 
-## Ornek
+## Example
 
-[Varsa kod ornegi veya somut senaryo]
+[Code example or concrete scenario if available]
 ```
 
-### 3.3 — Dosya Isimlendirme
+### 3.3 — File Naming
 
-- Kebab-case kullan: `prisma-n-plus-one-cozumu.md`
-- Kisa ve aciklayici: ismi okuyan ne hakkinda oldugunu anlamali
-- Tarih ekleme: dosya icindeki frontmatter'da zaten var
+- Use kebab-case: `prisma-n-plus-one-solution.md`
+- Short and descriptive: a reader should understand the topic from the name
+- Do not add a date: it is already in the frontmatter inside the file
 
 ---
 
-## Step 4 — Rapor
+## Step 4 — Report
 
 ```
-## Hafiza Raporu
+## Memory Report
 
-### Kaydedilen Ogrenimler
-| # | Kategori | Isim | Dosya |
+### Recorded Learnings
+| # | Category | Name | File |
 |---|---|---|---|
-| 1 | Cozum Deseni | Prisma N+1 cozumu | `patterns/prisma-n-plus-one-cozumu.md` |
-| 2 | Hata Tuzagi | useEffect cleanup | `pitfalls/use-effect-cleanup-gerekli.md` |
+| 1 | Solution Pattern | Prisma N+1 solution | `patterns/prisma-n-plus-one-solution.md` |
+| 2 | Pitfall | useEffect cleanup | `pitfalls/use-effect-cleanup-required.md` |
 
-### Atlanan Seyler
-- [genel bilgi, tek seferlik islem vs. — neden kaydedilmedi]
+### Skipped
+- [general knowledge, one-off operation, etc. — why not recorded]
 
-### Istatistik
-- **Analiz edilen etkilesim:** <sayi>
-- **Kaydedilen ogrenme:** <sayi>
-- **Atlanan:** <sayi>
+### Stats
+- **Interactions analyzed:** <count>
+- **Learnings recorded:** <count>
+- **Skipped:** <count>
 ```
 
 ---
 
-## Zorunlu Kurallar
+## Required Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/` directory inside Codebase or writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and, if the task requires it, edited. Config files (`.claude/`, `CLAUDE.md`) cannot be written inside Codebase.
 
-1. **Secici ol** — Her seyi kaydetme. "Bunu bilseydim daha hizli yapardim" testini uygula.
-2. **Net yaz** — Gelecekte okuyan ajan bagiam olmadan anlamali.
-3. **Ornek ekle** — Mumkunse somut kod ornegi veya senaryo ekle.
-4. **Frontmatter zorunlu** — Her dosyada `name`, `description`, `type`, `created`, `context` olmali.
-5. **Tekrar kontrol et** — Ayni ogrenme zaten kayitliysa TEKRAR KAYDETME.
-6. **Kategoriyi dogru sec** — Yanlis kategoriye koymaktan kacin.
-7. **Kisa tut** — Bir hafiza dosyasi 50 satirdan uzun olmamali.
-8. **Hassas bilgi kaydetme** — Credential, secret, kisisel bilgi ASLA hafizaya yazilmaz.
+1. **Be selective** — Do not record everything. Apply the "I would have been faster if I had known this" test.
+2. **Write clearly** — A future agent must understand without the original context.
+3. **Add an example** — Include a concrete code example or scenario when possible.
+4. **Frontmatter required** — Every file must have `name`, `description`, `type`, `created`, `context`.
+5. **Check for duplicates** — If the same learning is already recorded, do NOT record again.
+6. **Pick the right category** — Avoid putting it in the wrong category.
+7. **Keep it short** — A memory file should not exceed 50 lines.
+8. **Do not record sensitive information** — Credentials, secrets, personal data are NEVER written to memory.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->

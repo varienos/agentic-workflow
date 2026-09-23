@@ -2,7 +2,7 @@
   "name": "agentbase",
   "version": "2.5.0",
   "private": true,
-  "description": "Agentic workflow skeleton isleme araclari",
+  "description": "Host-neutral agent workflow generator",
   "scripts": {
     "init": "node bin/init.js --codebase ../Codebase --agentbase .",
     "init:yes": "node bin/init.js --codebase ../Codebase --agentbase . --yes",

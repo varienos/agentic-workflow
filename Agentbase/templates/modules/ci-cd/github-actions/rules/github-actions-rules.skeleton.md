@@ -1,44 +1,44 @@
-# GitHub Actions Kurallari
+# GitHub Actions Rules
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.name, project.description, project.structure
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
-## Temel Kurallar
+## Core Rules
 
-### Workflow Dosyasi Standartlari
-- Her workflow dosyasinda `name:` alani zorunludur
-- Workflow trigger'lari acikca belirtilmeli (`on:` blogu)
-- `runs-on:` her job'da tanimli olmali
+### Workflow File Standards
+- Every workflow file must include a `name:` field
+- Workflow triggers must be stated explicitly (`on:` block)
+- `runs-on:` must be defined on every job
 
-### Secret Yonetimi
+### Secret Management
 
-| Kural | Aciklama |
+| Rule | Description |
 |-------|----------|
-| Hardcoded secret YASAK | Tum secret'lar GitHub Secrets uzerinden yonetilmeli |
-| Environment secret'lari | Production secret'lari environment protection ile korunmali |
-| GITHUB_TOKEN scope | Minimum gerekli izinler verilmeli (`permissions:` blogu) |
+| Hardcoded secrets are FORBIDDEN | All secrets must be managed via GitHub Secrets |
+| Environment secrets | Production secrets must be protected with environment protection |
+| GITHUB_TOKEN scope | Grant the minimum required permissions (`permissions:` block) |
 
-### Cache Stratejisi
-- Node.js projeleri: `actions/cache` ile `node_modules/` veya `.npm/` cache'lenmeli
-- Python projeleri: `pip` cache kullanilmali
-- Docker build: layer cache (`docker/build-push-action` ile `cache-from/cache-to`)
+### Cache Strategy
+- Node.js projects: cache `node_modules/` or `.npm/` with `actions/cache`
+- Python projects: use `pip` cache
+- Docker build: layer cache (`docker/build-push-action` with `cache-from/cache-to`)
 
-### Artifact Yonetimi
-- Build artifact'lari `actions/upload-artifact` ile saklanmali
-- Test raporlari (coverage, junit) artifact olarak yuklenmeli
-- Artifact retention suresi proje ihtiyacina gore ayarlanmali (default 90 gun)
+### Artifact Management
+- Build artifacts must be stored with `actions/upload-artifact`
+- Test reports (coverage, junit) must be uploaded as artifacts
+- Artifact retention should be set to project needs (default 90 days)
 
-### Anti-Pattern'ler
+### Anti-Patterns
 
-| Anti-Pattern | Dogru Yaklasim |
+| Anti-Pattern | Correct Approach |
 |-------------|----------------|
-| `continue-on-error: true` gereksiz kullanimi | Sadece opsiyonel adimlar icin kullanin |
-| Butun repoyu checkout (`fetch-depth: 0`) | Gereksizse shallow clone (`fetch-depth: 1`) |
-| `latest` tag kullanimi action'larda | Spesifik versiyon pin'leyin (`@v4`, `@sha`) |
-| Tek monolitik workflow | Ise gore ayrilmis workflow'lar (test, build, deploy) |
+| Unnecessary use of `continue-on-error: true` | Use only for optional steps |
+| Checking out the entire repo (`fetch-depth: 0`) | Prefer shallow clone (`fetch-depth: 1`) when not needed |
+| Using the `latest` tag on actions | Pin a specific version (`@v4`, `@sha`) |
+| One monolithic workflow | Split workflows by purpose (test, build, deploy) |

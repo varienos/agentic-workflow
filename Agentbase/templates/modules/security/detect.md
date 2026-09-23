@@ -1,4 +1,4 @@
-# Security Modul Tespiti
+# Security Module Detection
 
 ## Checks
 
@@ -16,5 +16,5 @@
 
 ## Affects Core
 
-- code-review: IDOR kontrol listesi eklenir
-- task-review: Guvenlik maddeleri eklenir
+- code-review: IDOR checklist is added
+- task-review: Security items are added

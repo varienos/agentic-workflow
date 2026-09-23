@@ -69,10 +69,26 @@ function stripAnsi(str) {
  * Sadece renk/bold/reset kodlarina (SGR: \x1b[...m) izin verir.
  * Cursor reposition, ekran silme, OSC sekanslarini temizler.
  */
+function isAllowedSgr(params) {
+  if (!params) return false;
+  return params.split(';').every((part) => {
+    if (part === '0' || part === '1' || part === '22') return true;
+    const n = Number(part);
+    if (!Number.isInteger(n)) return false;
+    if (n >= 30 && n <= 37) return true;
+    if (n === 39 || n === 49) return true;
+    if (n >= 40 && n <= 47) return true;
+    if (n >= 90 && n <= 97) return true;
+    if (n >= 100 && n <= 107) return true;
+    return false;
+  });
+}
+
 function sanitizeForDisplay(str) {
   return String(str || '')
-    .replace(/\x1b\[[^m]*?[^0-9;m]/g, '')        // Non-SGR CSI sekanslarini sil
-    .replace(/\x1b\][^\x07\x1b]*(\x07|\x1b\\)/g, ''); // OSC sekanslarini sil
+    .replace(/\x1b\[[^m]*?[^0-9;m]/g, '')
+    .replace(/\x1b\][^\x07\x1b]*(\x07|\x1b\\)/g, '')
+    .replace(/\x1b\[([0-9;]*)m/g, (full, params) => (isAllowedSgr(params) ? full : ''));
 }
 
 function visibleLength(str) {
@@ -1182,6 +1198,7 @@ function cleanup() {
     try {
       process.stdin.removeListener('data', handleKey);
       process.stdin.setRawMode(false);
+      process.stdin.pause();
     } catch {
       // ignore
     }

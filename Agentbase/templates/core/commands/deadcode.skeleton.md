@@ -1,412 +1,388 @@
-# Dead Code Hunter — Kullanilmayan Kod Tespiti ve Temizligi
+# Dead Code Hunter — Unused Code Detection and Cleanup
 
-> Codebase'i tarar, kullanilmayan export'lari, cagirilmayan fonksiyonlari ve import edilmeyen dosyalari bulur, guven seviyesine gore siniflandirir, onay sonrasi temizler.
-> Kullanim: `/deadcode [dizin]`
+> Detects unused code, exports, functions, and files based on security levels, cleans up after verification.
+
+> Usage: `/deadcode [directory]`
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure, project.subprojects
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- **Yapi:**
+- **Structure:**
   - `apps/web/` — Next.js frontend
   - `apps/api/` — NestJS backend
   - `apps/mobile/` — Expo React Native
-  - `packages/shared/` — Paylasilan tipler ve yardimcilar
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+  - `packages/shared/` — Shared types and utilities
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
 <!-- GENERATE: DEADCODE_TOOLS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: stack.primary, stack.languages, project.subprojects
-Ornek cikti:
-## Dead Code Analiz Araclari
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: stack.primary, stack.languages, project.subprojects
+Example output:
+## Dead Code Analysis Tools
 
-Stack'e gore kullanilacak araclar:
+Tools to be used based on the stack:
 
-| Stack | Arac | Komut | Aciklama |
+| Stack | Tool | Command | Description |
 |---|---|---|---|
-| JS/TS | knip | `npx knip --reporter compact` | Kullanilmayan export, dosya, dependency tespiti |
-| JS/TS | ts-prune | `npx ts-prune` | Kullanilmayan TypeScript export'lari |
-| JS/TS | unimported | `npx unimported` | Import edilmeyen dosya tespiti |
-| Python | vulture | `vulture <dizin> --min-confidence 80` | Kullanilmayan kod tespiti |
-| Python | autoflake | `autoflake --check --remove-all-unused-imports -r <dizin>` | Kullanilmayan import temizligi |
-| PHP | psalm | `./vendor/bin/psalm --find-dead-code` | Dead code analizi |
-| Go | staticcheck | `staticcheck -checks U1000 ./...` | Kullanilmayan fonksiyon/tip/degisken |
-| Rust | cargo-udeps | `cargo +nightly udeps` | Kullanilmayan dependency tespiti |
+| JavaScript/TypeScript | knip | `npx knip --reporter compact` | Detects unused exports, files, and dependencies |
+| JavaScript/TypeScript | ts-prune | `npx ts-prune` | Cleans up unused TypeScript exports |
+| JavaScript/TypeScript | unimported | `npx unimported` | Detects unused imported files |
 
-**Not:** Arac yoksa `grep` tabanli manuel tarama yapilir (Step 2.2).
--->
+>>>
+### Step 1 — Scope Definition
 
----
+#### 1.1 — Argument Handling
 
-## Step 1 — Kapsam Belirleme
+| Input | Behavior |
+| --- | --- |
+| Empty | Search entire project at `../Codebase/` directory |
+| Directory Path | Search specified directory: `../Codebase/<directory>/` |
+| Subproject Name | Monorepo subproject: `../Codebase/apps/<name>/` or `../Codebase/packages/<name>/` |
 
-### 1.1 — Arguman Cozumleme
+#### 1.2 — Monorepo Analysis
 
-| Girdi | Davranis |
-|---|---|
-| Bos | Tum proje: `../Codebase/` dizinini tara |
-| Dizin yolu | Belirtilen dizin: `../Codebase/<dizin>/` |
-| Alt proje adi | Monorepo alt projesi: `../Codebase/apps/<ad>/` veya `../Codebase/packages/<ad>/` |
+If the project is a monorepo (with multiple subprojects):
 
-### 1.2 — Monorepo Tespiti
+1. Perform separate analysis for each subproject
+2. Treat published code in `packages/` directory as a trusted source and analyze it as a standalone entity, checking if it's imported from other subprojects
+3. Perform cross-reference analysis between subprojects
 
-Proje monorepo ise (birden fazla alt proje varsa):
+#### 1.3 — Safe File List (Inaccessible)
 
-1. Her alt proje icin AYRI tarama yap
-2. `packages/` altindaki paylasilan kodlari TANIMLAYICI olarak isle — diger alt projelerden import edilip edilmedigini kontrol et
-3. Alt projeler arasi cross-reference analizi yap
+The following files are never marked as dead code:
 
-### 1.3 — Guvenli Dosya Listesi (Dokunulmaz)
-
-Asagidaki dosyalar ASLA dead code olarak isaretlenmez:
-
-- Entry point'ler: `main.ts`, `index.ts`, `app.ts`, `server.ts`, `main.py`, `__main__.py`, `main.go`, `main.rs`
-- Konfigurasyon: `*.config.ts`, `*.config.js`, `*.config.py`, `.env*`, `Makefile`, `Dockerfile`
-- Package tanimlari: `package.json`, `setup.py`, `pyproject.toml`, `Cargo.toml`, `go.mod`
-- Framework convention'lari: `page.tsx`, `layout.tsx`, `middleware.ts`, `+page.svelte`, `views.py`
-- Migration dosyalari: `migrations/`, `prisma/migrations/`
-- CI/CD: `.github/`, `.gitlab-ci.yml`, `Jenkinsfile`
-- Tip tanimlari: `*.d.ts`, `*.types.ts` (kullanim harici export edilebilir)
-
-> **KURAL:** Bir dosyanin guvenli listede olup olmadigindan supheliysen, onu LOW guven seviyesine koy. Silme.
+- Entry points: `main.ts`, `index.ts`, `app.ts`, `server.ts`, `main.py`, `__main__.py`, `main.go`, `main.rs`
+- Configuration files: `*.config.ts`, `*.config.js`, `*.config.py`, `.env*`, `Makefile`, `Dockerfile`
+- Package definitions: `package.json`, `setup.py`, `pyproject.toml`, `Cargo.toml`, `go.mod`
+- Framework conventions: `page.tsx`, `layout.tsx`, `middleware.ts`, `+page.svelte`, `views.py`
+- Migration files: `migrations/`, `prisma/migrations/`
+- CI/CD files: `.github/`, `.gitlab-ci.yml`, `Jenkinsfile`
+- Type definitions: `*.d.ts`, `*.types.ts` (non-exportable)
+> **Rule:** If a file is not listed in the secure directory, set it to LOW security level. Delete.
 
 ---
 
-## Step 2 — Tarama
+## Step 2 — Analysis
 
-### 2.1 — Arac Tabanli Tarama
+### 2.1 — Vehicle-Based Analysis
 
-DEADCODE_TOOLS bolumundeki stack'e uygun araci calistir:
+Run the vehicle on the stack in the `DEADCODE_TOOLS` volume:
 
 ```bash
-cd ../Codebase && <arac_komutu>
+cd ../Codebase && <vehicle_command>
 ```
 
-Arac ciktisini parse et. Her bulgu icin kaydet:
-- **Dosya yolu**
-- **Satir numarasi** (varsa)
-- **Sembol adi** (fonksiyon, class, degisken, export)
-- **Bulgu tipi** (kullanilmayan export, cagirilmayan fonksiyon, import edilmeyen dosya, kullanilmayan dependency)
+Parse the output and record:
+- **File path**
+- **Line number** (if applicable)
+- **Symbol name** (function, class, variable, export)
+- **Type of symbol** (unused export, unused function, unused file, unused dependency)
 
-### 2.2 — Grep Tabanli Manuel Tarama (Fallback)
+### 2.2 — Grep-Based Manual Analysis (Fallback)
 
-Arac mevcut degilse veya ek dogrulama gerekiyorsa:
+If the vehicle is not present or additional verification is required:
 
-#### Export Taramasi
+#### Export Analysis
 ```bash
-# Tum export'lari bul
-cd ../Codebase && grep -rn "export " <dizin> --include="*.ts" --include="*.tsx" --include="*.js"
+# Find all exports in the directory
+cd ../Codebase && grep -rn "export " <directory> --include="*.ts" --include="*.tsx" --include="*.js"
 ```
 
-Her export icin referans kontrolu:
+Verify reference control for each export:
 ```bash
-# Bu sembol baska yerde kullaniliyor mu?
-cd ../Codebase && grep -rn "<sembol_adi>" --include="*.ts" --include="*.tsx" --include="*.js" | grep -v "<kaynak_dosya>"
+# Is this symbol used elsewhere?
+cd ../Codebase && grep -rn "<symbol_name>" --include="*.ts" --include="*.tsx" --include="*.js" | grep -v "<source_file>"
 ```
 
-#### Dosya Taramasi
+#### File Analysis
 ```bash
-# Bu dosya baska yerden import ediliyor mu?
-cd ../Codebase && grep -rn "from.*<dosya_adi>" --include="*.ts" --include="*.tsx" --include="*.js"
-```
+# Is this file imported from another location?
 
-> **KURAL:** Manuel taramada max 100 export kontrol et. Daha fazlasi icin araci yukle.
+>>>
+# Step 3 — Security Assessment
 
----
+Assess each issue based on the following criteria:
 
-## Step 3 — Guven Siniflandirmasi
+### HIGH — No Reference Found
 
-Her bulguyu asagidaki kriterlere gore siniflandir:
+All of the following are valid:
+- No reference found in the project's root directory (excluding naming conventions)
+- Not exporting from (`index.ts` barrel export control)
+- Not listed in the secure file list
+- Framework convention is not used (lifecycle hook, decorator handler etc.)
 
-### HIGH — Hicbir Referans Yok
+### MEDIUM — Only Test Reference
 
-Asagidakilerin TUMU gecerli:
-- grep ile projenin HICBIR yerinde referans bulunamadi (tanimlama noktasi haric)
-- Re-export zincirinde yer almiyor (`index.ts` barrel export kontrolu)
-- Guvenli dosya listesinde DEGIL
-- Framework convention'i DEGIL (lifecycle hook, decorator handler vb.)
+All of the following are valid:
+- Only test files have a reference (`*.test.*`, `*.spec.*`, `__tests__/`)
+- Only storybook/documented files have a reference
+- Only string match in comments (not actual import)
 
-### MEDIUM — Sadece Test Referansi
+### LOW — Dynamic/Unspecific Usage
 
-Asagidakilerin EN AZ BIRI gecerli:
-- Sadece test dosyalarinda (`*.test.*`, `*.spec.*`, `__tests__/`) referans var
-- Sadece storybook/dokumantasyon dosyalarinda referans var
-- Sadece yorum icerisinde referans var (string match, gercek import degil)
-
-### LOW — Dinamik/Belirsiz Kullanim
-
-Asagidakilerin EN AZ BIRI gecerli:
-- Dinamik import kullanimi olabilir: `import()`, `require()`, `importlib`
-- Reflection/decorator ile kullaniliyor olabilir
+All of the following are valid:
+- Dynamic import usage is possible: `import()`, `require()`, `importlib`
+- Used with reflection/decorator
 - String-based lookup: `getattr()`, `Reflect.get()`, IoC container
-- Diger paketler tarafindan kullaniliyor olabilir (library/package)
-- Plugin sistemi veya lazy loading mekanizmasi mevcut
-- Sembol adi cok genel (orn. `handle`, `process`, `init`)
+- Other packages may be using it (library/package)
+- Plugin system or lazy loading mechanism exists
+- Symbol name is very generic (e.g. `handle`, `process`, `init`)
+## Dead Code Analysis Results
 
-### 3.1 — Siniflandirma Tablosu
-
-Bulgulari asagidaki formatta raporla:
-
-```
-## Dead Code Tarama Sonuclari
-
-### Ozet
-| Guven | Sayi | Otomatik Temizlik |
+### Summary
+| Status | Number | Automatic Cleanup |
 |---|---|---|
-| HIGH | <n> | Evet (onay ile) |
-| MEDIUM | <n> | Hayir (manuel inceleme) |
-| LOW | <n> | Hayir (bilgilendirme) |
+| HIGH | <n> | Yes (with approval) |
+| MEDIUM | <n> | No (manual inspection) |
+| LOW | <n> | No (notification) |
 
-### HIGH Guven Bulgulari
-| # | Dosya | Satir | Sembol | Tip | Son Degisiklik |
+### High-Severity Issues
+| # | File | Line | Symbol | Type | Last Changed |
 |---|---|---|---|---|---|
-| 1 | `src/utils/old-helper.ts` | 15 | `formatLegacy()` | fonksiyon | 6 ay once |
-| 2 | `src/models/deprecated.ts` | — | (tum dosya) | dosya | 1 yil once |
+| 1 | `src/utils/old-helper.ts` | 15 | `formatLegacy()` | function | 6 months ago |
+| 2 | `src/models/deprecated.ts` | — | (all files) | file | 1 year ago |
 
-### MEDIUM Guven Bulgulari
-| # | Dosya | Satir | Sembol | Referans | Neden MEDIUM |
+### Medium-Severity Issues
+| # | File | Line | Symbol | Reference | Reason for MEDIUM |
 |---|---|---|---|---|---|
-| 1 | `src/auth/token.ts` | 42 | `validateOld()` | test.ts | Sadece testte |
+| 1 | `src/auth/token.ts` | 42 | `validateOld()` | test.ts | Only in tests |
 
-### LOW Guven Bulgulari
-| # | Dosya | Satir | Sembol | Neden LOW |
+### Low-Severity Issues
+| # | File | Line | Symbol | Reason LOW |
 |---|---|---|---|---|
-| 1 | `src/plugins/base.ts` | 10 | `register()` | Dinamik cagirim mumkun |
-```
+| 1 | `src/plugins/base.ts` | 10 | `register()` | Dynamic configuration not possible |
 
 ---
 
-## Step 4 — Temizlik
+## Step 4 — Cleanup
 
-### 4.1 — Otomatik Temizlik (Sadece HIGH)
+### 4.1 — Automatic Cleanup (Only for HIGH)
 
-HIGH guven seviyesindeki bulgular icin otomatik temizlik oner:
+High-severity issues require automatic cleanup:
 
 ```
-## Temizlik Plani
+## Cleanup Plan
 
-### Silinecek Dosyalar (tum dosya kullanilmiyor)
+### Files to be Removed (not used in all files)
 - `src/utils/old-helper.ts`
+
+>>>
+Here is the translation:
+
 - `src/models/deprecated.ts`
 
-### Cikarilacak Export'lar (dosya kalacak, sembol silinecek)
-- `src/services/user.ts` → `formatLegacyUser()` (satir 45-62)
-- `src/utils/string.ts` → `slugifyV1()` (satir 12-18)
+### Files to be Removed (Files will remain, Symbols will be removed)
+- `src/services/user.ts` → `formatLegacyUser()` (lines 45-62)
+- `src/utils/string.ts` → `slugifyV1()` (lines 12-18)
 
-### Temizlenecek Import'lar (silinen sembollere referans)
-- `src/services/index.ts` → `export { formatLegacyUser }` satirini kaldir
+### Files to be Purged (References to removed symbols)
+- `src/services/index.ts` → Remove the line exporting `formatLegacyUser`
 
-Toplam: <n> dosya silinecek, <m> dosyada export cikarilacak
-```
-
-### 4.2 — Kullanici Onayi
-
-> **KURAL:** Temizlik ASLA otomatik baslamaz. Kullanicidan acik onay ALINMADAN hicbir dosya silinmez veya duzenlenmez.
+Total: <n> files will be removed, <m> files will have exports removed
 
 ```
-Yukaridaki temizlik planini uygulamak istiyor musunuz?
-- [E] Tamamini uygula
-- [K] Kismi sec (numara ile)
-- [H] Hayir, sadece rapor yeterli
+Do you want to apply the cleanup plan?
+- [E] Apply all
+- [K] Select some (number)
+- [H] No, just report sufficient
 ```
 
-### 4.3 — Temizligi Uygula
+### 4.2 — User Confirmation
 
-Onay alindiktan sonra:
-
-1. Her dosya degisikligi ONCESI dosyayi oku — kor duzenleme YASAK
-2. Tum dosya silinecekse: `git rm <dosya>`
-3. Kismi temizlikse: ilgili satirlari/bloklari kaldir
-4. Silinen export'lara referans veren `index.ts` veya barrel dosyalarini guncelle
-5. Import satirlarini temizle (artik kullanilmayan import'lari kaldir)
-
-> **KURAL:** Her degisiklik sonrasi syntax kontrolu yap. Build kirilirsa degisikligi geri al.
+> **RULE:** Cleanup MUST NOT run automatically. NO confirmation from user is required for any file to be removed or organized.
 
 ---
 
-## Step 5 — Dogrulama
+## Step 5 — Verification
 
-### 5.1 — Build Kontrolu
+### 5.1 — Build Control
 
-```bash
-cd ../Codebase && <build_komutu>
-```
+>>>
+Here is the translated text:
 
-Build BASARISIZ ise:
-1. Hatayi analiz et — hangi silme/temizlik soruna neden oldu?
-2. Sorunlu degisikligi geri al: `git checkout -- <dosya>`
-3. O bulguyu HIGH'dan LOW'a dusur
-4. Kalan degisikliklerle devam et
-
-### 5.2 — Test Kontrolu
+<<<
 
 ```bash
-cd ../Codebase && <test_komutu>
+cd ../Codebase && <build_command>
 ```
 
-Test BASARISIZ ise:
-1. Basarisiz testin silinen koda bagli olup olmadigini kontrol et
-2. Test silinen kodu test ediyorsa: testi de sil (MEDIUM kategorisindeki test-only referans)
-3. Test baska sebeple kiriliyorsa: degisikligi geri al
+Build Failed:
+1. Analyze the error — what caused the deletion/ cleanup issue?
+2. Restore problematic changes: `git checkout -- <file>`
+3. Downgrade the bug to LOW from HIGH
+4. Continue with remaining changes
 
-### 5.3 — Lint Kontrolu
+### 5.2 — Test Control
 
 ```bash
-cd ../Codebase && <lint_komutu>
+cd ../Codebase && <test_command>
 ```
 
-Kullanilmayan import uyarilari ciktiysa bunlari da temizle.
+Test Failed:
+1. Check if deleted code is related to failed test
+2. If test is still failing after deleting code: restore problematic changes
+3. If test is failing for another reason: do not restore changes
+
+### 5.3 — Lint Control
+
+```bash
+cd ../Codebase && <lint_command>
+```
+
+Remove unused import warnings.
 
 ---
 
 ## Step 6 — Commit
 
-### 6.1 — Dosya Hazirlama
+### 6.1 — File Preparation
 
 ```bash
-cd ../Codebase && git add <degisen_ve_silinen_dosyalar>
+cd ../Codebase && git add <changed_and_deleted_files>
 ```
+**Rule:** `git add .` is forbidden. Only clean files should be added.
 
-> **KURAL:** `git add .` YASAK. Sadece temizlenen dosyalari ekle.
+### 6.2 — Task Assignment
 
-### 6.2 — Iliskili Gorev Tespiti
-
-```
+```bash
 backlog task list --plain
 ```
 
-Dead code temizligi ile iliskili gorev varsa commit mesajinda referans ver.
+Dead code cleanup tasks are related to the assignment of a task.
 
-### 6.3 — Commit Mesaji
+### 6.3 — Commit Message
 
 <!-- GENERATE: COMMIT_CONVENTION
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: conventions.commit_language, conventions.commit_format
-Ornek cikti:
-### Commit Format (Dead Code Temizligi)
+Description: This section will be filled by Bootstrap with manifest data.
+Required manifest fields: conventions.commit_language, conventions.commit_format
+Example output:
+### Commit Format (Dead Code Cleanup)
 
 ```
-refactor: <temizlik_ozeti>
+refactor: <cleanup_description>
 ```
 
-Iliskili gorev varsa:
+If related tasks exist:
 ```
-refactor: <temizlik_ozeti> (#<task_id>)
+refactor: <cleanup_description> (#<task_id>)
 ```
 
-**Dil:** Turkce
-**Ornek:** `refactor: kullanilmayan export ve dosyalar temizlendi (#42)`
+**Language:** Turkish
+**Example:** `refactor: Unused exports and files were cleaned up (#42)`
 -->
 
 ---
 
-## Step 7 — Backlog Gorevi
+## Step 7 — Task
 
-### 7.1 — Mevcut Gorev Guncelleme
+### 7.1 — Updating Current Task
 
-Eger iliskili gorev bulunduysa:
+If a related task exists, use:
+```bash
+backlog task edit <id> -s "Done" --append-notes "[DEAD CODE] <description>"
 ```
-backlog task edit <id> -s "Done" --append-notes "[DEAD CODE] <ozet>"
-```
 
-### 7.2 — Yeni Gorev Olusturma
+>>>
+### 7.2 — Creating a New Task
 
-Eger iliskili gorev yoksa, yapilan isi kaydet:
-```
+If no related task exists, record the done work:
+```bash
 backlog task create \
-  "refactor: dead code temizligi — <kapsam>" \
-  --description "<detay>" \
+  "refactor: dead code cleanup — <scope>" \
+  --description "<detail>" \
   --priority "low" \
   --labels "refactor,cleanup" \
   -s "Done"
 ```
 
-### 7.3 — MEDIUM Bulgular Icin Takip Gorevi
+### 7.3 — Medium Bug Tracking Task
 
-MEDIUM guven seviyesinde bulgu varsa inceleme icin gorev ac:
-```
+Create a task for reviewing medium-level bugs:
+```bash
 backlog task create \
-  "review: dead code adaylari — manuel inceleme gerekli" \
-  --description "MEDIUM guven seviyesindeki bulgular:\n<bulgu_listesi>" \
+  "review: dead code candidates — manual review required" \
+  --description "Medium-level issues:\n<bug_list>" \
   --priority "low" \
   --labels "review,cleanup,tech-debt"
 ```
 
 ---
 
-## Step 8 — Kullanici Raporu
+## Step 8 — User Report
 
 ```
-## Dead Code Temizlik Raporu
+## Dead Code Cleanup Report
 
-### Tarama Kapsami
-- **Dizin:** <taranan_dizin>
-- **Alt projeler:** <varsa_liste>
-- **Kullanilan arac:** <arac_adi_veya_manuel>
+### Scope Range
+- **Directory:** <scoped_directory>
+- **Subprojects:** <subproject_list>
+- **Used Tools/Manual:** <tool_name_or_manual>
 
-### Sonuclar
-| Guven | Bulunan | Temizlenen | Kalan |
+### Results
+| Severity | Found | Cleaned | Remaining |
 |---|---|---|---|
-| HIGH | <n> | <m> | <k> |
-| MEDIUM | <n> | — | <n> |
-| LOW | <n> | — | <n> |
 
-### Yapilan Temizlik
-| Dosya | Islem | Detay |
+>>>
+### Cleaning
+| File | Operation | Detail |
 |---|---|---|
-| `<yol>` | Silindi | Tum dosya kullanilmiyordu |
-| `<yol>` | Export cikarildi | `<sembol>` kaldirildi |
+| `<path>` | Deleted | All files were not in use |
+| `<path>` | Exported | Removed `<symbol>` |
 
-### Dogrulama
-- [x] Build basarili
-- [x] Testler gecti
-- [x] Lint temiz
+### Validation
+- [x] Build successful
+- [x] Tests passed
+- [x] Lint clean
 
 ### Commit
-`<hash>` — `<mesaj>`
+`<hash>` — `<message>`
 
-### Takip
-- MEDIUM bulgular icin inceleme gorevi: #<task_id>
-- LOW bulgular bilgilendirme amacli, aksiyon gerekmez
+### Tracking
+- MEDIUM issues for investigation: #<task_id>
+- LOW issues notification only, no action required
 ```
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — Only `.claude/`, `CLAUDE.md`, `.mcp.json`, and `.claude-ignore` files are allowed inside Agentbase. Creating a `.claude/` directory outside the Codebase or writing to `../Codebase/CLAUDE.md` is NOT ALLOWED.
+2. **Git runs only in Codebase** — All Git operations (commit, push, branch) must be performed inside the Codebase. Git is NOT ALLOWED on Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) are readable and can be refactored if necessary. Config files (`*.claude/`, `CLAUDE.md`) are NOT ALLOWED inside the Codebase.
 
-1. **Guvenli dosyalara dokunma** — Entry point, config, migration, CI/CD dosyalari ASLA silinmez.
-2. **Onaysiz temizlik YASAK** — HIGH bulgular bile kullanici onayi olmadan silinmez.
-3. **Build kirilirsa geri al** — Temizlik sonrasi build basarisizsa degisikligi geri al, guven seviyesini dusur.
-4. **Monorepo farkindaligi** — Cross-project referanslari kontrol et, paylasilan paketteki kodu sirf bir alt proje kullanmiyor diye silme.
-5. **Barrel export zincirleri** — `index.ts` uzerinden re-export edilen sembolleri takip et, zincirin sonuna kadar kontrol et.
-6. **Dinamik kullanimi yoksayma** — `import()`, reflection, IoC container ile kullanilabilecek kodu LOW olarak isaretle.
-7. **Framework convention'lari koru** — Lifecycle hook, decorator handler, convention-based dosyalar (page.tsx, middleware.ts) dead code DEGIL.
-8. **Sadece temizlenen dosyalari commit'le** — `git add .` yasak.
-9. **MEDIUM icin takip gorevi** — Test-only referansli bulgular icin backlog gorevi olustur.
-10. **Backlog CLI kullan** — Gorev islemlerini SADECE CLI ile yap.
-11. **Codebase yolu** — Tum dosya erisimleri `../Codebase/` uzerinden.
-12. **Guvenlik** — Credential, secret, `.env` degerleri ASLA log'a yazilmaz.
+1. **Protect sensitive files** — Entry point, config, migration, CI/CD files MUST NOT be deleted.
+2. **Non-atomic cleanup is forbidden** — HIGH issues cannot be deleted without user confirmation.
+3. **Revert on failure** — If build fails after cleaning, revert changes and decrease security level.
+4. **Cross-project reference control** — Check cross-project references, remove if only used in a single subproject.
+5. **Barrel export chains** — Follow re-exported symbols from `index.ts`, check the chain until the end.
+6. **Dynamic usage prohibition** — Prohibit use of `import()`, reflection, and IoC container for code that can be used dynamically with LOW severity.
+7. **Framework conventions enforcement** — Enforce lifecycle hook, decorator handler, and convention-based files (page.tsx, middleware.ts) as DEAD CODE.
+8. **Only committed files should be committed** — `git add .` is forbidden.
+
+9. **Medium-level task** — Create a backlog item for test-only references.
+
+10. **Use Backlog CLI** — Perform tasks only using the CLI.
+
+11. **Codebase path** — All file access points are from `../Codebase/`.
+
+12. **Security** — Credential, secret, `.env` values should never be logged to the log.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Last command step - self-refresh check. Bootstrap this marker.
+Self-Refresh section changes it. The command is reviewed by the project's current state:
+Small inconsistency Edit or big change backlog task is reported.
 -->

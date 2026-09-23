@@ -1,106 +1,106 @@
-# Ogrenim Kaydi Protokolu
+# Learning Record Protocol
 
-> Bu dosya tum command'larin paylastigi ogrenim kaydi kurallarinin TEK KAYNAGIDIR.
-> Tum agent'lar bu kurallara uyar. Proje-spesifik path veya convention yoktur — generic protokoldur.
+> This file is the SINGLE SOURCE of learning-record rules shared by all commands.
+> All agents follow these rules. There is no project-specific path or convention — it is a generic protocol.
 
 ---
 
-## Ne Zaman Kaydet?
+## When to Record?
 
-Is tamamlandiginda, asagidaki kosullardan **EN AZ BIRI** varsa auto-memory'ye kaydet:
+When work is finished, write to auto-memory if **AT LEAST ONE** of the following conditions holds:
 
-| Kosul | Ornek |
+| Condition | Example |
 |-------|-------|
-| Beklenmedik tuzak/hata | Dependency uyumsuzlugu, gizli bagimlilik, edge case |
-| Yeni pattern/yaklasim | Gelecekte referans olacak teknik kesif |
-| Kullanici tercihi | Calisma tarzi, oncelik, red, stil tercihi |
-| Surpriz kesif | Beklenmedik davranis, belgelenmemis ozellik |
-| Mimari karar | A yerine B secildi ve sebebi var |
-| Yeni tool/dependency | Versiyon, uyumluluk notu, kurulum detayi |
+| Unexpected trap/error | Dependency mismatch, hidden dependency, edge case |
+| New pattern/approach | Technical discovery worth referencing later |
+| User preference | Working style, priority, rejection, style preference |
+| Surprise discovery | Unexpected behavior, undocumented feature |
+| Architecture decision | B was chosen over A and there is a reason |
+| New tool/dependency | Version, compatibility note, install detail |
 
 ---
 
-## Ne Zaman KAYDETME?
+## When NOT to Record?
 
-- Rutin task implementasyonu (standart CRUD, basit UI degisikligi)
-- Standart bug fix (acik hata, net cozum)
-- Zaten CLAUDE.md veya MEMORY.md'de olan bilgi
-- Tek seferlik islem (bir kere yapildi, tekrar etmeyecek)
-- Genel programlama bilgisi (herkesin bildigi seyler)
+- Routine task implementation (standard CRUD, simple UI change)
+- Standard bug fix (clear error, clear fix)
+- Information already in CLAUDE.md or MEMORY.md
+- One-off operation (done once, will not repeat)
+- General programming knowledge (things everyone knows)
 
 ---
 
-## Nasil Kaydet?
+## How to Record?
 
-### 1. Dosya Adlandirma
+### 1. File Naming
 
-Format: `{tur}_{konu}.md`
+Format: `{type}_{topic}.md`
 
-Ornekler:
-- `project_prisma-migration-sirasi.md`
-- `feedback_test-coverage-tercihi.md`
+Examples:
+- `project_prisma-migration-order.md`
+- `feedback_test-coverage-preference.md`
 - `reference_expo-splash-screen-config.md`
-- `user_commit-dili-tercihi.md`
+- `user_commit-language-preference.md`
 
-### 2. Tur Secimi
+### 2. Type Selection
 
-| Tur | Ne Zaman | Ornek |
+| Type | When | Example |
 |-----|----------|-------|
-| `project` | Projeye ozgu teknik bilgi | Migration sirasi, API contract, deploy adimi |
-| `feedback` | Kullanicidan gelen geri bildirim | "Bunu yapma", "Soyle yap", red edilen oneri |
-| `reference` | Gelecekte lazim olacak referans | Config ayari, workaround, versiyon notu |
-| `user` | Kullanici tercihi/profili | Dil, stil, calisma saatleri, iletisim tercihi |
+| `project` | Project-specific technical knowledge | Migration order, API contract, deploy step |
+| `feedback` | Feedback from the user | "Don't do this", "Do it this way", rejected suggestion |
+| `reference` | Reference needed later | Config setting, workaround, version note |
+| `user` | User preference/profile | Language, style, working hours, communication preference |
 
-### 3. Dosya Formati
+### 3. File Format
 
 ```markdown
 ---
-name: kisa-baslik
-description: Tek cumle aciklama
+name: short-title
+description: One-sentence description
 type: project | feedback | reference | user
 ---
 
-**Kural/Bulgu:** Ogrenilenin ozeti.
+**Rule/Finding:** Summary of what was learned.
 
-**Why:** Neden onemli, hangi baglamda ortaya cikti.
+**Why:** Why it matters, and in which context it appeared.
 
-**How to apply:** Gelecekte nasil uygulanacak, ne zaman hatirlanacak.
+**How to apply:** How to apply it later, and when to remember it.
 ```
 
-### 4. Zorunlu Alanlar
+### 4. Required Fields
 
-- Frontmatter: `name`, `description`, `type` — **ZORUNLU**
-- Icerik: Kural/bulgu + `**Why:**` + `**How to apply:**` — **ZORUNLU**
-- Eksik alan = gecersiz kayit
+- Frontmatter: `name`, `description`, `type` — **REQUIRED**
+- Body: Rule/finding + `**Why:**` + `**How to apply:**` — **REQUIRED**
+- Missing field = invalid record
 
-### 5. MEMORY.md Guncellemesi
+### 5. MEMORY.md Update
 
-Her yeni kayit sonrasi `MEMORY.md` index dosyasini guncelle:
-- Yeni satir ekle veya mevcut satiri guncelle
-- Tarih bilgisi dahil et
+After every new record, update the `MEMORY.md` index file:
+- Add a new line or update an existing line
+- Include the date
 
-### 6. Duplicate Kontrolu
+### 6. Duplicate Check
 
-Ayni konu zaten mevcutsa:
-- Yeni dosya olusturma
-- Mevcut dosyayi **GUNCELLE**
-- Icerik zenginlestir, tarih guncelle
+If the same topic already exists:
+- Do not create a new file
+- **UPDATE** the existing file
+- Enrich the content and update the date
 
-### 7. Uzunluk Siniri
+### 7. Length Limit
 
-- **Maksimum 10-15 satir** (frontmatter haric)
-- Kisa ve oz tut
-- Gereksiz baglam veya ornek ekleme
-- Bir kayit = bir ogrenim
+- **Maximum 10-15 lines** (excluding frontmatter)
+- Keep it short and dense
+- Do not add unnecessary context or examples
+- One record = one learning
 
 ---
 
-## Anti-Pattern'ler
+## Anti-Patterns
 
-| Yapma | Yap |
+| Don't | Do |
 |-------|-----|
-| Her task icin kayit olustur | Sadece ogrenim varsa kaydet |
-| Uzun hikaye yaz | Kisa ve oz: bulgu + neden + nasil |
-| Ayni bilgiyi tekrar kaydet | Duplicate kontrolu yap, mevcudu guncelle |
-| Genel bilgi kaydet | Sadece projeye/kullaniciya ozgu bilgi |
-| Basliksiz/tursuz kayit | Frontmatter her zaman eksiksiz |
+| Create a record for every task | Record only when there is a learning |
+| Write a long story | Short and dense: finding + why + how |
+| Record the same information again | Check for duplicates; update the existing one |
+| Record general knowledge | Only project/user-specific information |
+| Record without title/type | Frontmatter is always complete |

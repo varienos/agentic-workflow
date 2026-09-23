@@ -1,28 +1,27 @@
-# NestJS Kodlama Kurallari
+# NestJS Coding Standards
 
-> Bu kurallar NestJS kullanan projeler icin gecerlidir.
-> `backend/nodejs` aile kurallari bu dosyayla birlikte uygulanir.
+> These standards apply to projects that use NestJS.
+> `backend/nodejs` family standards apply together with this file.
 
-## Modul Sinirlari
+## Module Boundaries
 
-- Her feature kendi module siniri icinde controller, service ve gerekiyorsa repository/provider yapisina sahip olmali.
-- Baska feature'in internal provider'ina dogrudan baglanmak yerine acik export/import iliskisi kullan.
-- `AppModule` icine her seyi yigma; domain modullerine bol.
+- Each feature should have its own module boundary with controller, service, and repository/provider structure as needed.
+- Prefer explicit export/import relationships instead of depending directly on another feature's internal provider.
+- Do not dump everything into `AppModule`; split into domain modules.
 
-## DTO, Pipe ve Validation
+## DTO, Pipe, and Validation
 
-- External input icin DTO kullan; `class-validator` ve `class-transformer` tabanli validation pipe'lari tercih et.
-- Global `ValidationPipe` varsa whitelist/forbidNonWhitelisted gibi kritik ayarlari kapatma.
-- Entity/model nesnelerini request DTO'su olarak yeniden kullanma.
+- Use DTOs for external input; prefer validation pipes based on `class-validator` and `class-transformer`.
+- If a global `ValidationPipe` exists, do not disable critical settings such as whitelist/forbidNonWhitelisted.
+- Do not reuse entity/model objects as request DTOs.
 
-## Controller ve Service Ayrimi
+## Controller and Service Separation
 
-- Controller HTTP/transport katmani icin ince kalmali.
-- Is logigi `@Injectable()` service'lerde toplanmali.
-- Cross-cutting concerns icin guard, interceptor ve filter kullan; controller icine tekrarlayan altyapi kodu koyma.
+- Controllers should stay thin for the HTTP/transport layer.
+- Business logic must be collected in `@Injectable()` services.
+- Use guards, interceptors, and filters for cross-cutting concerns; do not put repeated infrastructure code in controllers.
 
 ## Test Convention
 
-- Unit testler provider seviyesinde, e2e testler module/HTTP giris seviyesinde yazilmali.
-- Mock'lar module graph gercegini bozmayacak sekilde, sadece ihtiyac kadar override edilmeli.
-
+- Unit tests should be written at the provider level; e2e tests at the module/HTTP entry level.
+- Mocks should override only as much as needed without breaking the real module graph.

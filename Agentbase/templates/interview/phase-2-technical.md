@@ -1,11 +1,11 @@
 # Phase 2 — Technical Preferences
 
 > **Feeds:** `STACK.md`, `WORKFLOWS.md`, hook/rule configuration
-> **Goal:** Gelistirme surecleri, test stratejisi ve teknik convention'lari belirlemek.
+> **Goal:** Decide development processes, test strategy, and technical conventions.
 
 ---
 
-## Auto-Detection (Sorulardan Once Calistir)
+## Auto-Detection (Run Before Questions)
 
 | Field                  | Detection Source                                           | Manifest Path                        |
 |------------------------|------------------------------------------------------------|--------------------------------------|
@@ -22,27 +22,27 @@
 
 ## Questions
 
-### Q1 — Test Stratejisi
-- **Text:** `"Test stratejiniz nedir?"`
+### Q1 — Test Strategy
+- **Text:** `"What is your test strategy?"`
 - **Options:**
-  - `a)` Her degisiklikte test yazilir (TDD/test-first)
-  - `b)` Testler var ama her zaman yazilmiyor
-  - `c)` Minimal test — sadece kritik path'ler
-  - `d)` Henuz test yok
-- **Skip condition:** `manifest.detected.test_framework.confidence == "high"` ise sorulmaz (test framework paketi tespit edildi → test stratejisi `tests-exist` varsayılır).
-- **Default selection:** `manifest.detected.test_framework.confidence == "medium"` ise tespit edilen değer default seçili (`b` testler var). `low` ise default yok, standart soru.
+  - `a)` Write tests on every change (TDD/test-first)
+  - `b)` Tests exist but are not always written
+  - `c)` Minimal tests — critical paths only
+  - `d)` No tests yet
+- **Skip condition:** Not asked if `manifest.detected.test_framework.confidence == "high"` (test framework package detected → test strategy assumed `tests-exist`).
+- **Default selection:** If `manifest.detected.test_framework.confidence == "medium"`, detected value is the default (`b` tests exist). If `low`, no default; standard question.
 - **Maps to:** `manifest.workflows.test_strategy`
 - **Downstream:**
-  - **a → TDD:** task-hunter her task'a test yazma adimi ekler, verification gate test pass gerektirir
-  - **b → moderate:** task-hunter test oneriri ama zorunlu tutmaz
-  - **c → minimal:** sadece kritik path'lerde test beklenir
-  - **d → none:** test adimi atlanir, ileride eklenebilir notu duser
+  - **a → TDD:** task-hunter adds a write-tests step to every task; verification gate requires tests to pass
+  - **b → moderate:** task-hunter suggests tests but does not require them
+  - **c → minimal:** tests expected only on critical paths
+  - **d → none:** test step skipped; note left that they can be added later
 
-### Q2 — Branch Modeli
-- **Text:** `"Branch modeli?"`
-- **Show hint:** Auto-detected branch info (e.g. `"[main + develop branch'leri tespit edildi]"`)
+### Q2 — Branch Model
+- **Text:** `"Branch model?"`
+- **Show hint:** Auto-detected branch info (e.g. `"[main + develop branches detected]"`)
 - **Options:**
-  - `a)` main/master direkt push
+  - `a)` Direct push to main/master
   - `b)` Feature branch → PR → merge
   - `c)` Gitflow (develop/release/hotfix)
   - `d)` Trunk-based development
@@ -54,31 +54,31 @@
   - Hook: block direct push to protected branches (if b or c)
 
 ### Q3 — Commit Convention
-- **Text:** `"Commit mesaj convention'i?"`
+- **Text:** `"Commit message convention?"`
 - **Options:**
   - `a)` Conventional Commits (feat:, fix:, refactor:)
-  - `b)` Serbest format
-  - `c)` Proje-spesifik convention var (acikla)
-- **Follow-up (if c):** `"Convention'inizi kisa aciklayin"`
-- **Skip condition:** `manifest.detected.commit_convention.confidence == "high"` ise sorulmaz (git log heuristic > %60 conventional eşleşme).
-- **Default selection:** `manifest.detected.commit_convention.confidence == "medium"` ise tespit edilen değer default seçili (genellikle `a` conventional). `low` ise default yok, standart soru.
+  - `b)` Free-form
+  - `c)` Project-specific convention exists (explain)
+- **Follow-up (if c):** `"Briefly describe your convention"`
+- **Skip condition:** Not asked if `manifest.detected.commit_convention.confidence == "high"` (git log heuristic > 60% conventional match).
+- **Default selection:** If `manifest.detected.commit_convention.confidence == "medium"`, detected value is the default (usually `a` conventional). If `low`, no default; standard question.
 - **Maps to:** `manifest.workflows.commit_convention`, `manifest.workflows.commit_prefix_map`
 - **Downstream:**
   - Commit message validation hook
   - Agent commit message formatting rules
   - `WORKFLOWS.md` commit section
 
-### Q4 — Veritabani Migration
-- **Text:** `"Veritabani migration stratejiniz?"`
-- **Show hint:** `"[{detected_orm} tespit edildi]"` if applicable
+### Q4 — Database Migration
+- **Text:** `"What is your database migration strategy?"`
+- **Show hint:** `"[{detected_orm} detected]"` if applicable
 - **Options:**
   - `a)` ORM migration ({detected_orm})
-  - `b)` Manuel SQL
-  - `c)` Migration yok
-- **Skip condition:** Aşağıdaki koşullardan biri sağlanırsa sorulmaz:
-  - `manifest.detected.migration.confidence == "high"` (ORM tespit edildi → otomatik `a`)
-  - Database/ORM hiç tespit edilmediyse (mevcut davranış korundu)
-- **Default selection:** `manifest.detected.migration.confidence == "medium"` ise tespit edilen değer default seçili (genellikle `b` manuel SQL). `low` ise default yok, standart soru.
+  - `b)` Manual SQL
+  - `c)` No migration
+- **Skip condition:** Not asked if either condition holds:
+  - `manifest.detected.migration.confidence == "high"` (ORM detected → automatic `a`)
+  - Database/ORM was never detected (existing behavior preserved)
+- **Default selection:** If `manifest.detected.migration.confidence == "medium"`, detected value is the default (usually `b` manual SQL). If `low`, no default; standard question.
 - **Maps to:** `manifest.stack.migration_strategy`
 - **Downstream:**
   - `STACK.md` database section
@@ -86,10 +86,10 @@
   - Schema change workflow in `WORKFLOWS.md`
 
 ### Q5 — Auto-Format Hook
-- **Text:** `"Auto-format hook'u isteniyor mu? [{detected_formatter}] tespit edildi."`
+- **Text:** `"Do you want an auto-format hook? [{detected_formatter}] detected."`
 - **Options:**
-  - `a)` Evet — her dosya kaydinda otomatik format
-  - `b)` Hayir — manuel calistiririm
+  - `a)` Yes — auto-format on every file save
+  - `b)` No — I will run it manually
 - **Skip condition:** No formatter detected (prettier/biome/ruff/black)
 - **Maps to:** `manifest.workflows.auto_format`
 - **Downstream:**
@@ -97,49 +97,49 @@
   - `WORKFLOWS.md` formatting section
   - Agent behavior: auto-format before commit (if a)
 
-### Q6 — Authentication Tipi
-- **Text:** `"Projede authentication var mi? Hangi yontem?"`
+### Q6 — Authentication Type
+- **Text:** `"Does the project have authentication? Which method?"`
 - **Options:**
   - `a)` JWT (token-based)
-  - `b)` OAuth2 (Google, GitHub, vb.)
+  - `b)` OAuth2 (Google, GitHub, etc.)
   - `c)` Session-based
   - `d)` API key
-  - `e)` Yok / henuz planlanmadi
-- **Skip condition:** `manifest.detected.auth_method.confidence == "high"` ise sorulmaz. (Not: T3 implementasyonunda auth tespitleri `medium` ile sınırlı; `high` confidence yalnızca ileride netleşmiş kullanım kalıbı doğrulaması ile döner — pratikte bu soru genellikle `medium` default ile sorulur.)
-- **Default selection:** `manifest.detected.auth_method.confidence == "medium"` ise tespit edilen değer default seçili (jwt/oauth2/session). `low` ise default yok, standart soru.
+  - `e)` None / not planned yet
+- **Skip condition:** Not asked if `manifest.detected.auth_method.confidence == "high"`. (Note: In the T3 implementation, auth detections are capped at `medium`; `high` confidence only returns later with a confirmed usage-pattern check — in practice this question is usually asked with a `medium` default.)
+- **Default selection:** If `manifest.detected.auth_method.confidence == "medium"`, detected value is the default (jwt/oauth2/session). If `low`, no default; standard question.
 - **Maps to:** `manifest.stack.auth_method`
 - **Downstream:**
   - **a → JWT:**
-    - code-review checklist: token expiry kontrolu, refresh token mekanizmasi, JWT secret guvenli depolama
-    - IDOR kontrolleri: userId/ownerId filtreleme zorunlu
+    - code-review checklist: token expiry check, refresh token mechanism, secure JWT secret storage
+    - IDOR checks: userId/ownerId filtering required
   - **b → OAuth2:**
-    - code-review checklist: scope validation, token revocation, callback URL guvenlik kontrolu
+    - code-review checklist: scope validation, token revocation, callback URL security check
   - **c → Session:**
-    - code-review checklist: CSRF token kontrolu, session fixation korunmasi, cookie guvenlik flag'leri (httpOnly, secure, sameSite)
+    - code-review checklist: CSRF token check, session fixation protection, cookie security flags (httpOnly, secure, sameSite)
   - **d → API key:**
-    - code-review checklist: key rotation mekanizmasi, rate limiting, key loglama yasagi
+    - code-review checklist: key rotation mechanism, rate limiting, ban on logging keys
   - **e → none:**
-    - Auth-spesifik checklist maddeleri eklenmez
+    - Auth-specific checklist items are not added
 
-### Q7 — Kod Isimlendirme Kurallari
-- **Text:** `"Projede hangi isimlendirme konvansiyonu kullaniliyor?"`
+### Q7 — Code Naming Rules
+- **Text:** `"Which naming convention is used in the project?"`
 - **Options:**
-  - `a)` camelCase (JavaScript/TypeScript varsayilani)
-  - `b)` snake_case (Python/PHP varsayilani)
+  - `a)` camelCase (JavaScript/TypeScript default)
+  - `b)` snake_case (Python/PHP default)
   - `c)` PascalCase + camelCase (C#, Java pattern)
-  - `d)` Mevcut linter/formatter config'den tespit et
-  - `e)` Ozel (acikla)
-- **Auto-detect:** `.eslintrc.*`, `biome.json`, `ruff.toml`, `.editorconfig` dosyalarindan naming rule cikarilir. Tespit edildiyse hint olarak gosterilir.
-- **Follow-up:** `"Dosya isimlendirme kurali? (kebab-case, snake_case, PascalCase)"`
+  - `d)` Detect from existing linter/formatter config
+  - `e)` Custom (explain)
+- **Auto-detect:** Naming rules are extracted from `.eslintrc.*`, `biome.json`, `ruff.toml`, `.editorconfig`. If detected, shown as a hint.
+- **Follow-up:** `"File naming rule? (kebab-case, snake_case, PascalCase)"`
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.conventions.naming`, `manifest.conventions.file_naming`
 - **Downstream:**
-  - `.claude/CONVENTIONS.md` icindeki NAMING_RULES blogu doldurulur
-  - code-review-check hook'unda naming pattern kontrolu aktif olur
-  - Tum agent'lar yeni kod yazarken bu konvansiyona uyar
-  - **a → camelCase:** `functionName`, `variableName`, dosya: `kebab-case.js`
-  - **b → snake_case:** `function_name`, `variable_name`, dosya: `snake_case.py`
-  - **c → PascalCase+camelCase:** `ClassName`, `methodName`, dosya: `PascalCase.cs`
+  - NAMING_RULES block inside `.claude/CONVENTIONS.md` is filled
+  - Naming pattern check becomes active in the code-review-check hook
+  - All agents follow this convention when writing new code
+  - **a → camelCase:** `functionName`, `variableName`, file: `kebab-case.js`
+  - **b → snake_case:** `function_name`, `variable_name`, file: `snake_case.py`
+  - **c → PascalCase+camelCase:** `ClassName`, `methodName`, file: `PascalCase.cs`
 
 ---
 

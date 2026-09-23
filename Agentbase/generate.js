@@ -105,12 +105,12 @@ function fillBlocks(content, fileType, manifest) {
     // Karmasik blok — Claude icin isaretle
     marked.push(blockName);
     if (fileType === 'js') {
-      return `/* CLAUDE_FILL: ${blockName} — Bu blok Claude tarafindan doldurulacak */`;
+      return `/* CLAUDE_FILL: ${blockName} — filled by the active host during bootstrap */`;
     }
     if (fileType === 'py') {
-      return `# CLAUDE_FILL: ${blockName} — Bu blok Claude tarafindan doldurulacak`;
+      return `# CLAUDE_FILL: ${blockName} — filled by the active host during bootstrap`;
     }
-    return `<!-- CLAUDE_FILL: ${blockName} — Bu blok Claude tarafindan doldurulacak -->`;
+    return `<!-- CLAUDE_FILL: ${blockName} — filled by the active host during bootstrap -->`;
   });
 
   return { content: result, filled, marked };
@@ -307,7 +307,7 @@ function sanitizeShellCommand(cmd) {
   if (!cmd || typeof cmd !== 'string') return cmd || '';
   // $() ve backtick iceren komut substitution kontrolu
   if (/\$\(|`/.test(cmd)) {
-    return `echo "UYARI: Guvenli olmayan komut tespit edildi: ${escapeForShell(cmd)}" >&2 && exit 1`;
+    return `echo "WARNING: unsafe command rejected: ${escapeForShell(cmd)}" >&2 && exit 1`;
   }
   return cmd;
 }
@@ -324,15 +324,15 @@ function escapeForJqShell(str) {
 
 /**
  * Forbidden pattern'in jq test() icin guvenli olup olmadigini kontrol eder.
- * Nested quantifier (a+)+, (a*)+, (a{2,})+  gibi desenler ReDoS riski taşir.
+ * Nested quantifiers such as (a+)+, (a*)+, (a{2,})+ are a ReDoS risk.
  * @returns {boolean} true = guvenli
  */
 function isJqRegexSafe(pattern) {
   if (!pattern || typeof pattern !== 'string') return false;
-  // Nested quantifier tespiti: (...)[+*{n,}] ardından [+*{]
+  // Nested quantifier: (...)[+*{n,}] followed by [+*{]
   if (/\([^)]*[+*][^)]*\)[+*]/.test(pattern)) return false;
   if (/\([^)]*\{[^}]*\}[^)]*\)[+*]/.test(pattern)) return false;
-  // Aşırı uzun pattern (1000+ karakter) timeout riski
+  // Over-long pattern (1000+ characters) is a timeout risk
   if (pattern.length > 1000) return false;
   return true;
 }
@@ -382,7 +382,7 @@ function getForbiddenRules(manifest) {
     const pattern = item.pattern || item.command;
     if (type === 'block' && pattern && item.reason) {
       if (!isJqRegexSafe(pattern)) {
-        console.warn(`  Uyari: Guvenli olmayan forbidden pattern atlandi (ReDoS riski): ${pattern.slice(0, 50)}`);
+        console.warn(`  Warning: skipped an unsafe forbidden pattern (ReDoS risk): ${pattern.slice(0, 50)}`);
         continue;
       }
       rules.push({ pattern, reason: item.reason });
@@ -564,51 +564,51 @@ function getMigrationCommands(manifest, ormType) {
 
   const commands = {
     prisma: [
-      ['Schema dogrulama', `cd "${ormPath}" && npx prisma validate`],
-      ['Migration olustur', `cd "${ormPath}" && npx prisma migrate dev --name <aciklama>`],
-      ['Migration durumu', `cd "${ormPath}" && npx prisma migrate status`],
-      ['Client olustur', `cd "${ormPath}" && npx prisma generate`],
-      ['DB sifirla (DEV)', `cd "${ormPath}" && npx prisma migrate reset`],
-      ['Seed calistir', `cd "${ormPath}" && npx prisma db seed`],
-      ['Studio ac', `cd "${ormPath}" && npx prisma studio`],
+      ['Validate schema', `cd "${ormPath}" && npx prisma validate`],
+      ['Create migration', `cd "${ormPath}" && npx prisma migrate dev --name <description>`],
+      ['Migration status', `cd "${ormPath}" && npx prisma migrate status`],
+      ['Generate client', `cd "${ormPath}" && npx prisma generate`],
+      ['Reset database (DEV only)', `cd "${ormPath}" && npx prisma migrate reset`],
+      ['Run seed', `cd "${ormPath}" && npx prisma db seed`],
+      ['Open Studio', `cd "${ormPath}" && npx prisma studio`],
     ],
     eloquent: [
-      ['Migration olustur', `cd "${ormPath}" && php artisan make:migration <aciklama>`],
-      ['Migration calistir', `cd "${ormPath}" && php artisan migrate`],
-      ['Migration geri al', `cd "${ormPath}" && php artisan migrate:rollback`],
-      ['Migration durumu', `cd "${ormPath}" && php artisan migrate:status`],
-      ['DB sifirla (DEV)', `cd "${ormPath}" && php artisan migrate:fresh --seed`],
-      ['Seed calistir', `cd "${ormPath}" && php artisan db:seed`],
+      ['Create migration', `cd "${ormPath}" && php artisan make:migration <description>`],
+      ['Run migration', `cd "${ormPath}" && php artisan migrate`],
+      ['Roll back migration', `cd "${ormPath}" && php artisan migrate:rollback`],
+      ['Migration status', `cd "${ormPath}" && php artisan migrate:status`],
+      ['Reset database (DEV only)', `cd "${ormPath}" && php artisan migrate:fresh --seed`],
+      ['Run seed', `cd "${ormPath}" && php artisan db:seed`],
     ],
     'django-orm': [
-      ['Migration olustur', `cd "${ormPath}" && python manage.py makemigrations`],
-      ['Migration calistir', `cd "${ormPath}" && python manage.py migrate`],
-      ['Migration durumu', `cd "${ormPath}" && python manage.py showmigrations`],
-      ['SQL onizleme', `cd "${ormPath}" && python manage.py sqlmigrate <app> <migration>`],
+      ['Create migration', `cd "${ormPath}" && python manage.py makemigrations`],
+      ['Run migration', `cd "${ormPath}" && python manage.py migrate`],
+      ['Migration status', `cd "${ormPath}" && python manage.py showmigrations`],
+      ['Preview SQL', `cd "${ormPath}" && python manage.py sqlmigrate <app> <migration>`],
     ],
     typeorm: [
-      ['Migration olustur', `cd "${ormPath}" && npx typeorm migration:generate -n <aciklama>`],
-      ['Migration calistir', `cd "${ormPath}" && npx typeorm migration:run`],
-      ['Migration geri al', `cd "${ormPath}" && npx typeorm migration:revert`],
-      ['Schema senkronize', `cd "${ormPath}" && npx typeorm schema:sync`],
+      ['Create migration', `cd "${ormPath}" && npx typeorm migration:generate -n <description>`],
+      ['Run migration', `cd "${ormPath}" && npx typeorm migration:run`],
+      ['Roll back migration', `cd "${ormPath}" && npx typeorm migration:revert`],
+      ['Sync schema', `cd "${ormPath}" && npx typeorm schema:sync`],
     ],
     knex: [
-      ['Migration olustur', `cd "${ormPath}" && npx knex migrate:make <aciklama>`],
-      ['Migration calistir', `cd "${ormPath}" && npx knex migrate:latest`],
-      ['Migration durumu', `cd "${ormPath}" && npx knex migrate:status`],
-      ['Migration geri al', `cd "${ormPath}" && npx knex migrate:rollback`],
+      ['Create migration', `cd "${ormPath}" && npx knex migrate:make <description>`],
+      ['Run migration', `cd "${ormPath}" && npx knex migrate:latest`],
+      ['Migration status', `cd "${ormPath}" && npx knex migrate:status`],
+      ['Roll back migration', `cd "${ormPath}" && npx knex migrate:rollback`],
     ],
     sequelize: [
-      ['Migration olustur', `cd "${ormPath}" && npx sequelize-cli migration:generate --name <aciklama>`],
-      ['Migration calistir', `cd "${ormPath}" && npx sequelize-cli db:migrate`],
-      ['Migration durumu', `cd "${ormPath}" && npx sequelize-cli db:migrate:status`],
-      ['Migration geri al', `cd "${ormPath}" && npx sequelize-cli db:migrate:undo`],
+      ['Create migration', `cd "${ormPath}" && npx sequelize-cli migration:generate --name <description>`],
+      ['Run migration', `cd "${ormPath}" && npx sequelize-cli db:migrate`],
+      ['Migration status', `cd "${ormPath}" && npx sequelize-cli db:migrate:status`],
+      ['Roll back migration', `cd "${ormPath}" && npx sequelize-cli db:migrate:undo`],
     ],
     supabase: [
-      ['Migration olustur', `cd "${ormPath}" && supabase migration new <aciklama>`],
-      ['Migration farkini al', `cd "${ormPath}" && supabase db diff --schema public`],
-      ['Migration uygula', `cd "${ormPath}" && supabase db push`],
-      ['Migration listele', `cd "${ormPath}" && supabase migration list`],
+      ['Create migration', `cd "${ormPath}" && supabase migration new <description>`],
+      ['Diff schema', `cd "${ormPath}" && supabase db diff --schema public`],
+      ['Apply migration', `cd "${ormPath}" && supabase db push`],
+      ['List migrations', `cd "${ormPath}" && supabase migration list`],
     ],
   };
 
@@ -634,9 +634,9 @@ function getDetectedDatabase(manifest) {
 function getRawSqlMigrationRows(manifest) {
   const codebasePath = getCodebasePath(manifest);
   return [
-    ['Migration dosyasi olustur', `mkdir -p "${codebasePath}/db/migrations" && touch "${codebasePath}/db/migrations/<timestamp>_<aciklama>.up.sql" "${codebasePath}/db/migrations/<timestamp>_<aciklama>.down.sql"`],
-    ['Migration uygula', `cd "${codebasePath}" && psql "$DATABASE_URL" -f db/migrations/<timestamp>_<aciklama>.up.sql`],
-    ['Rollback uygula', `cd "${codebasePath}" && psql "$DATABASE_URL" -f db/migrations/<timestamp>_<aciklama>.down.sql`],
+    ['Create migration files', `mkdir -p "${codebasePath}/db/migrations" && touch "${codebasePath}/db/migrations/<timestamp>_<description>.up.sql" "${codebasePath}/db/migrations/<timestamp>_<description>.down.sql"`],
+    ['Apply migration', `cd "${codebasePath}" && psql "$DATABASE_URL" -f db/migrations/<timestamp>_<description>.up.sql`],
+    ['Apply rollback', `cd "${codebasePath}" && psql "$DATABASE_URL" -f db/migrations/<timestamp>_<description>.down.sql`],
   ];
 }
 
@@ -644,7 +644,7 @@ function getDryRunCommand(manifest) {
   const orm = getDetectedOrm(manifest);
   const codebasePath = getCodebasePath(manifest);
   const commands = {
-    prisma: 'npx prisma migrate dev --create-only --name <aciklama>',
+    prisma: 'npx prisma migrate dev --create-only --name <description>',
     typeorm: 'npx typeorm migration:show',
     eloquent: 'php artisan migrate --pretend',
     'django-orm': 'python manage.py sqlmigrate <app> <migration>',
@@ -653,7 +653,7 @@ function getDryRunCommand(manifest) {
     supabase: 'supabase db diff --schema public',
   };
 
-  return `cd "${codebasePath}" && ${commands[orm] || 'EXPLAIN < db/migrations/<timestamp>_<aciklama>.up.sql'}`;
+  return `cd "${codebasePath}" && ${commands[orm] || 'EXPLAIN < db/migrations/<timestamp>_<description>.up.sql'}`;
 }
 
 function getRollbackCommand(manifest) {
@@ -666,10 +666,10 @@ function getRollbackCommand(manifest) {
     'django-orm': 'python manage.py migrate <app> <onceki_migration>',
     knex: 'npx knex migrate:rollback',
     sequelize: 'npx sequelize-cli db:migrate:undo',
-    supabase: 'psql "$DATABASE_URL" -f supabase/migrations/<timestamp>_<aciklama>.down.sql',
+    supabase: 'psql "$DATABASE_URL" -f supabase/migrations/<timestamp>_<description>.down.sql',
   };
 
-  return `cd "${codebasePath}" && ${commands[orm] || 'psql "$DATABASE_URL" -f db/migrations/<timestamp>_<aciklama>.down.sql'}`;
+  return `cd "${codebasePath}" && ${commands[orm] || 'psql "$DATABASE_URL" -f db/migrations/<timestamp>_<description>.down.sql'}`;
 }
 
 // ─────────────────────────────────────────────────────
@@ -699,12 +699,12 @@ const SIMPLE_GENERATORS = {
       );
     const memoryPath = isSafeMemoryPath ? requestedPath : '.claude/memory';
     return [
-      '## Memory Yolu',
+      '## Memory path',
       '',
-      `**Hafiza dizini:** \`${memoryPath}\``,
+      `**Memory directory:** \`${memoryPath}\``,
       '',
-      '- Agentbase .claude/memory/ dizini esas alinir',
-      '- Codebase icine hafiza dosyasi yazilmaz',
+      '- The Agentbase .claude/memory/ directory is the store',
+      '- Memory files are not written into Codebase',
     ].join('\n');
   },
 
@@ -722,9 +722,9 @@ const SIMPLE_GENERATORS = {
     }
 
     return [
-      '## Prisma Dosya Konumlari',
+      '## Prisma file locations',
       '',
-      '| Dosya | Yol |',
+      '| File | Path |',
       '|---|---|',
       `| Schema | \`${prismaBase}/prisma/schema.prisma\` |`,
       `| Migrations | \`${prismaBase}/prisma/migrations/\` |`,
@@ -736,9 +736,9 @@ const SIMPLE_GENERATORS = {
   LARAVEL_PATHS(manifest) {
     const codebasePath = getCodebasePath(manifest);
     return [
-      '## Laravel Dosya Konumlari',
+      '## Laravel file locations',
       '',
-      '| Dosya | Yol |',
+      '| File | Path |',
       '|---|---|',
       `| Routes | \`${codebasePath}/routes/\` |`,
       `| Controllers | \`${codebasePath}/app/Http/Controllers/\` |`,
@@ -751,9 +751,9 @@ const SIMPLE_GENERATORS = {
   DJANGO_PATHS(manifest) {
     const codebasePath = getCodebasePath(manifest);
     return [
-      '## Django Dosya Konumlari',
+      '## Django file locations',
       '',
-      '| Dosya | Yol |',
+      '| File | Path |',
       '|---|---|',
       `| Views | \`${codebasePath}/*/views.py\` |`,
       `| Models | \`${codebasePath}/*/models.py\` |`,
@@ -766,9 +766,9 @@ const SIMPLE_GENERATORS = {
   TYPEORM_PATHS(manifest) {
     const codebasePath = getCodebasePath(manifest);
     return [
-      '## TypeORM Dosya Konumlari',
+      '## TypeORM file locations',
       '',
-      '| Dosya | Yol |',
+      '| File | Path |',
       '|---|---|',
       `| Entities | \`${codebasePath}/src/entities/\` |`,
       `| Migrations | \`${codebasePath}/src/migrations/\` |`,
@@ -777,7 +777,7 @@ const SIMPLE_GENERATORS = {
   },
 
   DEPLOY_LOG_PATH(manifest) {
-    return `## Deploy Log Yolu\n\n\`.claude/reports/deploys/\``;
+    return `## Deploy log path\n\n\`.claude/reports/deploys/\``;
   },
 
   HEALTH_CHECK_URL(manifest) {
@@ -789,7 +789,7 @@ const SIMPLE_GENERATORS = {
     if (prodEnv?.url) {
       return `## Health Check\n\n\`${prodEnv.url}/health\``;
     }
-    return `## Health Check\n\n\`<PROJE_URL>/health\``;
+    return `## Health Check\n\n\`<PROJECT_URL>/health\``;
   },
 
   // --- CONTEXT / ROOT-DOK BLOKLARI (Faz 2: marker azaltma) ---
@@ -810,40 +810,40 @@ const SIMPLE_GENERATORS = {
       : (detected.length ? detected.join(', ') : '—');
     const lines = [];
     if (p.description) lines.push(p.description, '');
-    lines.push(`- **Tip:** ${p.type || 'single'}`);
+    lines.push(`- **Type:** ${p.type || 'single'}`);
     lines.push(`- **Stack:** ${stackLabel}`);
     const exts = Array.isArray(stack.file_extensions) ? stack.file_extensions : [];
-    if (exts.length) lines.push(`- **Dosya uzantıları:** ${exts.join(', ')}`);
+    if (exts.length) lines.push(`- **File extensions:** ${exts.join(', ')}`);
     if (subprojects.length) {
-      lines.push('', '**Alt projeler:**');
+      lines.push('', '**Subprojects:**');
       for (const sp of subprojects) {
         const role = sp.role ? ` — ${sp.role}` : '';
         const spStack = sp.stack ? ` (${sp.stack})` : '';
         lines.push(`- \`${getSubprojectPath(manifest, sp)}\` · ${sp.name}${role}${spStack}`);
       }
     }
-    lines.push('', "> Kutsal Kurallar: config dosyaları yalnızca Agentbase içinde yaşar; Codebase içinde `.claude/` oluşturulmaz; git yalnızca Codebase'de çalışır.");
+    lines.push('', '> Invariant rules: config files live only inside Agentbase; a `.claude/` directory is not created inside Codebase; git runs only in Codebase.');
     return lines.join('\n');
   },
 
   PROFESSIONAL_STANCE(manifest) {
     const exp = manifest?.developer?.experience || 'mid';
     const texts = {
-      senior: "Dalkavukluk yapma. \"Harika soru!\" veya \"Güzel fikir!\" gibi ifadeler kullanma. Mühendis gibi düşün — kısa, öz, teknik. Soru sorulduğunda doğrudan cevapla. Öneri sunarken trade-off'ları belirt; kararı geliştirici verir.",
-      mid: "Net ve pragmatik ol. Karar noktalarında 2-3 alternatif sun ve trade-off'ları açıkla. Gereksiz detaydan kaçın.",
-      junior: "Detaylı açıklama yap. Her kararın nedenini anlat. Kod örnekleri ver. Adım adım rehberlik et.",
-      'new-to-stack': "Stack-spesifik kavramları açıkla. Idiomatic pattern'leri göster. Diğer stack'lerle karşılaştırarak bağlam ver.",
+      senior: 'Do not flatter. Skip praise. Think like an engineer: short, concrete, technical. Answer the question directly. When you suggest something, state the trade-off; the developer decides.',
+      mid: 'Be clear and pragmatic. At decision points, offer 2-3 alternatives and explain the trade-offs. Skip unnecessary detail.',
+      junior: 'Explain in detail. Say why each decision was made. Give code examples. Guide step by step.',
+      'new-to-stack': 'Explain stack-specific concepts. Show idiomatic patterns. Compare them with other stacks for context.',
     };
-    return ['## Profesyonel Duruş', '', texts[exp] || texts.mid].join('\n');
+    return ['## Professional stance', '', texts[exp] || texts.mid].join('\n');
   },
 
   PROJECT_DEFINITION(manifest) {
     const p = manifest?.project || {};
     const subprojects = Array.isArray(p.subprojects) ? p.subprojects : [];
-    const typeLabel = p.type === 'monorepo' ? 'Monorepo yapısı.' : 'Tek proje yapısı.';
-    const lines = ['## Proje Tanımı', '', `**${p.name || 'Proje'}** — ${p.description || 'Açıklama tanımlı değil.'} ${typeLabel}`];
+    const typeLabel = p.type === 'monorepo' ? 'Monorepo layout.' : 'Single-project layout.';
+    const lines = ['## Project definition', '', `**${p.name || 'Project'}** — ${p.description || 'No description is defined.'} ${typeLabel}`];
     if (subprojects.length) {
-      lines.push('', '| Alt Proje | Yol | Rol | Stack |', '|---|---|---|---|');
+      lines.push('', '| Subproject | Path | Role | Stack |', '|---|---|---|---|');
       for (const sp of subprojects) {
         lines.push(`| ${sp.name || '—'} | \`${getSubprojectPath(manifest, sp)}\` | ${sp.role || '—'} | ${sp.stack || '—'} |`);
       }
@@ -858,43 +858,43 @@ const SIMPLE_GENERATORS = {
     add('Runtime', s.runtime ? `${s.runtime}${s.runtime_version ? ` ${s.runtime_version}` : ''}` : null);
     add('Dil', hasTypeScript(manifest) ? 'TypeScript' : (manifest?.project?.language || null));
     add('ORM', s.orm);
-    add('Veritabanı', s.database);
+    add('Database', s.database);
     add('Auth', s.auth_method && s.auth_method !== 'none' ? s.auth_method : null);
     add('Test', s.test_framework);
     add('Lint', s.linter);
     add('Format', s.formatter);
-    add('Paket Yöneticisi', s.package_manager);
-    if (!rows.length) return "## Teknoloji Yığını\n\n_Stack bilgisi manifest'te tanımlı değil._";
-    return ['## Teknoloji Yığını', '', '| Katman | Teknoloji |', '|---|---|', ...rows].join('\n');
+    add('Package manager', s.package_manager);
+    if (!rows.length) return '## Technology stack\n\n_No stack is defined in the manifest._';
+    return ['## Technology stack', '', '| Layer | Technology |', '|---|---|', ...rows].join('\n');
   },
 
   ENVIRONMENTS(manifest) {
     const envs = Array.isArray(manifest?.environments) ? manifest.environments : [];
-    if (!envs.length) return '## Ortamlar\n\n_Ortam tanımlı değil._';
+    if (!envs.length) return '## Environments\n\n_No environment is defined._';
     const rows = envs.map((e) => {
       const url = e.url || e.api_url || '—';
       const deploy = [e.deploy_platform, e.deploy_trigger].filter(Boolean).join(', ') || '—';
       const name = e.name ? e.name.charAt(0).toUpperCase() + e.name.slice(1) : '—';
       return `| ${name} | ${url} | ${deploy} |`;
     });
-    return ['## Ortamlar', '', '| Ortam | URL | Deploy |', '|---|---|---|', ...rows].join('\n');
+    return ['## Environments', '', '| Environment | URL | Deploy |', '|---|---|---|', ...rows].join('\n');
   },
 
   COMMANDS(manifest) {
     const p = manifest?.project || {};
     const subprojects = Array.isArray(p.subprojects) ? p.subprojects : [];
     const pm = manifest?.stack?.package_manager || 'npm';
-    const lines = ['## Geliştirme Komutları', ''];
+    const lines = ['## Development commands', ''];
     const formatCommand = (dir, cmd) => cmd.startsWith('cd ') ? cmd : `cd "${dir}" && ${cmd}`;
     if (subprojects.length) {
       for (const sp of subprojects) {
         const dir = getSubprojectPath(manifest, sp);
         const cmds = [
           [sp.dev_command || `${pm} run dev`, 'Dev server'],
-          [sp.test_command || `${pm} test`, 'Testler'],
+          [sp.test_command || `${pm} test`, 'Tests'],
           [sp.build_command || `${pm} run build`, 'Build'],
         ];
-        lines.push(`### ${sp.name} (\`${dir}\` dizininden)`, '```bash',
+        lines.push(`### ${sp.name} (from \`${dir}\`)`, '```bash',
           ...cmds.map(([c, l]) => `${formatCommand(dir, c)}      # ${l}`), '```', '');
       }
     } else {
@@ -905,7 +905,7 @@ const SIMPLE_GENERATORS = {
         [sc.test || `${pm} test`, 'Testler'],
         [sc.build || `${pm} run build`, 'Build'],
       ];
-      lines.push(`### ${dir} dizininden`, '```bash',
+      lines.push(`### from \`${dir}\``, '```bash',
         ...cmds.map(([c, l]) => `${formatCommand(dir, c)}      # ${l}`), '```', '');
     }
     return lines.join('\n').trimEnd();
@@ -913,24 +913,22 @@ const SIMPLE_GENERATORS = {
 
   CONVENTIONS(manifest) {
     const wf = manifest?.workflows || {};
-    const conv = manifest?.conventions || {};
     const domain = Array.isArray(manifest?.rules?.domain) ? manifest.rules.domain : [];
-    const lang = (conv.commit_language || manifest?.developer?.communication_language || 'tr') === 'tr' ? 'Türkçe' : 'İngilizce';
-    const lines = ['## Konvansiyonlar', '', '### Commit Formatı'];
+    const lines = ['## Conventions', '', '### Commit format'];
     const cc = wf.commit_convention || 'conventional';
     if (cc === 'conventional') {
       const map = wf.commit_prefix_map || {
-        feat: 'Yeni özellik', fix: 'Hata düzeltme', refactor: 'Yeniden yapılandırma',
-        docs: 'Dokümantasyon', test: 'Test', chore: 'Bakım',
+        feat: 'New feature', fix: 'Bug fix', refactor: 'Restructure',
+        docs: 'Documentation', test: 'Test', chore: 'Maintenance',
       };
-      lines.push(`Conventional Commits (${lang}):`);
-      for (const [k, v] of Object.entries(map)) lines.push(`- \`${k}: ${v} açıklaması\``);
+      lines.push('Conventional Commits (English):');
+      for (const [k, v] of Object.entries(map)) lines.push(`- \`${k}: ${v}\``);
     } else {
-      lines.push(`Commit formatı: ${cc}.`);
+      lines.push(`Commit format: ${cc}.`);
     }
-    lines.push('', '### Dil', `Tüm iletişim, commit mesajları, yorumlar ve dokümantasyon ${lang} yazılır.`);
+    lines.push('', '### Language', 'Workflow instructions, commit messages produced by this workflow, and agent-written documentation are English.');
     if (domain.length) {
-      lines.push('', '### Domain Kuralları');
+      lines.push('', '### Domain rules');
       for (const d of domain) {
         if (typeof d === 'string') lines.push(`- ${d}`);
         else if (d && d.rule) lines.push(`- ${d.name ? `**${d.name}:** ` : ''}${d.rule}`);
@@ -947,21 +945,21 @@ const SIMPLE_GENERATORS = {
       if (typeof d === 'string') lines.push(`- ${d}`);
       else if (d && d.rule) lines.push(`- ${d.name ? `**${d.name}:** ` : ''}${d.rule}`);
     }
-    if (docblock === 'required') lines.push('- Her public fonksiyon docblock/JSDoc ile dokümante edilir.');
-    if (!lines.length) return '_Projeye özgü ek konvansiyon tanımlı değil._';
+    if (docblock === 'required') lines.push('- Document every public function with a docblock/JSDoc comment.');
+    if (!lines.length) return '_No extra project conventions are defined._';
     return lines.join('\n');
   },
 
   FORBIDDEN_OPERATIONS(manifest) {
     const forbidden = Array.isArray(manifest?.rules?.forbidden) ? manifest.rules.forbidden : [];
-    if (!forbidden.length) return "_Manifest'te tanımlı yasaklı işlem yok._";
+    if (!forbidden.length) return '_No forbidden operation is defined in the manifest._';
     const rows = forbidden.map((f) => {
       const cmd = f.command || f.pattern || '—';
       const reason = f.reason || '—';
       const hook = f.hook_type || f.type || 'hook';
       return `| \`${cmd}\` | ${reason} | ${hook} |`;
     });
-    return ['| Komut | Sebep | Koruma |', '|---|---|---|', ...rows].join('\n');
+    return ['| Command | Reason | Guard |', '|---|---|---|', ...rows].join('\n');
   },
 
   // --- KOMUT TABLOLARI ---
@@ -970,19 +968,19 @@ const SIMPLE_GENERATORS = {
     const orm = getDetectedOrm(manifest);
     const database = getDetectedDatabase(manifest);
     const confidence = manifest?.detected?.orm?.confidence || (orm ? 'stack.orm' : 'none');
-    const source = manifest?.detected?.orm?.source || (orm ? 'stack.orm' : 'tespit yok');
+    const source = manifest?.detected?.orm?.source || (orm ? 'stack.orm' : 'not detected');
 
     return [
-      '## ORM / Database Tespiti',
+      '## ORM / database detection',
       '',
-      `- **ORM:** \`${orm || 'yok'}\``,
-      `- **Güven:** \`${confidence}\``,
-      `- **Kaynak:** \`${source}\``,
-      `- **Database:** \`${database || 'bilinmiyor'}\``,
+      `- **ORM:** \`${orm || 'none'}\``,
+      `- **Confidence:** \`${confidence}\``,
+      `- **Source:** \`${source}\``,
+      `- **Database:** \`${database || 'unknown'}\``,
       '',
       orm
-        ? 'ORM tespit edildigi icin migration, dry-run ve rollback komutlari bu teknolojiye gore uygulanir.'
-        : 'ORM tespit edilmezse raw SQL disiplini uygulanir: her degisiklik icin eslesmis `up.sql` ve `down.sql` dosyasi gerekir.',
+        ? 'An ORM was detected, so migration, dry-run, and rollback commands follow that technology.'
+        : 'No ORM was detected. Raw SQL discipline applies: every change needs a matching `up.sql` and `down.sql`.',
     ].join('\n');
   },
 
@@ -991,36 +989,36 @@ const SIMPLE_GENERATORS = {
     if (!orm) {
       const rows = getRawSqlMigrationRows(manifest).map(([label, cmd]) => `| ${label} | \`${cmd}\` |`);
       return [
-        '## Migration Komutlari',
+        '## Migration commands',
         '',
-        'ORM tespit edilemedi. Raw SQL fallback kullanilir; `up.sql` ve `down.sql` birlikte olusturulur.',
+        'No ORM was detected. Raw SQL is the fallback; create matching `up.sql` and `down.sql` files.',
         '',
-        '| Islem | Komut |',
+        '| Action | Command |',
         '|---|---|',
         ...rows,
       ].join('\n');
     }
 
     const commands = getMigrationCommands(manifest, orm);
-    if (commands.length === 0) return `## Migration Komutlari\n\n${orm} icin komut tanimlanmadi.`;
+    if (commands.length === 0) return `## Migration commands\n\n${orm} has no command defined.`;
 
     const rows = commands.map(([label, cmd]) => `| ${label} | \`${cmd}\` |`);
     return [
-      '## Migration Komutlari',
+      '## Migration commands',
       '',
-      '| Islem | Komut |',
+      '| Action | Command |',
       '|---|---|',
       ...rows,
       '',
-      '> **UYARI:** Sifirla/reset komutlari SADECE gelistirme ortaminda kullanilir.',
+      '> **WARNING:** Reset commands are for the development environment only.',
     ].join('\n');
   },
 
   DRY_RUN_COMMAND(manifest) {
     return [
-      '## Dry-run / Preview Komutu',
+      '## Dry-run / preview command',
       '',
-      'Migration production veya paylasimli ortama uygulanmadan once preview/dry-run komutu calistirilir.',
+      'Run the preview or dry-run command before applying a migration to production or a shared environment.',
       '',
       '```bash',
       getDryRunCommand(manifest),
@@ -1030,9 +1028,9 @@ const SIMPLE_GENERATORS = {
 
   ROLLBACK_COMMAND(manifest) {
     return [
-      '## Rollback / Down Komutu',
+      '## Rollback / down command',
       '',
-      'Her schema degisikligi uygulanmadan once geri alma komutu veya down SQL dosyasi hazir olmalidir.',
+      'A rollback command or down SQL file must be ready before a schema change is applied.',
       '',
       '```bash',
       getRollbackCommand(manifest),
@@ -1043,30 +1041,30 @@ const SIMPLE_GENERATORS = {
   COMMIT_CONVENTION(manifest) {
     const convention = manifest?.workflows?.commit_convention || 'conventional';
     const prefixMap = manifest?.workflows?.commit_prefix_map || {
-      feat: 'Yeni ozellik',
-      fix: 'Hata duzeltme',
-      refactor: 'Kod yeniden duzenleme',
-      docs: 'Dokumantasyon',
-      test: 'Test ekleme/duzeltme',
-      chore: 'Bakim isleri',
-      style: 'Format/stil degisikligi',
-      perf: 'Performans iyilestirme',
-      ci: 'CI/CD degisikligi',
+      feat: 'New feature',
+      fix: 'Bug fix',
+      refactor: 'Restructure without a behavior change',
+      docs: 'Documentation',
+      test: 'Add or update tests',
+      chore: 'Maintenance',
+      style: 'Format or style',
+      perf: 'Performance',
+      ci: 'CI/CD change',
     };
 
     const rows = Object.entries(prefixMap)
       .map(([prefix, desc]) => `| \`${prefix}:\` | ${desc} |`);
 
     return [
-      '## Commit Konvansiyonu',
+      '## Commit convention',
       '',
-      `Tip: **${convention}**`,
+      `Type: **${convention}**`,
       '',
-      '| Prefix | Aciklama |',
+      '| Prefix | Description |',
       '|---|---|',
       ...rows,
       '',
-      'Ornek: `feat: kullanici kayit formu eklendi`',
+      'Example: `feat: add user registration form`',
     ].join('\n');
   },
 
@@ -1102,18 +1100,18 @@ const SIMPLE_GENERATORS = {
     );
 
     const lines = [
-      `### Isimlendirme: ${naming}`,
+      `### Naming: ${naming}`,
       '',
-      '| Oge | Format | Ornek |',
+      '| Item | Format | Example |',
       '|-----|--------|-------|',
       ...rows,
     ];
 
     if (componentNaming) {
-      lines.push('', `**Component isimlendirme:** ${componentNaming}`);
+      lines.push('', `**Component naming:** ${componentNaming}`);
     }
 
-    lines.push('', `### Dosya Isimlendirme: ${fileNaming}`);
+    lines.push('', `### File naming: ${fileNaming}`);
 
     return lines.join('\n');
   },
@@ -1131,9 +1129,9 @@ const SIMPLE_GENERATORS = {
       });
 
       return [
-        '## Dogrulama Komutlari',
+        '## Verification commands',
         '',
-        '| Subproject | Komut |',
+        '| Subproject | Command |',
         '|---|---|',
         ...rows,
       ].join('\n');
@@ -1143,9 +1141,9 @@ const SIMPLE_GENERATORS = {
     const codebasePath = getCodebasePath(manifest);
     const testCmd = manifest?.project?.scripts?.test || 'npm test';
     return [
-      '## Dogrulama Komutlari',
+      '## Verification commands',
       '',
-      '| Islem | Komut |',
+      '| Action | Command |',
       '|---|---|',
       `| Test | \`${testCmd.startsWith('cd ') ? testCmd : `cd "${codebasePath}" && ${testCmd}`}\` |`,
     ].join('\n');
@@ -1169,15 +1167,15 @@ const SIMPLE_GENERATORS = {
           return `| ${sp.name} | \`cd "${spPath}" && ${cmd}\` |`;
         });
 
-      if (rows.length === 0) return '## Derleme Komutlari\n\nDerleme komutu tanimlanmadi.';
-      return ['## Derleme Komutlari', '', '| Subproject | Komut |', '|---|---|', ...rows].join('\n');
+      if (rows.length === 0) return '## Build commands\n\nNo build command is defined.';
+      return ['## Build commands', '', '| Subproject | Command |', '|---|---|', ...rows].join('\n');
     }
 
     const buildCmd = manifest?.project?.scripts?.build || 'npm run build';
     return [
-      '## Derleme Komutlari',
+      '## Build commands',
       '',
-      '| Islem | Komut |',
+      '| Action | Command |',
       '|---|---|',
       `| Build | \`cd "${codebasePath}" && ${buildCmd}\` |`,
     ].join('\n');
@@ -1261,30 +1259,30 @@ const SIMPLE_GENERATORS = {
 
     if (allStacks.some(s => s.includes('node') || s.includes('express') || s.includes('fastify') || s.includes('nest'))) {
       patterns.push(
-        "{ pattern: /eval\\s*\\(/, severity: 'CRITICAL', message: 'eval() kullanimi tespit edildi!' }",
-        "{ pattern: /res\\.send\\(.*req\\.(body|query|params)/, severity: 'HIGH', message: 'Dogrudan kullanici girdisi response\\'a yansitiliyor (XSS riski)' }",
+        "{ pattern: /eval\\s*\\(/, severity: 'CRITICAL', message: 'eval() usage detected' }",
+        "{ pattern: /res\\.send\\(.*req\\.(body|query|params)/, severity: 'HIGH', message: 'Request input is reflected in the response (XSS risk)' }",
       );
     }
     if (allStacks.some(s => s.includes('prisma'))) {
       patterns.push(
-        "{ pattern: /\\$queryRaw\\s*`[^`]*\\$\\{/, severity: 'CRITICAL', message: 'Raw query\\'de interpolasyon — SQL injection riski!' }",
-        "{ pattern: /\\$executeRaw\\s*`[^`]*\\$\\{/, severity: 'CRITICAL', message: 'Raw execute\\'da interpolasyon — SQL injection riski!' }",
+        "{ pattern: /\\$queryRaw\\s*`[^`]*\\$\\{/, severity: 'CRITICAL', message: 'Interpolation in a raw query — SQL injection risk' }",
+        "{ pattern: /\\$executeRaw\\s*`[^`]*\\$\\{/, severity: 'CRITICAL', message: 'Interpolation in a raw execute — SQL injection risk' }",
       );
     }
     if (allStacks.some(s => s.includes('php') || s.includes('laravel'))) {
       patterns.push(
-        "{ pattern: /\\$_(GET|POST|REQUEST)\\[/, severity: 'HIGH', message: 'Raw superglobal kullanimi — sanitize edilmeli' }",
+        "{ pattern: /\\$_(GET|POST|REQUEST)\\[/, severity: 'HIGH', message: 'Raw superglobal usage — sanitize before use' }",
       );
     }
     if (allStacks.some(s => s.includes('react'))) {
       patterns.push(
-        "{ pattern: /dangerouslySetInnerHTML/, severity: 'HIGH', message: 'dangerouslySetInnerHTML kullanimi — XSS riski' }",
+        "{ pattern: /dangerouslySetInnerHTML/, severity: 'HIGH', message: 'dangerouslySetInnerHTML usage — XSS risk' }",
       );
     }
     if (allStacks.some(s => s.includes('django') || s.includes('python'))) {
       patterns.push(
-        "{ pattern: /\\.raw\\s*\\([^)]*%/, severity: 'CRITICAL', message: 'Raw SQL\\'de string formatting — SQL injection riski!' }",
-        "{ pattern: /mark_safe\\s*\\(/, severity: 'HIGH', message: 'mark_safe kullanimi — XSS riski' }",
+        "{ pattern: /\\.raw\\s*\\([^)]*%/, severity: 'CRITICAL', message: 'String formatting in raw SQL — SQL injection risk' }",
+        "{ pattern: /mark_safe\\s*\\(/, severity: 'HIGH', message: 'mark_safe usage — XSS risk' }",
       );
     }
 
@@ -1355,7 +1353,7 @@ const SIMPLE_GENERATORS = {
   SMOKE_TEST_ENDPOINTS(manifest) {
     const envs = manifest?.environments || [];
     const prodEnv = envs.find(e => e.name === 'production' || e.name === 'prod');
-    const url = prodEnv?.url || '<PROJE_URL>';
+    const url = prodEnv?.url || '<PROJECT_URL>';
     const healthCheck = prodEnv?.health_check;
     const rawPrefix = manifest?.project?.api_prefix || '';
     const apiPrefix = rawPrefix && !rawPrefix.startsWith('/') ? '/' + rawPrefix : rawPrefix;
@@ -1373,7 +1371,7 @@ const SIMPLE_GENERATORS = {
         const method = (ep.method || 'GET').toUpperCase();
         const epPath = ep.path || '/';
         const expectedStatus = parseInt(ep.response, 10) || 200;
-        const auth = ep.auth === 'required' ? 'Authorization gerekli' : '—';
+        const auth = ep.auth === 'required' ? 'Authorization required' : '—';
         rows.push(`| \`${method} ${url}${epPath}\` | ${expectedStatus} | ${auth} |`);
       }
     } else {
@@ -1383,9 +1381,9 @@ const SIMPLE_GENERATORS = {
     }
 
     return [
-      '## Smoke Test Endpoint\'leri',
+      '## Smoke test endpoints',
       '',
-      '| Endpoint | Beklenen | Auth |',
+      '| Endpoint | Expected | Auth |',
       '|---|---|---|',
       ...rows,
     ].join('\n');
@@ -1396,7 +1394,7 @@ const SIMPLE_GENERATORS = {
   API_SMOKE_SCRIPT(manifest) {
     const envs = manifest?.environments || [];
     const prodEnv = envs.find(e => e.name === 'production' || e.name === 'prod');
-    const url = prodEnv?.url || '<PROJE_URL>';
+    const url = prodEnv?.url || '<PROJECT_URL>';
     const healthCheck = prodEnv?.health_check;
     const apiEndpoints = manifest?.api_endpoints || [];
     const rawPrefix = manifest?.project?.api_prefix || '';
@@ -1405,8 +1403,8 @@ const SIMPLE_GENERATORS = {
     const healthUrl = healthCheck || `${url}/health`;
     const lines = [
       '#!/bin/bash',
-      '# Smoke Test Script — Bootstrap tarafindan uretilmistir',
-      '# Kullanim: bash smoke-test.sh [TOKEN]',
+      '# Smoke test script — generated from the manifest',
+      '# Usage: bash smoke-test.sh [TOKEN]',
       '',
       'ERRORS=0',
       'TOKEN="${1:-$SMOKE_TEST_TOKEN}"',
@@ -1420,7 +1418,7 @@ const SIMPLE_GENERATORS = {
       '  if [ "$status" = "$expected" ]; then',
       '    echo "✅ $method $url → $status"',
       '  else',
-      '    echo "❌ $method $url → $status (beklenen: $expected)"',
+      '    echo "❌ $method $url → $status (expected: $expected)"',
       '    ERRORS=$((ERRORS + 1))',
       '  fi',
       '}',
@@ -1447,10 +1445,10 @@ const SIMPLE_GENERATORS = {
       '',
       'echo ""',
       'if [ "$ERRORS" -ne 0 ]; then',
-      '  echo "━━━ Smoke Test BASARISIZ ($ERRORS hata) ━━━"',
+      '  echo "━━━ Smoke test FAILED ($ERRORS errors) ━━━"',
       '  exit 1',
       'fi',
-      'echo "━━━ Smoke Test BASARILI ━━━"',
+      'echo "━━━ Smoke test PASSED ━━━"',
     );
 
     return lines.join('\n');
@@ -1459,7 +1457,7 @@ const SIMPLE_GENERATORS = {
   API_SMOKE_NODE_TESTS(manifest) {
     const envs = manifest?.environments || [];
     const prodEnv = envs.find(e => e.name === 'production' || e.name === 'prod');
-    const url = prodEnv?.url || '<PROJE_URL>';
+    const url = prodEnv?.url || '<PROJECT_URL>';
     const healthCheck = prodEnv?.health_check;
     const apiEndpoints = manifest?.api_endpoints || [];
     const rawPrefix = manifest?.project?.api_prefix || '';
@@ -1478,7 +1476,7 @@ const SIMPLE_GENERATORS = {
       "  const headers = {};",
       "  if (auth && TOKEN) headers['Authorization'] = `Bearer ${TOKEN}`;", // eslint-disable-line no-template-curly-in-string
       "  const res = await fetch(`${BASE_URL}${path}`, { method, headers });", // eslint-disable-line no-template-curly-in-string
-      "  assert.strictEqual(res.status, expectedStatus, `${method} ${path} → ${res.status} (beklenen: ${expectedStatus})`);", // eslint-disable-line no-template-curly-in-string
+      "  assert.strictEqual(res.status, expectedStatus, `${method} ${path} → ${res.status} (expected: ${expectedStatus})`);", // eslint-disable-line no-template-curly-in-string
       '}',
       '',
       "describe('API Smoke Tests', () => {",
@@ -1596,7 +1594,7 @@ const SIMPLE_GENERATORS = {
     if (rows.length === 0) return '';
 
     return [
-      '| Kaynak Pattern | Test Dosyasi | Framework |',
+      '| Source pattern | Test file | Framework |',
       '|---|---|---|',
       ...rows,
     ].join('\n');
@@ -1608,14 +1606,14 @@ const SIMPLE_GENERATORS = {
     const testStrategy = manifest?.workflows?.test_strategy || 'none';
     const securityLevel = manifest?.project?.security_level || 'standard';
 
-    const redGreenActive = testStrategy.toLowerCase() === 'tdd' ? 'AKTIF' : 'PASIF';
-    const dualPassActive = securityLevel.toLowerCase() === 'high' ? 'AKTIF' : 'PASIF';
+    const redGreenActive = testStrategy.toLowerCase() === 'tdd' ? 'active' : 'inactive';
+    const dualPassActive = securityLevel.toLowerCase() === 'high' ? 'active' : 'inactive';
 
     return [
-      '#### Proje Yapilandirmasi (Manifest)',
+      '#### Project configuration (manifest)',
       '',
-      `- **Test stratejisi:** \`${testStrategy}\` — Red-Green modifier ${redGreenActive}`,
-      `- **Guvenlik seviyesi:** \`${securityLevel}\` — Dual-Pass modifier ${dualPassActive}`,
+      `- **Test strategy:** \`${testStrategy}\` — Red-Green modifier is ${redGreenActive}`,
+      `- **Security level:** \`${securityLevel}\` — Dual-Pass modifier is ${dualPassActive}`,
     ].join('\n');
   },
 
@@ -1627,9 +1625,9 @@ const SIMPLE_GENERATORS = {
 
     if (hasTypeScript(manifest)) {
       lines.push(
-        'echo "→ TypeScript derleme kontrolu..."',
+        'echo "→ TypeScript compile check..."',
         `cd "$CODEBASE_DIR" && npx tsc --noEmit 2>&1 || {`,
-        '  echo "❌ TypeScript derleme hatasi!"',
+        '  echo "❌ TypeScript compile failed!"',
         '  ERRORS=1',
         '}',
       );
@@ -1638,25 +1636,25 @@ const SIMPLE_GENERATORS = {
     const runtime = (stack.runtime || '').toLowerCase();
     if (runtime === 'go') {
       lines.push(
-        'echo "→ Go build kontrolu..."',
+        'echo "→ Go build check..."',
         `cd "$CODEBASE_DIR" && go build ./... 2>&1 || {`,
-        '  echo "❌ Go build hatasi!"',
+        '  echo "❌ Go build failed!"',
         '  ERRORS=1',
         '}',
       );
     }
     if (runtime === 'rust') {
       lines.push(
-        'echo "→ Cargo check kontrolu..."',
+        'echo "→ Cargo check..."',
         `cd "$CODEBASE_DIR" && cargo check 2>&1 || {`,
-        '  echo "❌ Cargo check hatasi!"',
+        '  echo "❌ Cargo check failed!"',
         '  ERRORS=1',
         '}',
       );
     }
 
     if (lines.length === 0) {
-      return '# Derleme kontrolu: Stack icin derleme komutu tespit edilemedi';
+      return '# Compile check: no compile command was detected for this stack';
     }
     return lines.join('\n');
   },
@@ -1672,48 +1670,48 @@ const SIMPLE_GENERATORS = {
     if (testCmd) {
       const safeCmd = sanitizeShellCommand(testCmd);
       lines.push(
-        'echo "→ Test calistiriliyor..."',
+        'echo "→ Running tests..."',
         `cd "$CODEBASE_DIR" && ${safeCmd} 2>&1 || {`,
-        '  echo "❌ Testler basarisiz!"',
+        '  echo "❌ Tests failed!"',
         '  ERRORS=1',
         '}',
       );
     } else if (testFramework === 'jest' || testFramework === 'vitest' || testFramework === 'mocha') {
       lines.push(
-        'echo "→ Test calistiriliyor..."',
+        'echo "→ Running tests..."',
         `cd "$CODEBASE_DIR" && npm test 2>&1 || {`,
-        '  echo "❌ Testler basarisiz!"',
+        '  echo "❌ Tests failed!"',
         '  ERRORS=1',
         '}',
       );
     } else if (testFramework === 'pytest') {
       lines.push(
-        'echo "→ Test calistiriliyor..."',
+        'echo "→ Running tests..."',
         `cd "$CODEBASE_DIR" && python -m pytest 2>&1 || {`,
-        '  echo "❌ Testler basarisiz!"',
+        '  echo "❌ Tests failed!"',
         '  ERRORS=1',
         '}',
       );
     } else if (testFramework === 'phpunit') {
       lines.push(
-        'echo "→ Test calistiriliyor..."',
+        'echo "→ Running tests..."',
         `cd "$CODEBASE_DIR" && ./vendor/bin/phpunit 2>&1 || {`,
-        '  echo "❌ Testler basarisiz!"',
+        '  echo "❌ Tests failed!"',
         '  ERRORS=1',
         '}',
       );
     } else if (runtime === 'go') {
       lines.push(
-        'echo "→ Test calistiriliyor..."',
+        'echo "→ Running tests..."',
         `cd "$CODEBASE_DIR" && go test ./... 2>&1 || {`,
-        '  echo "❌ Testler basarisiz!"',
+        '  echo "❌ Tests failed!"',
         '  ERRORS=1',
         '}',
       );
     }
 
     if (lines.length === 0) {
-      return '# Test kontrolu: Test framework tespit edilemedi';
+      return '# Test check: no test framework was detected';
     }
     return lines.join('\n');
   },
@@ -1726,36 +1724,36 @@ const SIMPLE_GENERATORS = {
 
     if (linter === 'eslint') {
       lines.push(
-        '# Staged dosyalarda lint kontrolu',
+        '# Lint check on staged files',
         'LINT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.(ts|tsx|js|jsx|mjs|cjs)$" || true)',
         'if [ -n "$LINT_FILES" ]; then',
-        '  echo "→ ESLint kontrolu..."',
+        '  echo "→ ESLint check..."',
         '  echo "$LINT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 npx eslint --quiet 2>&1 || {',
-        '    echo "❌ Lint hatalari var!"',
+        '    echo "❌ Lint errors found!"',
         '    ERRORS=1',
         '  }',
         'fi',
       );
     } else if (linter === 'biome') {
       lines.push(
-        '# Staged dosyalarda lint kontrolu',
+        '# Lint check on staged files',
         'LINT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.(ts|tsx|js|jsx|mjs|cjs|json)$" || true)',
         'if [ -n "$LINT_FILES" ]; then',
-        '  echo "→ Biome lint kontrolu..."',
+        '  echo "→ Biome lint check..."',
         '  echo "$LINT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 npx biome check --no-errors-on-unmatched 2>&1 || {',
-        '    echo "❌ Lint hatalari var!"',
+        '    echo "❌ Lint errors found!"',
         '    ERRORS=1',
         '  }',
         'fi',
       );
     } else if (linter === 'ruff') {
       lines.push(
-        '# Staged dosyalarda lint kontrolu',
+        '# Lint check on staged files',
         'LINT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.py$" || true)',
         'if [ -n "$LINT_FILES" ]; then',
-        '  echo "→ Ruff lint kontrolu..."',
+        '  echo "→ Ruff lint check..."',
         '  echo "$LINT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 ruff check 2>&1 || {',
-        '    echo "❌ Lint hatalari var!"',
+        '    echo "❌ Lint errors found!"',
         '    ERRORS=1',
         '  }',
         'fi',
@@ -1763,7 +1761,7 @@ const SIMPLE_GENERATORS = {
     }
 
     if (lines.length === 0) {
-      return '# Lint kontrolu: Linter tespit edilemedi';
+      return '# Lint check: no linter was detected';
     }
     return lines.join('\n');
   },
@@ -1776,36 +1774,36 @@ const SIMPLE_GENERATORS = {
 
     if (formatter === 'prettier') {
       lines.push(
-        '# Staged dosyalarda format kontrolu',
+        '# Format check on staged files',
         'FORMAT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.(ts|tsx|js|jsx|mjs|cjs|json|css|scss|md)$" || true)',
         'if [ -n "$FORMAT_FILES" ]; then',
-        '  echo "→ Prettier format kontrolu..."',
+        '  echo "→ Prettier format check..."',
         '  echo "$FORMAT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 npx prettier --check 2>&1 || {',
-        '    echo "❌ Format hatalari var! npx prettier --write ile duzeltebilirsiniz."',
+        '    echo "❌ Format errors found. Fix with npx prettier --write."',
         '    ERRORS=1',
         '  }',
         'fi',
       );
     } else if (formatter === 'biome') {
       lines.push(
-        '# Staged dosyalarda format kontrolu',
+        '# Format check on staged files',
         'FORMAT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.(ts|tsx|js|jsx|mjs|cjs|json)$" || true)',
         'if [ -n "$FORMAT_FILES" ]; then',
-        '  echo "→ Biome format kontrolu..."',
+        '  echo "→ Biome format check..."',
         '  echo "$FORMAT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 npx biome format --no-errors-on-unmatched 2>&1 || {',
-        '    echo "❌ Format hatalari var! npx biome format --write ile duzeltebilirsiniz."',
+        '    echo "❌ Format errors found. Fix with npx biome format --write."',
         '    ERRORS=1',
         '  }',
         'fi',
       );
     } else if (formatter === 'ruff') {
       lines.push(
-        '# Staged dosyalarda format kontrolu',
+        '# Format check on staged files',
         'FORMAT_FILES=$(echo "$STAGED_FILES" | grep -E "\\.py$" || true)',
         'if [ -n "$FORMAT_FILES" ]; then',
-        '  echo "→ Ruff format kontrolu..."',
+        '  echo "→ Ruff format check..."',
         '  echo "$FORMAT_FILES" | tr \'\\n\' \'\\0\' | xargs -0 ruff format --check 2>&1 || {',
-        '    echo "❌ Format hatalari var! ruff format ile duzeltebilirsiniz."',
+        '    echo "❌ Format errors found. Fix with ruff format."',
         '    ERRORS=1',
         '  }',
         'fi',
@@ -1813,23 +1811,23 @@ const SIMPLE_GENERATORS = {
     }
 
     if (lines.length === 0) {
-      return '# Format kontrolu: Formatter tespit edilemedi';
+      return '# Format check: no formatter was detected';
     }
     return lines.join('\n');
   },
 
   GIT_PREPUSH_LOCALHOST(manifest) {
     return [
-      '  # Localhost/127.0.0.1 leak taramasi',
+      '  # Localhost/127.0.0.1 leak scan',
       '  PUSH_DIFF=$(git diff "$RANGE" -- . 2>/dev/null || true)',
       '  if [ -n "$PUSH_DIFF" ]; then',
-      '    # Test ve config dosyalarini haric tut',
+      '    # Exclude test and config files',
       '    LOCALHOST_HITS=$(echo "$PUSH_DIFF" | grep -n "^+" | grep -v "^+++" | \\',
       '      grep -Ei "(localhost:[0-9]+|127\\.0\\.0\\.1|0\\.0\\.0\\.0:[0-9]+)" | \\',
       '      grep -vE "(test|spec|__tests__|mock|fixture|docker-compose|Dockerfile|\\.env\\.example)" || true)',
       '    if [ -n "$LOCALHOST_HITS" ]; then',
-      '      echo "❌ Localhost referansi tespit edildi!"',
-      '      echo "   Asagidaki satirlari kontrol edin:"',
+      '      echo "❌ Localhost reference detected!"',
+      '      echo "   Check these lines:"',
       '      echo "$LOCALHOST_HITS" | head -5 | sed \'s/^/     /\'',
       '      ERRORS=1',
       '    fi',
@@ -1844,51 +1842,51 @@ const SIMPLE_GENERATORS = {
 
     if (orm === 'prisma') {
       lines.push(
-        '  # Prisma migration tutarliligi',
+        '  # Prisma migration consistency',
         '  SCHEMA_CHANGED=$(git diff "$RANGE" --name-only -- "*/prisma/schema.prisma" | head -1)',
         '  if [ -n "$SCHEMA_CHANGED" ]; then',
         '    NEW_MIGRATION=$(git diff "$RANGE" --name-only -- "*/prisma/migrations/" | head -1)',
         '    if [ -z "$NEW_MIGRATION" ]; then',
-        '      echo "❌ schema.prisma degisti ama yeni migration yok!"',
-        '      echo "   npx prisma migrate dev --name <aciklama> calistirin."',
+        '      echo "❌ schema.prisma changed but there is no new migration!"',
+        '      echo "   Run npx prisma migrate dev --name <description>."',
         '      ERRORS=1',
         '    fi',
         '  fi',
       );
     } else if (orm === 'typeorm') {
       lines.push(
-        '  # TypeORM migration tutarliligi',
+        '  # TypeORM migration consistency',
         '  ENTITY_CHANGED=$(git diff "$RANGE" --name-only -- "*/entities/*.ts" "*/entity/*.ts" | head -1)',
         '  if [ -n "$ENTITY_CHANGED" ]; then',
         '    NEW_MIGRATION=$(git diff "$RANGE" --name-only -- "*/migrations/*.ts" | head -1)',
         '    if [ -z "$NEW_MIGRATION" ]; then',
-        '      echo "❌ Entity dosyasi degisti ama yeni migration yok!"',
-        '      echo "   npx typeorm migration:generate calistirin."',
+        '      echo "❌ An entity file changed but there is no new migration!"',
+        '      echo "   Run npx typeorm migration:generate."',
         '      ERRORS=1',
         '    fi',
         '  fi',
       );
     } else if (orm === 'eloquent') {
       lines.push(
-        '  # Eloquent migration tutarliligi',
+        '  # Eloquent migration consistency',
         '  MODEL_CHANGED=$(git diff "$RANGE" --name-only -- "*/Models/*.php" "*/app/Models/*.php" | head -1)',
         '  if [ -n "$MODEL_CHANGED" ]; then',
         '    NEW_MIGRATION=$(git diff "$RANGE" --name-only -- "*/database/migrations/*.php" | head -1)',
         '    if [ -z "$NEW_MIGRATION" ]; then',
-        '      echo "⚠️  Model degisti ama yeni migration yok — kontrol edin."',
+        '      echo "⚠️  A model changed but there is no new migration — check it."',
         '      WARNINGS=$((WARNINGS + 1))',
         '    fi',
         '  fi',
       );
     } else if (orm === 'django-orm') {
       lines.push(
-        '  # Django migration tutarliligi',
+        '  # Django migration consistency',
         '  MODEL_CHANGED=$(git diff "$RANGE" --name-only -- "*/models.py" | head -1)',
         '  if [ -n "$MODEL_CHANGED" ]; then',
         '    NEW_MIGRATION=$(git diff "$RANGE" --name-only -- "*/migrations/0*.py" | head -1)',
         '    if [ -z "$NEW_MIGRATION" ]; then',
-        '      echo "❌ models.py degisti ama yeni migration yok!"',
-        '      echo "   python manage.py makemigrations calistirin."',
+        '      echo "❌ models.py changed but there is no new migration!"',
+        '      echo "   Run python manage.py makemigrations."',
         '      ERRORS=1',
         '    fi',
         '  fi',
@@ -1896,7 +1894,7 @@ const SIMPLE_GENERATORS = {
     }
 
     if (lines.length === 0) {
-      return '  # Migration kontrolu: ORM tespit edilemedi';
+      return '  # Migration check: no ORM was detected';
     }
     return lines.join('\n');
   },
@@ -1907,24 +1905,24 @@ const SIMPLE_GENERATORS = {
     const lines = [];
 
     lines.push(
-      '  # Env variable senkronizasyon kontrolu',
+      '  # Env variable sync check',
       '  if [ -f "$CODEBASE_DIR/.env.example" ]; then',
       '    EXAMPLE_KEYS=$(grep -E "^[A-Z_]+=" "$CODEBASE_DIR/.env.example" 2>/dev/null | cut -d= -f1 | sort || true)',
     );
 
     if (runtime === 'node' || hasTypeScript(manifest)) {
       lines.push(
-        '    # process.env referanslarini tara',
+        '    # Scan process.env references',
         '    CODE_KEYS=$(grep -rhoE "process\\.env\\.([A-Z_]+)" "$CODEBASE_DIR/src/" 2>/dev/null | sed "s/process\\.env\\.//" | sort -u || true)',
       );
     } else if (runtime === 'python') {
       lines.push(
-        '    # os.environ referanslarini tara',
+        '    # Scan os.environ references',
         '    CODE_KEYS=$(grep -rhoE "os\\.environ\\[.([A-Z_]+).|os\\.getenv\\(.([A-Z_]+)." "$CODEBASE_DIR/" 2>/dev/null | grep -oE "[A-Z_]+" | sort -u || true)',
       );
     } else if (runtime === 'php') {
       lines.push(
-        '    # env() referanslarini tara',
+        '    # Scan env() references',
         '    CODE_KEYS=$(grep -rhoE "env\\(.([A-Z_]+)." "$CODEBASE_DIR/" 2>/dev/null | grep -oE "[A-Z_]+" | sort -u || true)',
       );
     } else {
@@ -1937,8 +1935,8 @@ const SIMPLE_GENERATORS = {
       '    if [ -n "$CODE_KEYS" ] && [ -n "$EXAMPLE_KEYS" ]; then',
       '      MISSING=$(comm -23 <(echo "$CODE_KEYS") <(echo "$EXAMPLE_KEYS") 2>/dev/null || true)',
       '      if [ -n "$MISSING" ]; then',
-      '        echo "⚠️  .env.example ile kod arasinda env tutarsizligi:"',
-      '        echo "   Kodda var ama .env.example da yok:"',
+      '        echo "⚠️  Env keys in code are missing from .env.example:"',
+      '        echo "   Present in code, absent from .env.example:"',
       '        echo "$MISSING" | head -5 | sed \'s/^/     /\'',
       '        WARNINGS=$((WARNINGS + 1))',
       '      fi',
@@ -1955,7 +1953,7 @@ const SIMPLE_GENERATORS = {
     const lines = [];
 
     lines.push(
-      '  # Destructive migration uyarisi',
+      '  # Destructive migration warning',
       '  MIGRATION_FILES=$(git diff "$RANGE" --name-only -- "*/migrations/*" 2>/dev/null || true)',
       '  if [ -n "$MIGRATION_FILES" ]; then',
       '    MIGRATION_DIFF=$(echo "$MIGRATION_FILES" | tr \'\\n\' \'\\0\' | xargs -0 git diff "$RANGE" -- 2>/dev/null || true)',
@@ -1985,8 +1983,8 @@ const SIMPLE_GENERATORS = {
 
     lines.push(
       '    if [ -n "$DESTRUCTIVE" ]; then',
-      '      echo "⚠️  DESTRUCTIVE migration tespit edildi!"',
-      '      echo "   Asagidaki satirlari kontrol edin:"',
+      '      echo "⚠️  DESTRUCTIVE migration detected!"',
+      '      echo "   Check these lines:"',
       '      echo "$DESTRUCTIVE" | head -5 | sed \'s/^/     /\'',
       '      WARNINGS=$((WARNINGS + 1))',
       '    fi',
@@ -2003,32 +2001,28 @@ const SIMPLE_GENERATORS = {
 
   SELF_REFRESH(_manifest) {
     return [
-      '## Self-Refresh — Komut guncelligi',
+      '## Self-Refresh',
       '',
-      'Komut bitmeden once son adim: bu calistirma sirasinda projenin',
-      'su anki gerceginden ogrendiklerin ile komut metnini karsilastir.',
+      'Before the command ends, compare its text with what this run observed.',
       '',
-      '**Soru:** Komutun mevcut hali projeyi dogru tanitiyor mu?',
-      '- Eksik bir path/klasor var mi?',
-      '- Eski bir stack referansi var mi?',
-      '- Kural listesinde eksik/gereksiz bir madde var mi?',
-      '- Kapsam disi kalmis yeni bir proje alani var mi?',
+      '**Question:** Does the command still describe the project?',
+      '- Is a path or directory missing?',
+      '- Is a stack reference stale?',
+      '- Is a rule missing or unnecessary?',
+      '- Is a new project area outside the command scope?',
       '',
-      '**Karar agaci:**',
-      '- **Yok** -> no-op, bitir.',
-      '- **Kucuk** (<=3 satir, mekanik): `Edit` ile komut dosyasini guncelle,',
-      '  `.claude/commands/_evolution.log` dosyasina tek satir not dus:',
-      '  `YYYY-MM-DD — <komut>: <kisa aciklama>`',
-      '- **Buyuk** (bolum yazimi, kapsam genislemesi, yeniden yapilandirma):',
+      '**Decision:**',
+      '- **None** -> no-op and stop.',
+      '- **Small** (3 lines or fewer, mechanical): edit the command file and append one line to `.claude/commands/_evolution.log`:',
+      '  `YYYY-MM-DD — <command>: <short note>`',
+      '- **Large** (a new section, a wider scope, or a restructure):',
       '  `backlog task create "..." --labels command-refresh --priority low`',
-      '  Komut dosyasina dokunma.',
+      '  Do not edit the command file in this run.',
       '',
-      '**Sinirlar:**',
-      '- Sadece bu calistirmada dogrudan gozlemledigin seyi yansit — hipotetik ekleme YASAK.',
-      '- Emin degilsen no-op bitir.',
-      '- Commit atma. `git add` yapma. Sadece dosya yaz.',
-      '',
-      'Kullanici diff-te gorecek, kendisi karar verecek.',
+      '**Boundaries:**',
+      '- Record only what this run observed. Do not invent hypothetical additions.',
+      '- If unsure, no-op and stop.',
+      '- Commit completed non-sensitive work in the same session without asking. Do not push unless the user asks. Do not use `git add -A`.',
     ].join('\n');
   },
 
@@ -2065,8 +2059,8 @@ const SIMPLE_GENERATORS = {
 
     if (!monorepoActive || subprojects.length === 0) {
       return [
-        '    # NOT: Bu script SADECE monorepo (multi-layer) icin gereklidir.',
-        '    # Mevcut manifest tek-katman; UYARLAMA GEREKLI: kendi monorepo yapina gore listele.',
+        '    # NOTE: This script is only needed for a monorepo (multi-layer).',
+        '    # This manifest is single-layer. Adapt the list to your monorepo layout.',
       ].join('\n');
     }
 
@@ -2087,8 +2081,8 @@ const SIMPLE_GENERATORS = {
     }
     if (lines.length === 0) {
       return [
-        '    # NOT: Bu script SADECE monorepo (multi-layer) icin gereklidir.',
-        '    # Mevcut manifest tek-katman; UYARLAMA GEREKLI: kendi monorepo yapina gore listele.',
+        '    # NOTE: This script is only needed for a monorepo (multi-layer).',
+        '    # This manifest is single-layer. Adapt the list to your monorepo layout.',
       ].join('\n');
     }
     return lines.join('\n');
@@ -2177,7 +2171,7 @@ function processSkeletonFile(filePath, manifest) {
     try {
       obj = JSON.parse(content);
     } catch (jsonErr) {
-      throw new Error(`Gecersiz JSON skeleton dosyasi: ${jsonErr.message}`);
+      throw new Error(`Invalid JSON skeleton file: ${jsonErr.message}`);
     }
     const { obj: processed, filled, marked } = processJsonGenerateKeys(obj, manifest);
     return {
@@ -2448,13 +2442,13 @@ function main() {
   const manifestPath = findManifestArg(args);
 
   if (!manifestPath) {
-    console.error('Kullanim: node generate.js <manifest-yolu> [--output-dir <dir>] [--modules <modul-listesi>] [--dry-run] [--verbose]');
+    console.error('Usage: node generate.js <manifest> [--output-dir <dir>] [--modules <module-list>] [--dry-run] [--verbose]');
     process.exit(1);
   }
 
   const resolvedManifestPath = path.resolve(manifestPath);
   if (!fs.existsSync(resolvedManifestPath)) {
-    console.error(`Hata: Manifest dosyasi bulunamadi: ${resolvedManifestPath}`);
+    console.error(`Error: Manifest file not found: ${resolvedManifestPath}`);
     process.exit(1);
   }
 
@@ -2471,7 +2465,7 @@ function main() {
   }
 
   if (!manifest) {
-    console.error('Hata: Manifest bos veya gecersiz.');
+    console.error('Error: manifest is empty or invalid.');
     process.exit(1);
   }
 
@@ -2487,10 +2481,10 @@ function main() {
 
   if (skeletonFiles.length === 0) {
     if (flags.onlyModules && flags.onlyModules.length > 0) {
-      console.error(`Hata: Belirtilen moduller icin hicbir skeleton dosyasi bulunamadi: ${flags.onlyModules.join(', ')}`);
+      console.error(`Error: no skeleton files found for the requested modules: ${flags.onlyModules.join(', ')}`);
       process.exit(1);
     }
-    console.error('Uyari: Hicbir skeleton dosyasi bulunamadi.');
+    console.error('Warning: no skeleton files found.');
     process.exit(0);
   }
 
@@ -2528,16 +2522,16 @@ function main() {
 
       if (flags.verbose) {
         console.log(`  ${relPath} → ${path.relative(outputDir, outputPath)}`);
-        if (filled.length) console.log(`    Dolduruldu: ${filled.join(', ')}`);
-        if (marked.length) console.log(`    Claude icin: ${marked.join(', ')}`);
+        if (filled.length) console.log(`    Filled: ${filled.join(', ')}`);
+        if (marked.length) console.log(`    Left for the active host: ${marked.join(', ')}`);
       }
 
       if (!flags.dryRun) {
-        // Path traversal koruması: çıktı yolu outputDir içinde kalmalı
+        // Path traversal guard: the output path must stay inside outputDir
         const resolvedOutput = path.resolve(outputPath);
         const resolvedBase = path.resolve(outputDir);
         if (!resolvedOutput.startsWith(resolvedBase + path.sep) && resolvedOutput !== resolvedBase) {
-          throw new Error(`Path traversal tespit edildi: ${outputPath} dizin disinda`);
+          throw new Error(`Path traversal detected: ${outputPath} is outside the output directory`);
         }
         const dir = path.dirname(outputPath);
         fs.mkdirSync(dir, { recursive: true });
@@ -2546,7 +2540,7 @@ function main() {
     } catch (err) {
       report.errors.push(`${relPath}: ${err.message}`);
       if (flags.verbose) {
-        console.error(`  HATA: ${relPath}: ${err.message}`);
+        console.error(`  ERROR: ${relPath}: ${err.message}`);
       }
     }
   }
@@ -2554,21 +2548,21 @@ function main() {
   // Rapor ciktisi
   console.log('');
   console.log('━'.repeat(55));
-  console.log('  Skeleton Isleme Raporu');
+  console.log('  Skeleton processing report');
   console.log('━'.repeat(55));
-  console.log(`  Dosya sayisi:        ${report.total}`);
-  console.log(`  Islenen:             ${report.processed}`);
-  console.log(`  Deterministik blok:  ${report.filledBlocks.length}`);
-  console.log(`  Claude icin:         ${report.markedBlocks.length}`);
-  console.log(`  Hata:                ${report.errors.length}`);
+  console.log(`  Files:               ${report.total}`);
+  console.log(`  Processed:           ${report.processed}`);
+  console.log(`  Deterministic blocks:${report.filledBlocks.length}`);
+  console.log(`  Left for the host:   ${report.markedBlocks.length}`);
+  console.log(`  Errors:              ${report.errors.length}`);
   if (flags.dryRun) {
-    console.log(`  Mod:                 DRY RUN (dosya yazilmadi)`);
+    console.log(`  Mode:                DRY RUN (no files written)`);
   }
   console.log('━'.repeat(55));
 
   if (report.markedBlocks.length > 0) {
     console.log('');
-    console.log('Claude tarafindan doldurulmasi gereken bloklar:');
+    console.log('Blocks the active host still has to fill:');
     const uniqueBlocks = [...new Set(report.markedBlocks.map(b => b.split(' (')[0]))];
     uniqueBlocks.forEach(b => console.log(`  - ${b}`));
   }

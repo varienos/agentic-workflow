@@ -1,72 +1,79 @@
 # Workflow Orchestration
 
-> Bu dosya tüm ajanların (Claude, Gemini, Codex, Kimi, OpenCode) ortak çalışma felsefesini tanımlar.
-> Root `CLAUDE.md` üzerinden `@ORCHESTRATION.md` satırı (Claude Code resmi import syntax'ı — boşluksuz) ile context'e enjekte edilir;
-> `transform.js` aynı içeriği `GEMINI.md`, `AGENTS.md`, `.kimi/`, `.opencode/` hedeflerine taşır.
+> This file defines the shared working philosophy for all agents (Claude, Gemini, Codex, Kimi, OpenCode, and other hosts).
+> It is injected into context via the `@ORCHESTRATION.md` line in root `CLAUDE.md` (Claude Code official import syntax — no spaces);
+> `transform.js` carries the same content to `GEMINI.md`, `AGENTS.md`, `.kimi/`, `.opencode/`, and other host targets.
 
 ---
 
-## 1. Varsayılan Plan Modu
+## 1. Default Plan Mode
 
-- Herhangi bir basit olmayan görev (3+ adım veya mimari karar) için **plan moduna gir** — özellikle backlog task'ları çoklu katmana dokunduğunda.
-- Eğer bir şeyler ters giderse, **DUR** ve hemen yeniden planla — zorlamaya devam etme.
-- Plan modunu sadece inşa etmek için değil, **doğrulama adımları** için de kullan.
-- Belirsizliği azaltmak için önceden detaylı teknik özellikler (specs) yaz; bunları backlog task açıklamasına veya `Agentbase/.claude/reports/` altına bırak.
+- For any non-trivial task (3+ steps or an architectural decision), **enter plan mode** — especially when a backlog task touches multiple layers.
+- If something goes wrong, **STOP** and replan immediately — do not keep forcing the same approach.
+- Use plan mode not only for building, but also for **verification steps**.
+- Reduce ambiguity by writing detailed technical specs up front; put them in the backlog task description or under `Agentbase/.claude/reports/`.
 
-## 2. Alt-ajan Stratejisi
+## 2. Sub-agent Strategy
 
-- Ana bağlam penceresini temiz tutmak için alt-ajanları **cömertçe** kullan.
-- **Bağımsız** araştırma, keşif ve analiz işlerini paralel alt-ajanlara devret (Agent tool'u tek mesajda çoklu çağırarak eşzamanlı çalıştır).
-- **Bağımlı** işler için sıralı (sequential) çalış — paralelleştirme uğruna yanlış sonuç üretme.
-- Karmaşık problemlerde alt-ajanlar aracılığıyla daha fazla hesaplama gücü kullan; ana ajan sentez ve karar verir, alt-ajanlar veri toplar.
-- Her alt-ajana **tek odaklı görev** ver; "her şeyi yap" tarzı prompt yazma.
-- Kutsal Kural 1: Alt-ajanlar git işlemlerini her zaman `../Codebase/` içinde yapar — Agentbase'de değil.
+- Use sub-agents **generously** to keep the main context window clean.
+- Delegate **independent** research, discovery, and analysis to parallel sub-agents (invoke the Agent tool multiple times in one message for concurrent work).
+- For **dependent** work, run sequentially — do not parallelize at the cost of wrong results.
+- On complex problems, use sub-agents for more compute; the lead agent synthesizes and decides while sub-agents gather data.
+- Give each sub-agent a **single focused task**; do not write "do everything" prompts.
+- Do **not** tell sub-agents to call parent-only tools (for example parent session controls, goal evaluators, or tools only the lead may use). Pass needed context in the spawn prompt instead.
+- Sacred Rule 1: Sub-agents always run product git operations inside `../Codebase/` — never inside Agentbase. For a generated project, product git stays in Codebase.
 
-## 3. Öz-Gelişim Döngüsü
+## 3. Self-Improvement Loop
 
-- Kullanıcıdan gelen **HERHANGİ** bir düzeltmeden sonra: `Agentbase/LESSONS.md` dosyasını ilgili kalıpla güncelle.
-- Kendin için aynı hatayı önleyecek **kurallar** yaz — "şunu yaptım yanlıştı" değil, "şunu yapmadan önce şunu kontrol et" formatında.
-- Hata oranı düşene kadar bu dersleri **acımasızca** yinele; yinelenen yanlışları LESSONS.md'de promote et.
-- Oturum başında ilgili dersleri gözden geçir (gerekirse `grep`/`@import` ile context'e çek).
+- After **ANY** correction from the user: update `Agentbase/LESSONS.md` with the relevant pattern.
+- Write **rules** that prevent the same mistake — not "I did X wrong", but "before doing X, check Y".
+- Repeat these lessons **ruthlessly** until the error rate drops; promote recurring mistakes in LESSONS.md.
+- At session start, review relevant lessons (pull them into context with `grep` / `@import` if needed).
 
-## 4. Bitti Demeden Önce Doğrulama
+## 4. Verify Before Declaring Done
 
-- Çalıştığını **kanıtlamadan** bir görevi tamamlandı olarak işaretleme.
-- Backlog task tamamlamadan önce: `backlog task edit N -s "Done" --final-summary "..."` ile **kanıt özeti** yaz (hangi testler geçti, hangi davranış doğrulandı).
-- İlgili durumlarda, ana sürüm ile yaptığın değişiklikler arasındaki davranış farklarını (diff) kontrol et — sadece kod farkı değil, **davranış farkı**.
-- Testleri çalıştır, hook sinyallerine bak, günlükleri kontrol et, doğruluğunu kanıtla.
-- Kendine sor: _"Bir staff engineer bunu onaylar mıydı?"_
+- Never mark a task complete without **proof** that it works.
+- Before completing a backlog task: write an **evidence summary** with `backlog task edit N -s "Done" --final-summary "..."` (which tests passed, which behavior was verified).
+- When relevant, check behavioral diffs between main and your changes — not only code diffs, but **behavior diffs**.
+- Run tests, read hook signals, check logs, and prove correctness.
+- Ask yourself: _"Would a staff engineer approve this?"_
 
-## 5. Zarafet Talep Et (Dengeli)
+## 5. Demand Elegance (Balanced)
 
-- Basit olmayan değişiklikler için dur ve sor: _"Daha zarif bir yol var mı?"_
-- Çözüm "uydurma" (hacky) hissettiriyorsa: _"Şu an bildiğim her şeyi göz önüne alarak, zarif çözümü uygula."_
-- Basit ve bariz düzeltmeler için bu adımı atla — aşırı mühendislikten (over-engineering) kaçın.
-- Sunmadan önce kendi çalışmanı **sorgula**: hipotetik gelecek için tasarlama, gereksiz soyutlama ekleme.
+- For non-trivial changes, pause and ask: _"Is there a more elegant path?"_
+- If a solution feels hacky: _"Given everything I know now, apply the elegant solution."_
+- Skip this for simple, obvious fixes — avoid over-engineering.
+- Before presenting work, **challenge** it: do not design for hypothetical futures or add unnecessary abstraction.
 
-## 6. Otonom Hata Giderme
+## 6. Autonomous Troubleshooting
 
-- Bir hata raporu verildiğinde: **Sadece düzelt.** Yardım isteme.
-- Günlüklere, hatalara, başarısız testlere işaret et — sonra bunları çöz.
-- Kullanıcıdan **sıfır bağlam değişimi** (context switching) gereksinimi.
-- Söylenmesini beklemeden başarısız CI testlerini Codebase içinde git ve düzelt (`cd ../Codebase && ...`).
+- When given a bug report: **Just fix it.** Do not ask for help first.
+- Point at logs, errors, and failing tests — then resolve them.
+- Require **zero context switching** from the user.
+- Fix failing CI tests in Codebase without waiting to be told (`cd ../Codebase && ...`).
 
----
+## 7. Session Git Hygiene
 
-## Görev Yönetimi
-
-- **Önce Planla:** Kontrol edilebilir maddelerle planı `backlog` ile hazırla. Tek kaynak `backlog/` dizinidir — task dosyalarını **elle düzenleme**, her zaman `backlog task edit` CLI'sini kullan.
-- **Planı Doğrula:** Uygulamaya başlamadan gözden geçir; gerekirse kullanıcıdan teyit al.
-- **İlerlemeyi Takip Et:** Maddeleri ilerledikçe `backlog task edit N -s "In Progress"` / `Done` ile işaretle.
-- **Değişiklikleri Açıkla:** Her adımda üst düzey özet sun — uzun açıklama değil, **net sonuç**.
-- **Sonuçları Belgele:** `backlog task edit N --final-summary "..."` ile sonuçları task'a yaz.
-- **Dersleri Kaydet:** Düzeltmelerden sonra `Agentbase/LESSONS.md` dosyasını güncelle.
+- When non-sensitive work is complete in the same session, **commit it in Codebase without asking** (`cd ../Codebase && git ...`).
+- **Do not push** unless the user explicitly asks.
+- Never commit secrets, credentials, or sensitive local config.
 
 ---
 
-## Temel İlkeler
+## Task Management
 
-- **Önce Sadelik:** Her değişikliği mümkün olduğunca basit yap. Koda minimum düzeyde müdahale et.
-- **Tembelliğe Yer Yok:** Kök nedenleri bul. Geçici çözümlere kaçma. Kıdemli geliştirici standartlarını uygula.
-- **Minimum Etki:** Değişiklikler sadece gerekli yere dokunmalı. Yeni hatalar oluşturmaktan kaçın.
-- **Kutsal Kural Bilinci:** `Agentbase/` konfigürasyon dizinidir, git burada çalışmaz. Tüm git ve uygulama değişiklikleri `../Codebase/` içinde olur. Bootstrap dışında **Codebase'e ASLA yazma**. Proje kökü (Agentbase/Codebase/Docbase'in üstü) geliştiricinin OPSIYONEL git reposu olabilir (Agentbase + Docbase'i versiyonlar, Codebase'i `.gitignore` ile yok sayar) — bu **geliştiricinin manuel aracıdır**: ajanlar üst-kök repoya ASLA dokunmaz, tüm ajan git işlemleri `../Codebase/` içinde kalır.
+- **Plan first:** Prepare a controllable plan with `backlog`. The single source of truth is the `backlog/` directory — **do not edit task files by hand**; always use the `backlog task edit` CLI.
+- **Validate the plan:** Review before implementing; get user confirmation when needed.
+- **Track progress:** Mark items with `backlog task edit N -s "In Progress"` / `Done` as you go.
+- **Explain changes:** Give a high-level summary at each step — not a long essay, a **clear outcome**.
+- **Document results:** Write outcomes with `backlog task edit N --final-summary "..."`.
+- **Record lessons:** After corrections, update `Agentbase/LESSONS.md`.
+
+---
+
+## Core Principles
+
+- **Simplicity first:** Keep every change as simple as possible. Touch the least code needed.
+- **No laziness:** Find root causes. Do not escape into temporary workarounds. Apply senior-developer standards.
+- **Minimum impact:** Changes should touch only what is necessary. Avoid introducing new bugs.
+- **Sacred Rule awareness:** `Agentbase/` is a configuration directory; git does not run there. All git and application changes happen in `../Codebase/`. Outside Bootstrap, **never write into Codebase** for config/workflow purposes. The project root (above Agentbase/Codebase/Docbase) may be the developer's OPTIONAL git repo (versions Agentbase + Docbase, ignores Codebase via `.gitignore`) — that is the **developer's manual tool**: agents never touch the upper-root repo; all agent git operations stay in `../Codebase/`.

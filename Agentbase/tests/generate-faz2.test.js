@@ -42,7 +42,7 @@ function richManifest() {
 
 test('PROJECT_DEFINITION: baslik + subproject tablosu', () => {
   const out = SIMPLE_GENERATORS.PROJECT_DEFINITION(richManifest(), 'md');
-  assert.match(out, /## Proje Tanımı/);
+  assert.match(out, /## Project definition/);
   assert.match(out, /\*\*MyApp\*\*/);
   assert.match(out, /Monorepo/);
   assert.match(out, /\| api \|.*Backend REST API.*\|/);
@@ -51,13 +51,13 @@ test('PROJECT_DEFINITION: baslik + subproject tablosu', () => {
 
 test('TECH_STACK: yalnizca dolu satirlari listeler', () => {
   const out = SIMPLE_GENERATORS.TECH_STACK(richManifest(), 'md');
-  assert.match(out, /## Teknoloji Yığını/);
+  assert.match(out, /## Technology stack/);
   assert.match(out, /\| Runtime \| node 18 \|/);
   assert.match(out, /\| ORM \| prisma \|/);
   assert.match(out, /\| Test \| jest \|/);
   // bos alan satiri uretmemeli
   const empty = SIMPLE_GENERATORS.TECH_STACK({ stack: {} }, 'md');
-  assert.match(empty, /tanımlı değil/);
+  assert.match(empty, /No stack is defined/);
 });
 
 test('ENVIRONMENTS: ortam tablosu', () => {
@@ -68,7 +68,7 @@ test('ENVIRONMENTS: ortam tablosu', () => {
 
 test('COMMANDS: subproject komut bloklari', () => {
   const out = SIMPLE_GENERATORS.COMMANDS(richManifest(), 'md');
-  assert.match(out, /### api \(`\.\.\/Codebase\/apps\/api`/);
+  assert.match(out, /### api \(from `\.\.\/Codebase\/apps\/api`\)/);
   assert.match(out, /cd "\.\.\/Codebase\/apps\/api" && npm test/);
   // komutu olmayan subproject icin pm default
   assert.match(out, /cd "\.\.\/Codebase\/apps\/web" && npm run build/);
@@ -114,9 +114,9 @@ test('COMMANDS: tek proje path quote eder ve cd ile baslayan scripti korur', () 
 
 test('CONVENTIONS: commit format + dil + domain', () => {
   const out = SIMPLE_GENERATORS.CONVENTIONS(richManifest(), 'md');
-  assert.match(out, /Conventional Commits \(Türkçe\)/);
+  assert.match(out, /Conventional Commits \(English\)/);
   assert.match(out, /`feat:/);
-  assert.match(out, /### Domain Kuralları/);
+  assert.match(out, /### Domain rules/);
   assert.match(out, /\*\*API formatı:\*\*/);
 });
 
@@ -124,14 +124,13 @@ test('FORBIDDEN_OPERATIONS: tablo + bos durum notu', () => {
   const out = SIMPLE_GENERATORS.FORBIDDEN_OPERATIONS(richManifest(), 'md');
   assert.match(out, /\| `git push --force` \| Takım geçmişini bozar \| pre-push \|/);
   const empty = SIMPLE_GENERATORS.FORBIDDEN_OPERATIONS({ rules: { forbidden: [] } }, 'md');
-  assert.match(empty, /yasaklı işlem yok/);
+  assert.match(empty, /No forbidden operation is defined/);
 });
 
 test('PROFESSIONAL_STANCE: deneyime gore metin', () => {
-  assert.match(SIMPLE_GENERATORS.PROFESSIONAL_STANCE({ developer: { experience: 'senior' } }, 'md'), /Dalkavukluk yapma/);
-  assert.match(SIMPLE_GENERATORS.PROFESSIONAL_STANCE({ developer: { experience: 'junior' } }, 'md'), /Adım adım/);
-  // bilinmeyen → mid fallback
-  assert.match(SIMPLE_GENERATORS.PROFESSIONAL_STANCE({}, 'md'), /pragmatik/);
+  assert.match(SIMPLE_GENERATORS.PROFESSIONAL_STANCE({ developer: { experience: 'senior' } }, 'md'), /Do not flatter/);
+  assert.match(SIMPLE_GENERATORS.PROFESSIONAL_STANCE({ developer: { experience: 'junior' } }, 'md'), /step by step/);
+  assert.match(SIMPLE_GENERATORS.PROFESSIONAL_STANCE({}, 'md'), /pragmatic/);
 });
 
 test('CODEBASE_CONTEXT: basliksiz, stack + alt projeler', () => {
@@ -139,16 +138,16 @@ test('CODEBASE_CONTEXT: basliksiz, stack + alt projeler', () => {
   assert.doesNotMatch(out, /^#/m); // ust baslik yok (skeleton basliginin altina oturur)
   assert.match(out, /E-ticaret B2C/);
   assert.match(out, /\*\*Stack:\*\* Node\.js \+ TypeScript/);
-  assert.match(out, /\*\*Alt projeler:\*\*/);
+  assert.match(out, /\*\*Subprojects:\*\*/);
   assert.match(out, /apps\/api/);
-  assert.match(out, /Kutsal Kurallar/);
+  assert.match(out, /Invariant rules/);
 });
 
 test('PROJECT_CONVENTIONS: domain bullet + docblock', () => {
   const out = SIMPLE_GENERATORS.PROJECT_CONVENTIONS(richManifest(), 'md');
   assert.match(out, /- \*\*API formatı:\*\*/);
   assert.match(out, /docblock\/JSDoc/);
-  assert.match(SIMPLE_GENERATORS.PROJECT_CONVENTIONS({}, 'md'), /tanımlı değil/);
+  assert.match(SIMPLE_GENERATORS.PROJECT_CONVENTIONS({}, 'md'), /No extra project conventions/);
 });
 
 test('marker azaltma: 9 blok artik CLAUDE_FILL degil, FILLED', () => {

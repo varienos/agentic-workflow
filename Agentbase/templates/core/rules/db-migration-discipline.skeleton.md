@@ -1,57 +1,57 @@
 # DB Migration Discipline
 
-Bu rule veritabani sema degisikliklerinde veri kaybi riskini azaltmak icin her projede uygulanir. ORM modulu aktif olmasa bile bu dosya uretilir; ORM yoksa raw SQL disiplini kullanilir.
+This rule applies in every project to reduce data-loss risk on database schema changes. The file is generated even when no ORM module is active; without an ORM, use the raw SQL discipline.
 
 <!-- GENERATE: DETECTED_ORM
-Aciklama: Tespit edilen ORM/database bilgisi ve fallback davranisi.
+Description: Detected ORM/database info and fallback behavior.
 -->
 
-## Zorunlu Dort Adim
+## Mandatory Four Steps
 
-1. **Migration dosyasi olustur.** Schema/model degisikligi migration dosyasi olmadan tamamlanmis sayilmaz.
-2. **Reversible up + down hazirla.** Her degisiklik icin ileri alma ve geri alma yolu yazilir. ORM down mekanizmasi yoksa eslesmis `down.sql` dosyasi tutulur.
-3. **Dry-run / preview calistir.** Production veya paylasimli ortama uygulamadan once uretilen SQL ya da migration plani incelenir.
-4. **Destructive flag taramasi yap.** Yikici pattern varsa uygulamadan once kullaniciya bildir, veri yedegi ve rollback planini yaz.
+1. **Create a migration file.** A schema/model change is not complete without a migration file.
+2. **Prepare reversible up + down.** Write a forward and a reverse path for every change. If the ORM has no down mechanism, keep a matching `down.sql` file.
+3. **Run dry-run / preview.** Inspect the generated SQL or migration plan before applying to production or a shared environment.
+4. **Scan for destructive flags.** If a destructive pattern exists, notify the user before applying and record a data backup and rollback plan.
 
-## Destructive Pattern Listesi
+## Destructive Pattern List
 
 - `DROP TABLE`
 - `DROP COLUMN`
 - Prisma `RemoveField`
 - Prisma `DeleteModel`
-- `ALTER COLUMN` type degisikligi
+- `ALTER COLUMN` type change
 - `RENAME COLUMN`
-- `NULL` alandan `NOT NULL` alana gecis, mevcut data temizlenmeden
-- Enum value silme veya rename etme
-- Foreign key relation kaldirma
-- Index/constraint silme, production query path etkileniyorsa
+- Moving a `NULL` field to `NOT NULL` without cleaning existing data
+- Deleting or renaming an enum value
+- Removing a foreign key relation
+- Dropping an index/constraint when a production query path is affected
 
-## Migration Komutlari
+## Migration Commands
 
 <!-- GENERATE: MIGRATION_COMMANDS
-Aciklama: ORM veya raw SQL fallback icin migration komutlari.
+Description: Migration commands for the ORM or raw SQL fallback.
 -->
 
 ## Dry-run / Preview
 
 <!-- GENERATE: DRY_RUN_COMMAND
-Aciklama: ORM veya raw SQL fallback icin dry-run/preview komutu.
+Description: Dry-run/preview command for the ORM or raw SQL fallback.
 -->
 
 ## Rollback / Down
 
 <!-- GENERATE: ROLLBACK_COMMAND
-Aciklama: ORM veya raw SQL fallback icin rollback/down komutu.
+Description: Rollback/down command for the ORM or raw SQL fallback.
 -->
 
-## Uygulama Kurallari
+## Application Rules
 
-- Schema, model, entity veya raw SQL degisikligi ayni commit icinde migration dosyasiyla birlikte gelir.
-- Knex, Sequelize, Supabase veya raw SQL projelerinde `up` ve `down` dosyalari birlikte yazilir.
-- Destructive flag tespit edilirse migration tek basina uygulanmaz; backup, dry-run ve rollback kaniti task notuna yazilir.
-- Geri donus komutu belirsizse task tamamlanmaz. Belirsizlik kullaniciya ve Backlog final summary'sine acikca yazilir.
+- A schema, model, entity, or raw SQL change lands in the same commit as its migration file.
+- In Knex, Sequelize, Supabase, or raw SQL projects, `up` and `down` files are written together.
+- If a destructive flag is detected, do not apply the migration alone; write backup, dry-run, and rollback evidence into the task notes.
+- If the rollback command is unclear, the task is not complete. State the ambiguity clearly to the user and in the Backlog final summary.
 
-## Manifest Input Alanlari
+## Manifest Input Fields
 
 - `manifest.detected.orm.value`
 - `manifest.detected.orm.confidence`

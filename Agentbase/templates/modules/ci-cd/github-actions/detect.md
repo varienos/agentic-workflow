@@ -1,4 +1,4 @@
-# GitHub Actions Modul Tespiti
+# GitHub Actions Module Detection
 
 ## Checks
 
@@ -16,6 +16,6 @@
 
 ## Affects Core
 
-- workflow-lifecycle: GitHub Actions workflow entegrasyonu
-- CLAUDE.md: GA best practice kurallari
-- pre-deploy: Workflow status kontrolu
+- workflow-lifecycle: GitHub Actions workflow integration
+- CLAUDE.md: GA best practice rules
+- pre-deploy: Workflow status check

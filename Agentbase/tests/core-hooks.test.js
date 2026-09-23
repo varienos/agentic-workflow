@@ -197,7 +197,7 @@ describe('test-enforcer hook', () => {
     assert.equal(result.status, 0);
     const output = JSON.parse(result.stdout);
     assert.ok(output.systemMessage, 'systemMessage olmali');
-    assert.ok(output.systemMessage.includes('TEST EKSIK'), 'EKSIK mesaji olmali');
+    assert.ok(output.systemMessage.includes('TEST MISSING'), 'missing-test message should be present');
   });
 
   it('test dosyasi varsa GUNCELLE systemMessage uretir', t => {
@@ -217,7 +217,7 @@ describe('test-enforcer hook', () => {
     assert.equal(result.status, 0);
     const output = JSON.parse(result.stdout);
     assert.ok(output.systemMessage, 'systemMessage olmali');
-    assert.ok(output.systemMessage.includes('Test guncelle'), 'GUNCELLE mesaji olmali');
+    assert.ok(output.systemMessage.includes('Update the test'), 'update-test message should be present');
   });
 
   it('test dosyasi icin talimat VERMIYOR', t => {
@@ -446,7 +446,7 @@ describe('openapi-sync-check hook', () => {
     const result = runHook(hookPath, input);
 
     assert.equal(result.stdout, input);
-    assert.match(result.stderr, /OpenAPI Spec Hatirlatmasi/);
+    assert.match(result.stderr, /OpenAPI Spec Reminder/);
     assert.match(result.stderr, /docs\/openapi\.yaml/);
   });
 

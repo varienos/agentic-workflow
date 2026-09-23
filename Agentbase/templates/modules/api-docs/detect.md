@@ -1,26 +1,26 @@
-# API Docs Kategori Tespiti
+# API Docs Category Detection
 
-Bu kategori API dokumantasyon araclarini tespit eder, spec senkronizasyon kontrolleri ve dogrulama mekanizmalari saglar.
+This category detects API documentation tools and provides spec synchronization checks and validation mechanisms.
 
 ## Variants
 
-Bootstrap asagidaki varyantlari sirayla kontrol eder. Birden fazla eslesen aktive edilebilir:
+Bootstrap checks the following variants in order. Multiple matches may be activated:
 
-| Varyant | Tespit Dosyasi | Oncelik |
+| Variant | Detection File | Priority |
 |---------|---------------|---------|
 | OpenAPI/Swagger | `api-docs/openapi/detect.md` | 1 |
 | GraphQL | `api-docs/graphql/detect.md` | 2 |
 
 ## Provides
 
-- API spec dosyasi tespiti
-- Endpoint degistiginde spec guncelleme hatirlatmasi
-- Pre-deploy'a spec dogrulama adimi
-- Code-review'a "endpoint degisti ama spec guncellenmedi" kontrolu
+- API spec file detection
+- Spec update reminder when an endpoint changes
+- Spec validation step for pre-deploy
+- Code-review check for "endpoint changed but spec not updated"
 
 ## Affects Core
 
-- code-review: API spec senkronizasyonu kontrolu
-- pre-deploy: Spec dogrulama
-- task-review: API degisikligi checklist
-- CLAUDE.md: API dokumantasyon kurallari
+- code-review: API spec synchronization check
+- pre-deploy: Spec validation
+- task-review: API change checklist
+- CLAUDE.md: API documentation rules

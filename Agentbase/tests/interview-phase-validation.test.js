@@ -69,13 +69,13 @@ describe('interview phase template validation (TASK-214/T6b)', () => {
     const content = fs.readFileSync(bootstrapPath, 'utf8');
     assert.match(
       content,
-      /### 1\.4 Interview Phase Template Doğrulaması/,
-      'Bootstrap.md ADIM 1.4 alt bölümü eksik — TASK-214/T6b zorunlu doğrulama eklenmeli'
+      /### 1\.4 Interview phase template validation/,
+      'Bootstrap.md STEP 1.4 subsection missing — TASK-214/T6b validation must stay'
     );
     assert.match(
       content,
-      /eksik\. Lütfen template kurulumunu doğrulayın/,
-      'Bootstrap.md eksik phase hata mesajı eksik — AC#3 hata mesajı uyumsuz'
+      /missing\. Verify the template installation/,
+      'Bootstrap.md missing-phase error text drifted — AC#3 message mismatch'
     );
   });
 

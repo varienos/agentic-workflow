@@ -17,7 +17,7 @@
             "timeout": 5
           },
           {
-            "__doc__": "Backlog dosya korumasi — her zaman aktif",
+            "__doc__": "Backlog file protection — always active",
             "type": "command",
             "command": "jq -r 'if (.tool_input.file_path // \"\" | test(\"backlog/tasks/|backlog/completed/\")) then {\"decision\":\"block\",\"reason\":\"Backlog dosyalari elle duzenlenemez. backlog task edit kullanin.\"} else empty end'",
             "timeout": 5
@@ -37,7 +37,7 @@
             "timeout": 10
           },
           "forbidden_commands": {
-            "__doc__": "Manifest rules.forbidden[] icindeki her komut icin jq block kurali ekle",
+            "__doc__": "Add a jq block rule for each command in manifest rules.forbidden[]",
             "template": {
               "type": "command",
               "command": "jq -r 'if (.tool_input.command // \"\" | test(\"{{FORBIDDEN_PATTERN}}\")) then {\"decision\":\"block\",\"reason\":\"{{FORBIDDEN_REASON}}\"} else empty end'",
@@ -48,7 +48,7 @@
       },
       {
         "__GENERATE__PRETOOLUSE_BASH_HOOKS__": {
-          "__doc__": "Bash tool icin ek PreToolUse hook'lari. Aktif modullere gore eklenir.",
+          "__doc__": "Extra PreToolUse hooks for the Bash tool. Added from active modules.",
           "matcher": "Bash",
           "prisma_active": {
             "__doc__": "Prisma aktifse: npx prisma db push komutunu engelle",
@@ -98,7 +98,7 @@
         "matcher": "Bash",
         "hooks": [
           {
-            "__doc__": "Shadow Git Checkpointing — git commit oncesi gizli ref kaydeder (refs/checkpoints/agent/<id>-<ts>). /rollback komutu icin. ASLA bloklamaz.",
+            "__doc__": "Shadow Git Checkpointing — saves a hidden ref before git commit (refs/checkpoints/agent/<id>-<ts>). Used by /rollback. Never blocks.",
             "type": "command",
             "command": "node .claude/hooks/git-checkpoint.js",
             "timeout": 10
@@ -139,7 +139,7 @@
             "command": "node .claude/hooks/code-review-check.js"
           },
           {
-            "__doc__": "Test enforcer — kaynak dosya icin test talimati (systemMessage)",
+            "__doc__": "Test enforcer — test instruction for a source file (systemMessage)",
             "type": "command",
             "command": "node .claude/hooks/test-enforcer.js"
           },
@@ -150,7 +150,7 @@
             "timeout": 100
           },
           {
-            "__doc__": "Team trigger — teammate spawn onerisi (dosya sayisi, cross-layer, uzun oturum)",
+            "__doc__": "Team trigger — teammate spawn suggestion (file count, cross-layer, long session)",
             "type": "command",
             "command": "node .claude/hooks/team-trigger.js",
             "timeout": 100

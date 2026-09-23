@@ -1,44 +1,44 @@
-# Datadog Kurallari
+# Datadog Rules
 
-> Bu kurallar Datadog entegrasyonu kullanan projeler icin gecerlidir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules apply to projects that use Datadog integration.
+> All developers and agents MUST follow these rules.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Ornek cikti:
-## Proje Baglami
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.name, project.description, project.structure
+Example output:
+## Project Context
 
-- **Proje:** MyApp — E-ticaret platformu
-- **Yapi:** Monorepo (`apps/web/` + `apps/api/`)
+- **Project:** MyApp — E-commerce platform
+- **Structure:** Monorepo (`apps/web/` + `apps/api/`)
 - **Datadog SDK:** dd-trace + @datadog/browser-rum
 - **DD_ENV:** development | staging | production
 - **DD_SERVICE:** myapp-api, myapp-web
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## APM ve Tracing Kurallari
+## APM and Tracing Rules
 
-Datadog APM ile distributed tracing ZORUNLUDUR. Tum servisler arasi iletisimde trace propagation saglanmalidir.
+Distributed tracing with Datadog APM is MANDATORY. Trace propagation must be provided for all inter-service communication.
 
-### Tracer Baslatma
+### Tracer Startup
 
 ```typescript
-// DOGRU — dd-trace ilk import olmali (instrument.ts veya tracer.ts)
+// CORRECT — dd-trace must be the first import (instrument.ts or tracer.ts)
 import tracer from 'dd-trace';
 
 tracer.init({
   service: process.env.DD_SERVICE,
   env: process.env.DD_ENV,
   version: process.env.DD_VERSION,
-  logInjection: true, // Log'lara trace ID enjekte et
+  logInjection: true, // Inject trace ID into logs
   runtimeMetrics: true,
   profiling: true,
 });
@@ -47,7 +47,7 @@ export default tracer;
 ```
 
 ```typescript
-// DOGRU — Custom span olusturma
+// CORRECT — Creating a custom span
 import tracer from './tracer';
 
 async function processOrder(orderId: string) {
@@ -79,117 +79,117 @@ async function processOrder(orderId: string) {
 ### Trace Propagation
 
 ```typescript
-// DOGRU — Servisler arasi HTTP isteklerinde trace propagation
+// CORRECT — Trace propagation on inter-service HTTP requests
 import tracer from 'dd-trace';
 
-// dd-trace otomatik olarak HTTP client'lari instrument eder (axios, fetch, http)
-// Ek konfigurasyon gerekmez, ancak kontrol et:
+// dd-trace automatically instruments HTTP clients (axios, fetch, http)
+// Extra configuration is not required, but verify:
 tracer.use('http', { enabled: true });
 tracer.use('express', { enabled: true });
 ```
 
-### APM Kurallar Tablosu
+### APM Rules Table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `dd-trace` ilk import | Diger modulleri instrument edebilmesi icin en uste import et |
-| Custom span olustur | Kritik is mantiginda (`tracer.trace`) ile olcum yap |
-| Span tag ekle | Islem detaylari icin anlamli tag'ler kullan |
-| Hata durumunda `error: true` | Span'e hata bilgisi set et |
-| Trace propagation aktif | Servisler arasi isteklerde trace context tasinmali |
+| `dd-trace` first import | Import at the top so other modules can be instrumented |
+| Create custom spans | Measure critical business logic with `tracer.trace` |
+| Add span tags | Use meaningful tags for operation details |
+| On error set `error: true` | Set error info on the span |
+| Trace propagation active | Trace context must be carried on inter-service requests |
 
 ---
 
-## RUM (Real User Monitoring) Kurallari
+## RUM (Real User Monitoring) Rules
 
-Browser tarafinda kullanici deneyimini olcmek icin Datadog RUM SDK kullanilir.
+The Datadog RUM SDK is used on the browser side to measure user experience.
 
 ```typescript
-// DOGRU — RUM SDK baslatma
+// CORRECT — RUM SDK init
 import { datadogRum } from '@datadog/browser-rum';
 
 datadogRum.init({
   applicationId: process.env.NEXT_PUBLIC_DD_APPLICATION_ID,
   clientToken: process.env.NEXT_PUBLIC_DD_CLIENT_TOKEN,
-  site: 'datadoghq.eu', // Veya datadoghq.com
+  site: 'datadoghq.eu', // Or datadoghq.com
   service: process.env.NEXT_PUBLIC_DD_SERVICE,
   env: process.env.NEXT_PUBLIC_DD_ENV,
   version: process.env.NEXT_PUBLIC_DD_VERSION,
 
   // Session replay
   sessionSampleRate: 100,
-  sessionReplaySampleRate: 20, // Production'da dusuk tut
+  sessionReplaySampleRate: 20, // Keep low in production
   trackUserInteractions: true,
   trackResources: true,
   trackLongTasks: true,
 
-  // PII korumasi
+  // PII protection
   defaultPrivacyLevel: 'mask-user-input',
 });
 
-// Session replay baslatma
+// Start session replay
 datadogRum.startSessionReplayRecording();
 ```
 
 ```typescript
-// DOGRU — Custom action tracking
+// CORRECT — Custom action tracking
 datadogRum.addAction('checkout_started', {
   cartTotal: cart.total,
   itemCount: cart.items.length,
   currency: 'TRY',
 });
 
-// DOGRU — User bilgisi set etme
+// CORRECT — Set user info
 datadogRum.setUser({
   id: user.id,
   name: user.name,
   plan: user.subscriptionPlan,
 });
 
-// DOGRU — Logout'ta temizle
+// CORRECT — Clear on logout
 datadogRum.clearUser();
 ```
 
-### RUM Kurallar Tablosu
+### RUM Rules Table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `applicationId` ve `clientToken` env'den | Hardcoded deger YASAK |
-| `sessionReplaySampleRate` production'da dusuk | Maliyet kontrolu icin `10`-`20` arasi |
-| `defaultPrivacyLevel: 'mask-user-input'` | Kullanici girdilerini maskele (KVKK/GDPR) |
-| Custom action tracking | Kritik kullanici aksiyonlarini olc |
-| User context set et | Hatalari ve performansi kullaniciya bagla |
+| `applicationId` and `clientToken` from env | Hardcoded values FORBIDDEN |
+| Low `sessionReplaySampleRate` in production | Use `10`-`20` for cost control |
+| `defaultPrivacyLevel: 'mask-user-input'` | Mask user inputs (KVKK/GDPR) |
+| Custom action tracking | Measure critical user actions |
+| Set user context | Tie errors and performance to the user |
 
 ---
 
-## Log Yonetimi
+## Log Management
 
-Structured logging ile Datadog Log Management entegrasyonu saglanir.
+Structured logging provides Datadog Log Management integration.
 
 ```typescript
-// DOGRU — Structured logging (JSON format)
-import pino from 'pino'; // veya winston
+// CORRECT — Structured logging (JSON format)
+import pino from 'pino'; // or winston
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
   formatters: {
     level: (label) => ({ level: label }),
   },
-  // dd-trace logInjection: true ile otomatik trace ID enjekte edilir
+  // With dd-trace logInjection: true, trace ID is injected automatically
 });
 
-// DOGRU — Anlamli log mesajlari
-logger.info({ orderId: order.id, userId: user.id }, 'Siparis olusturuldu');
-logger.error({ err, orderId }, 'Odeme islemi basarisiz');
-logger.warn({ userId, attemptCount }, 'Basarisiz giris denemesi');
+// CORRECT — Meaningful log messages
+logger.info({ orderId: order.id, userId: user.id }, 'Order created');
+logger.error({ err, orderId }, 'Payment operation failed');
+logger.warn({ userId, attemptCount }, 'Failed login attempt');
 
-// YANLIS — Unstructured log
-console.log('Order created: ' + orderId); // YASAK
-console.log(`User ${userId} failed login`); // YASAK
+// WRONG — Unstructured log
+console.log('Order created: ' + orderId); // FORBIDDEN
+console.log(`User ${userId} failed login`); // FORBIDDEN
 ```
 
 ```typescript
-// DOGRU — Correlation ID ile istek takibi
+// CORRECT — Request tracking with correlation ID
 import { v4 as uuidv4 } from 'uuid';
 
 function correlationMiddleware(req, res, next) {
@@ -197,54 +197,54 @@ function correlationMiddleware(req, res, next) {
   req.correlationId = correlationId;
   res.setHeader('x-correlation-id', correlationId);
 
-  // Logger'a correlation ID ekle
+  // Attach correlation ID to logger
   req.log = logger.child({ correlationId });
   next();
 }
 ```
 
-### Log Level Standartlari
+### Log Level Standards
 
-| Level | Kullanim | Ornek |
+| Level | Usage | Example |
 |---|---|---|
-| `fatal` | Uygulama capamaz | Veritabani baglantisi tamamen kayboldu |
-| `error` | Islem basarisiz, mudahale gerekli | Odeme islemi basarisiz |
-| `warn` | Potansiyel sorun, dikkat gerekli | Rate limit'e yaklasiliyor |
-| `info` | Normal is akisi olaylari | Siparis olusturuldu, kullanici giris yapti |
-| `debug` | Gelistirme/debug icin detay | SQL sorgusu, request/response detayi |
-| `trace` | En detayli seviye | Fonksiyon giris/cikis |
+| `fatal` | Application cannot continue | Database connection completely lost |
+| `error` | Operation failed; intervention required | Payment operation failed |
+| `warn` | Potential issue; attention needed | Approaching rate limit |
+| `info` | Normal workflow events | Order created, user signed in |
+| `debug` | Detail for development/debug | SQL query, request/response detail |
+| `trace` | Most detailed level | Function enter/exit |
 
-### Log Kurallar Tablosu
+### Log Rules Table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| JSON format ZORUNLU | Structured logging kullan, plain text YASAK |
-| Trace ID enjeksiyonu | `logInjection: true` ile log-trace korelasyonu |
-| Correlation ID | Servisler arasi istek takibi icin `x-correlation-id` header |
-| Log level dogru kullan | `error` != `warn`, severity'yi dogru belirle |
-| `console.log` YASAK | Logger kutuphanesi kullan (pino, winston) |
-| PII loglama YASAK | Sifre, kredi karti, TC kimlik gibi verileri loglama |
+| JSON format MANDATORY | Use structured logging; plain text FORBIDDEN |
+| Trace ID injection | Log-trace correlation via `logInjection: true` |
+| Correlation ID | `x-correlation-id` header for inter-service request tracking |
+| Use log levels correctly | `error` != `warn`; set severity correctly |
+| `console.log` FORBIDDEN | Use a logger library (pino, winston) |
+| PII logging FORBIDDEN | Do not log password, credit card, national ID, etc. |
 
 ---
 
-## Environment Ayarlari
+## Environment Settings
 
-Tum Datadog entegrasyonlarinda standart environment variable'lar kullanilmalidir.
+Standard environment variables must be used across all Datadog integrations.
 
-### Zorunlu Environment Variable'lar
+### Required Environment Variables
 
-| Variable | Aciklama | Ornek |
+| Variable | Description | Example |
 |---|---|---|
-| `DD_ENV` | Ortam ismi | `production`, `staging`, `development` |
-| `DD_SERVICE` | Servis ismi | `myapp-api`, `myapp-web`, `myapp-worker` |
-| `DD_VERSION` | Uygulama versiyonu | `1.2.3`, git short hash |
-| `DD_API_KEY` | Datadog API anahtari | Agent veya CI/CD icin |
-| `DD_TRACE_AGENT_URL` | Trace agent URL | `http://localhost:8126` (varsayilan) |
+| `DD_ENV` | Environment name | `production`, `staging`, `development` |
+| `DD_SERVICE` | Service name | `myapp-api`, `myapp-web`, `myapp-worker` |
+| `DD_VERSION` | Application version | `1.2.3`, git short hash |
+| `DD_API_KEY` | Datadog API key | For agent or CI/CD |
+| `DD_TRACE_AGENT_URL` | Trace agent URL | `http://localhost:8126` (default) |
 
 ### Unified Service Tagging
 
 ```yaml
-# DOGRU — docker-compose.yml icinde unified service tagging
+# CORRECT — unified service tagging in docker-compose.yml
 services:
   api:
     environment:
@@ -257,42 +257,51 @@ services:
       com.datadoghq.tags.version: ${APP_VERSION}
 ```
 
-### Environment Kurallar Tablosu
+### Environment Rules Table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `DD_ENV` her ortamda set | Metric, trace, log'lar ortama gore filtrelenebilmeli |
-| `DD_SERVICE` her serviste set | Servis bazli dashboard ve alert olustur |
-| `DD_VERSION` her deploy'da guncelle | Version bazli regresyon tespiti |
-| Unified service tagging | Ayni tag'ler metric, trace ve log'larda tutarli olmali |
-| API key GIZLI | `DD_API_KEY` asla koda veya log'a yazilmaz |
+| Set `DD_ENV` in every environment | Metrics, traces, and logs must be filterable by environment |
+| Set `DD_SERVICE` on every service | Build service-based dashboards and alerts |
+| Update `DD_VERSION` on every deploy | Version-based regression detection |
+| Unified service tagging | Same tags must be consistent across metrics, traces, and logs |
+| API key SECRET | Never write `DD_API_KEY` into code or logs |
 
 ---
 
-## Yasak Pratikler (Anti-pattern)
+## Forbidden Practices (Anti-patterns)
 
-| # | Yasak | Neden | Dogru Alternatif |
+| # | Forbidden | Why | Correct Alternative |
 |---|---|---|---|
-| 1 | `console.log` ile loglama | Structured logging kaybi, Datadog'a akmaz | Pino/Winston ile JSON log |
-| 2 | Trace olmadan servisler arasi istek | Distributed tracing zinciri kirilir | `dd-trace` ile otomatik propagation |
-| 3 | Hardcoded `DD_API_KEY` | Guvenlik riski, key ifsa olur | Env variable veya secret manager kullan |
-| 4 | `DD_ENV` set etmeden deploy | Metric ve log'lar ortama gore ayrilamaz | Her ortamda `DD_ENV` ZORUNLU |
-| 5 | Yuksek `sessionReplaySampleRate` | Maliyet patlamasi | Production'da `10`-`20` kullan |
-| 6 | PII loglama | KVKK/GDPR ihlali riski | Hassas verileri filtrele veya maskele |
-| 7 | Custom metric'lerde yuksek cardinality tag | Metric patlamasi ve maliyet | Tag degerlerini sinirli tut (< 1000 unique) |
-| 8 | Her fonksiyona custom span | Performans etkisi, gereksiz veri | Sadece kritik is mantigi icin span olustur |
+| 1 | Logging with `console.log` | Loses structured logging; does not flow to Datadog | JSON log with Pino/Winston |
+| 2 | Inter-service request without trace | Breaks the distributed tracing chain | Automatic propagation with `dd-trace` |
+| 3 | Hardcoded `DD_API_KEY` | Security risk; key is exposed | Use env variable or secret manager |
+| 4 | Deploy without setting `DD_ENV` | Metrics and logs cannot be split by environment | `DD_ENV` is MANDATORY in every environment |
+| 5 | High `sessionReplaySampleRate` | Cost explosion | Use `10`-`20` in production |
+| 6 | Logging PII | KVKK/GDPR violation risk | Filter or mask sensitive data |
+| 7 | High-cardinality tags on custom metrics | Metric explosion and cost | Keep tag values limited (< 1000 unique) |
+| 8 | Custom span on every function | Performance impact, unnecessary data | Create spans only for critical business logic |
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-1. **`dd-trace` ilk import** — Tracer diger tum modullerin oncesinde baslatilir.
-2. **Unified service tagging** — `DD_ENV`, `DD_SERVICE`, `DD_VERSION` her ortamda set edilir.
-3. **Structured logging** — JSON format ZORUNLU, `console.log` YASAK.
-4. **Trace propagation** — Servisler arasi iletisimde trace context ZORUNLU tasinir.
-5. **Log-trace korelasyonu** — `logInjection: true` ile log'lara trace ID eklenir.
-6. **Correlation ID** — Servisler arasi isteklerde `x-correlation-id` header kullanilir.
-7. **RUM privacy** — `defaultPrivacyLevel: 'mask-user-input'` ile kullanici girdileri maskelenir.
-8. **API key guvenligi** — `DD_API_KEY` asla koda, log'a veya client bundle'a yazilmaz.
-9. **Custom span dikkatli** — Sadece kritik is mantigi icin span olustur, her fonksiyona ekleme.
-10. **Log level dogru** — `error` != `warn`, severity'yi dogru belirle ve tutarli kullan.
+1. **`dd-trace` first import** — Tracer starts before all other modules.
+2. **Unified service tagging** — `DD_ENV`, `DD_SERVICE`, `DD_VERSION` are set in every environment.
+3. **Structured logging** — JSON format MANDATORY; `console.log` FORBIDDEN.
+4. **Trace propagation** — Trace context MUST be carried in inter-service communication.
+5. **Log-trace correlation** — Trace ID is added to logs via `logInjection: true`.
+6. **Correlation ID** — Use `x-correlation-id` header on inter-service requests.
+7. **RUM privacy** — Mask user inputs with `defaultPrivacyLevel: 'mask-user-input'`.
+8. **API key security** — Never write `DD_API_KEY` into code, logs, or the client bundle.
+9. **Custom spans carefully** — Create spans only for critical business logic; do not add to every function.
+10. **Correct log level** — `error` != `warn`; set severity correctly and use consistently.
+
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

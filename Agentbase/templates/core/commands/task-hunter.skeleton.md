@@ -1,103 +1,89 @@
-# Task Hunter — Otonom Gorev Uygulayici
+# Task Hunter — Autonomous Task Application
 
-> Backlog'dan gorev alir, analiz eder, uygular, test eder, commit atar.
-> Kullanim: `/task-hunter <numara>`, `/task-hunter <anahtar-kelime>`, `/task-hunter 3,5,8`
+> Backlog retrieves tasks, analyzes them, applies them, tests them, and commits.
+> Usage: `/task-hunter <number>`, `/task-hunter <keyword>`, `/task-hunter 3,5,8`
 
 ---
 
-## Arguman Cozumleme
+## Argument Resolution
 
-Kullanicinin girdisini asagidaki kurallara gore cozumle:
+The user's input is resolved according to the following rules:
 
-| Girdi Tipi | Ornek | Davranis |
+| Input Type | Example | Behavior |
 |---|---|---|
-| Tek numara | `5` | `backlog task 5 --plain` ile gorevi oku |
-| Virgullu numaralar | `3,5,8` | Sirayla her birini isle (3 → 5 → 8) |
-| Anahtar kelime | `login sayfasi` | `backlog task list --plain` ile tum gorevleri listele, baslik/aciklamada eslesenleri bul |
-| Bos | *(yok)* | `backlog task list -s "To Do" --plain` ile ilk uygun gorevi sec |
+| Single number | `5` | Retrieve task 5 with `backlog task 5 --plain` |
+| Comma-separated numbers | `3,5,8` | Iterate through each one sequentially (3 → 5 → 8) |
+| Keyword | `login page` | List all tasks with `backlog task list --plain`, regardless of title/description |
+| Empty input | *(none)* | Select the first suitable task with `backlog task list -s "To Do" --plain`
 
-**Coklu gorev modu:** Virgullu numaralarda her gorev icin Step 1–7 bagimsiz tekrarlanir. Bir gorevdeki hata digerlerini durdurmaz.
+**Multi-task mode:** Each task's Step 1–7 repeat independently, except for errors in one task do not affect others.
 
 ---
 
-## Step 1 — Gorevi Oku ve Sahiplen
+## Step 1 — Read and Claim Task
 
 ```
 backlog task <id> --plain
 ```
 
-Gorev ciktisini oku. Asagidaki bilgileri cikar:
-- **Baslik**
-- **Aciklama**
-- **Kabul kriterleri (AC)**
-- **Oncelik**
-- **Mevcut durum**
+Read the task details. Extract the following information:
+- **Title**
+- **Description**
+- **Acceptance criteria (AC)**
+- **Priority**
+- **Current status**
 
-Gorevi hemen sahiplen:
+Immediately claim the task:
 ```
 backlog task edit <id> -s "In Progress"
 ```
 
-> **KURAL:** Gorev "Done" durumundaysa DOKUNMA. Kullaniciya bildir ve dur.
-> **KURAL:** Gorev "In Progress" durumundaysa kullaniciya sor: devam mi, sifirdan mi?
+> **RULE:** If the task is already in the "Done" state, DO NOT TOUCH. Inform the user and stop.
+> **RULE:** If the task is in the "In Progress" state, ask the user: continue or start from scratch?
 
 ---
 
-## Step 2 — Analiz ve Plan
+## Step 2 — Analysis and Planning
 
-### 2.1 — Codebase Kesfet
+### 2.1 — Codebase Cleanup
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
-- **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- **Yapi:**
-  - `apps/web/` — Next.js frontend
-  - `apps/api/` — NestJS backend
-  - `apps/mobile/` — Expo React Native
-  - `packages/shared/` — Paylasilan tipler ve yardimcilar
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
--->
 
-### 2.2 — Ilgili Dosyalari Bul
+>>>
+### 2.2 — File Discovery
 
-<!-- GENERATE: FILE_DISCOVERY_HINTS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, stack.primary, project.subprojects
-Ornek cikti:
-Gorev turune gore dosya arama stratejisi:
+#### Description
+This section is populated by Bootstrap using manifest files.
 
-| Gorev Turu | Aranacak Dizinler | Dosya Desenleri |
-|---|---|---|
-| API endpoint | `apps/api/src/modules/` | `*.controller.ts`, `*.service.ts`, `*.module.ts` |
-| Frontend sayfa | `apps/web/src/app/` | `page.tsx`, `layout.tsx`, `*.tsx` |
-| Mobil ekran | `apps/mobile/src/screens/` | `*.screen.tsx`, `*.tsx` |
-| Veritabani | `apps/api/prisma/` | `schema.prisma`, `migrations/` |
-| Paylasilan tip | `packages/shared/src/` | `*.types.ts`, `*.dto.ts` |
-| Konfigurasyon | proje koku | `*.config.ts`, `*.config.js`, `.env*` |
--->
+#### Required manifest fields:
+- project.structure
+- stack.primary
+- project.subprojects
 
-### 2.3 — Dosyalari Oku ve Anla
+#### Example output:
 
-1. Gorev basligina ve AC'lere gore ilgili dosyalari belirle
-2. Her dosyayi oku — mevcut yapiyi, pattern'leri, import'lari anla
-3. Komsuluk analizi yap: ayni dizindeki diger dosyalar nasil yapilandirilmis?
-4. Eger benzer bir is daha once yapildiysa (orn. baska bir controller), onu referans al
+| Project Context |
+| --- |
+| **Project:** E-commerce platform (Next.js + NestJS + React Native) |
+| **Stack:** TypeScript, Prisma, PostgreSQL, Expo |
 
-### 2.3.1 — Stack Uyumluluk Kontrolu
+### 2.3 — File Reading and Analysis
 
-Etkilenen dosyalarin stack'ini taniyip manifest'teki aktif modullerle karsilastir.
-Eslesmeme varsa kullaniciyi uyar — zorunlu degil, bilgilendirme amacli:
+1. Determine the relevant files based on the task name and ACs.
+2. Read each file — understand the current architecture, patterns, imports.
+3. Perform community analysis: how do other files in the same directory get organized?
+4. If a similar task was done before (e.g., another controller), use it as a reference.
 
-| Dosya Deseni | Beklenen Modul |
-|---|---|
-| `*.prisma`, `prisma/` dizini | `orm/prisma` |
+### 2.3.1 — Stack Compatibility Check
+
+Identify the stack for affected files and compare them with active modules in the manifest.
+If there's an inconsistency, inform the user — not mandatory, but informative:
+
+| File Design | Expected Module |
+| --- | --- |
+| `*.prisma`, `prisma/` directory | `orm/prisma` |
+
+>>>
 | `Dockerfile`, `docker-compose*` | `deploy/docker` |
 | `*.expo.*`, `app.json` (expo), `expo-*` | `mobile/expo` |
 | `*.swift`, `*.xcodeproj`, `Podfile` | `mobile/react-native` veya iOS |
@@ -108,655 +94,676 @@ Eslesmeme varsa kullaniciyi uyar — zorunlu degil, bilgilendirme amacli:
 | `manage.py`, `settings.py` (Django) | `backend/python/django` |
 | `.github/workflows/` | `ci-cd/github-actions` |
 
-**Kontrol:**
-1. Etkilenen dosya listesini yukardaki desenlerle karsilastir
-2. Eslesen modul manifest'te `modules.active` icinde mi kontrol et
-3. Aktif DEGILSE uyari ver:
+**Control:**
+1. Compare the list of affected files with the above diagram.
+2. Check if the module is active in the manifest's `modules.active`.
+3. Display warning:
 
 ```
-⚠️ Stack Uyumsuzlugu Tespit Edildi
+⚠️ Incompatible Stack Detected
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Dosya: <dosya yolu>
-Tespit: <stack adi> (orn: "Prisma ORM")
-Beklenen modul: <modul adi> (orn: "orm/prisma")
-Durum: Bu modul aktif degil.
+File: <file path>
+Test: <stack name> (e.g., "Prisma ORM")
+Expected Module: <module name> (e.g., "orm/prisma")
+Status: This module is not active.
 
-Oneri: /workflow-update calistirarak modulu etkinlestirin.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+Suggestion: Run /workflow-update to enable the module.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+4. If active → silent, warning display
 
-4. Aktif ise → sessiz gec, uyari VERME
+### 2.4 — Task Type Analysis and Guidance
 
-### 2.4 — Gorev Tipi Analizi ve Yonlendirme
+Analyze the task AC's description, target file list, and approach mode automatically. This is a menu DEPENDING — task-hunter will automatically guide.
 
-Gorev AC'lerini, aciklamasini ve hedef dosya listesini analiz ederek yaklasim modunu OTOMATIK sec. Bu bir menu DEGIL — task-hunter otomatik yonlendirir.
+#### Main Mode Selection
 
-#### Ana Mod Secimi
+Apply the following controls in sequence. First, select the module if it exists:
 
-Asagidaki kontrolleri SIRAYLA uygula. Ilk eslesen mod secilir:
-
-| # | Kontrol | Mod | Akis |
+| # | Control | Module | Action |
 |---|---------|-----|------|
-| 1 | AC/aciklamada "bug", "hata", "fix", "duzelt", "cokme", "crash" var | **AECA** | Hipotez → test → duzelt → dogrula (maks 3 deneme) |
-| 2 | Tahmini etkilenen dosya sayisi 1-2 | **RPI** | Research → Plan → Implement (tek agent, hizli) |
-| 3 | Tahmini etkilenen dosya sayisi 3-9 | **Orchestrator** | Teammate spawn, paralel calisma |
-| 4 | Tahmini etkilenen dosya sayisi 10+ | **Context Cycling** | Her 5 dosyada ara commit + ozet, context temizleme |
+| 1 | AC description contains "bug", "hata", "fix", "duzelt", "cokme", or "crash" | **AECA** | Hypothesis → test → fix → verify (max 3 attempts) |
+| 2 | Estimated number of affected files is between 1-2 | **RPI** | Research → Plan → Implement (fast agent, fast) |
+| 3 | Estimated number of affected files is between 3-9 | **Orchestrator** | Teammate spawn, parallel work |
+| 4 | Estimated number of affected files is 10+ | **Context Cycling** | Every 5 files, commit + summary, context cleanup |
 
-**Dosya sayisi tahmini:** Step 2.2-2.3'te bulunan ilgili dosyalari say. Kesin olmasi gerekmez — kaba tahmin yeterli.
+**File count estimation:** Step 2.2-2.3's relevant files should be counted — no need for exactness — rough estimate is sufficient.
 
-#### Ek Modifier Kontrolleri
+#### Modifier Control
 
-Ana modun USTUNE asagidaki modifier'lardan eslesen tum modifier'lar eklenir:
+If the main mode is above, apply these modifier controls in sequence:
 
-| Kontrol | Modifier | Ne yapar |
+>>>
+| Control | Modifier | Does It |
 |---------|----------|----------|
-| Hedef dosyalar controller, middleware, auth, guard, permission, token icerir | **Adversarial Testing** | Uygulama sonrasi `devils-advocate` agent'ini spawn et — adversarial perspektifli guvenlik ve dayaniklilik review |
-| Hedef dosyalar component, screen, page, layout (UI) icerir | **TDD** | Once gorsel/davranis testi yaz, sonra kodu uygula |
-| `test_strategy == TDD` (asagidaki yapilandirmaya bak) | **Red-Green** | Test ONCE yazilir (kirmizi), sonra gecen kod yazilir (yesil) |
-| `security_level == high` (asagidaki yapilandirmaya bak) | **Dual-Pass** | Uygulama sonrasi ikinci agent temiz context ile review yapar |
+| Application files controller, middleware, auth, guard, permission, token icerir | **Adversarial Testing** | Applies to application files after `devils-advocate` agent is spawned — adversarial perspective on security and reliability review |
+| Application files component, screen, page, layout (UI) icerir | **TDD** | Once write visual/dynamic test, then apply code |
+| `test_strategy == TDD` (below for configuration) | **Red-Green** | Test ONCE written (red), then write previous code (green) |
+| `security_level == high` (below for configuration) | **Dual-Pass** | Application review after second agent with clean context |
 
 <!-- GENERATE: TASK_ROUTING_CONFIG
-Aciklama: Bootstrap manifest'teki test ve guvenlik yapilandirmasini yazar.
-Gerekli manifest alanlari: workflows.test_strategy, project.security_level
-Ornek cikti:
+Description: Writes test and security configuration in the bootstrap manifest.
+Required manifest fields: workflows.test_strategy, project.security_level
+Example output:
 
-#### Proje Yapilandirmasi (Manifest)
-- **Test stratejisi:** `TDD` — Red-Green modifier AKTIF
-- **Guvenlik seviyesi:** `standard` — Dual-Pass modifier PASIF
+#### Project Configuration (Manifest)
+- **Test strategy:** `TDD` — Red-Green modifier ACTIVE
+- **Security level:** `standard` — Dual-Pass modifier PASSIVE
 -->
 
-#### Karar Bildirimi
+#### Decision Making
 
-Secilen modu kullaniciya bildir. Kullanici override edebilir:
+Informs user of selected mode. User can override:
 
 ```
-━━━ Gorev Tipi Analizi ━━━
-Gorev: #<id> — <baslik>
-Tespit: <aciklama> (ornek: "3 dosya etkileyen yeni API endpoint'i")
-Mod:    <AECA | RPI | Orchestrator | Context Cycling>
-Modifier: <varsa liste, yoksa "yok">
+━━━ Task Type Analysis ━━━
+Task: #<id> — <title>
+Findings: <description> (example: "3 files affected by new API endpoint")
+Mode:    <AECA | RPI | Orchestrator | Context Cycling>
+Modifier: <variable list, otherwise "none">
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Farkli bir yaklasim mi istiyorsunuz? (orn. "basit yap", "teammate kullanma")
-Devam etmek icin Enter veya yaklasim belirtin >
+Do you want to try a different approach? (e.g. "simple implementation", "team collaboration")
+Press Enter or specify alternative >
 ```
 
-> **KURAL:** Kullanici yanit vermezse veya Enter'a basarsa secilen modla devam et.
-> **KURAL:** Kullanici "basit", "inline", "tek agent" gibi birsey derse RPI moduna gec.
-> **KURAL:** Kullanici "teammate", "paralel" derse Orchestrator moduna gec.
+> **RULE:** User does not respond or presses Enter, continues with selected mode.
+> **RULE:** If user says "simple", "inline", or "single agent", goes to RPI mode.
+> **RULE:** If user says "team" or "parallel", goes to Orchestrator mode.
 
-#### Mod Referans Detaylari
+#### Mode Reference Details
 
-Her modun Step 3'teki davranis farklari (detay icin bkz. Step 3):
+Differences in behavior for each mode (see Step 3):
 
 **AECA (Autonomous Error Correction Agent):**
-- Onceligi: root cause bulmak, fix denemek, dogrulamak
-- Maks 3 fix denemesi — 3. denemede de basarisizsa kullaniciya bildir
-- Her denemede: hipotez → fix → test → sonuc degerlendirme
-- Test komutu BASARISIZ olursa bir sonraki hipoteze gec
+- First step: find root cause, try fix, validate
+- Maximum of 3 attempts — if fails after 3rd attempt, informs user
+- Each attempt: hypothesis → fix → test → evaluation
+- Test command fails, moves to next hypothesis
 
 **RPI (Research → Plan → Implement):**
-- Tek agent, hizli cevrim
-- Research: dosyalari oku, pattern'i anla
-- Plan: kisa degisiklik listesi (max 2 dosya)
-- Implement: direkt uygula, teammate SPAWN ETME
+- Single agent, fast workflow
+- Research: reads files, understands pattern
+
+>>>
+- Plan: brief change list (max 2 files)
+- Implement: direct application, teammate SPAWN ETME
 
 **Orchestrator:**
-- Step 3.1-3.2'deki delegasyon matrisini kullan
-- Her alt gorev icin uygun uzman agent sec (backend-expert, mobile-expert, frontend-expert)
-- Teammate'leri PARALEL spawn et
-- Sonuclari topla, merge conflict kontrolu yap
+- Use the delegation matrix from steps 3.1-3.2
+- Select a suitable expert agent for each subtask (backend-expert, mobile-expert, frontend-expert)
+- Spawn teammates in parallel
+- Sum up results and handle merge conflict control
 
 **Context Cycling:**
-- Buyuk refactoring gorevleri icin
-- Her 5 dosya duzenlendikten sonra:
-  1. Ara commit at (`refactor: <kapsam> — ara commit (#<id>)`)
-  2. Mevcut ilerlemeyi ozetle (yapilan + kalan)
-  3. Ozeti bir sonraki iterasyona tasi
-- Son iterasyonda nihai commit ve rapor
+- For large refactoring tasks
+- Every 5 files ordered:
+  1. Insert an intermediate commit (`refactor: <scope> — intermediate commit (#<id>)`)
+  2. Describe the current progress (done + remaining)
+  3. Pass the summary to the next iteration
+- Final commit and report in the last iteration
 
-### 2.5 — Uygulama Plani Olustur
+### 2.5 — Application Plan Creation
 
-Step 2.4'te secilen moda uygun plan yaz:
+Step 2.4's chosen approach should be used for the plan:
 
 ```
-## Uygulama Plani — Task #<id>
+## Application Plan — Task #<id>
 
-### Secilen Yaklasim
-Mod: [AECA | RPI | Orchestrator | Context Cycling]
-Modifier: [varsa liste]
+### Chosen Approach
+Mode: [AECA | RPI | Orchestrator | Context Cycling]
+Modifiers: [list]
 
-### Degisiklik Listesi
-1. [dosya_yolu] — [ne yapilacak]
-2. [dosya_yolu] — [ne yapilacak]
+### Change List
+1. [file_path] — [what to do]
+2. [file_path] — [what to do]
 ...
 
-### Bagimlilklar
-- [varsa diger gorevler veya dosyalar]
+### Dependencies
+- [list of other tasks or files]
 
-### Risk Alanlari
-- [potansiyel sorunlar]
+### Risk Areas
+- [potential issues]
 
-### Tahmini Karmasiklik
-- [ ] Basit (tek dosya, net degisiklik)
-- [ ] Orta (2-4 dosya, mevcut pattern'i takip)
-- [ ] Karmasik (5+ dosya, yeni pattern veya entegrasyon)
-```
-
-**AECA modu icin ek plan alanlari:**
-```
-### Hipotez
-Root cause tahmini: [hipotez aciklamasi]
-Dogrulama yontemi: [nasil test edilecek]
+### Estimated Complexity
+- [ ] Simple (single file, minor changes)
+- [ ] Medium (2-4 files, following existing pattern)
+- [ ] Complex (5+ files, new pattern or integration)
 ```
 
-**Orchestrator modu icin ek plan alanlari:**
+**AECA mode-specific additional plan areas:**
 ```
-### Teammate Bolumu
-Teammate 1: [agent] — [dosya listesi]
-Teammate 2: [agent] — [dosya listesi]
-```
+### Hypothesis
+Root cause estimation: [hypothesis explanation]
+Verification method: [how to test it]
 
-**Context Cycling modu icin ek plan alanlari:**
-```
-### Iterasyon Plani
-Iterasyon 1 (dosya 1-5): [kapsam]
-Iterasyon 2 (dosya 6-10): [kapsam]
+>>>
+**Application Flow for Orchestrator Mode**
+
+### Teammate Module
+Teammate 1: [agent] — [file list]
+Teammate 2: [agent] — [file list]
+
+**Context Cycling Mode Application Flow**
+
+### Iteration Plan
+
+Iteration 1 (files 1-5): [scope]
+Iteration 2 (files 6-10): [scope]
 ...
-```
 
-Plani backlog'a kaydet:
+**Save Plan to Backlog**
 ```
-backlog task edit <id> --plan "<plan_metni>"
+backlog task edit <id> --plan "<plan_text>"
 ```
 
 ---
 
-## Step 3 — Uygulama
+## Step 3 — Application Flow
 
-Step 2.4'te secilen moda gore uygulama akisi degisir. Asagidaki mod-spesifik talimatlari oku ve secilen modun akisini takip et.
+Step 2.4's selected mode will change the application flow. Follow the following mode-specific instructions and select the application flow for the chosen mode.
 
-### 3.0 — Mod-Spesifik Uygulama Akisi
+### 3.0 — Mode-Specific Application Flow
 
-#### AECA Modu (Bug Fix)
+#### AECA Mode (Bug Fix)
 
-AECA modunda sabit 7 adim DEGIL, hipotez-test dongusu uygulanir:
-
-```
-Dongu (maks 3 deneme):
-  1. Hipotez olustur: root cause nedir?
-  2. Fix uygula: hipoteze gore minimal degisiklik yap
-  3. Test calistir: dogrulama komutlarini calistir
-  4. Sonuc degerlendir:
-     - Testler GECTI → donguden cik, Step 4'e devam et
-     - Testler BASARISIZ → hipotezi guncelle, bir sonraki denemeye gec
-  5. 3. deneme de basarisizsa → DURMA, kullaniciya bildir:
-     "3 fix denemesi basarisiz. Mevcut bulgular:
-      Deneme 1: [hipotez] → [sonuc]
-      Deneme 2: [hipotez] → [sonuc]
-      Deneme 3: [hipotez] → [sonuc]
-      Lutfen yonlendirme yapin."
-```
-
-> **AECA'da Step 3.1-3.2 (delegasyon/teammate) ATLANIR.** Bug fix direkt inline yapilir.
-> Backlog'a her denemeyi kaydet: `backlog task edit <id> --append-notes "AECA Deneme N: [hipotez] → [sonuc]"`
-
-#### RPI Modu (Basit Feature)
-
-RPI modunda teammate spawn EDILMEZ. Tek agent hizli cevrim:
-
-1. **Research:** Hedef dosyalari oku, mevcut pattern'i anla (Step 2.2-2.3 zaten yapti)
-2. **Plan:** Kisa degisiklik listesi (maks 2 dosya, Step 2.5'te yazildi)
-3. **Implement:** Direkt uygula, Step 3.1 delegasyon matrisini ATLA, Step 3.3 kurallarina uy
-
-> RPI modunda Step 3.1-3.2 ATLANIR. Dogrudan Step 3.3'e gec.
-
-#### Orchestrator Modu (Karmasik Feature)
-
-Orchestrator modunda Step 3.1-3.2 TAM olarak uygulanir:
-
-1. Step 2.5'teki teammate bolumune gore alt gorevler olustur
-2. Her alt gorev icin uygun uzman agent sec (Step 3.2 tablosuna bak)
-3. Teammate'leri PARALEL spawn et
-4. Sonuclari topla ve butunlestir
-5. Teammate'ler arasi tutarlilik kontrolu yap (import'lar, tip uyumu, API contract)
-
-#### Context Cycling Modu (Buyuk Refactoring)
-
-Context Cycling modunda uygulama ITERASYONLARA bolunur:
+In AECA mode, follow these steps:
 
 ```
-Her iterasyonda (5 dosya):
-  1. Step 2.5'teki iterasyon planindaki dosyalari isle
-  2. Degisiklikleri uygula (Step 3.3 kurallarina uy)
-  3. Testleri calistir
-  4. Ara commit at:
-     git commit -m "refactor: <kapsam> — ara commit (#<id>)"
-  5. Ilerleme ozetini yaz:
-     "Iterasyon N tamamlandi. Yapilan: [liste]. Kalan: [liste]."
-  6. Ozeti backlog'a kaydet:
-     backlog task edit <id> --append-notes "Context Cycling iterasyon N: [ozet]"
-  7. Sonraki iterasyona gec
+Loop (max 3 attempts):
+  1. Create hypothesis: what is the root cause?
+  2. Apply fix: apply minimal change based on hypothesis
+  3. Test run: execute verification commands
+  4. Result evaluation:
+     - Tests PASSED → exit loop, proceed to Step 4
+     - Tests FAILED → update hypothesis, proceed to next attempt
+  5. If all three attempts fail → STOP, inform user:
+     "3 fix attempts failed. Current findings:
+      Attempt 1: [hypothesis] → [result]
+      Attempt 2: [hypothesis] → [result]
+      Attempt 3: [hypothesis] → [result]
+      Please provide guidance."
+```
+**AECA'da Step 3.1-3.2 (delegasyon/teammate) WILL BE APPLIED. Bug fix will be done inline.**
+
+#### RPI Mode (Simple Feature)
+
+RPI mode does not allow teammate spawning. Fast agent interaction:
+
+1. **Research:** Read target files, understand the existing pattern (Steps 2.2-2.3 already completed)
+2. **Plan:** Short change list (max 2 files, Step 2.5 written)
+3. **Implement:** Directly apply, Step 3.1 delegate matrix will be applied, Step 3.3 rules will be followed
+
+> RPI mode will apply Steps 3.1-3.2 directly to Step 3.3.
+
+#### Orchestrator Mode (Complex Feature)
+
+Orchestrator mode will apply Steps 3.1-3.2 fully:
+
+1. Create subtasks below Step 2.5
+2. Select the appropriate specialist agent for each subtask (Step 3.2 table)
+3. Spawn teammates in parallel
+4. Summarize results and consolidate
+5. Maintain continuity between agents (import compatibility, type consistency, API contract)
+
+#### Context Cycling Mode (Major Refactoring)
+
+Context Cycling mode will be applied iteratively:
+
+```
+Each iteration (5 files):
+  1. Apply the iteration plan from Step 2.5
+  2. Apply changes (Step 3.3 rules)
+  3. Run tests
+  4. Make an intermediate commit:
+     git commit -m "refactor: <scope> — intermediate commit (#<id>)"
+  5. Progress summary:
+     "Iteration N completed. Done: [list]. Remaining: [list]."
+  6. Summary will be logged to backlog:
+     `backlog task edit <id> --append-notes "Context Cycling iteration N: [summary]"`
+  7. Move on to the next iteration
 ```
 
-> Context Cycling'de nihai commit Step 5'te atilir. Ara commit'ler refactoring'in guvenli checkpoint'leridir.
-> **KURAL:** Her iterasyon bagimsiz olarak derlenebilir/test edilebilir olmali. Yari birakilmis degisiklik YASAK.
+> The final commit will be made at Step 5. Intermediate commits are safe checkpoints for refactoring.
+> **RULE:** Each iteration can be independent and testable. Half-done changes are NOT ALLOWED.
 
-### 3.0.1 — Modifier Uygulamasi
+### 3.0.1 — Modifier Application
 
-Secilen modifier'lar ana mod akisinin USTUNE eklenir. Step 3 tamamlandiktan sonra (Step 4'e gecmeden once) asagidaki modifier'lari uygula:
+Selected modifiers will be added to the main application's upper layer. After completing Step 4 (before applying the next step), apply the following modifiers:
 
-| Modifier | Ne zaman | Ne yap |
+| Modifier | When | What |
 |----------|----------|--------|
-| **Adversarial Testing** | Uygulama bittikten sonra | `devils-advocate` agent'ini spawn et. Agent kodu adversarial perspektiften inceler: edge case'ler, yanlis input, yetki bypass, race condition, N+1 sorgu, bagimlilk kirilganligi. CRITICAL ve HIGH bulgulari duzelt, MEDIUM/LOW bulgulari raporla. |
-| **TDD** | Uygulama ONCE | UI component icin once test yaz (render testi, event testi), SONRA kodu uygula. |
-| **Red-Green** | Uygulama ONCE | Her degisiklik icin: (1) kirmizi test yaz (fail etmeli), (2) testi gecirecek minimal kodu yaz (yesil), (3) refactor. |
-| **Dual-Pass** | Uygulama bittikten sonra | `code-review` agent'ini TEMIZ context ile spawn et. Agent implementasyonu bagimsiz olarak review eder. CRITICAL bulgular varsa duzelt. |
 
-> **TDD ve Red-Green BIRLIKTE secilmisse:** Red-Green onceliklidir (TDD'nin daha siki hali). TDD modifier'i ATLA.
-> **Adversarial Testing ve Dual-Pass BIRLIKTE secilmisse:** Once adversarial testing, SONRA dual-pass. Dual-pass adversarial fix'leri de review eder.
+>>>
+| **Adversarial Testing** | After application completion | Spawn `devils-advocate` agent. The agent code examines adversarial perspectives: edge cases, wrong input, permission bypass, race conditions, N+1 queries, and dependency issues. Report MEDIUM/LOW-level findings, and fix CRITICAL-level issues. |
+| **TDD** | Once | Write UI component tests (render test, event test) once, then apply the code. |
+| **Red-Green** | Once | For each change: (1) write red test (must fail), (2) write green test (minimal code that passes), and (3) refactor. |
+| **Dual-Pass** | After application completion | Spawn `code-review` agent with CLEAN context. The agent implements independently, reviewing the implementation. Fix CRITICAL-level issues if found. |
 
-### 3.1 — Teammate Delegasyon Matrisi
+> **TDD and Red-Green TOGETHER selected:** Red-Green takes priority (in a more refined TDD state). TDD modifier is ATLA.
+> **Adversarial Testing and Dual-Pass TOGETHER selected:** Once adversarial testing, then dual-pass. Dual-pass also reviews adversarial fixes.
 
-> **NOT:** Bu bolum sadece **Orchestrator** modunda aktiftir. AECA ve RPI modlarinda ATLA.
+### 3.1 — Teammate Delegation Matrix
 
-Gorev karmasikligina gore delegasyon kararini ver:
+> **NOT:** This section only applies to the Orchestrator mode. AECA and RPI modes skip this.
 
-| Karmasiklik | Dosya Sayisi | Karar | Yontem |
+Decide delegation based on complexity:
+
+| Complexity | File Count | Decision | Method |
 |---|---|---|---|
-| Basit | 1-2 | Direkt uygula | Inline |
-| Orta | 3-5 | Direkt uygula | Inline |
-| Karmasik | 6+ | Teammate spawn et | Alt gorevlere bol |
-| Cok karmasik | 10+ | Kullaniciya danismadan teammate spawn etme | Plani onayla |
+| Simple | 1-2 | Directly apply | Inline |
+| Medium | 3-5 | Directly apply | Inline |
+| Complex | 6+ | Spawn teammate | Delegate to lower tasks |
+| Very complex | 10+ | Get user input without spawning teammate | Plan and approve |
 
-### 3.2 — Teammate Spawn Mekanizmasi
+### 3.2 — Teammate Spawn Mechanism
 
-Karmasik gorevlerde alt gorevler olustur. Dosya tipine gore uygun **uzman agent** kullan:
+Create subtasks for complex tasks. Use the **expert agent** suitable for the file type:
 
-#### Uzman Agent Yonlendirme Tablosu
+#### Expert Agent Guidance Table
 
-Hedef dosyalarin tipine gore teammate'i dogru agent ile spawn et:
+Determine the correct expert agent based on the target file type:
 
-| Hedef Dosya Tipi | Agent | Aciklama |
+| Target File Type | Agent | Description |
 |---|---|---|
-| Controller, service, middleware, route, model, migration | `backend-expert` | Backend framework uzmani |
-| Screen, component (mobil), navigation, hook (mobil) | `mobile-expert` | Mobil platform uzmani |
-| Page, component (web), layout, style, store (web) | `frontend-expert` | Frontend framework uzmani |
-| Birden fazla katman (backend + frontend) | Her katman icin ayri agent | Paralel spawn |
-| Test, config, util (katman belirsiz) | Inline uygula | Uzman agent gereksiz |
+| Controller, service, middleware, route, model, migration | `backend-expert` | Backend framework expert |
+| Screen, component (mobil), navigation, hook (mobil) | `mobile-expert` | Mobile platform expert |
+| Page, component (web), layout, style, store (web) | `frontend-expert` | Frontend framework expert |
+| Multi-layered (backend + frontend) | Separate agent for each layer | Parallel spawn |
+| Test, config, util (layer unclear) | Inline apply | No need for expert agent |
 
-**Monorepo:** Subproject-bazli uzman agent varsa (ornegin `api-expert`, `mobile-expert`), generic agent yerine subproject-spesifik agent'i tercih et. Subproject agent'i o alt projenin dizin yapisi ve convention'larini daha iyi bilir.
+**Monorepo:** If a subproject-based expert agent exists (e.g., `api-expert`, `mobile-expert`), prefer the specific agent over the generic one. The subproject agent should be familiar with the project's directory structure and conventions.
 
-**Agent yoksa:** Bootstrap'in uzman agent uretmedigi durumlarda (ornegin Go projesi icin mobile-expert yok) inline uygula ve framework kurallarini IMPLEMENTATION_RULES bolumunden oku.
+**Agent Not Available:** Bootstrap's expert agent creation is not available for certain projects (e.g., Go project without `mobile-expert`). Inline apply and follow framework rules in the IMPLEMENTATION_RULES section.
 
-#### Spawn Formati
+#### Spawn Format
 
 ```
-## Teammate Gorevi: [alt_gorev_adi]
+## Teammate Task: [task_name]
 - Agent: [backend-expert | mobile-expert | frontend-expert | {subproject}-expert]
-- Hedef dosyalar: [liste]
-- Yapilacak is: [net talimat]
-- Referans dosya: [ornek pattern icin]
-- Tamamlaninca: [beklenen cikti]
-```
+- Target files: [list]
+- Action to perform: [net instruction]
+- Reference file: [example pattern for]
+- Completed with: [expected output]
 
-> **KURAL:** Her teammate'e NET sinirlar ver. Dosya listesi, beklenen cikti, referans pattern.
-> **KURAL:** Teammate'ler arasi dosya catismasi OLMAMALI. Ayni dosyayi iki teammate duzenleyemez.
-> **KURAL:** Uzman agent sadece kendi domain'indeki dosyalari duzenlemelidir (backend-expert frontend dosyasina dokunmaz).
+>>>
+> **Rule:** Each teammate should set NET boundaries. File list, expected output, reference pattern.
+> **Rule:** Teammates should not perform file comparison between each other. The same file cannot be edited by two teammates.
+> **Rule:** Expert agent should only edit files in their own domain (backend-expert should not touch frontend files).
 
-### 3.3 — Uygulama Kurallari
+### 3.3 — Implementation Rules
 
 <!-- GENERATE: IMPLEMENTATION_RULES
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: stack.primary, stack.conventions, project.rules
-Ornek cikti:
-### Stack-Spesifik Kurallar
+Description: This section will be filled with data from Bootstrap's manifest.
+Required manifest fields: stack.primary, stack.conventions, project.rules
+Example output:
+### Stack-Specific Rules
 
-**TypeScript Genel:**
-- Strict mode aktif, `any` tipi yasak
-- Barrel export kullan (`index.ts`)
-- Path alias kullan (`@/modules/...`)
+**TypeScript General:**
+- Strict mode is active, `any` type is forbidden
+- Barrel export use (`index.ts`)
+- Path alias use (`@/modules/...`)
 
 **NestJS Backend:**
-- Her endpoint bir DTO ile validate edilmeli
-- Service katmaninda is mantigi, controller'da sadece routing
-- Guard/Interceptor pattern'ini takip et
-- Prisma client enjeksiyonu `PrismaService` uzerinden
+- Each endpoint should be validated with a DTO
+- The logic of the service layer and only routing in the controller
+- Follow the Guard/Interceptor pattern
+- Prisma client injection through `PrismaService`
 
 **Next.js Frontend:**
-- App Router kullan, Pages Router degil
-- Server Component varsayilan, `'use client'` sadece gerektiginde
-- Tailwind CSS, inline style yasak
+- Use App Router, not Pages Router
+- Server Component is assumed, `'use client'` only when necessary
+- Tailwind CSS, inline style is forbidden
 
 **React Native / Expo:**
-- `useTheme()` hook'u ile tema renkleri, hardcoded renk yasak
+- Use the `useTheme()` hook to set theme colors, hardcoded color is forbidden
 - Navigation: Expo Router
-- Platform-spesifik kod icin `Platform.select()` kullan
+- Platform-specific code use `Platform.select()`
 -->
 
-### 3.4 — Ilerleme Kaydi
+### 3.4 — Progress Log
 
-Her onemli adimda ilerlemeyi logla:
+Log each important step:
 ```
-backlog task edit <id> --append-notes "[ILERLEME] Step 3.4 — UserService.createUser() tamamlandi"
+backlog task edit <id> --append-notes "[PROGRESS] Step 3.4 — UserService.createUser() completed"
 ```
 
 ---
 
-## Step 4 — Dogrulama Kapisi
+## Step 4 — Validation Gate
 
-### 4.1 — Test Yazma Kontrolu
+### 4.1 — Test Write Control
 
-AC'lerde test gerektiren maddeler var mi kontrol et.
-- Eger AC'de "test yazilmali" veya benzeri ifade varsa: ONCE testleri yaz
-- Eger AC'de test belirtilmemisse de, yeni is mantigi eklendiyse: birim test yaz
+Check if there are any items that require testing.
 
-### 4.2 — Syntax Kontrolu
+>>>
+### 4.2 — Syntax Control
 
-Degisiklik yapilan dosyalarin syntax hatasi icermedigini dogrula:
-- TypeScript: derleme hatasi yok mu?
-- Import'lar gecerli mi?
-- Dosya dogru formatta mi?
+Verify that the files affected by changes do not have syntax errors:
+- TypeScript: Does it have a compilation error?
+- Are imports valid?
+- Is the file in the correct format?
 
-### 4.3 — Test Yurutme
+### 4.3 — Test Execution
 
 <!-- GENERATE: VERIFICATION_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, project.scripts, stack.test_framework
-Ornek cikti:
-Her alt proje icin test ve dogrulama komutlari:
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.subprojects, project.scripts, stack.test_framework
+Example output:
+Test and verification commands for each subproject:
 
-| Alt Proje | Komut | Aciklama |
+| Subproject | Command | Explanation |
 |---|---|---|
-| API | `cd ../Codebase/apps/api && npm run test` | Jest birim testleri |
-| API (e2e) | `cd ../Codebase/apps/api && npm run test:e2e` | Uctan uca testler |
-| API (lint) | `cd ../Codebase/apps/api && npm run lint` | ESLint kontrolu |
-| API (type) | `cd ../Codebase/apps/api && npx tsc --noEmit` | TypeScript tip kontrolu |
-| Web | `cd ../Codebase/apps/web && npm run test` | Jest/Vitest birim testleri |
-| Web (build) | `cd ../Codebase/apps/web && npm run build` | Build dogrulamasi |
-| Mobile | `cd ../Codebase/apps/mobile && npx tsc --noEmit` | TypeScript tip kontrolu |
-| Shared | `cd ../Codebase/packages/shared && npm run test` | Paylasilan paket testleri |
+| API | `cd ../Codebase/apps/api && npm run test` | Jest unit tests |
+| API (e2e) | `cd ../Codebase/apps/api && npm run test:e2e` | End-to-end tests |
+| API (lint) | `cd ../Codebase/apps/api && npm run lint` | ESLint checks |
+| API (type) | `cd ../Codebase/apps/api && npx tsc --noEmit` | TypeScript type checking |
+| Web | `cd ../Codebase/apps/web && npm run test` | Jest/Vitest unit tests |
+| Web (build) | `cd ../Codebase/apps/web && npm run build` | Build validation |
+| Mobile | `cd ../Codebase/apps/mobile && npx tsc --noEmit` | TypeScript type checking |
+| Shared | `cd ../Codebase/packages/shared && npm run test` | Package tests |
 -->
 
-### 4.4 — Hata Degerlendirme
+### 4.4 — Error Handling
 
-Test basarisiz olursa:
+If a test fails:
 
-1. **Hata bu gorevden mi kaynaklaniyor?**
-   - EVET → Hatay duzelt, testleri tekrar calistir (max 3 deneme)
-   - HAYIR → Onceden var olan hata protokolune gec
+1. **Is the error related to this task?**
+   - YES → Fix the error, re-run the tests (max 3 attempts)
+   - NO → Follow the existing error protocol
+2. **Existing error protocol:**
+   - Verify that the error existed before (git stash + test)
+   - Verified → FIX, ensure that all relevant tests have passed
+   - Not verified → This task is related to the error, fix it
+3. **TESTS_VERIFIED flag:**
+   - If all relevant tests pass: `TESTS_VERIFIED = true`
+   - If tests do not pass: Proceed to Step 5
 
-2. **Onceden var olan hata protokolu:**
-   - Hatanin gorev oncesinde de var oldugunu dogrula (git stash + test)
-   - Dogrulandi → Hatayi YOKSAY, gorevle ilgili testlerin gectiginden emin ol
-   - Dogrulanamadi → Bu gorevden kaynaklaniyordur, duzelt
+> **RULE:** Do not commit with `TESTS_VERIFIED = false`.
+> **RULE:** You cannot fix existing errors, only verify that your own task's tests have passed.
+### 4.5 — Optional Documentation Synchronization
 
-3. **TESTS_VERIFIED flag'i:**
-   - Tum ilgili testler gectiyse: `TESTS_VERIFIED = true`
-   - Testler gecmediyse: Step 5'e GECME
+This step will only be executed if one of the following areas is affected:
 
-> **KURAL:** `TESTS_VERIFIED = false` iken ASLA commit atma.
-> **KURAL:** Onceden var olan hatalari duzeltemezsin, sadece kendi gorev testlerinin gectigini dogrula.
+* Project capabilities, scope, or environment definition
+* Stack, runtime, package, tool, or integration selection
+* Directory structure, module boundaries, data flow
+* Git/review/test/deploy workflow
+* README or onboarding information for developers
 
-### 4.5 — Opsiyonel Dokumantasyon Senkronizasyonu
+If none of these areas are affected, skip this step.
 
-Bu adim yalnizca gorev asagidaki alanlardan birini etkiliyorsa calisir:
-- Proje yetenegi, kapsam veya ortam tanimi
-- Stack, runtime, paket, tool veya entegrasyon secimi
-- Dizin yapisi, modul sinirlari, veri akisi
-- Git/review/test/deploy workflow'u
-- README veya gelistirici onboarding bilgisi
-
-Yukaridaki alanlardan hicbiri etkilenmiyorsa bu adimi SKIP et.
-
-Gerekliyse `service-documentation` agent'ini cagir:
+If necessary, run the `service-documentation` agent:
 
 ```
-## Teammate Gorevi: service-documentation
-- Hedef dosyalar: PROJECT.md, STACK.md, DEVELOPER.md, ARCHITECTURE.md, WORKFLOWS.md, README.md
-- Yapilacak is: Mevcut diff'e gore hangi root dokumanlarin guncellenmesi gerektigini belirle, gereksiz degisiklik onermeden minimal update listesi cikar.
-- Referans girdiler: git diff, degisen dosyalar, mevcut root dokumanlar
-- Tamamlaninca: dosya bazli guncelleme onerileri veya "guncelleme gerekmiyor" raporu
+## Teammate Task: service-documentation
+- Target files: PROJECT.md, STACK.md, DEVELOPER.md, ARCHITECTURE.md, WORKFLOWS.md, README.md
+- Action to perform: Determine which root documents need updating based on current diff, and extract minimal update list without unnecessary changes.
+- Reference materials: git diff, changed files, existing root documents
+- Completion outcome: File-based update recommendations or "no update required" report
 ```
 
-Agent ciktisi geldikten sonra:
-1. Onerileri oku
-2. Sadece gorevle dogrudan ilgili ve diff ile dogrulanabilen guncellemeleri uygula
-3. Dokumantasyon degisiklikleri yapildiysa backlog notlarina ekle
-4. Dokuman disinda ek kod degisikligi yapildiysa ilgili dogrulama komutlarini tekrar calistir
+After the agent's output is received:
+
+1. Read the recommendations
+2. Apply only updates directly related to the task and verified by diff
+3. If documentation changes were made, add notes to backlog
+4. If code outside of documents was changed, re-run relevant verification commands
 
 ---
 
-## Step 5 — Commit
+### 5.1 — File Preparation
 
-### 5.1 — Dosya Hazirlama
+**ONLY execute this step for files related to this task:**
 
-SADECE bu gorevle ilgili dosyalari stage'e al:
 ```bash
-git add <dosya1> <dosya2> ...
+git add <file1> <file2> ...
 ```
 
-> **KURAL:** `git add .` veya `git add -A` KULLANMA. Sadece gorevle ilgili dosyalari ekle.
-> **KURAL:** `.env`, credentials, `node_modules`, build ciktilari ASLA commit'e dahil edilmez.
+> **RULE:** Use `git add .` or `git add -A`. Only include files related to this task.
+> **RULE:** Do not commit `.env`, credentials, `node_modules`, build artifacts.
 
-### 5.2 — Commit Mesaji
+---
+
+### 5.2 — Commit Message
 
 <!-- GENERATE: COMMIT_CONVENTION
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: conventions.commit_language, conventions.commit_format
-Ornek cikti:
+Description: This section will be filled by Bootstrap with manifest data.
+Required manifest fields: conventions.commit_language, conventions.commit_format
+Example output:
 ### Commit Format
 
 ```
-<prefix>: <aciklama> (#<task_id>)
-```
 
-**Prefix haritasi:**
-| Prefix | Kullanim |
+>>>
+### Prefix Dictionary:
+| Prefix | Usage |
 |---|---|
-| `feat` | Yeni ozellik |
-| `fix` | Hata duzeltme |
-| `refactor` | Yeniden yapilandirma (davranis degismez) |
-| `test` | Test ekleme/duzeltme |
-| `docs` | Dokumantasyon |
-| `chore` | Bakim, konfigurasyon |
-| `style` | Kod formatlama |
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `refactor` | Code refactoring (no behavior change) |
+| `test` | Add or modify test |
+| `docs` | Documentation |
+| `chore` | Maintenance, configuration |
+| `style` | Code formatting |
 
-**Dil:** Turkce
-**Ornek:** `feat: kullanici kayit endpointi eklendi (#12)`
+### Language: Turkish
+**Example:** `feat: user registration endpoint added (#12)`
 -->
 
-### 5.3 — Commit Olustur
+### 5.3 — Create Commit
 
 ```bash
-git commit -m "<prefix>: <aciklama> (#<task_id>)"
+git commit -m "<prefix>: <description> (#<task_id>)"
 ```
 
 ---
 
-## Step 6 — Gorevi Kapat
+## Step 6 — Task Completion
 
-### 6.1 — AC Kontrolu
+### 6.1 — AC Control
 
-Tum kabul kriterlerini tek tek kontrol et:
-- [ ] AC 1 — karsilandi mi?
-- [ ] AC 2 — karsilandi mi?
+Manually check all acceptance criteria:
+- [ ] AC 1 — was it accepted?
+- [ ] AC 2 — was it accepted?
 - ...
 
-> **KURAL:** Tum AC'ler karsilanmadikca gorevi kapatma.
+> **RULE:** If none of the ACs were accepted, close the task.
 
-### 6.2 — Ozet Yaz
-
-```
-backlog task edit <id> --append-notes "[TAMAMLANDI] <ozet>"
-```
-
-Ozet icerigi:
-- Yapilan degisiklikler (dosya listesi)
-- Eklenen/degistirilen satirlar (kaba rakam)
-- Olusturulan testler
-- Commit hash'i
-
-### 6.3 — Durumu Guncelle
+### 6.2 — Summary Write
 
 ```
-backlog task edit <id> -s "Done"
+backlog task edit <id> --append-notes "[DONE] <summary>"
 ```
+
+Summary contents:
+- Applied changes (file list)
+- Added/modified lines (column count)
+- Created tests
+- Commit hash
+
+### 6.3 — Status Update
+
+>>>
+### backlog task edit <id> -s "Done"
 
 ---
 
-## Step 7 — Kullanici Raporu
+## Step 7 — User Report
 
-Kullaniciya asagidaki formatta rapor sun:
+Present the following format to the user:
 
 ```
-## ✅ Task #<id> — <baslik>
+## Task #<id> — <title>
 
-### Yapilan Isler
-- [degisiklik 1]
-- [degisiklik 2]
+### Completed Tasks
+- [Change 1]
+- [Change 2]
 
-### Degisiklik Ozeti
-| Dosya | Degisiklik |
+### Change Summary
+| File | Changes |
 |---|---|
-| `<yol>` | <aciklama> |
+| `<path>` | <description> |
 
-### Test Sonuclari
-- [x] Birim testler gecti
-- [x] Lint temiz
-- [x] Tip kontrolu basarili
+### Test Results
+- [x] Unit tests passed
+- [x] Lint clean
+- [x] Code review successful
 
 ### Commit
-`<hash>` — `<mesaj>`
+`<hash>` — `<message>`
 
-### Notlar
-[varsa ek bilgiler, uyarilar, oneriler]
+### Notes
+[If any additional information, warnings, or suggestions]
 
-### Sonraki Task Onerisi
+### Next Task Suggestion
 
-| Sira | Task | Baslik | Skor | Neden Simdi? |
+| Order | Task | Title | Score | Reason |
 |------|------|--------|------|-------------|
-| 1 | #id | baslik | skor | gerekcesi |
-| 2 | #id | baslik | skor | gerekcesi |
-| 3 | #id | baslik | skor | gerekcesi |
+| 1 | #id | title | score | reason |
+| 2 | #id | title | score | reason |
+| 3 | #id | title | score | reason |
 
-> Devam etmek icin: `/task-hunter {id}`
+> To continue: `/task-hunter {id}`
 ```
 
 ---
 
-## ADIM 8 — Sonraki Task Onerisi
+## Step 8 — Next Task Suggestion
 
-Bu adim HER ZAMAN calisir — tek task veya coklu task fark etmez, is bitince sonraki adimi onerir.
-Coklu task modunda sadece TUM task'lar tamamlandiktan sonra sunulur — task'lar arasi onerilmez.
+This step is always performed — whether it's a single task or multiple tasks, once the previous task is completed.
 
-### 8.1 Acik Task'lari Tara
+>>>
+# Multiple Task Mode
+
+In the multiple task mode, only completed TUM tasks are displayed — task completion is not recommended.
+
+### 8.1 Completing Open Tasks
 
 ```bash
 backlog task list -s "To Do" --plain
 ```
 
-Acik task yoksa → "Backlog'da acik task kalmadi." mesaji ile bitir.
+If there are no open tasks → "There are no open tasks in the backlog." message to complete.
 
-### 8.2 Sicak Baglam Analizi
+### 8.2 Task Context Analysis
 
-Az once tamamlanan task'tan su bilgileri kullan:
+Use information from recently completed tasks:
 
-| Bilgi | Kaynak | Kullanim |
-|-------|--------|----------|
-| **Degistirilen dosyalar** | Adim 3'ten dosya listesi | Ayni dosya/dizine dokunan task'lara bonus |
-| **Etkilenen katmanlar** | Subproject/dizin tespiti | Ayni katmandaki task'lara bonus |
-| **Etiketler** | Tamamlanan task'in etiketleri | Ayni etiketli task'lara bonus |
-| **Ogrenilen pattern** | Implementasyon deneyimi | Ilgili alan bilgisi zaten yuklu |
+| Information | Source | Usage |
+|-------------|--------|-------|
+| **Modified Files** | Step 3's file list | Bonus for tasks touching the same file/directory |
+| **Affected Layers** | Subproject/Directory Detection | Bonus for tasks in the same layer (backend/mobile/frontend) |
+| **Tags** | Tags of completed task | Bonus for tasks with the same tag |
+| **Learned Patterns** | Implementation Experience | Already loaded knowledge |
 
-### 8.3 Hizli Skorlama (5 boyutlu)
+### 8.3 Fast Scoring (5-Dimensional)
 
-Her acik task icin hizli skor hesapla:
+Calculate fast score for each open task:
 
+```bash
+Etki (0-10):         Security/Data Loss=10, UX/Refactor=2
+Risk (0-10):         Active in Production=10, Only Dev=2
+Maturity (0-10):   Blocker=10, Isolated=2
+Complexity (0-10):  Single File=10, Migration+Multi-Layer=2
+Similarity (0-10):  Same File=10, Same Directory=8, Same Layer=6, Same Tag=4, Irrelevant=0
+
+Score = (Etki x 2.5) + (Risk x 2) + (Maturity x 1.5) + (Complexity x 1) + (Similarity x 2)
 ```
-Etki (0-10):         Guvenlik/veri kaybi=10, UX/refactor=2
-Risk (0-10):         Prod'da aktif tetiklenen=10, sadece dev=2
-Bagimlilik (0-10):   Blocker=10, izole=2
-Karmasiklik (0-10):  TERS — tek dosya=10, migration+multi-layer=2
-Sicak Baglam (0-10): Ayni dosya=10, ayni dizin=8, ayni katman=6, ayni etiket=4, ilgisiz=0
 
-Skor = (Etki x 2.5) + (Risk x 2) + (Bagimlilik x 1.5) + (Karmasiklik x 1) + (Sicak Baglam x 2)
-```
+**Similarity Bonus:**
+- Touching the **same file** → 10 (context change zero)
+- Touching the **same directory** → 8
+- Touching the **same layer** (backend/mobile/frontend) → 6
+- Having the **same tag** → 4
+- No relevance → 0
 
-**Sicak baglam bonusu:**
-- Ayni **dosyaya** dokunan → 10 (baglam degisimi sifir)
-- Ayni **dizin/module** dokunan → 8
-- Ayni **katmana** dokunan (backend/mobile/frontend) → 6
-- Ayni **etikete** sahip → 4
-- Hic ilgisi yok → 0
+### 8.4 Suggesting Tasks
 
-### 8.4 Oneri Sun
-
-En yuksek skorlu 3 task'i oner:
+Suggest the top 3 tasks with the highest score:
 
 ```markdown
-## Sonraki Task Onerisi
+## Next Task Suggestions
 
-Tamamlanan task'in baglami ve backlog analizi bazinda:
-
-| Sira | Task | Baslik | Skor | Neden Simdi? |
+Based on completed task's context and backlog analysis:
+>>>
+| Sira | Task | Title | Score | Why Today? |
 |------|------|--------|------|-------------|
-| 1 | #{id} | {baslik} | {skor} | {1 cumle gerekce} |
-| 2 | #{id} | {baslik} | {skor} | {1 cumle gerekce} |
-| 3 | #{id} | {baslik} | {skor} | {1 cumle gerekce} |
+| 1   | #{id} | {Title} | {Score} | {One sentence explanation} |
+| 2   | #{id} | {Title} | {Score} | {One sentence explanation} |
+| 3   | #{id} | {Title} | {Score} | {One sentence explanation} |
 
-> Devam etmek icin: `/task-hunter {id}`
-```
+> To continue: `/task-hunter {id}`
 
-**Gerekce yazim kurallari:**
-- Sicak baglam varsa belirt: "Az once calistigin `{dosya}` ile ayni modul"
-- Blocker ise belirt: "#{diger_id} bu task'a bagimli"
-- Quick win ise belirt: "Tek dosya degisikligi, yuksek etki"
-- Risk yuksekse belirt: "Prod'da aktif tetikleniyor"
+**Writing Style Rules**
+
+- If a hotfix is required, specify: "Fixed in the last commit of `{file}` with the same module"
+- If a blocker is required, specify: "#{other_id} this task is related to"
+- If it's a quick win, specify: "A single file change, high impact"
+- If there's a high risk, specify: "Active on production"
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files should only be created inside the Agentbase directory. Creating a `.claude/` directory in the codebase, writing to `../Codebase/CLAUDE.md` is NOT ALLOWED.
+2. **Git runs only in Codebase** — All Git operations (commit, push, branch) should be performed inside the codebase. The Agentbase does not have Git.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) are readable and can be modified if necessary. Config files (`.claude/`, `CLAUDE.md`) should NOT be written in the codebase.
 
-1. **Otonom calis** — Kullaniciya soru sorma, karar al ve uygula. Sadece belirsiz AC'lerde sor.
-2. **Once oku, sonra yaz** — Bir dosyayi degistirmeden once MUTLAKA oku ve mevcut pattern'i anla.
-3. **Pattern takip et** — Mevcut koddaki yapiyi, isimlendirmeyi, formati takip et. Yeni convention icat etme.
-4. **Minimal degisiklik** — Sadece gorev icin gerekli degisiklikleri yap. Refactor, iyilestirme, cleanup YAPMA.
-5. **Test yaz** — Yeni is mantigi eklendiyse test yaz. Mevcut testleri bozma.
-6. **TESTS_VERIFIED olmadan commit atma** — Testler gecmeden Step 5'e gecme.
-7. **Sadece gorev dosyalarini commit'le** — `git add .` yasak. Gorevle ilgisiz dosyalari ekleme.
-8. **Backlog CLI kullan** — Gorev durumunu, notlarini, kapamayi SADECE `backlog` CLI ile yap. Dosyayi elle duzenleme.
-9. **Onceden var olan hatalari duzeltme** — Senin gorevinden once var olan hatalari yoksay, sadece kendi testlerinin gectigini dogrula.
-10. **AC karsilanmadan kapatma** — Tum kabul kriterleri karsilanmadikca gorevi "Done" yapma.
-11. **Teammate sinirlarini koru** — Teammate'lere net dosya listesi ver. Ayni dosyayi iki teammate duzenleyemez.
-12. **Ilerlemeyi kaydet** — Her onemli adimda backlog'a not ekle.
-13. **Hata dongusune girme** — Ayni hatayi 3'ten fazla deneme ile cozmeye calisma. 3 denemede cozulmediyse kullaniciya bildir.
-14. **Codebase yolu** — Tum proje dosyalarina `../Codebase/` uzerinden eris.
-15. **Guvenlik** — `.env` dosyalari, credential'lar, secret'lar ASLA commit'e dahil edilmez, log'a yazilmaz, ciktida gosterilmez.
+1. **Autonomous execution** — User interaction, decision-making, and application execution. Only for uncertain AC's.
+2. **Read once, write never** — Read a file without modifying it first. Always read before writing.
+3. **Pattern follow** — Follow the existing code structure, naming conventions, formatting, and style. Do not introduce new conventions.
+4. **Minimal changes** — Make only necessary changes for the task. Refactor, improve, clean up.
+5. **Test write** — Write a test when a new task is added. Do not modify existing tests.
+6. **TESTS_VERIFIEDWITHOUT commit atma** — Commit without verifying tests first. Follow Step 5.
+7. **Only task files commit'le** — `git add .` is NOT ALLOWED. Only commit task-related files.
+8. **Backlog CLI use** — Use the `backlog` CLI to manage tasks, notes, and shutdowns. Do not manually edit files.
+9. **Fix previous errors** — Fix existing errors before introducing new ones. Only test your own tests.
+10. **Close without consensus** — Close a task if all acceptance criteria are met. Otherwise, mark it as "Done".
+11. **Team member boundaries** — Provide clear file lists to teammates. Do not allow simultaneous modifications of the same file.
+12. **Logging progress** — Log important steps in the backlog.
+13. **Error handling** — Handle errors after three attempts. If not resolved, inform the user.
+14. **Codebase path** — Access all project files through `../Codebase/`.
+15. **Security** — Do not commit `.env` files, credentials, or secrets. Log them instead, and do not display them.
+
+16. **DB schema discipline** — Follow the DB schema/model/migration change checklist: migration file, dry-run/preview, rollback/down, and destructive flag review.
+17. **ADR discipline** — When introducing architectural changes, follow the ADR process: write or reference an existing ADR in `backlog/decisions/`. If layer boundaries, data flow, integration contracts, runtime/deploy models, or cross-cutting policies change, ADR control is mandatory.
+### API Versioning
+
+All endpoints must be under the `/api/v1/` prefix.
+
+### Theme Usage
+
+In React Native, hardcoded color YASAK should not be used. Instead, use `useTheme()`.
+
+### DTO Validation
+
+Every API endpoint must use a DTO (Data Transfer Object) with class-validator for input validation.
+
+### Error Response Format
+
+API errors must be in the format `{ error: string, code: string, details?: any }`.
+
 16. **DB schema disiplini** — DB schema/model/migration degisikligi yaptiysan `.claude/rules/db-migration-discipline.md` checklist'ini uygula: migration dosyasi, dry-run/preview, rollback/down ve destructive flag taramasi.
-17. **ADR disiplini** — Mimari davranis degisikligi yaptiysan `backlog/decisions/` altinda ADR yaz veya mevcut ADR dosyasina referans ver. Katman siniri, veri akisi, entegrasyon kontrati, runtime/deploy modeli veya cross-cutting policy degisiyorsa ADR kontrolu zorunludur.
 
-<!-- GENERATE: PROJECT_SPECIFIC_RULES
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.rules, project.forbidden_patterns, project.domain_rules
-Ornek cikti:
-### Proje-Spesifik Kurallar
+Invariant rules:
 
-18. **API versiyonlama** — Tum endpointler `/api/v1/` prefix'i altinda olmali.
-19. **Tema kullanimi** — React Native'de hardcoded renk YASAK, `useTheme()` kullan.
-20. **DTO validasyon** — Her API endpoint'i input icin DTO + class-validator kullanmali.
-21. **Error response format** — API hatalari `{ error: string, code: string, details?: any }` formatinda donmeli.
--->
+1. **Do not write config into Codebase** — create `.claude/`, `CLAUDE.md`, `.mcp.json`, and `.claude-ignore` only inside Agentbase.
+2. **Git runs only in Codebase** — product git operations stay in `../Codebase/`.
+3. **Codebase is readable; config is not written there**.
+
+Commit completed non-sensitive work in the same session without asking. Do not push unless the user asks.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Last step. Compare this command with what the run observed.
 -->
+
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

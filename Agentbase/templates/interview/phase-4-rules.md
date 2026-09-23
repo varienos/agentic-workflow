@@ -1,13 +1,13 @@
 # Phase 4 — Domain Rules
 
 > **Feeds:** `rules/`, hooks (forbidden commands)
-> **Goal:** Projeye ozel kurallar, yasaklar ve domain bilgisi toplamak. Bu phase'in ciktilari koruma hook'larina ve agent kurallarina donusur.
+> **Goal:** Collect project-specific rules, bans, and domain knowledge. Outputs from this phase become protection hooks and agent rules.
 
 ---
 
 ## Auto-Detection
 
-Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
+Automatic detection in this phase is limited. The following hints are added to questions:
 
 | Field                    | Detection Source                                      | Usage                              |
 |--------------------------|-------------------------------------------------------|------------------------------------|
@@ -19,54 +19,54 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
 
 ## Questions
 
-### Q1 — Yasakli Komutlar / Islemler
-- **Text:** `"Projede kesinlikle YAPILMAMASI gereken seyler var mi? (Ornek: 'prisma db push YASAK' — bir hata sonucu bu kural dogdu) Varsa listele. Her biri bir koruma hook'una donusturulecek."`
+### Q1 — Forbidden Commands / Operations
+- **Text:** `"Are there things that must NEVER be done in this project? (Example: 'prisma db push FORBIDDEN' — this rule came from an incident) If so, list them. Each will become a protection hook."`
 - **Type:** open-ended, multi-value
-- **Format:** Her kural ayri satirda. Ornek:
+- **Format:** One rule per line. Example:
   ```
-  prisma db push — production'da schema bozuldu
-  rm -rf / — acik sebep
-  git push --force main — history kaybolur
+  prisma db push — schema broke in production
+  rm -rf / — obvious reason
+  git push --force main — history is lost
   ```
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.rules.forbidden[]`
   - Each entry: `{ command: string, reason: string, hook_type: "block" | "warn" }`
-- **YAML safety:** Kullanici cevabindaki `command` ve `reason` alanlari manifest'e yazilirken YAML cift tirnak icinde yazilmali. YAML ozel karakterler (`: # [ ]`) iceriyorsa escape zorunlu.
+- **YAML safety:** When writing `command` and `reason` from the user answer to the manifest, wrap in YAML double quotes. Escape is required if YAML special characters (`: # [ ]`) are present.
 - **Downstream:**
   - `rules/forbidden-commands.md` generation
   - Pre-exec hook: block or warn when forbidden command detected
   - Agent instructions: never suggest or execute these commands
-  - **block** → komut calistirilmaz, hata mesaji gosterilir
-  - **warn** → uyari gosterilir, onay istenir
+  - **block** → command is not run; error message is shown
+  - **warn** → warning is shown; approval is requested
 
-### Q2 — Tasarim Sistemi / Component Library
-- **Text:** `"Bir tasarım sistemi/component library kullanıyor musunuz? (Örn: Material UI, Tailwind, özel design system)"`
+### Q2 — Design System / Component Library
+- **Text:** `"Do you use a design system/component library? (e.g. Material UI, Tailwind, custom design system)"`
 - **Type:** yes/no + follow-up
-- **Skip condition:** never — always ask (TASK-209/T5 ile T3'ün design_system için skip:high kuralı **override edildi**; soru her zaman sorulur, ADIM 2.7 onayı sadece default seçimini etkiler).
-- **Default selection (confidence'a göre):**
-  - `manifest.detected.design_system.confidence == "high"` → tespit edilen değer default seçili (MUI/Shadcn/Antd/RN-Paper). Kullanıcı doğrulamak için Enter'a basabilir.
-  - `confidence == "medium"` → tespit edilen değer default (örn: Tailwind only).
-  - `confidence == "low"`, alan yok, GREENFIELD_MODE=true → default `"Yok / kullanmıyorum"`.
-- **UI framework yok / greenfield:** Soru her durumda sorulur (kullanıcı UI yoksa bile "Yok" diyerek niyetini ifade edebilmeli; sonradan UI eklemeyi planlıyor olabilir).
-- **"Yok" cevabı semantiği:** Kullanıcı "Yok / kullanmıyorum" seçerse `manifest.rules.design_system = "none"` yazılır (string `"none"`, **null DEĞİL**). Eski manifest'lerde `null` olabilir; downstream tüketiciler `null` ile `"none"`'u **eşdeğer** işlemelidir (geriye uyumluluk).
-- **Follow-up (if yes):** `"Temel kurallarini kisa acikla (renk kullanimi, component pattern, vb.)"`
+- **Skip condition:** never — always ask (TASK-209/T5 **overrides** T3's skip:high rule for design_system; the question is always asked; STEP 2.7 confirmation only affects the default selection).
+- **Default selection (by confidence):**
+  - `manifest.detected.design_system.confidence == "high"` → detected value is the default (MUI/Shadcn/Antd/RN-Paper). User can press Enter to confirm.
+  - `confidence == "medium"` → detected value is the default (e.g. Tailwind only).
+  - `confidence == "low"`, field missing, GREENFIELD_MODE=true → default `"None / not using"`.
+- **No UI framework / greenfield:** The question is always asked (even with no UI, the user should be able to say "None"; they may plan to add UI later).
+- **"None" answer semantics:** If the user selects "None / not using", write `manifest.rules.design_system = "none"` (string `"none"`, **NOT null**). Older manifests may have `null`; downstream consumers must treat `null` and `"none"` as **equivalent** (backward compatibility).
+- **Follow-up (if yes):** `"Briefly describe the core rules (color usage, component pattern, etc.)"`
 - **Maps to:** `manifest.rules.domain[]` (category: design-system)
 - **Downstream:**
   - `rules/design-system.md` generation
   - Agent UI component generation rules
   - Style/theme consistency enforcement
   - Example generated rules:
-    - "Sadece Tailwind utility class'lari kullan, inline style yazma"
-    - "Renk degerleri theme config'den alinir, hardcoded hex kullanilmaz"
-    - "Her yeni component Storybook story'si ile birlikte olusturulur"
+    - "Use only Tailwind utility classes; do not write inline styles"
+    - "Color values come from theme config; no hardcoded hex"
+    - "Every new component is created with a Storybook story"
 
-### Q3 — Domain-Spesifik Kurallar
-- **Text:** `"Projede agent'ların bilmesi gereken domain-spesifik kurallar var mı? (Örn: 'API response formatı her zaman {status, data, message}', 'Kullanıcı verisi log'a yazılmaz') Serbest format."`
+### Q3 — Domain-Specific Rules
+- **Text:** `"Are there domain-specific rules agents should know? (e.g. 'API response format is always {status, data, message}', 'User data is never written to logs') Free format."`
 - **Type:** open-ended, multi-value
-- **Format:** Her kural ayri satirda. Serbest format kabul edilir.
+- **Format:** One rule per line. Free format is accepted.
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.rules.domain[]` (category: domain)
-- **YAML safety:** Serbest metin kurallari manifest'e yazilirken YAML cift tirnak icinde yazilmali. Secret, credential veya API key iceriyorsa UYARI ver — manifest'e secret yazmak yerine env var referansi kullan.
+- **YAML safety:** When writing free-text rules to the manifest, wrap in YAML double quotes. If a secret, credential, or API key is present, WARN — use an env var reference instead of writing the secret into the manifest.
 - **Downstream:**
   - `rules/domain-rules.md` generation
   - Agent instructions per rule
@@ -77,60 +77,60 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
     - **Code patterns:** naming conventions, file organization
     - **Business logic:** calculation rules, state machine constraints
 
-### Q4 — Guvenlik Oncelik Seviyesi
-- **Text:** `"Projenin guvenlik oncelik seviyesi nedir?"`
+### Q4 — Security Priority Level
+- **Text:** `"What is the project's security priority level?"`
 - **Options:**
-  - `a)` Standart — genel web uygulamasi
-  - `b)` Yuksek — finans, saglik, kisisel veri (KVKK/GDPR)
-  - `c)` Kritik — odeme isleme, devlet sistemleri
+  - `a)` Standard — general web application
+  - `b)` High — finance, health, personal data (KVKK/GDPR)
+  - `c)` Critical — payment processing, government systems
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.project.security_level`
 - **Downstream:**
   - **a → standard:**
-    - Mevcut security modulu yeterli
-    - task-hunter Dual-Pass modifier PASIF
-    - Guvenlik hook'lari (codebase-guard) her zaman aktif, ek kontrol yok
+    - Existing security module is enough
+    - task-hunter Dual-Pass modifier OFF
+    - Security hooks (codebase-guard) always on; no extra checks
     - Enforce: manifest.task_hunter_directives.dual_pass = false
   - **b → high:**
-    - IDOR scan zorunlu (opsiyonel degil)
-    - Ek guvenlik hook'lari aktif
-    - Security review her PR'da
-    - task-hunter Dual-Pass modifier AKTIF
-    - pre-commit hook'ta secret scanning siki mod
+    - IDOR scan mandatory (not optional)
+    - Extra security hooks active
+    - Security review on every PR
+    - task-hunter Dual-Pass modifier ON
+    - Strict secret scanning in pre-commit hook
     - Enforce: manifest.task_hunter_directives.dual_pass = true
-    - Enforce: task-review.skeleton.md devils-advocate ZORUNLU (kosulsuz)
+    - Enforce: task-review.skeleton.md devils-advocate MANDATORY (unconditional)
   - **c → critical:**
-    - Tum guvenlik kontrolleri maksimum
-    - pre-commit'te guvenlik taramasi genisletilmis
-    - git hook'lara ek secret scanning
-    - task-hunter Dual-Pass modifier AKTIF
-    - Adversarial Testing her guvenlik-iliskili gorevde ZORUNLU
+    - All security checks at maximum
+    - Expanded security scanning in pre-commit
+    - Extra secret scanning on git hooks
+    - task-hunter Dual-Pass modifier ON
+    - Adversarial Testing MANDATORY on every security-related task
     - Enforce: manifest.task_hunter_directives.dual_pass = true
     - Enforce: manifest.task_hunter_directives.adversarial_testing = always
-    - Enforce: task-review.skeleton.md devils-advocate ZORUNLU + maks 2 iterasyon
+    - Enforce: task-review.skeleton.md devils-advocate MANDATORY + max 2 iterations
 
-### Q5 — Hedef CLI Araclari
-- **Text:** `"Claude Code disinda hangi CLI araclarini kullaniyorsunuz? (Agentbase tek bootstrap ciktisini bu hedeflere transform edecek)"`
+### Q5 — Target CLI Tools
+- **Text:** `"Which CLI tools do you use besides Claude Code? (Agentbase will transform the single bootstrap output to these targets)"`
 - **Options:**
   - `a)` Gemini CLI
   - `b)` Antigravity 2.0
   - `c)` Codex CLI
   - `d)` Kimi CLI
   - `e)` OpenCode
-  - `f)` Hicbiri — sadece Claude Code
-- **Multi-select:** Virgul ile birden fazla secilebilir (orn: a,b,c). `claude` her zaman dahil edilir.
+  - `f)` None — Claude Code only
+- **Multi-select:** Multiple can be selected with commas (e.g. a,b,c). `claude` is always included.
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.targets`
 - **Downstream:**
-  - `claude` canonical kaynak olarak her zaman manifestte kalir; diger degerler transform hedefidir
-  - `transform.js` secilen hedeflere gore `.gemini/`, `.agents/`, `.codex/`, `.kimi/`, `.opencode/` dizinleri uretir
-  - Antigravity secimi `.agents/workflows/*.md`, `.agents/skills/*/SKILL.md`, `.agents/rules/*.md` ve root `GEMINI.md` uretir
-  - Codex secimi ikinci bootstrap baslatmaz; `.agents/skills/*/SKILL.md` ve `AGENTS.md` transform ciktisidir
-  - Codex secildiyse transform sonrasi opsiyonel `/codex-verify` pass'i onerilir
-  - Sadece `f` secilirse `targets: [claude]` — transform ve Codex verify/adapt atlanir
+  - `claude` always remains in the manifest as the canonical source; other values are transform targets
+  - `transform.js` produces `.gemini/`, `.agents/`, `.codex/`, `.kimi/`, `.opencode/` directories for selected targets
+  - Antigravity selection produces `.agents/workflows/*.md`, `.agents/skills/*/SKILL.md`, `.agents/rules/*.md`, and root `GEMINI.md`
+  - Codex selection does not start a second bootstrap; `.agents/skills/*/SKILL.md` and `AGENTS.md` are transform output
+  - If Codex is selected, an optional `/codex-verify` pass is suggested after transform
+  - If only `f` is selected: `targets: [claude]` — transform and Codex verify/adapt are skipped
 
-### Q6 — Son Eklemeler
-- **Text:** `"Baska eklemek istedigin bir sey var mi? Bu son soru."`
+### Q6 — Final Additions
+- **Text:** `"Anything else to add? This is the last question."`
 - **Type:** open-ended, optional
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.rules.domain[]` (if applicable)
@@ -143,13 +143,13 @@ Bu phase'de otomatik tespit sinirlidir. Asagidaki ipuclari sorulara eklenir:
 
 ## Batch Delivery
 
-Bu phase'in soruları karışık tipte: Q1/Q3/Q6 free-text, Q2/Q4/Q5 çoktan seçmeli (subjektif). Bootstrap, ADIM 3'te şu sırayı izler:
-- Q1 (yasaklı komutlar) → free-text `>` prompt
-- **[Q2 + Q4 + Q5] → tek `AskUserQuestion` çağrısı (3 element batch):** design system + güvenlik öncelik + CLI hedefler. Batch her zaman 3 element (TASK-209/T5 sonrası Q2 design_system için skip yok; default seçim confidence değerine göre belirlenir, soru her zaman sorulur).
-- Q3 (domain kuralları) → free-text `>` prompt
-- Q6 (ek notlar) → free-text `>` prompt
+This phase has mixed question types: Q1/Q3/Q6 free-text, Q2/Q4/Q5 multiple choice (subjective). In STEP 3, Bootstrap follows this order:
+- Q1 (forbidden commands) → free-text `>` prompt
+- **[Q2 + Q4 + Q5] → single `AskUserQuestion` call (3-element batch):** design system + security priority + CLI targets. Batch is always 3 elements (after TASK-209/T5 there is no skip for Q2 design_system; default selection follows confidence; the question is always asked).
+- Q3 (domain rules) → free-text `>` prompt
+- Q6 (extra notes) → free-text `>` prompt
 
-Bkz: `bootstrap.md` ADIM 3 KURAL 1 ve Faz 4 batch tanımı.
+See: `bootstrap.md` STEP 3 RULE 1 and Phase 4 batch definition.
 
 ---
 
@@ -158,10 +158,10 @@ Bkz: `bootstrap.md` ADIM 3 KURAL 1 ve Faz 4 batch tanımı.
 When all applicable questions are answered, Bootstrap:
 
 1. Populates `manifest.rules.forbidden[]` and `manifest.rules.domain[]`
-2. Generates `rules/` directory → hedef: `Agentbase/.claude/rules/`:
-   - `.claude/rules/forbidden-commands.md` — yasakli komutlar ve hook tanimlari
-   - `.claude/rules/design-system.md` — UI/tasarim kurallari (if applicable)
-   - `.claude/rules/domain-rules.md` — domain-spesifik kurallar
+2. Generates `rules/` directory → target: `Agentbase/.claude/rules/`:
+   - `.claude/rules/forbidden-commands.md` — forbidden commands and hook definitions
+   - `.claude/rules/design-system.md` — UI/design rules (if applicable)
+   - `.claude/rules/domain-rules.md` — domain-specific rules
 3. Configures pre-exec hooks for forbidden commands
 4. Completes the interview — proceeds to **manifest compilation and file generation**
 

@@ -1,56 +1,56 @@
-# Backlog Yonetimi — Agentic Workflow Template
+# Backlog Management — Agentic Workflow Template
 
-Bu proje gorev/teknik borc takibini **Backlog.md** ile yapar.
-Tum gorevler `backlog/tasks/` altinda ayri markdown dosyalaridir.
+This project tracks tasks and technical debt with **Backlog.md**.
+Every task is a separate markdown file under `backlog/tasks/`.
 
-> **Konum:** Hedef projelerde backlog `Agentbase/backlog/` icinde olusturulur.
-> Bootstrap `backlog init` komutunu Agentbase CWD'sinde calistirir.
-> Bu repo'nun kendi backlog'u (template gelistirme icin) root'ta kalir.
+> **Location:** In target projects, backlog is created inside `Agentbase/backlog/`.
+> Bootstrap runs `backlog init` with Agentbase as CWD.
+> This repo's own backlog (for template development) stays at the root.
 
-## Hizli Baslangic
+## Quick Start
 
-### Kurulum
-Gerekirse backlog.md kurulumu: `npm i -g backlog.md` veya `brew install backlog-md`
+### Install
+If needed: `npm i -g backlog.md` or `brew install backlog-md`
 
-### Temel Komutlar
-| Komut | Aciklama |
-|-------|----------|
+### Core Commands
+| Command | Description |
+|---------|-------------|
 | `backlog board` | Kanban board (terminal) |
-| `backlog browser` | Web arayuzu |
-| `backlog task list` | Tum gorevleri listele |
-| `backlog task list --priority high` | Oncelige gore filtrele |
-| `backlog task list -s "In Progress"` | Duruma gore filtrele |
-| `backlog search "kimlik dogrulama" --type task --plain` | Gorev ara |
-| `backlog task create "Baslik" -d "Aciklama" --priority high -l backend` | Yeni gorev |
-| `backlog task edit N --ac "Kriter"` | Kabul kriteri ekle |
-| `backlog task N` | Gorev detayi |
+| `backlog browser` | Web UI |
+| `backlog task list` | List all tasks |
+| `backlog task list --priority high` | Filter by priority |
+| `backlog task list -s "In Progress"` | Filter by status |
+| `backlog search "authentication" --type task --plain` | Search tasks |
+| `backlog task create "Title" -d "Description" --priority high -l backend` | Create task |
+| `backlog task edit N --ac "Criterion"` | Add acceptance criterion |
+| `backlog task N` | Task detail |
 
-### Oncelik Eslestirmesi
-| Eski (P) | Backlog.md | Aciklama |
+### Priority Mapping
+| Legacy (P) | Backlog.md | Description |
 |-----------|-----------|----------|
-| P0 | high | Gelir kaybi / veri tutarsizligi, acil (critical desteklenmiyor) |
-| P1 | high | Guvenlik riski veya onemli is mantigi |
-| P2 | medium | UX/teknik borc, planli sprint |
-| P3 | low | Altyapi iyilestirme, uzun vadeli |
+| P0 | high | Revenue loss / data inconsistency, urgent (critical not supported) |
+| P1 | high | Security risk or important business logic |
+| P2 | medium | UX/tech debt, planned sprint |
+| P3 | low | Infrastructure improvement, long-term |
 
-### Label Konvansiyonlari
+### Label Conventions
 `frontend`, `backend`, `api`, `mobile`, `web`, `infra`, `security`, `auth`, `payment`, `tech-debt`
 
-### AI Agent Is Akisi
-1. `backlog task list -s "To Do"` → gorev sec
-2. `backlog task edit N -s "In Progress" -a @claude` → ata
-3. Plan yaz, implement et, test et
-4. `backlog task edit N -s "Done" --final-summary "Ozet"` → tamamla
+### AI Agent Workflow
+1. `backlog task list -s "To Do"` → pick a task
+2. `backlog task edit N -s "In Progress" -a @claude` → assign
+3. Write plan, implement, test
+4. `backlog task edit N -s "Done" --final-summary "Summary"` → complete
 
-### Dizin Yapisi
+### Directory Layout
 ```
 backlog/
-  config.yml       — proje ayarlari
-  tasks/           — aktif gorevler
-  completed/       — tamamlanmis arsiv
-  archive/         — eski arsivler
-  decisions/       — mimari kararlar
-  docs/            — backlog dokumantasyonu
-  drafts/          — taslak gorevler
-  milestones/      — kilometre taslari
+  config.yml       — project settings
+  tasks/           — active tasks
+  completed/       — completed archive
+  archive/         — older archives
+  decisions/       — architecture decisions
+  docs/            — backlog documentation
+  drafts/          — draft tasks
+  milestones/      — milestones
 ```

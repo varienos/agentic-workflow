@@ -22,10 +22,10 @@ const fs = require('fs');
 const path = require('path');
 
 // ─── GENERATE BOLUMU BASLANGIC ───
-// Bootstrap bu bolumu manifest'teki subproject ve test bilgilerine gore doldurur.
+// Bootstrap fills this section from subproject and test info in the manifest.
 // Manuel duzenleme yapmayin — degisiklikler Bootstrap tarafindan ezilir.
 
-// Katman-test eslesmesi — her subproject icin bir entry
+// Layer-test mapping — one entry per subproject
 const LAYER_TESTS = [
   /* GENERATE: LAYER_TESTS
    * Bootstrap manifest.project.subprojects[] ve manifest.stack.test_commands bilgilerini
@@ -38,7 +38,7 @@ const LAYER_TESTS = [
   /* END GENERATE */
 ];
 
-// Kontrol edilecek kod dosya uzantilari
+// Code file extensions to check
 const CODE_EXTENSIONS = [
   /* GENERATE: CODE_EXTENSIONS
    * Bootstrap tespit edilen stack'e gore kod dosya uzantilarini doldurur.
@@ -49,9 +49,9 @@ const CODE_EXTENSIONS = [
 
 // ─── GENERATE BOLUMU BITIS ───
 
-// === KONFIGÜRASYON ===
+// === CONFIGURATION ===
 
-const DEBOUNCE_MS = 3 * 60 * 1000;       // 3 dakika — ayni katman icin tekrar sinyal verme
+const DEBOUNCE_MS = 3 * 60 * 1000;       // 3 minutes — do not signal the same layer again
 const EDIT_THRESHOLD = 3;                 // 3+ edit sonrasi sinyal guclendir
 const STATE_FILE = path.join(__dirname, '.auto-test-state.json');
 
@@ -85,7 +85,7 @@ function saveState(state) {
     state.timestamp = Date.now();
     fs.writeFileSync(STATE_FILE, JSON.stringify(state));
   } catch {
-    // Yazilamazsa sessizce devam et
+    // If it cannot be written, continue silently
   }
 }
 
@@ -131,7 +131,7 @@ async function main() {
     try {
       input = JSON.parse(inputData);
     } catch {
-      // Bozuk JSON — sessizce gecir
+      // Broken JSON — skip silently
       process.stdout.write(inputData);
       process.exit(0);
     }
@@ -144,7 +144,7 @@ async function main() {
       process.exit(0);
     }
 
-    // Kod dosyasi degilse — gecir
+    // If not a code file — skip
     if (!isCodeFile(filePath)) {
       process.stdout.write(inputData);
       process.exit(0);
@@ -153,12 +153,12 @@ async function main() {
     // Katman tespiti
     const layer = detectLayer(filePath);
     if (!layer) {
-      // Katman eslesmiyor — sessizce skip (crash degil)
+      // Layer does not match — skip silently (not a crash)
       process.stdout.write(inputData);
       process.exit(0);
     }
 
-    // State yukle ve guncelle
+    // Load and update state
     const state = loadState();
     if (!state.layers[layer.layer]) {
       state.layers[layer.layer] = { editCount: 0, lastSignal: 0, lastEdit: 0 };
@@ -168,7 +168,7 @@ async function main() {
     layerState.editCount++;
     layerState.lastEdit = Date.now();
 
-    // Debounce kontrolu: son sinyal 3 dakika icindeyse atla
+    // Debounce check: skip if last signal was within 3 minutes
     const timeSinceLastSignal = Date.now() - (layerState.lastSignal || 0);
     if (timeSinceLastSignal < DEBOUNCE_MS) {
       saveState(state);
@@ -180,16 +180,16 @@ async function main() {
     let message;
     if (layerState.editCount >= EDIT_THRESHOLD) {
       // Guclu sinyal: cok sayida edit birikti
-      message = `${layer.layer} katmaninda ${layerState.editCount} duzenleme yapildi. Test calistirmaniz oneriliyor:\n  ${layer.command}`;
+      message = `${layerState.editCount} edits were made in the ${layer.layer} layer. Running tests is recommended:\n  ${layer.command}`;
       if (layer.extra) {
         message += `\n  Not: ${layer.extra}`;
       }
     } else {
       // Normal sinyal: ilk edit'ler
-      message = `${layer.layer} katmaninda degisiklik yapildi. Uygun bir noktada testleri calistirin:\n  ${layer.command}`;
+      message = `A change was made in the ${layer.layer} layer. Run the tests at a suitable point:\n  ${layer.command}`;
     }
 
-    // State guncelle ve kaydet
+    // Update state and save
     layerState.lastSignal = Date.now();
     // Edit sayacini sifirla (sinyal verildi)
     layerState.editCount = 0;

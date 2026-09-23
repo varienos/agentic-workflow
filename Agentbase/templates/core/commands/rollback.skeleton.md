@@ -1,84 +1,84 @@
-# Rollback — Shadow Git Checkpoint Geri Yukleme
+# Rollback — Shadow Git Checkpoint Restore
 
-> Agent'in attigi son commit'leri gizli checkpoint'lerden geri yukler. `git-checkpoint.js` hook'unun `refs/checkpoints/agent/*` altinda biriktirdigi ref'leri listeler, secileni `git reset --hard` veya `git revert` ile uygular.
-> Kullanım: `/rollback`
+> Restores the agent's recent commits from hidden checkpoints. Lists refs accumulated by the `git-checkpoint.js` hook under `refs/checkpoints/agent/*`, then applies the selected one with `git reset --hard` or `git revert`.
+> Usage: `/rollback`
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure, project.subprojects
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- **Yapi:**
+- **Structure:**
   - `apps/web/` — Next.js frontend
   - `apps/api/` — NestJS backend
-- **Codebase yolu:** `../Codebase/`
+- **Codebase path:** `../Codebase/`
 
-Kutsal Kurallar:
-- Codebase e config YAZMA — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` SADECE Agentbase icinde olusturulur.
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
-- Codebase OKUNUR, config YAZILMAZ — rollback git state okur/degistirir, Codebase config dosyasi yazmaz.
-- Agentbase git'siz — Agentbase'de rollback YOK
-- Checkpoint ref'leri `refs/checkpoints/agent/<id>-<ts>` formatinda
+Invariant rules:
+- Do not write config into Codebase — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` are created ONLY inside Agentbase.
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Codebase is readable; config is not written there — rollback reads/changes git state and does not write Codebase config files.
+- Agentbase has no git — no rollback inside Agentbase
+- Checkpoint refs use the format `refs/checkpoints/agent/<id>-<ts>`
 -->
 
 ---
 
 <!-- GENERATE: COMMIT_CONVENTION
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: conventions.commit_language, conventions.commit_format
-Ornek cikti:
-## Commit Format (Rollback Sonrasi)
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: conventions.commit_language, conventions.commit_format
+Example output:
+## Commit Format (After Rollback)
 
-`reset --hard` modu commit yaratmaz (history rewrite). `revert` modu yeni commit yaratir:
+`reset --hard` mode does not create a commit (history rewrite). `revert` mode creates a new commit:
 
 ```
-revert: <orijinal-commit-ozeti> (rollback to <ref>)
+revert: <original-commit-summary> (rollback to <ref>)
 ```
 
-**Dil:** Turkce
-**Ornek:** `revert: hatalı kullanıcı tablosu migration'i geri alindi (rollback to checkpoint/agent/220-...)`
+**Language:** English
+**Example:** `revert: roll back the user-table migration (rollback to checkpoint/agent/220-...)`
 -->
 
 ---
 
-## Step 1 — Onkosul Kontrolu
+## Step 1 — Prerequisite Check
 
-### 1.1 — Git Repo Dogrulamasi
+### 1.1 — Git Repo Validation
 
 ```bash
 cd ../Codebase && git rev-parse --git-dir
 ```
 
-Eger Codebase git repo'su DEGILSE, kullaniciya bildir ve cik:
+If Codebase is NOT a git repo, tell the user and exit:
 
-> "Codebase git repo'su olarak baslatilmamis. Rollback için `git init` gerekli."
+> "Codebase is not a git repository. Rollback needs `git init`."
 
-### 1.2 — Calisma Agaci Temiz mi?
+### 1.2 — Is the Working Tree Clean?
 
 ```bash
 cd ../Codebase && git status --porcelain
 ```
 
-Stage'lenmemis veya commit'lenmemis degisiklik VARSA kullaniciya sor:
+If there are unstaged or uncommitted changes, ask the user:
 
-> "Calisma agacinda commit'lenmemis değişiklik var. Rollback bunlari kaybedebilir.
-> - [S] Stash et ve devam (`git stash push -u`)
-> - [I] İptal et
-> - [Z] Riski kabul et, devam et"
+> "The working tree has uncommitted changes. Rollback can lose them.
+> - [S] Stash and continue (`git stash push -u`)
+> - [I] Cancel
+> - [Z] Accept the risk and continue"
 
-> **KURAL:** Kullanıcı onayi olmadan ASLA `reset --hard` veya `revert` calistirma.
+> **RULE:** Never run `reset --hard` or `revert` without an explicit user request.
 
 ---
 
-## Step 2 — Checkpoint Listesi
+## Step 2 — Checkpoint List
 
-### 2.1 — Mevcut Checkpoint'leri Cek
+### 2.1 — Fetch Existing Checkpoints
 
 ```bash
 cd ../Codebase && git for-each-ref \
@@ -87,24 +87,24 @@ cd ../Codebase && git for-each-ref \
   refs/checkpoints/agent/
 ```
 
-Ciktiyi parse et — her satir bir checkpoint:
-- **Ref adi:** `refs/checkpoints/agent/<task-id>-<timestamp>`
-- **Kisa SHA:** Commit SHA'si (kisa form)
-- **Tarih:** Checkpoint olusturulma anindaki commit tarihi
-- **Konu:** Commit basligi
+Parse the output — each line is a checkpoint:
+- **Ref name:** `refs/checkpoints/agent/<task-id>-<timestamp>`
+- **Short SHA:** Commit SHA (short form)
+- **Date:** Commit date at checkpoint creation
+- **Subject:** Commit title
 
-Eger HIC checkpoint yoksa kullaniciya bildir:
+If there are NO checkpoints, tell the user:
 
-> "Checkpoint bulunamadi. Hook (git-checkpoint.js) henuz tetiklenmemis veya GC ile temizlenmis olabilir.
-> Manuel rollback için: `git reflog` + `git reset --hard <hash>`"
+> "No checkpoints found. The hook (git-checkpoint.js) may not have fired yet, or GC may have cleaned them.
+> Manual rollback: `git reflog` + `git reset --hard <hash>`"
 
-### 2.2 — Listeyi Kullaniciya Goster
+### 2.2 — Show the List to the User
 
-Son 10 checkpoint'i tablo halinde sun:
+Present the last 10 checkpoints as a table:
 
 ```
-| # | Tarih              | Task    | SHA      | Commit Konusu               |
-|---|--------------------|----- ---|----------|-----------------------------|
+| # | Date               | Task    | SHA      | Commit Subject              |
+|---|--------------------|---------|----------|-----------------------------|
 | 1 | 2026-05-07 14:32   | 220     | a3f9c1e  | feat(hooks): checkpoint...  |
 | 2 | 2026-05-07 14:18   | 220     | b1e8d4a  | refactor(hooks): cleanup    |
 | 3 | 2026-05-07 13:55   | 219     | f7c2b9d  | fix(parse): null guard      |
@@ -112,129 +112,129 @@ Son 10 checkpoint'i tablo halinde sun:
 
 ---
 
-## Step 3 — Checkpoint Secimi
+## Step 3 — Checkpoint Selection
 
-`AskUserQuestion` ile checkpoint sec ettir:
+Use `AskUserQuestion` to let the user pick a checkpoint:
 
-> "Hangi checkpoint'e geri donmek istiyorsunuz?"
+> "Which checkpoint do you want to restore?"
 > - 1: 2026-05-07 14:32 — feat(hooks): checkpoint... (a3f9c1e)
 > - 2: 2026-05-07 14:18 — refactor(hooks): cleanup (b1e8d4a)
 > - 3: 2026-05-07 13:55 — fix(parse): null guard (f7c2b9d)
 
-> **KURAL:** Tek checkpoint varsa bile sor — yanlislikla geri yükleme onlemi.
+> **RULE:** Ask even when there is one checkpoint, so a restore is not accidental.
 
-Kullanici iptal ederse adim 7'ye atla (rapor: "İptal edildi").
+If the user cancels, skip to step 7 (report: "Cancelled").
 
 ---
 
-## Step 4 — Rollback Modu Secimi
+## Step 4 — Rollback Mode Selection
 
-Secilen checkpoint'in commit'i remote'a push edildi mi kontrol et:
+Check whether the selected checkpoint's commit was pushed to remote:
 
 ```bash
-cd ../Codebase && git branch -r --contains <secilen-sha>
+cd ../Codebase && git branch -r --contains <selected-sha>
 ```
 
-### 4.1 — Mod Tablosu
+### 4.1 — Mode Table
 
-| Mod | Komut | Ne zaman? | Risk |
+| Mode | Command | When? | Risk |
 |---|---|---|---|
-| **hard reset** | `git reset --hard <ref>` | Commit LOCAL — push edilmedi | Sonraki commit'ler KAYBOLUR |
-| **revert** | `git revert <commit>` | Commit PUSH edildi | History korunur, yeni revert commit |
-| **soft reset** | `git reset --soft <ref>` | Stage'i koru, sadece HEAD geri | Degisiklikler stage'de kalir |
+| **hard reset** | `git reset --hard <ref>` | Commit is LOCAL — not pushed | Later commits are LOST |
+| **revert** | `git revert <commit>` | Commit was PUSHED | History preserved; new revert commit |
+| **soft reset** | `git reset --soft <ref>` | Keep the stage; only move HEAD back | Changes remain staged |
 
-### 4.2 — Otomatik Oneri
+### 4.2 — Automatic Suggestion
 
-- Push edilmemisse → **hard reset** oner (en temiz)
-- Push edilmisse → **revert** oner (history guvenli)
-- Kullanici emin degilse → **soft reset** oner (geri donulebilir)
+- If not pushed → suggest **hard reset** (cleanest)
+- If pushed → suggest **revert** (history-safe)
+- If the user is unsure → suggest **soft reset** (recoverable)
 
-`AskUserQuestion` ile mod onayla:
+Confirm the mode with `AskUserQuestion`:
 
-> "Onerilen mod: <mod>. Devam etmek istiyor musunuz?"
+> "Suggested mode: <mode>. Do you want to continue?"
 
 ---
 
-## Step 5 — Rollback Uygula
+## Step 5 — Apply Rollback
 
 ### 5.1 — Hard Reset
 
 ```bash
-cd ../Codebase && git reset --hard <secilen-ref>
+cd ../Codebase && git reset --hard <selected-ref>
 ```
 
-> **DIKKAT:** Bu komuttan sonra checkpoint'ten sonraki tum commit'ler erisilemez olur (reflog haric).
+> **WARNING:** After this command, all commits after the checkpoint become unreachable (except via reflog).
 
 ### 5.2 — Revert
 
-> **ONEMLI:** Checkpoint, kotu commit'ten ONCEKI saglam HEAD'dir. Revert etmek istedigimiz checkpoint SHA'si DEGIL, checkpoint sonrasi gelen commit'lerdir. Bu yuzden range syntax kullanilir.
+> **IMPORTANT:** The checkpoint is the healthy HEAD BEFORE the bad commit. What we want to revert is NOT the checkpoint SHA, but the commits that came after the checkpoint. That is why range syntax is used.
 
-Checkpoint sonrasi tek commit varsa (HEAD = kotu commit):
+If there is a single commit after the checkpoint (HEAD = bad commit):
 ```bash
 cd ../Codebase && git revert --no-edit HEAD
 ```
 
-Checkpoint sonrasi birden fazla commit varsa (range — checkpoint dahil DEGIL, HEAD dahil):
+If there are multiple commits after the checkpoint (range — checkpoint NOT included, HEAD included):
 ```bash
-cd ../Codebase && git revert --no-edit <secilen-ref>..HEAD
+cd ../Codebase && git revert --no-edit <selected-ref>..HEAD
 ```
 
-> **DIKKAT:** `git revert --no-edit <secilen-ref>` (range YOK) YANLIS — bu checkpoint'in kendisini geri alir, kotu commit'i degil.
+> **WARNING:** `git revert --no-edit <selected-ref>` (NO range) is WRONG — that reverts the checkpoint itself, not the bad commit.
 
 ### 5.3 — Soft Reset
 
 ```bash
-cd ../Codebase && git reset --soft <secilen-ref>
+cd ../Codebase && git reset --soft <selected-ref>
 ```
 
-Sonra kullaniciya bildir: "Degisiklikler stage'de korunuyor. Inceleyip yeni commit yapabilirsiniz."
+Then tell the user: "Changes are kept in the stage. You can inspect and make a new commit."
 
 ---
 
-## Step 6 — Dogrulama
+## Step 6 — Verification
 
-### 6.1 — HEAD Konumu
+### 6.1 — HEAD Position
 
 ```bash
 cd ../Codebase && git log -1 --format='%H %s'
 ```
 
-Ciktinin beklenen SHA'ya esit oldugunu dogrula.
+Verify the output matches the expected SHA.
 
-### 6.2 — Calisma Agaci
+### 6.2 — Working Tree
 
 ```bash
 cd ../Codebase && git status
 ```
 
-Modu hard reset ise: clean olmali.
-Modu revert ise: yeni revert commit gorunmeli.
-Modu soft reset ise: stage'de degisiklikler olmali.
+If mode is hard reset: should be clean.
+If mode is revert: a new revert commit should appear.
+If mode is soft reset: changes should be staged.
 
-### 6.3 — Test
+### 6.3 — Tests
 
-Kritik testleri calistir:
+Run critical tests:
 
 ```bash
-cd ../Codebase && <test_komutu>
+cd ../Codebase && <test_command>
 ```
 
-Test BASARISIZ ise kullaniciya bildir — rollback'in koka inmesi gerekebilir.
+If tests FAIL, tell the user — the rollback may need to go deeper.
 
 ---
 
-## Step 7 — Backlog Notu
+## Step 7 — Backlog Note
 
 ```bash
-backlog task edit <aktif-task-id> --append-notes "[ROLLBACK] <secilen-ref> — mod: <hard|revert|soft>"
+backlog task edit <active-task-id> --append-notes "[ROLLBACK] <selected-ref> — mode: <hard|revert|soft>"
 ```
 
-Eger aktif task yoksa, yapilan rollback'i kayıt altina al:
+If there is no active task, record the rollback:
 
 ```bash
 backlog task create \
-  "rollback: <commit-ozeti>" \
-  --description "Checkpoint <ref> uygulandi (<mod>)" \
+  "rollback: <commit-summary>" \
+  --description "Checkpoint <ref> applied (<mode>)" \
   --priority "low" \
   --labels "rollback,recovery" \
   -s "Done"
@@ -242,50 +242,51 @@ backlog task create \
 
 ---
 
-## Step 8 — Kullanici Raporu
+## Step 8 — User Report
 
 ```
-## Rollback Raporu
+## Rollback Report
 
-### Geri Donulen Checkpoint
+### Restored Checkpoint
 - **Ref:** `refs/checkpoints/agent/<id>-<ts>`
 - **SHA:** `<short-sha>`
-- **Konu:** `<commit-konusu>`
-- **Tarih:** `<iso-tarih>`
+- **Subject:** `<commit-subject>`
+- **Date:** `<iso-date>`
 
-### Mod
-- **Secilen:** `<hard|revert|soft>`
-- **Gerekce:** `<push edildi mi / kullanıcı tercihi>`
+### Mode
+- **Selected:** `<hard|revert|soft>`
+- **Reason:** `<was it pushed / user choice>`
 
-### Sonuc
-- HEAD: `<yeni-sha>`
-- Calisma agaci: `<temiz|stage var|değişiklik var>`
-- Testler: `<gecti|kaldi|calistirilmadi>`
+### Result
+- HEAD: `<new-sha>`
+- Working tree: `<clean|staged|dirty>`
+- Tests: `<passed|failed|not-run>`
 
 ### Backlog
-- Not eklenen task: `#<id>`
+- Task with note: `#<id>`
 
-> Geri yükleme tamamlandi. Inceleme için: `git log -5`
+> Restore finished. Inspect with: `git log -5`
 ```
+
+Commit completed non-sensitive work in the same session without asking. Do not push unless the user asks.
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-1. **Onaysiz reset/revert YASAK** — Hicbir destruktif komut kullanici onayi olmadan calisamaz.
-2. **Calisma agaci temiz olmalı** — `git status --porcelain` cikti varsa once stash veya iptal.
-3. **Push kontrolu zorunlu** — Pushed commit icin hard reset varsayilan DEGIL; revert oner.
-4. **Tek mod tek seferde** — `reset` ve `revert` ayni rollback'te birlestirilmez.
-5. **Reflog garantisi** — Hard reset sonrasi kullaniciya hatirlat: kayip commit'ler `git reflog` ile 90 gun erisilebilir.
-6. **Codebase yolu** — Tum git islemleri `../Codebase/` icinde. Agentbase'de git YOK.
-7. **Backlog kayit** — Her rollback ya mevcut task notuna ya da yeni task'a kaydedilir — auditability icin.
-8. **Kucuk adim** — Coklu checkpoint birbirine yakinsa tek tek rollback uygula, toplu degil.
-9. **Hata durumunda durdur** — `git reset/revert` fail olursa devam etme, kullaniciya bildir ve manuel inceleme iste.
-10. **Guvenlik** — Credential, secret iceren commit'ler rollback ile geri gelebilir. Secret detection çağır veya uyarı ver.
+1. **No unapproved reset/revert** — No destructive command may run without user approval.
+2. **The working tree must be clean** — if `git status --porcelain` prints anything, stash or cancel first.
+3. **Push check is mandatory** — hard reset is NOT the default for a pushed commit; suggest revert.
+4. **One mode at a time** — `reset` and `revert` are not combined in the same rollback.
+5. **Reflog guarantee** — After hard reset, remind the user: lost commits are reachable via `git reflog` for 90 days.
+6. **Codebase path** — All git operations run inside `../Codebase/`. There is NO git in Agentbase.
+7. **Backlog record** — Every rollback is recorded either on an existing task note or a new task — for auditability.
+8. **Small steps** — If multiple checkpoints are close together, roll back one at a time, not in bulk.
+9. **Stop on error** — If `git reset/revert` fails, do not continue; tell the user and ask for manual inspection.
+10. **Security** — a rollback can restore a commit that contains a secret. Warn before restoring it.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->

@@ -1,28 +1,27 @@
-# CodeIgniter 4 Kodlama Kurallari
+# CodeIgniter 4 Coding Rules
 
-> Bu kurallar CodeIgniter 4 kullanan projeler icin gecerlidir.
-> `backend/php` aile kurallari bu dosyayla birlikte uygulanir.
+> These rules apply to projects that use CodeIgniter 4.
+> `backend/php` family rules apply together with this file.
 
-## Konfigurasyon ve Ortam
+## Configuration and Environment
 
-- Environment ayarlari `.env` ve `app/Config/*` uzerinden yonetilmeli.
-- Secret degerleri `Config` veya env katmani disinda hardcode etme.
-- Framework davranisini degistiren config override'lari acik ve izlenebilir olmali.
+- Environment settings must be managed through `.env` and `app/Config/*`.
+- Do not hardcode secret values outside the `Config` or env layer.
+- Config overrides that change framework behavior must be explicit and traceable.
 
-## Controller, Validation ve Service Ayrimi
+## Controller, Validation, and Service Separation
 
-- Controller'lar request/response odakli ince katman olarak kalmali.
-- Validation `Validation` servisi veya request seviyesinde acikca tanimlanmali.
-- Is logigini controller veya model icinde buyutmek yerine service/library siniflarina tasi.
+- Controllers should remain a thin request/response-focused layer.
+- Validation must be defined explicitly via the `Validation` service or at the request level.
+- Move business logic to service/library classes instead of growing it inside controllers or models.
 
-## Filter ve Yetkilendirme
+## Filter and Authorization
 
-- Auth, rate-limit, CORS veya benzeri cross-cutting davranislar filter katmaninda tanimlanmali.
-- Endpoint korumasini controller ici `if` bloklarina dagitma.
+- Auth, rate-limit, CORS, and similar cross-cutting behavior must be defined in the filter layer.
+- Do not scatter endpoint protection into `if` blocks inside controllers.
 
-## Model ve Response Deseni
+## Model and Response Pattern
 
-- Model'ler veri erisim ve persistence katmanina odaklanmali.
-- API endpoint'lerinde response sekli tutarli olmali; hata cevaplari tek bir kontrata baglanmali.
-- Entity veya raw array kullanimi ekip standardina gore net olmali; iki yaklasimi ayni feature icinde karistirma.
-
+- Models should focus on data access and persistence.
+- API endpoint response shapes must be consistent; error responses must follow a single contract.
+- Entity vs raw array usage must be clear per team standard; do not mix both approaches inside the same feature.

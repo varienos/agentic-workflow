@@ -62,9 +62,9 @@ describe('kutsal kural regressions', () => {
     for (const relativePath of COMMAND_FILES) {
       const content = read(relativePath);
 
-      assert.match(content, /Codebase e config YAZMA/);
-      assert.match(content, /Git sadece Codebase de/);
-      assert.match(content, /Codebase OKUNUR, config YAZILMAZ/);
+      assert.match(content, /Do not write config into Codebase/);
+      assert.match(content, /Git runs only in Codebase/);
+      assert.match(content, /Codebase is readable; config is not written there/);
     }
   });
 
@@ -72,10 +72,10 @@ describe('kutsal kural regressions', () => {
     for (const relativePath of AGENT_FILES) {
       const content = read(relativePath);
 
-      assert.match(content, /## Calisma Siniri/);
-      assert.match(content, /Codebase icinde `\.claude\/` dizini OLUSTURAMAZ/);
-      assert.match(content, /`CLAUDE\.md`, `\.mcp\.json`, `\.claude-ignore` YAZAMAZ/);
-      assert.match(content, /Tum agent config dosyalari Agentbase\/\.claude\/ altinda yasar/);
+      assert.match(content, /## Working boundary/);
+      assert.match(content, /Cannot create a `\.claude\/` directory inside Codebase/);
+      assert.match(content, /Cannot write `CLAUDE\.md`, `\.mcp\.json`, or `\.claude-ignore`/);
+      assert.match(content, /All agent config files live under Agentbase\/\.claude\//);
     }
   });
 
@@ -83,10 +83,10 @@ describe('kutsal kural regressions', () => {
     for (const relativePath of CODEBASE_CONTEXT_FILES) {
       const content = read(relativePath);
 
-      assert.match(content, /Kutsal Kurallar:/);
-      assert.match(content, /Config dosyalari SADECE Agentbase icinde yasar/);
-      assert.match(content, /Codebase icinde `?\.claude\/`? OLUSTURULMAZ/);
-      assert.match(content, /Git sadece Codebase de calisir/);
+      assert.match(content, /Invariant rules:/);
+      assert.match(content, /Config files live only inside Agentbase/);
+      assert.match(content, /A `?\.claude\/`? directory is not created inside Codebase/);
+      assert.match(content, /Git runs only in Codebase/);
     }
   });
 
@@ -94,11 +94,11 @@ describe('kutsal kural regressions', () => {
     const memorize = read('templates/core/commands/memorize.skeleton.md');
     const serviceDocs = read('templates/core/agents/service-documentation.skeleton.md');
 
-    assert.match(memorize, /Agentbase \.claude\/memory\/ dizini icine yaz/);
-    assert.match(memorize, /Codebase icine hafiza dosyasi YAZMA/);
+    assert.match(memorize, /Write into the Agentbase \.claude\/memory\/ directory/);
+    assert.match(memorize, /Do not write memory files into Codebase/);
 
-    assert.match(serviceDocs, /Agentbase root altindaki dokumanlar/);
-    assert.match(serviceDocs, /Codebase icinde yeni dokuman veya config dosyasi YAZMA/);
+    assert.match(serviceDocs, /documents under the Agentbase root/);
+    assert.match(serviceDocs, /Do not write new documents or config files inside Codebase/);
   });
 
   it('MEMORY_PATH generatoru Agentbase icindeki hafiza yolunu aciklar ve unsafe override lari reddeder', () => {
@@ -108,8 +108,8 @@ describe('kutsal kural regressions', () => {
       project: { memory_path: '../Codebase/.claude/memory' },
     });
 
-    assert.match(output, /Agentbase \.claude\/memory\/ dizini/);
-    assert.match(output, /Codebase icine hafiza dosyasi yazilmaz/);
+    assert.match(output, /Agentbase \.claude\/memory\/ directory/);
+    assert.match(output, /Memory files are not written into Codebase/);
     assert.doesNotMatch(unsafeOutput, /\.\.\/Codebase\/\.claude\/memory/);
     assert.match(unsafeOutput, /`\.claude\/memory`/);
   });
@@ -132,13 +132,13 @@ describe('kutsal kural regressions', () => {
     const bootstrap = read('.claude/commands/bootstrap.md');
 
     assert.match(bootstrap, /CODEBASE_CONTEXT/);
-    assert.match(bootstrap, /Kutsal Kurallar:/);
-    assert.match(bootstrap, /Config dosyalari SADECE Agentbase icinde yasar/);
-    assert.match(bootstrap, /Codebase icinde \.claude\/ OLUSTURULMAZ/);
-    assert.match(bootstrap, /Git sadece Codebase de calisir/);
-    assert.match(bootstrap, /\.claude\/commands\/ \(16 core command dosyasi\)/);
+    assert.match(bootstrap, /Invariant rules:/);
+    assert.match(bootstrap, /Config files live only inside Agentbase/);
+    assert.match(bootstrap, /A \.claude\/ directory is not created inside Codebase/);
+    assert.match(bootstrap, /Git runs only in Codebase/);
+    assert.match(bootstrap, /\.claude\/commands\/ \(16 core command files\)/);
     assert.match(bootstrap, /codex-verify\.skeleton\.md/);
-    assert.match(bootstrap, /\.claude\/agents\/ \(8 core \+ uzman agent'lar\)/);
+    assert.match(bootstrap, /\.claude\/agents\/ \(8 core \+ specialist agents\)/);
     assert.match(bootstrap, /api-smoke\.skeleton\.md/);
     assert.match(bootstrap, /service-documentation\.skeleton\.md/);
     assert.match(bootstrap, /docker-pre-deploy\.skeleton\.md/);
@@ -157,7 +157,7 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     assert.doesNotMatch(content, /^\*-wt-\*\/$/m);
     // ROOT-ANCHORED kilidi (Finding 2): anchorsuz bare satirlar bulunmamali
     assert.doesNotMatch(content, /^Codebase\/?$/m);
-    assert.match(content, /Codebase'i \*\*ayrica\*\* klonlar\/baglar/);
+    assert.match(content, /clones or links Codebase \*\*separately\*\*/);
     assert.doesNotMatch(content, /her sey gelir|her şey gelir/);
   });
 
@@ -175,7 +175,7 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     }).trim().split('\n').filter(Boolean);
 
     assert.deepEqual(trackedCodebaseFiles, ['Codebase/.gitkeep']);
-    assert.match(repoGitignore, /Template repo placeholder'i/);
+    assert.match(repoGitignore, /Template repo placeholder/);
     assert.match(repoGitignore, /^Codebase\/\*$/m);
     assert.match(repoGitignore, /^!Codebase\/\.gitkeep$/m);
     assert.match(repoGitignore, /^\/Codebase-wt-\*\/$/m);
@@ -221,24 +221,21 @@ describe('iki-repo teslimat modeli (Sik 1 — TASK-237)', () => {
     }
   });
 
-  it('bootstrap.md iki-repo teslimat modelini, ADIM 6.6 yi ve ust-kok ajan sinirini icerir', () => {
+  it('bootstrap.md iki-repo teslimat modelini, STEP 6.6 yi ve ust-kok ajan sinirini icerir', () => {
     const bootstrap = read('.claude/commands/bootstrap.md');
 
-    // KUTSAL KURALLAR madde 1 ek netlestirmesi
-    assert.match(bootstrap, /Iki-repo teslimat modeli/);
-    assert.match(bootstrap, /ust-kok \(gelistirici\) reposuna ASLA dokunmaz/);
-    // ADIM 6.6 + proje-koku .gitignore mekanizmasi
-    assert.match(bootstrap, /## ADIM 6\.6/);
+    assert.match(bootstrap, /Two-repo delivery model/);
+    assert.match(bootstrap, /never touches the parent \(developer\) repository/);
+    assert.match(bootstrap, /## STEP 6\.6/);
     assert.match(bootstrap, /root-gitignore\.skeleton/);
     assert.match(bootstrap, /AGENTIC-WORKFLOW-ROOT-GITIGNORE/);
-    // GATE J
     assert.match(bootstrap, /GATE J:/);
     assert.match(bootstrap, /grep -q "AGENTIC-WORKFLOW-ROOT-GITIGNORE" \.\.\/\.gitignore/);
     assert.match(bootstrap, /grep -Eq "\^\/Codebase\/\?\$" \.\.\/\.gitignore/);
     assert.match(bootstrap, /grep -Eq "\^\/Codebase-wt-\\\*\/\$" \.\.\/\.gitignore/);
-    // Cekirdek kutsal kural ifadesi korunuyor (regresyon guvencesi)
-    assert.match(bootstrap, /Git sadece Codebase de calisir/);
+    assert.match(bootstrap, /Git runs only in Codebase/);
     assert.doesNotMatch(bootstrap, /kloduyla/);
+    assert.doesNotMatch(bootstrap, /uv tool install graphifyy/);
   });
 
   it('Gate J kosulu sentinel-only veya yorumdaki Codebase ile false-pass vermez', () => {

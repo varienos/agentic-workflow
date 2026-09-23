@@ -68,13 +68,13 @@ describe('generate.js CLI entegrasyon', () => {
   it('eksik manifest ile exit code 1 ve hata mesaji', () => {
     const result = runGenerate(['nonexistent.yaml']);
     assert.strictEqual(result.status, 1);
-    assert.ok(result.stderr.includes('bulunamadi'), 'bulunamadi hata mesaji olmali');
+    assert.ok(result.stderr.includes('not found'), 'missing-manifest error should say not found');
   });
 
   it('argumansiz calistirmada kullanim mesaji ve exit 1', () => {
     const result = runGenerate([]);
     assert.strictEqual(result.status, 1);
-    assert.ok(result.stderr.includes('Kullanim'), 'kullanim mesaji olmali');
+    assert.ok(result.stderr.includes('Usage'), 'usage message should be present');
   });
 
   it('--dry-run dosya yazmadan basariyla cikiyor', t => {

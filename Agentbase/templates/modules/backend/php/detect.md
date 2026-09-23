@@ -1,4 +1,4 @@
-# PHP Backend Ailesi Tespit Kurallari
+# PHP Backend Family Detection Rules
 
 ## Checks
 
@@ -12,7 +12,7 @@
 
 ## Variants
 
-| Framework | Tespit Dosyasi | Oncelik |
+| Framework | Detection File | Priority |
 |-----------|----------------|---------|
 | Laravel | `backend/php/laravel/detect.md` | 1 |
 | CodeIgniter 4 | `backend/php/codeigniter4/detect.md` | 2 |
@@ -23,5 +23,5 @@
 
 ## Affects Core
 
-- task-hunter: `composer`, `phpunit` veya framework test komutlari icin verification convention'i eklenir
-- CLAUDE.md: PHP backend ortak kurallari bolumu eklenir
+- task-hunter: Verification convention for `composer`, `phpunit`, or framework test commands is added
+- CLAUDE.md: PHP backend shared rules section is added

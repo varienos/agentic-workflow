@@ -1,4 +1,4 @@
-# Flutter Modul Tespiti
+# Flutter Module Detection
 
 ## Checks
 
@@ -16,6 +16,6 @@
 
 ## Affects Core
 
-- code-review: Flutter/Dart anti-pattern kontrolu eklenir (gereksiz rebuild, dynamic tip, print kullanimi vb.)
-- task-hunter: IMPLEMENTATION_RULES'a Flutter widget ve state yonetim kurallari eklenir
-- settings.json: Flutter/Dart plugin konfigurasyonu eklenir
+- code-review: Flutter/Dart anti-pattern check is added (unnecessary rebuild, dynamic type, print usage, etc.)
+- task-hunter: Flutter widget and state management rules are added to IMPLEMENTATION_RULES
+- settings.json: Flutter/Dart plugin configuration is added

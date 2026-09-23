@@ -1,128 +1,127 @@
-# Workflow Update — Incremental Drift Guncelleme
+# Workflow Update — Incremental Drift Update
 
-> Mevcut workflow konfigurasyonunu Codebase'in guncel durumuyla karsilastirir.
-> Sadece degisen parcalari gunceller — tam re-bootstrap YAPMAZ.
-> Kullanim: `/workflow-update`
+> Compares the current workflow configuration with the current state of Codebase.
+> Updates only the changed pieces — does NOT do a full re-bootstrap.
+> Usage: `/workflow-update`
 
 ---
 
-## ADIM 1 — Mevcut Manifest'i Oku
+## STEP 1 — Read the Current Manifest
 
 ```
-Docbase/agentic/project-manifest.yaml dosyasini oku.
-meta.last_analyzed ve meta.codebase_hash alanlarini not al.
-Manifest yoksa: "Manifest bulunamadi. Once /bootstrap calistirin." uyarisi ver.
+Read Docbase/agentic/project-manifest.yaml.
+Note meta.last_analyzed and meta.codebase_hash.
+If the manifest is missing: warn "Manifest not found. Run /bootstrap first."
 ```
 
-## ADIM 2 — Codebase'i Yeniden Tara
+## STEP 2 — Rescan Codebase
 
-Codebase dizinini tara ve su bilgileri topla:
-- Mevcut dependency'ler (package.json, composer.json, pyproject.toml vb.)
-- Aktif framework/ORM/deploy araclari
-- Subproject dizinleri ve test komutlari
-- Root config dosyalari hash'i
+Scan the Codebase directory and collect:
+- Current dependencies (package.json, composer.json, pyproject.toml, etc.)
+- Active framework/ORM/deploy tools
+- Subproject directories and test commands
+- Root config file hash
 
-**Bu adim yazma YAPMAZ — sadece okuma ve analiz.**
+**This step does NOT write — read and analyze only.**
 
-## ADIM 3 — Drift Raporu
+## STEP 3 — Drift Report
 
-Mevcut manifest ile yeni analiz arasindaki farklari raporla:
+Report differences between the current manifest and the new analysis:
 
 ```
-## Workflow Drift Raporu
+## Workflow Drift Report
 
-### Yeni Tespit Edilen (+)
-- +deploy/docker (Dockerfile eklenmis)
-- +mobile/react-native (react-native dependency eklenmis)
+### Newly Detected (+)
+- +deploy/docker (Dockerfile added)
+- +mobile/react-native (react-native dependency added)
 
-### Kaldirilan (-)
-- -orm/prisma (prisma dependency cikarilmis)
+### Removed (-)
+- -orm/prisma (prisma dependency removed)
 
-### Degisen (~)
-- ~api subproject: test komutu jest → vitest
+### Changed (~)
+- ~api subproject: test command jest → vitest
 
-### Degismeyen
-- orm/eloquent, backend/nodejs/express (ayni)
+### Unchanged
+- orm/eloquent, backend/nodejs/express (same)
 
-Uygulamak istiyor musunuz? (evet / hayir / secmeli)
+Do you want to apply? (yes / no / selective)
 ```
 
-## ADIM 4 — Kullanici Onayi
+## STEP 4 — User Approval
 
-Kullanicinin yaniti:
-- **evet**: Tum degisiklikleri uygula
-- **hayir**: Hicbir sey yapma, raporu kapat
-- **secmeli**: Her degisiklik icin tek tek onayla/reddet
+User response:
+- **yes**: Apply all changes
+- **no**: Do nothing; close the report
+- **selective**: Approve/reject each change one by one
 
-## ADIM 5 — Incremental Guncelleme
+## STEP 5 — Incremental Update
 
-Onaylanan degisiklikler icin:
+For approved changes:
 
-1. **Manifest yedekle**: `project-manifest.yaml.backup` olarak kopyala
-2. **Manifest guncelle**: Eklenen modulleri `modules.active`'e ekle, kaldirilanlari cikar, subproject degisikliklerini yansit
-3. **Sadece degisen modullerin dosyalarini uret**: `node generate.js` ile `--modules <degisen-moduller>` parametresi
-4. **Degismeyen dosyalara DOKUNMA**
-5. **`.claude/custom/` dizinini KORU** — kullanici ozellestirmelerini silme
+1. **Back up the manifest**: copy as `project-manifest.yaml.backup`
+2. **Update the manifest**: add modules to `modules.active`, remove dropped ones, reflect subproject changes
+3. **Generate only changed module files**: `node generate.js` with `--modules <changed-modules>`
+4. **Do NOT touch unchanged files**
+5. **PRESERVE `.claude/custom/`** — do not delete user customizations
 
-## ADIM 6 — Meta Guncelle
+## STEP 6 — Update Meta
 
-Manifest meta bolumunu guncelle:
+Update the manifest meta section:
 ```yaml
 meta:
-  last_analyzed: <simdi>
-  codebase_hash: <yeni-hash>
+  last_analyzed: <now>
+  codebase_hash: <new-hash>
   update_history:
-    - date: <bugun>
+    - date: <today>
       action: update
       changes: ["+deploy/docker", "-orm/prisma", "~api.test_command"]
 ```
 
-## ADIM 7 — Ozet
+## STEP 7 — Summary
 
 ```markdown
-## Workflow Update Tamamlandi
+## Workflow Update Complete
 
-| Degisiklik | Tip | Durum |
+| Change | Type | Status |
 |---|---|---|
-| deploy/docker | +Eklenen | Uygulandi |
-| orm/prisma | -Kaldirilan | Uygulandi |
-| api test komutu | ~Degisen | Uygulandi |
+| deploy/docker | +Added | Applied |
+| orm/prisma | -Removed | Applied |
+| api test command | ~Changed | Applied |
 
-Manifest: Docbase/agentic/project-manifest.yaml (yedek: .backup)
-Uretilen dosyalar: 4 yeni, 2 guncellenen, 0 silinen
+Manifest: Docbase/agentic/project-manifest.yaml (backup: .backup)
+Generated files: 4 new, 2 updated, 0 deleted
 ```
 
 ---
 
-## Zorunlu Kurallar
+## Required Rules
 
-1. **Tam re-bootstrap YAPMA** — Sadece degisen parcalari guncelle.
-2. **Manifest yedegi ZORUNLU** — .backup dosyasi olmadan guncelleme yapma.
-3. **`.claude/custom/` KORU** — Kullanici ozellestirmelerini asla silme veya uzerine yazma.
-4. **Degismeyen dosyalara DOKUNMA** — Drift raporu bos ise hicbir dosyayi degistirme.
-5. **Kullanici onayi ZORUNLU** — Drift raporunu goster, onaysiz degisiklik yapma.
-6. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json` Codebase icinde olusturulmaz.
-7. **Git sadece Codebase de calisir** — Agentbase de `.git` yok.
-8. **Codebase OKUNUR, config YAZILMAZ** — Analiz icin oku, workflow dosyalarini Agentbase e yaz.
+1. **Do NOT full re-bootstrap** — Update only the changed pieces.
+2. **Manifest backup REQUIRED** — Do not update without a .backup file.
+3. **PRESERVE `.claude/custom/`** — Never delete or overwrite user customizations.
+4. **Do NOT touch unchanged files** — If the drift report is empty, change no files.
+5. **User approval REQUIRED** — Show the drift report; do not change without approval.
+6. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json` are not created inside Codebase.
+7. **Git runs only in Codebase** — There is no `.git` in Agentbase.
+8. **Codebase is readable; config is not written there** — Read for analysis; write workflow files to Agentbase.
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Projeye ozel baglam — stack bilgisi, manifest yolu, ozel kurallar
-Gerekli manifest alanlari: project.name, stack.primary, modules.active
-Ornek cikti:
+Description: Project-specific context — stack info, manifest path, special rules
+Required manifest fields: project.name, stack.primary, modules.active
+Example output:
 
-Bu proje {project.name} icin ozellestirilmistir.
+This project is customized for {project.name}.
 Stack: {stack.primary}
 Manifest: Docbase/agentic/project-manifest.yaml
-Aktif moduller: {modules.active listesi}
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Active modules: {modules.active list}
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->

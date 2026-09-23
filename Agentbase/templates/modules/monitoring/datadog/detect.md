@@ -1,4 +1,4 @@
-# Datadog Modul Tespiti
+# Datadog Module Detection
 
 ## Checks
 
@@ -16,5 +16,5 @@
 
 ## Affects Core
 
-- code-review: Tracing/span kontrolu eklenir
-- CLAUDE.md: Datadog kurallari bolumu eklenir
+- code-review: Tracing/span check is added
+- CLAUDE.md: Datadog rules section is added

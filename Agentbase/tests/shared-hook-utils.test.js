@@ -58,13 +58,13 @@ describe('createGuardHook — warn/info', () => {
   it('warn pattern systemMessage uretiyor', () => {
     const script = `
       const { runGuard } = require(${JSON.stringify(UTILS_PATH)});
-      runGuard([{ pattern: /risky/, decision: 'warn', reason: 'Dikkat' }]);
+      runGuard([{ pattern: /risky/, decision: 'warn', reason: 'Caution' }]);
     `;
     const result = runGuardScript(script, { tool_input: { command: 'risky operation' } });
     const output = JSON.parse(result.stdout);
     assert.ok(output.systemMessage);
-    assert.ok(output.systemMessage.includes('UYARI'));
-    assert.ok(output.systemMessage.includes('Dikkat'));
+    assert.ok(output.systemMessage.includes('WARNING'));
+    assert.ok(output.systemMessage.includes('Caution'));
   });
 
   it('info pattern BILGI prefix ile systemMessage uretiyor', () => {
@@ -74,7 +74,7 @@ describe('createGuardHook — warn/info', () => {
     `;
     const result = runGuardScript(script, { tool_input: { command: 'clear cache' } });
     const output = JSON.parse(result.stdout);
-    assert.ok(output.systemMessage.includes('BILGI'));
+    assert.ok(output.systemMessage.includes('INFO'));
   });
 });
 

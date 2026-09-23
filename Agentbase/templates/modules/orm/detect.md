@@ -1,12 +1,12 @@
-# ORM Kategori Tespiti
+# ORM Category Detection
 
-Bu kategori veritabani ORM/migration araclari icin koruma mekanizmalari saglar.
+This category provides protection mechanisms for database ORM/migration tools.
 
 ## Variants
 
-Bootstrap asagidaki varyantlari sirayla kontrol eder. Ilk eslesen aktive edilir:
+Bootstrap checks the following variants in order. The first match is activated:
 
-| Varyant | Tespit Dosyasi | Oncelik |
+| Variant | Detection File | Priority |
 |---------|---------------|---------|
 | Prisma | `orm/prisma/detect.md` | 1 |
 | Eloquent (Laravel) | `orm/eloquent/detect.md` | 2 |
@@ -15,14 +15,14 @@ Bootstrap asagidaki varyantlari sirayla kontrol eder. Ilk eslesen aktive edilir:
 
 ## Provides
 
-- Destructive migration tespiti (DROP TABLE/COLUMN)
-- Tehlikeli komut bloklama
-- Migration dosyasi tutarlilik kontrolu
-- Migration risk tablosu
+- Destructive migration detection (DROP TABLE/COLUMN)
+- Dangerous command blocking
+- Migration file consistency check
+- Migration risk table
 
 ## Affects Core
 
-- task-hunter: VERIFICATION_COMMANDS'a migration kontrolu eklenir
-- workflow-lifecycle: Migration fail protokolu eklenir
-- CLAUDE.md: ORM kurallari bolumu eklenir
-- settings.json: ORM hook tanimlari eklenir
+- task-hunter: Migration check is added to VERIFICATION_COMMANDS
+- workflow-lifecycle: Migration fail protocol is added
+- CLAUDE.md: ORM rules section is added
+- settings.json: ORM hook definitions are added

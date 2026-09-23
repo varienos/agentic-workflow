@@ -86,9 +86,9 @@ describe('generateSection', () => {
 
   it('commit tipleri dogru kategorilerde', () => {
     const section = generateSection('1.0.0', '2026-03-23', commits);
-    assert.ok(section.includes('### Eklenen'));
-    assert.ok(section.includes('### Düzeltilen'));
-    assert.ok(section.includes('### Dokümantasyon'));
+    assert.ok(section.includes('### Added'));
+    assert.ok(section.includes('### Fixed'));
+    assert.ok(section.includes('### Documentation'));
   });
 
   it('scope li commit bold prefix ile gosteriliyor', () => {
@@ -103,9 +103,9 @@ describe('generateSection', () => {
 
   it('feat fix docs siralamasini takip ediyor', () => {
     const section = generateSection('1.0.0', '2026-03-23', commits);
-    const featIdx = section.indexOf('### Eklenen');
-    const fixIdx = section.indexOf('### Düzeltilen');
-    const docsIdx = section.indexOf('### Dokümantasyon');
+    const featIdx = section.indexOf('### Added');
+    const fixIdx = section.indexOf('### Fixed');
+    const docsIdx = section.indexOf('### Documentation');
     assert.ok(featIdx < fixIdx, 'feat fix ten once olmali');
     assert.ok(fixIdx < docsIdx, 'fix docs tan once olmali');
   });
@@ -235,7 +235,7 @@ describe('generateAllSections', () => {
     const unreleasedCommits = getCommits(lastTag, null);
 
     const sections = generateAllSections();
-    const hasUnreleased = sections.some(s => s.includes('[Yayınlanmamış]'));
+    const hasUnreleased = sections.some(s => s.includes('[Unreleased]'));
 
     if (unreleasedCommits.length > 0) {
       assert.ok(hasUnreleased, 'unreleased commit varsa Yayinlanmamis bolumu olmali');

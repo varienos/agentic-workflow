@@ -1,70 +1,74 @@
-# Post-Deploy — Coolify Deploy Dogrulama
+# Post-Deploy — Coolify Deploy Validation
 
-> Coolify uzerinden deploy sonrasinda production ortaminin sagligini dogrular.
-> Kullanim: `/post-deploy`
+> Coolify from user-side validates the production environment's stability after deployment.
+> Usage: `/post-deploy`
 
 ---
 
-## Kural: OTONOM CALIS
+## Invariant Rule: Automation Test
 
-- Kullaniciya soru SORMA — tum kontrolleri sirayla calistir.
-- Hicbir seyi DEGISTIRME — sadece kontrol et ve raporla.
-- Tum adimlari CALISTIR — bir adimi atlama.
-- Rollback gerekirse TALIMAT ver, kendin yapma.
+- Perform sequential tests on all controls — do not change anything.
+- Do not modify any element — only test and report.
+- Execute all steps — complete one step.
+- If rollback is required, follow instructions — do not attempt to make changes yourself.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** SaaS API platformu (NestJS + PostgreSQL)
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields:
+  - project.description
+  - stack.primary
+  - project.structure
+  - project.subprojects
+Example output:
+## Project Overview
+- **Project:** SaaS API platform (NestJS + PostgreSQL)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Redis
 - **Deploy:** Coolify (self-hosted, Hetzner VPS)
-- **Yapi:**
+- **Architecture:**
   - `apps/api/` — NestJS backend
   - `apps/web/` — Next.js frontend
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
--->
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Git only operates on the codebase -->
 
 ---
 
-## Step 1 — Deploy Bekleme Suresi
+## Step 1 — Deployment Wait Period
 
-Coolify build + deploy isleminin tamamlanmasini bekle:
-
+Wait for the Coolify build + deployment process to complete:
 ```bash
 echo "Coolify build + deploy bekleniyor (90 saniye)..." && sleep 90
 ```
-
-> **NOT:** Coolify build suresi projeye gore degisir. Tipik sureler:
-> - Basit Node.js uygulamasi: 30-60 saniye
-> - Multi-stage Docker build: 60-120 saniye
-> - Monorepo build: 90-180 saniye
+> **NOT:** The build duration changes based on the project. Typical times:
 >
-> Build tamamlandigini Coolify dashboard'dan kontrol edebilirsiniz.
+> - Simple Node.js application: 30-60 seconds
+> - Multi-stage Docker build: 60-120 seconds
+> - Monorepo build: 90-180 seconds
+>
+> You can control whether the build has completed by checking Coolify dashboard.
 
 ---
 
 ## Step 2 — Health Check
 
-Production ortaminin saglik durumunu kontrol et.
+Check the health status of your production environment.
 
 <!-- GENERATE: HEALTH_CHECK_URL
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments.health_check, environments.production_url
-Ornek cikti:
-### Health Check Endpoint'leri
+Description: This section is populated with manifest data from Bootstrap.
+Required manifest fields: environments.health_check, environments.production_url
+Example output:
+### Health Check Endpoints
 
-| Servis | URL | Beklenen | Timeout |
+| Service | URL | Expected Response | Timeout |
 |---|---|---|---|
 | API | `https://api.example.com/health` | HTTP 200 + `{"status":"ok"}` | 10s |
 | Web | `https://www.example.com` | HTTP 200 | 10s |
 
+---
 ```bash
 # API health check
 curl -sf --max-time 10 https://api.example.com/health | jq .
@@ -72,300 +76,242 @@ curl -sf --max-time 10 https://api.example.com/health | jq .
 # Web health check
 curl -sf --max-time 10 -o /dev/null -w "%{http_code}" https://www.example.com
 ```
--->
 
-### Retry Mekanizmasi
+### Retry Mechanism
 
-Her endpoint icin 3 deneme yap (15 saniye arayla — Coolify container'in ayaga kalkmasi icin daha uzun aralik):
+For each endpoint, perform three retries (15 seconds apart) to avoid Coolify container restarts:
 
 ```
-Deneme 1 → basarisiz → 15 saniye bekle
-Deneme 2 → basarisiz → 15 saniye bekle
-Deneme 3 → basarisiz → FAIL
+Deneme 1 → failed → wait 15 seconds
+Deneme 2 → failed → wait 15 seconds
+Deneme 3 → failed → FAIL
 ```
+### Invariant Rules
 
-3 denemede de basarisiz olursa FAIL olarak isaretle.
+Invariant rules:
 
-### Coolify-Spesifik Health Check Bilgisi
+3. If the first test fails, mark it as FAIL.
 
-Coolify kendi health check mekanizmasina sahiptir. Eger Coolify health check basarisiz olursa:
-- Yeni container otomatik olarak durdurulur
-- Eski container korunur ve trafik eski container'a yonlendirilir
-- Bu durumda production hala eski versiyonda calisir
+### Coolify-Specific Health Check Information
 
-Bu komutu (`/post-deploy`) Coolify'in build + health check'i gectiginden emin olduktan sonra calistiriniz.
+Coolify has a health check mechanism. If the Coolify health check fails:
+- New container will be automatically stopped
+- Old container will be preserved and traffic will be redirected to the old version
+- In this case, production will still run on the old version
+
+Run this command (`/post-deploy`) after verifying that Coolify's build and health check are successful.
+
+>>>
 
 ---
 
 ## Step 3 — Smoke Test
 
-Temel kullanici akislarinin calistigini dogrula.
+Verify basic user workflows.
 
 <!-- GENERATE: SMOKE_TEST_ENDPOINTS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments, api_endpoints, project.api_prefix
-Ornek cikti:
-## Smoke Test Endpoint'leri
+Explanation: This section is populated by Bootstrap using manifest data.
+Required manifest fields: environments, api_endpoints, project.api_prefix
+Example output:
+## Smoke Test Endpoints
 
-| Endpoint | Beklenen | Auth |
+| Endpoint | Expected | Auth |
 |---|---|---|
 | `GET https://api.example.com/health` | 200 OK | — |
-| `GET https://api.example.com/api/v1/users` | 200 | Authorization gerekli |
-| `POST https://api.example.com/api/v1/orders` | 201 | Authorization gerekli |
+| `GET https://api.example.com/api/v1/users` | 200 | Authorization necesario |
+| `POST https://api.example.com/api/v1/orders` | 201 | Authorization necessário |
 | `GET https://api.example.com/api/v1/products` | 200 | — |
+
 -->
 
-Her endpoint icin HTTP status code ve response body kontrol et. Beklenenden farkli bir yanit varsa WARN olarak isaretle.
+For each endpoint, check the HTTP status code and response body. If there is a difference from the expected response, warn.
 
 ---
 
-## Step 4 — Migration Durumu
+## Step 4 — Migration Status
 
-Veritabani migration'larinin basariyla uygulandigini dogrula.
+Verify that database migrations were successful.
 
-Coolify'da migration genellikle `entrypoint.sh` icerisinde container basladiginda calistirilir. Bu adim migration'in tamamlandigini dogrulamali:
+In Coolify, migration typically runs when the container starts up in `entrypoint.sh`. Verify that this step completes successfully:
 
-```bash
-# Prisma migration durumu (lokal baglanti veya SSH uzerinden)
-cd ../Codebase && npx prisma migrate status 2>/dev/null || echo "Prisma kontrol edilemiyor"
-```
-
-Kontrol et:
-- [ ] Tum migration'lar uygulanmis mi?
-- [ ] Bekleyen migration var mi?
-- [ ] entrypoint.sh icinde migration komutu var mi?
-
-```bash
-# entrypoint.sh icindeki migration komutunu kontrol et
-cd ../Codebase && grep -E 'migrate|migration' entrypoint.sh 2>/dev/null || echo "entrypoint.sh icinde migration komutu yok"
-```
-
-> **UYARI:** Eger entrypoint.sh icinde migration komutu yoksa ve yeni migration varsa, bu migration'lar UYGULANMAMIS olabilir.
-
----
-
-## Step 5 — Versiyon Dogrulama
-
-Deploy edilen versiyonun beklenen versiyon oldugunu dogrula:
-
-```bash
-# Lokal versiyon (son push edilen commit)
+```shell
+# Shell command to check migration status
+# Replace 'path/to/migration/check' with actual path
+bash
+# Path to the migration check
+/path/to/migration/check
+bash
+# Local version (last pushed commit)
 cd ../Codebase && git rev-parse --short HEAD
+## Step 7 — Rollback Guide
+
+> This section is only displayed in case of a DEPLOY_FAIL. Skip DEPLOY_OK or DEPLOY_WARN.
+
+### Method 1 — Coolify Dashboard (Recommended)
+
+
+```
+1. Navigate to the Coolify Dashboard → Project → Select Application
+2. Go to the "Deployments" tab
+3. Find the latest successful deployment (green marked)
+4. Click on the "Redeploy" button
+5. Coolify will create a new container from the old image
+6. Wait for the deployment to complete and verify `/post-deploy`
 ```
 
-Production'daki versiyon kontrolu:
+
+### Method 2 — Coolify API with Rollback
+
 
 ```bash
-# Health endpoint'ten versiyon bilgisi (proje destekliyorsa)
-# curl -sf https://api.example.com/health | jq '.version // .commit // .hash'
-
-# Alternatif: Coolify API ile deploy durumu kontrolu
-# curl -sf -H "Authorization: Bearer $COOLIFY_TOKEN" https://coolify.example.com/api/v1/applications/{uuid}/deployments | jq '.[0]'
-```
-
-Lokal commit hash ile production'daki hash eslesiyorsa PASS. Eslenemiyorsa WARN (versiyon bilgisi health endpoint'ten sunulmuyorsa bu normal olabilir).
-
----
-
-## Step 6 — Sonuc Belirleme
-
-Tum kontrol sonuclarini degerlendirerek nihai durumu belirle:
-
-| Kombinasyon | Sonuc |
-|---|---|
-| Tum kontroller PASS | DEPLOY_OK |
-| Health PASS, smoke kismi FAIL | DEPLOY_WARN |
-| Versiyon dogrulanamadi ama health PASS | DEPLOY_WARN |
-| Health check FAIL (3 denemede) | DEPLOY_FAIL |
-| Migration uygulanmamis | DEPLOY_FAIL |
-| Smoke test tamamen FAIL | DEPLOY_FAIL |
-
----
-
-## Step 7 — Rollback Rehberi
-
-> Bu bolum SADECE DEPLOY_FAIL durumunda gosterilir. DEPLOY_OK veya DEPLOY_WARN'da atla.
-
-### Yontem 1 — Coolify Dashboard (Onerilen)
-
-```
-1. Coolify Dashboard'a git → Proje → Uygulamayi sec
-2. "Deployments" sekmesine git
-3. Son basarili deployment'i bul (yesil isaretli)
-4. "Redeploy" butonuna tikla
-5. Coolify eski image'dan yeni container olusturacak
-6. Deploy tamamlaninca `/post-deploy` ile dogrula
-```
-
-### Yontem 2 — Coolify API ile Rollback
-
-```bash
-# Son basarili deployment'i bul
+# Find the latest successful deployment
 # curl -sf -H "Authorization: Bearer $COOLIFY_TOKEN" \
 #   "https://coolify.example.com/api/v1/applications/{uuid}/deployments" | \
 #   jq '[.[] | select(.status == "finished")] | .[0]'
 
-# Redeploy tetikle
+# Trigger redeployment
 # curl -sf -X POST -H "Authorization: Bearer $COOLIFY_TOKEN" \
 #   "https://coolify.example.com/api/v1/applications/{uuid}/restart"
 ```
 
-### Yontem 3 — Git Revert (Son Care)
 
-```bash
+### Method 3 — Git Revert (Last Resort)
+
+>>>
+bash
 cd ../Codebase
-git log --oneline -5          # Son basarili commit'i bul
-git revert HEAD               # Son commit'i geri al
-git push origin main          # Coolify otomatik olarak yeni build baslatacak
-```
+git log --oneline -5          # Find the most recent successful commit
+git revert HEAD               # Revert to the last commit
+git push origin main          # Automatically start a new build
+- A new container is started → The health check is performed → Failure → The new container is stopped
+- The old container still runs, and traffic is redirected to the previous container
+- In this situation, "rollback" has already occurred, but the root cause needs to be investigated
 
-### Migration Rollback (Gerekirse)
+### Step 8 — Deploy Log
 
-> DIKKAT: Migration rollback risklidir. Sadece bu deploy'da eklenen migration'lar geri alinmali.
-
-```bash
-# Prisma — belirli migration'a geri don
-# cd ../Codebase && npx prisma migrate resolve --rolled-back <migration_name>
-
-# TypeORM
-# cd ../Codebase && npx typeorm migration:revert
-```
-
-Eger yikici migration uygulandiysa (DROP TABLE, DROP COLUMN):
-```
-KRITIK: Yikici migration geri alinamaz. Veri kaybini engellemek icin:
-1. Backup'tan restore yapin
-2. Yeni migration ile eski semaya donun
-3. Asla dogrudan DROP kullanmayin — once yeni kolonu ekle, veriyi tasi, sonra eski kolonu kaldir
-```
-
-### Coolify Otomatik Rollback Notu
-
-Coolify, health check basarisiz oldugunda eski container'i otomatik olarak korur:
-- Yeni container baslatilir → health check calistirilir → basarisiz → yeni container durdurulur
-- Eski container hala calisir, trafik eski container'a yonlendirilir
-- Bu durumda "rollback" zaten gerceklesmistir, ancak root cause arastirilmali
-
----
-
-## Step 8 — Deploy Logu
-
-Deploy sonucunu kaydet.
+Save the deployment result.
 
 <!-- GENERATE: DEPLOY_LOG_PATH
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, conventions.log_path
-Ornek cikti:
-### Log Kaydi
+Description: This section will be filled in by Bootstrap with manifest data.
+Required manifest areas: project.structure, conventions.log_path
+Example output:
+### Log Entry
 
-Deploy sonucunu asagidaki dosyaya kaydet:
+Save the deployment result to the following file:
 
 ```bash
+$ DEPLOY_LOG_PATH
+```
+```bash
 mkdir -p ../.claude/reports/deploys
-echo "$(date '+%Y-%m-%d %H:%M:%S') | $(cd ../Codebase && git rev-parse --short HEAD) | [DURUM] | Coolify | [OZET]" >> ../.claude/reports/deploys/deploy-log.md
+echo "$(date '+%Y-%m-%d %H:%M:%S') | $(cd ../Codebase && git rev-parse --short HEAD) | [STATUS] | Coolify | [SUMMARY]" >> ../.claude/reports/deploys/deploy-log.md
 ```
 
-### Detayli Rapor
 
-Her deploy icin ayri bir dosya olustur:
+### Detailed Report
+
+Create a separate file for each deployment:
+
 
 ```bash
 cat > ../.claude/reports/deploys/deploy-$(date '+%Y%m%d-%H%M%S').md << 'DEPLOY_EOF'
-# Deploy Raporu — {tarih}
+# Deployment Report — {date}
 
+>>>
 - **Commit:** {hash}
 - **Platform:** Coolify
-- **Durum:** {DEPLOY_OK/DEPLOY_WARN/DEPLOY_FAIL}
+- **Status:** {DEPLOY_OK/DEPLOY_WARN/DEPLOY_FAIL}
 - **Health Check:** {PASS/FAIL}
-- **Smoke Test:** {X/Y gecti}
+- **Smoke Test:** {X/Y successful}
 - **Migration:** {PASS/FAIL/N/A}
-- **Versiyon:** {eslesti/eslenemedi}
-- **Notlar:** {ek bilgi}
-DEPLOY_EOF
+- **Version:** {tested/untested}
+- **Notes:** {additional information}
+
+## Log Format (Summary Line):
+
+```
+DATE | COMMIT | STATUS | PLATFORM | SUMMARY
+2024-01-15 14:30:00 | a1b2c3d | DEPLOY_OK | Coolify | 3 characteristics, 0 errors
+2024-01-14 10:00:00 | d4e5f6g | DEPLOY_WARN | Coolify | smoke test 1/3 unsuccessful
 ```
 
-**Log formati (ozet satiri):**
-```
-TARIH | COMMIT | DURUM | PLATFORM | OZET
-2024-01-15 14:30:00 | a1b2c3d | DEPLOY_OK | Coolify | 3 ozellik, 0 hata
-2024-01-14 10:00:00 | d4e5f6g | DEPLOY_WARN | Coolify | smoke test 1/3 basarisiz
-```
-
-**Log dizini:** `../.claude/reports/deploys/`
+## Log Directory: `../.claude/reports/deploys/`
 -->
 
 ---
 
-## Step 9 — Sonuc Raporu
+## Step 9 — Post-Deploy Report
+
 
 ```
-## Post-Deploy Raporu (Coolify)
+## Post-Deploy Report (Coolify)
 
-### Genel Durum: [DEPLOY_OK / DEPLOY_WARN / DEPLOY_FAIL]
-
-### Deploy Bilgileri
-- **Commit:** <hash>
-- **Tarih:** <tarih>
+### Overall Status: [DEPLOY_OK / DEPLOY_WARN / DEPLOY_FAIL]
+```
+### Deployment Information
+- **Commit:** `<hash>`
+- **Date:** `<date>`
 - **Platform:** Coolify (self-hosted)
-- **Build Suresi:** ~<sure> (tahmini)
+- **Build Time:** `~<time>` (estimated)
 
-### Kontrol Sonuclari
+### Control Results
 
-| # | Adim | Durum | Detay |
+| # | Step | Status | Detail |
 |---|---|---|---|
-| 1 | Bekleme | INFO | 90 saniye beklendi |
+| 1 | Waiting | INFO | Expected for 90 seconds |
 | 2 | Health check | PASS/FAIL | ... |
-| 3 | Smoke test | PASS/FAIL | X/Y gecti |
+| 3 | Smoke test | PASS/FAIL | X/Y completed |
 | 4 | Migration | PASS/FAIL/N/A | ... |
-| 5 | Versiyon | PASS/WARN | ... |
+| 5 | Version | PASS/WARN | ... |
 
-### Basarisiz Kontroller
-[varsa detayli liste — hangi endpoint, hangi hata, HTTP status]
+### Failed Controls
+[various detailed list — which endpoint, what error, HTTP status]
 
-### Rollback Gerekli mi?
-[EVET: yukaridaki rollback rehberini takip edin / HAYIR]
+### Rollback Required?
+[YES: follow the rollback guide above / NO]
 
-### Coolify Notlari
+### Coolify Notes
 - Dashboard: [Coolify dashboard URL]
-- Eger health check Coolify tarafinda da basarisiz olduysa, eski container otomatik korunmustur
-- Sonraki deploy icin root cause cozulmelidir
-```
+- If health check fails on Coolify side as well, previous container will be automatically restored
+- Root cause must be fixed for next deploy
+| Health Check Failure | Deployment Failure | Rollback Required |
+| Smoke Test Partial Failure | Deployment Warning | Investigate Affected Features |
+| Smoke Test Complete Failure | Deployment Failure | Rollback Required |
+| Migration Failure | Deployment Failure | Rollback Required, Migration Control Required |
+| Version Incompatible | Deployment Warning | Control Deploy Status from Dashboard |
+| Platform Issue | Deployment Warning | Check Server Resources |
 
----
+## Mandatory Rules
 
-## Karar Matrisi
+### Invariant Rules (Always Applied)
 
-| Durum | Karar | Aksiyon |
-|---|---|---|
-| Tum kontroller PASS | DEPLOY_OK | Deploy basarili |
-| Health check FAIL | DEPLOY_FAIL | Rollback gerekli |
-| Smoke test kismi FAIL | DEPLOY_WARN | Etkilenen ozellikler arastirilmali |
-| Smoke test tamamen FAIL | DEPLOY_FAIL | Rollback gerekli |
-| Migration FAIL | DEPLOY_FAIL | Rollback gerekli, migration kontrol edilmeli |
-| Versiyon uyumsuz | DEPLOY_WARN | Coolify dashboard'dan deploy durumu kontrol edilmeli |
-| Platform sorunlu | DEPLOY_WARN | Sunucu kaynaklari kontrol edilmeli |
+1. **Codebase and Config Write** — Only `.claude/`, `CLAUDE.md`, `.mcp.json`, and `.claude-ignore` files are created within the Agentbase. Creating a `.claude/` directory outside of the Codebase is **FORBIDDEN**.
+2. **Git Operations in Codebase** — All Git operations (commit, push, branch) should be performed within the `../Codebase/` directory. The Agentbase does not have Git.
+3. **Codebase Readable, Config Write-Forbidden** — Project files (`src/`, `app/`, etc.) are readable and can be modified if necessary. Config files (`.claude/`, `CLAUDE.md`) are NOT ALLOWED within the Codebase.
 
----
+1. **Ask Question** — All controllers will silently run, only reporting the result.
+2. **Modify Change** — This command only checks, does not modify anything.
+3. **Rollback** — If rollback is required, follow instructions provided. Do not automate.
+4. **Execute all steps** — Run all steps even if one fails.
+5. **Deploy Log Required** — A log must be created for Step 8 in every situation.
+6. **Result Report Required** — A report must be generated for Step 9 in every situation.
+7. **Rollback Guide Only for Deploy Fail** — The rollback section is not displayed when `DEPLOY_OK/WARN` conditions are met.
 
-## Zorunlu Kurallar
+### Invariant Rules (Valid in Every Command)
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+1. **Do Not Write Config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/` directory inside Codebase or writing `../Codebase/CLAUDE.md` is **FORBIDDEN**.
+2. **Git Runs Only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is Readable; Config is Not Written There** — Project files (`src/`, `app/`, etc.) can be read and edited when the task requires it. Config files (`.claude/`, `CLAUDE.md`) CANNOT be written inside Codebase.
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+### Invariant Rules (Valid in Every Command)
 
-1. **Soru sorma** — Tum kontrolleri sessizce calistir, sadece sonuc raporunu goster.
-2. **Degisiklik yapma** — Bu komut sadece kontrol eder, hicbir seyi degistirmez.
-3. **Rollback yapma** — Rollback gerekirse TALIMAT ver, kendin uygulama.
-4. **Tum adimlari calistir** — Bir adim basarisiz olsa bile sonraki adima gec.
-5. **Deploy logu ZORUNLU** — Her durumda Step 8 log kaydi olusturulmali.
-6. **Sonuc raporu ZORUNLU** — Her durumda Step 9 raporu olusturulmali.
-7. **Rollback rehberi SADECE DEPLOY_FAIL'de** — DEPLOY_OK/WARN durumunda rollback bolumu gosterilmez.
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/` directory inside Codebase or writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and edited when the task requires it. Config files (`.claude/`, `CLAUDE.md`) CANNOT be written inside Codebase.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Explanation: Command last step - self-refresh check. Bootstrap this marker-common
+Self-Refresh area modifies it. The command examines its own text under project's current state:
+Small discrepancy with Edit, big change backlog task as reported.
 -->
+  <!-- GENERATED: SELF_REFRESH -->

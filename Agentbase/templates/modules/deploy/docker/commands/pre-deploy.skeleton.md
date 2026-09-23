@@ -1,144 +1,144 @@
-# Pre-Deploy — Production Push Kontrolu
+# Pre-Deploy — Production Push Check
 
-> Production'a gondermeden once tum kontrolleri calistirir, sonuc raporunu sunar.
-> Kullanim: `/pre-deploy`
+> Runs all checks before sending to production and presents a result report.
+> Usage: `/pre-deploy`
 
 ---
 
-## Kural: OTONOM CALIS
+## Rule: WORK AUTONOMOUSLY
 
-- Kullaniciya soru SORMA — tum kontrolleri sirayla calistir.
-- Hic bir seyi PUSH etme — sadece kontrol et ve raporla.
-- Hata bulursan DUZELTME — raporla ve kullaniciya birak.
-- Tum adimlari CALISTIR — bir adimi atlama.
+- Do NOT ask the user questions — run all checks in order.
+- Do NOT PUSH anything — only check and report.
+- If you find an error, do NOT FIX it — report and leave it to the user.
+- RUN every step — do not skip a step.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure, project.subprojects
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- **Yapi:**
+- **Structure:**
   - `apps/web/` — Next.js frontend
   - `apps/api/` — NestJS backend
   - `apps/mobile/` — Expo React Native
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Step 1 — Baslangic Kontrolu
+## Step 1 — Initial Check
 
 ```bash
 cd ../Codebase && git status
 ```
 
-Kontrol et:
-- [ ] Commit edilmemis degisiklik var mi?
-- [ ] Hangi branch'tesin? (main/master disinda UYAR)
-- [ ] Remote ile senkron mu?
+Check:
+- [ ] Are there uncommitted changes?
+- [ ] Which branch are you on? (WARN if outside main/master)
+- [ ] Synced with remote?
 
-Eger commit edilmemis degisiklik varsa:
+If there are uncommitted changes:
 ```
-⚠️ Commit edilmemis degisiklikler var. Once commit atilmali.
+⚠️ There are uncommitted changes. Commit first.
 ```
 
 ---
 
-## Step 2 — Degisiklik Ozeti
+## Step 2 — Change Summary
 
-Son deploy'dan bu yana yapilan degisiklikleri listele:
+List changes since the last deploy:
 
 ```bash
 cd ../Codebase && git log --oneline HEAD~20..HEAD
 ```
 
-Degisiklikleri kategorize et:
-- **Yeni ozellikler** (feat:)
-- **Hata duzeltmeleri** (fix:)
-- **Yikici degisiklikler** (breaking change iceren commit'ler)
-- **Veritabani degisiklikleri** (migration iceren commit'ler)
+Categorize changes:
+- **New features** (feat:)
+- **Bug fixes** (fix:)
+- **Breaking changes** (commits containing a breaking change)
+- **Database changes** (commits containing a migration)
 
 ---
 
-## Step 3 — Derleme Kontrolu
+## Step 3 — Compile Check
 
-Tum alt projelerin basariyla derlendigi dogrulanir.
+Verify that all subprojects compile successfully.
 
 <!-- GENERATE: COMPILE_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, project.scripts, stack.primary
-Ornek cikti:
-| Alt Proje | Komut | Beklenen Sonuc |
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.subprojects, project.scripts, stack.primary
+Example output:
+| Subproject | Command | Expected Result |
 |---|---|---|
-| API | `cd ../Codebase/apps/api && npx tsc --noEmit` | Tip hatasi yok |
-| Web | `cd ../Codebase/apps/web && npm run build` | Build basarili |
-| Shared | `cd ../Codebase/packages/shared && npx tsc --noEmit` | Tip hatasi yok |
+| API | `cd ../Codebase/apps/api && npx tsc --noEmit` | No type errors |
+| Web | `cd ../Codebase/apps/web && npm run build` | Build successful |
+| Shared | `cd ../Codebase/packages/shared && npx tsc --noEmit` | No type errors |
 -->
 
-Her komutu calistir. Hata varsa kaydet, durma — sonraki adima gec.
+Run each command. If there is an error, record it and continue — do not stop.
 
 ---
 
-## Step 4 — Test Suiti
+## Step 4 — Test Suite
 
-Tum testleri calistir.
+Run all tests.
 
 <!-- GENERATE: TEST_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, project.scripts, stack.test_framework
-Ornek cikti:
-| Alt Proje | Komut | Tip |
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.subprojects, project.scripts, stack.test_framework
+Example output:
+| Subproject | Command | Type |
 |---|---|---|
-| API (unit) | `cd ../Codebase/apps/api && npm run test` | Jest birim testleri |
-| API (e2e) | `cd ../Codebase/apps/api && npm run test:e2e` | Uctan uca testler |
-| Web (unit) | `cd ../Codebase/apps/web && npm run test` | Vitest birim testleri |
-| Shared | `cd ../Codebase/packages/shared && npm run test` | Birim testleri |
+| API (unit) | `cd ../Codebase/apps/api && npm run test` | Jest unit tests |
+| API (e2e) | `cd ../Codebase/apps/api && npm run test:e2e` | End-to-end tests |
+| Web (unit) | `cd ../Codebase/apps/web && npm run test` | Vitest unit tests |
+| Shared | `cd ../Codebase/packages/shared && npm run test` | Unit tests |
 -->
 
-Her testi calistir. Basarisiz testleri kaydet, durma — sonraki adima gec.
+Run each test. Record failures and continue — do not stop.
 
 ---
 
-## Step 5 — Veritabani Migration Kontrolu
+## Step 5 — Database Migration Check
 
-Migration durumunu kontrol et:
-- Uygulanmamis migration var mi?
-- Migration dosyalari commit edilmis mi?
-- Yikici migration var mi? (DROP TABLE, DROP COLUMN)
+Check migration status:
+- Are there unapplied migrations?
+- Are migration files committed?
+- Is there a destructive migration? (DROP TABLE, DROP COLUMN)
 
 ```bash
-cd ../Codebase && npx prisma migrate status 2>/dev/null || echo "Prisma yok veya baglanti hatasi"
+cd ../Codebase && npx prisma migrate status 2>/dev/null || echo "Prisma missing or connection error"
 ```
 
 ---
 
-## Step 6 — Ortam Degiskeni Senkronizasyonu
+## Step 6 — Environment Variable Synchronization
 
-Production ortam degiskenlerinin tanimli oldugunu dogrula.
+Verify that production environment variables are defined.
 
 <!-- GENERATE: ENV_CHECKS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments.env_files, environments.required_vars, stack.validation
-Ornek cikti:
-### Kontrol Edilecek Ortam Degiskenleri
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: environments.env_files, environments.required_vars, stack.validation
+Example output:
+### Environment Variables to Check
 
-**Kaynak:** `.env.example` veya Zod schema (`apps/api/src/config/env.ts`)
+**Source:** `.env.example` or Zod schema (`apps/api/src/config/env.ts`)
 
-| Degisken | Zorunlu | Kontrol Yontemi |
+| Variable | Required | Check Method |
 |---|---|---|
-| DATABASE_URL | Evet | `.env` icinde tanimli mi? |
-| JWT_SECRET | Evet | `.env` icinde tanimli mi? |
-| REDIS_URL | Evet | `.env` icinde tanimli mi? |
-| SMTP_HOST | Hayir | Opsiyonel |
+| DATABASE_URL | Yes | Defined in `.env`? |
+| JWT_SECRET | Yes | Defined in `.env`? |
+| REDIS_URL | Yes | Defined in `.env`? |
+| SMTP_HOST | No | Optional |
 
-**Docker Compose kontrol:**
+**Docker Compose check:**
 ```bash
 cd ../Codebase && grep -E '^\s+\w+:$' docker-compose.yml | head -20
 ```
@@ -146,99 +146,98 @@ cd ../Codebase && grep -E '^\s+\w+:$' docker-compose.yml | head -20
 
 ---
 
-## Step 7 — Docker Build Kontrolu (Opsiyonel)
+## Step 7 — Docker Build Check (Optional)
 
-Docker image basariyla build edilebildigini dogrula:
+Verify that the Docker image can be built successfully:
 
 <!-- GENERATE: DEPLOY_CONFIG
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments.deploy_platform, environments.docker_compose, project.subprojects
-Ornek cikti:
-### Docker Build Komutlari
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: environments.deploy_platform, environments.docker_compose, project.subprojects
+Example output:
+### Docker Build Commands
 
-| Servis | Komut |
+| Service | Command |
 |---|---|
 | API | `cd ../Codebase && docker build -f apps/api/Dockerfile -t api-test .` |
 | Web | `cd ../Codebase && docker build -f apps/web/Dockerfile -t web-test .` |
 
-### Docker Compose Dosyalari
+### Docker Compose Files
 - Production: `../Codebase/docker-compose.prod.yml`
 - Development: `../Codebase/docker-compose.yml`
 
-### Health Check URL'leri
+### Health Check URLs
 - API: `http://localhost:3000/health`
 - Web: `http://localhost:3001`
 -->
 
-> **NOT:** Docker build uzun surebilir. Eger `SKIP_DOCKER_BUILD` flag'i varsa bu adimi atla.
+> **NOTE:** Docker build can take a long time. Skip this step if the `SKIP_DOCKER_BUILD` flag is set.
 
 ---
 
-## Step 8 — Sonuc Raporu
+## Step 8 — Result Report
 
-Tum adimlarin sonuclarini asagidaki formatta raporla:
+Report the results of all steps in the following format:
 
 ```
-## 📋 Pre-Deploy Raporu
+## 📋 Pre-Deploy Report
 
-### Genel Durum: [PASS ✅ / FAIL ❌ / WARN ⚠️]
+### Overall Status: [PASS ✅ / FAIL ❌ / WARN ⚠️]
 
-### Degisiklik Ozeti
-- X yeni ozellik, Y hata duzeltme, Z diger
-- Yikici degisiklik: [var/yok]
-- DB migration: [var/yok]
+### Change Summary
+- X new features, Y bug fixes, Z other
+- Breaking change: [yes/no]
+- DB migration: [yes/no]
 
-### Kontrol Sonuclari
+### Check Results
 
-| Adim | Durum | Detay |
+| Step | Status | Detail |
 |---|---|---|
-| Git durumu | ✅/❌ | ... |
-| Derleme | ✅/❌ | ... |
-| Testler | ✅/❌ | X/Y gecti |
+| Git status | ✅/❌ | ... |
+| Compile | ✅/❌ | ... |
+| Tests | ✅/❌ | X/Y passed |
 | Migration | ✅/❌/⚠️ | ... |
 | Env sync | ✅/❌ | ... |
 | Docker build | ✅/❌/⏭️ | ... |
 
-### Basarisiz Kontroller
-[varsa detayli liste]
+### Failed Checks
+[detailed list if any]
 
-### Oneriler
-[varsa aksiyonlar]
+### Recommendations
+[actions if any]
 ```
 
 ---
 
-## Karar Matrisi
+## Decision Matrix
 
-| Durum | Karar | Aksiyon |
+| Status | Decision | Action |
 |---|---|---|
-| Tum adimlar PASS | ✅ PASS | Deploy edilebilir |
-| Testler FAIL | ❌ FAIL | Deploy edilemez, testler duzeltilmeli |
-| Derleme FAIL | ❌ FAIL | Deploy edilemez, derleme hatalari duzeltilmeli |
-| Env eksik | ❌ FAIL | Ortam degiskenleri tamamlanmali |
-| Migration uyarisi | ⚠️ WARN | Deploy edilebilir, dikkatli olunmali |
-| Docker build FAIL | ⚠️ WARN | Docker build sorunu arastirilmali |
-| Commit edilmemis degisiklik | ❌ FAIL | Once commit atilmali |
+| All steps PASS | ✅ PASS | Ready to deploy |
+| Tests FAIL | ❌ FAIL | Cannot deploy; tests must be fixed |
+| Compile FAIL | ❌ FAIL | Cannot deploy; compile errors must be fixed |
+| Env missing | ❌ FAIL | Environment variables must be completed |
+| Migration warning | ⚠️ WARN | Can deploy; proceed carefully |
+| Docker build FAIL | ⚠️ WARN | Investigate Docker build issue |
+| Uncommitted changes | ❌ FAIL | Commit first |
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant Rules (Valid in Every Command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/` directory inside Codebase or writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and edited when the task requires it. Config files (`.claude/`, `CLAUDE.md`) CANNOT be written inside Codebase.
 
-1. **Soru sorma** — Tum kontrolleri sessizce calistir, sadece sonuc raporunu goster.
-2. **Push etme** — Bu komut sadece kontrol eder, hicbir seyi push etmez.
-3. **Duzeltme yapma** — Hata bulursan raporla, duzeltmeye calisma.
-4. **Tum adimlari calistir** — Bir adim basarisiz olsa bile sonraki adima gec.
-5. **Sonuc raporu ZORUNLU** — Her durumda Step 8 raporu olusturulmali.
+1. **Do not ask questions** — Run all checks silently and only show the result report.
+2. **Do not push** — This command only checks; it pushes nothing.
+3. **Do not fix** — If you find an error, report it; do not try to fix it.
+4. **Run every step** — Even if one step fails, continue to the next.
+5. **Result report is REQUIRED** — The Step 8 report must be produced in every case.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command last step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text in light of
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->

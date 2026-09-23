@@ -1,36 +1,36 @@
-# Mimari
+# Architecture
 
-## Dizin Yapisi
+## Directory Structure
 
 <!-- CLAUDE_FILL: DIRECTORY_MAP
-Bootstrap sirasinda tespit edilen dizin haritasi.
-Codebase analizi ile detaylandirilir.
+Directory map detected during bootstrap.
+Refined through Codebase analysis.
 -->
 
-## Alt Proje Yapisi
+## Subproject Structure
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Alt projeler ve rolleri.
-Gerekli manifest alanlari: project.subprojects
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Description: Subprojects and their roles.
+Required manifest fields: project.subprojects
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
-## Veri Akisi
+## Data Flow
 
 <!-- CLAUDE_FILL: DATA_FLOW
-Bu bolum proje gelistirme sirasinda detaylandirilacak.
-API → DB → Frontend veri akisi dokumante edilir.
+This section will be detailed during project development.
+Document API → DB → Frontend data flow.
 -->
 
-## Bagimlilik Kurallari
+## Dependency Rules
 
 <!-- CLAUDE_FILL: DEPENDENCY_RULES
-Bu bolum proje gelistirme sirasinda detaylandirilacak.
-Katmanlar arasi bagimlilik kurallari eklenir.
+This section will be detailed during project development.
+Add cross-layer dependency rules.
 -->
 
-> Bu dosya bootstrap sirasinda iskelet olarak olusturulmustur.
-> Detaylandirmak icin: backlog'daki "ARCHITECTURE.md'yi detaylandir" gorevini tamamlayin.
+> This file is created as a skeleton during bootstrap.
+> To flesh it out: complete the "Detail ARCHITECTURE.md" backlog task.

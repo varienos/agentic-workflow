@@ -1,4 +1,4 @@
-# Next.js Modul Tespiti
+# Next.js Module Detection
 
 ## Checks
 
@@ -16,6 +16,6 @@
 
 ## Affects Core
 
-- code-review: Next.js anti-pattern kontrolu eklenir (client/server karisimi, img tagi vb.)
-- task-hunter: IMPLEMENTATION_RULES'a Next.js rendering ve routing kurallari eklenir
-- settings.json: Next.js plugin konfigurasyonu eklenir
+- code-review: Next.js anti-pattern check is added (client/server mix, img tag, etc.)
+- task-hunter: Next.js rendering and routing rules are added to IMPLEMENTATION_RULES
+- settings.json: Next.js plugin configuration is added

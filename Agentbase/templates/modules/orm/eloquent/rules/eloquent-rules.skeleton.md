@@ -1,142 +1,142 @@
-# Eloquent Migration Kurallari
+# Eloquent Migration Rules
 
-> Bu kurallar Laravel Eloquent ORM kullanan projeler icin gecerlidir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
-
----
-
-## Yasaklar
-
-### `artisan migrate:fresh` YASAK
-
-Tum tablolari silip migration'lari sifirdan calistirir.
-
-**Neden:** Production veritabanindaki tum verileri geri donulemez sekilde siler.
-
-**Dogru alternatif:** `php artisan migrate`
-
-### `artisan migrate:reset` YASAK
-
-Tum migration'lari geri alir.
-
-**Neden:** Tum tablolar silinir, veri kaybi olusur.
-
-**Dogru alternatif:** `php artisan migrate:rollback` (tek batch geri alir)
-
-### `artisan db:wipe` YASAK
-
-Tum tablo, view ve type'lari siler.
-
-**Neden:** Veritabanindaki her seyi geri donulemez sekilde yok eder.
+> These rules apply to projects that use Laravel Eloquent ORM.
+> All developers and agents MUST follow these rules.
 
 ---
 
-## Yasak Komutlar Tablosu
+## Prohibitions
 
-| Komut | Neden | Alternatif |
+### `artisan migrate:fresh` is FORBIDDEN
+
+Deletes all tables and runs migrations from scratch.
+
+**Why:** Irreversibly deletes all data in the production database.
+
+**Correct alternative:** `php artisan migrate`
+
+### `artisan migrate:reset` is FORBIDDEN
+
+Rolls back all migrations.
+
+**Why:** All tables are deleted; data loss occurs.
+
+**Correct alternative:** `php artisan migrate:rollback` (rolls back a single batch)
+
+### `artisan db:wipe` is FORBIDDEN
+
+Deletes all tables, views, and types.
+
+**Why:** Irreversibly destroys everything in the database.
+
+---
+
+## Forbidden Commands Table
+
+| Command | Why | Alternative |
 |-------|-------|------------|
-| `artisan migrate:fresh` | Tum tablolari silip sifirdan olusturur | `artisan migrate` |
-| `artisan migrate:reset` | Tum migration'lari geri alir | `artisan migrate:rollback` |
-| `artisan db:wipe` | Tum DB nesnelerini siler | Kullanma |
+| `artisan migrate:fresh` | Deletes all tables and recreates from scratch | `artisan migrate` |
+| `artisan migrate:reset` | Rolls back all migrations | `artisan migrate:rollback` |
+| `artisan db:wipe` | Deletes all DB objects | Do not use |
 
 ---
 
-## Migration Olusturma Akisi
+## Migration Creation Flow
 
 ```
-Schema degisikligi planla
+Plan schema change
         |
-php artisan make:migration {aciklayici_isim}
+php artisan make:migration {descriptive_name}
         |
-Migration dosyasini duzenle (up + down metotlari)
+Edit migration file (up + down methods)
         |
 php artisan migrate
         |
-Migration dosyasini incele (yikici degisiklik varsa)
-        | (yikici degisiklik varsa)
-Veri yedegi planla + kullaniciyla onayla
+Inspect migration file (if destructive change exists)
+        | (if destructive change exists)
+Plan data backup + confirm with user
         |
-Uygulama kodunu guncelle (Model, Controller, vb.)
+Update application code (Model, Controller, etc.)
         |
-Testleri calistir
+Run tests
         |
-Commit (migration dosyasi + model degisiklikleri BIRLIKTE)
+Commit (migration file + model changes TOGETHER)
 ```
 
-**ASLA** model dosyasini degistirip migration olusturmadan birakma.
+**NEVER** change a model file and leave it without creating a migration.
 
 ---
 
-## Migration Risk Tablosu
+## Migration Risk Table
 
-| Degisiklik | Risk | Aksiyon |
+| Change | Risk | Action |
 |-----------|------|---------|
-| Yeni tablo (`Schema::create`) | Dusuk | Normal akis |
-| Yeni nullable kolon (`$table->string()->nullable()`) | Dusuk | Normal akis |
-| Yeni NOT NULL kolon (default ile) | Orta | Mevcut veri kontrolu |
-| `$table->dropColumn()` | Kritik | Kullaniciya bildir |
-| `Schema::drop()` / `Schema::dropIfExists()` | Kritik | ASLA otomatik yapma |
-| `$table->renameColumn()` | Yuksek | Veri kaybi riski, model ve controller guncelle |
-| `Schema::rename()` (tablo adi) | Yuksek | Tum referanslar guncellenmeli |
-| `$table->dropForeign()` | Orta | Referans butunlugu kaybolur |
-| `$table->dropIndex()` | Orta | Performans etkilenebilir |
-| `$table->dropPrimary()` | Yuksek | Tablo yapisini temelden etkiler |
-| Kolon tipi degisikligi (`$table->string()->change()`) | Orta | Veri truncation riski |
+| New table (`Schema::create`) | Low | Normal flow |
+| New nullable column (`$table->string()->nullable()`) | Low | Normal flow |
+| New NOT NULL column (with default) | Medium | Check existing data |
+| `$table->dropColumn()` | Critical | Notify the user |
+| `Schema::drop()` / `Schema::dropIfExists()` | Critical | NEVER do automatically |
+| `$table->renameColumn()` | High | Data loss risk; update model and controller |
+| `Schema::rename()` (table name) | High | All references must be updated |
+| `$table->dropForeign()` | Medium | Referential integrity is lost |
+| `$table->dropIndex()` | Medium | Performance may be affected |
+| `$table->dropPrimary()` | High | Fundamentally affects table structure |
+| Column type change (`$table->string()->change()`) | Medium | Data truncation risk |
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-1. **Migration isimleri aciklayici olmalidir.** `create_users_table`, `add_email_to_orders_table` gibi. `migration_1` gibi DEGIL.
-2. **Her migration'da `down()` metodu yazilir.** Geri alma senaryosu icin her zaman `down()` metodu implement edilir.
-3. **Migration dosyasi commit'lenmeden once incelenir.** Otomatik olusturulan migration'lari bile oku ve dogrula.
-4. **Yikici migration'larda veri yedegi ZORUNLU.** `dropColumn`, `dropTable` iceren migration'lardan once yedek plani olustur.
-5. **Model degisiklikleri migration ile BIRLIKTE commit edilir.** `$fillable`, `$casts`, iliskiler migration'la uyumlu olmali.
-6. **Seeder data guncel tutulur.** Yeni tablo eklendiyse `DatabaseSeeder` guncellenir.
-7. **Foreign key constraint'leri dogru sirada olusturulur.** Referans verilen tablo once olusturulmalidir.
+1. **Migration names must be descriptive.** Like `create_users_table`, `add_email_to_orders_table`. NOT like `migration_1`.
+2. **Every migration implements a `down()` method.** Always implement `down()` for rollback scenarios.
+3. **Inspect the migration file before committing.** Even auto-generated migrations must be read and verified.
+4. **Data backup is REQUIRED for destructive migrations.** Create a backup plan before migrations that contain `dropColumn` or `dropTable`.
+5. **Model changes are committed TOGETHER with the migration.** `$fillable`, `$casts`, and relations must stay compatible with the migration.
+6. **Keep seeder data up to date.** If a new table was added, update `DatabaseSeeder`.
+7. **Foreign key constraints are created in the correct order.** The referenced table must be created first.
 
 ---
 
-## Migration Isimlendirme Kurallari
+## Migration Naming Rules
 
-| Islem | Ornek Isim |
+| Operation | Example Name |
 |-------|-----------|
-| Tablo olusturma | `create_users_table` |
-| Kolon ekleme | `add_email_to_users_table` |
-| Kolon silme | `drop_phone_from_users_table` |
-| Index ekleme | `add_index_to_users_email` |
-| Tablo iliskisi | `create_order_items_table` |
-| Kolon degistirme | `change_status_type_in_orders_table` |
+| Create table | `create_users_table` |
+| Add column | `add_email_to_users_table` |
+| Drop column | `drop_phone_from_users_table` |
+| Add index | `add_index_to_users_email` |
+| Table relation | `create_order_items_table` |
+| Change column | `change_status_type_in_orders_table` |
 
 ---
 
 <!-- GENERATE: MIGRATION_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: subprojects[].path
-Ornek cikti:
-## Migration Komutlari
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: subprojects[].path
+Example output:
+## Migration Commands
 
-Bu proje icin kullanilacak tam komutlar:
+Full commands to use for this project:
 
-| Islem | Komut |
+| Operation | Command |
 |---|---|
-| Migration olustur | `cd ../Codebase && php artisan make:migration {aciklama}` |
-| Migration calistir | `cd ../Codebase && php artisan migrate` |
-| Migration durumu | `cd ../Codebase && php artisan migrate:status` |
-| Tek batch geri al | `cd ../Codebase && php artisan migrate:rollback` |
-| Seed calistir | `cd ../Codebase && php artisan db:seed` |
-| Model olustur | `cd ../Codebase && php artisan make:model {Model} -m` |
+| Create migration | `cd ../Codebase && php artisan make:migration {description}` |
+| Run migration | `cd ../Codebase && php artisan migrate` |
+| Migration status | `cd ../Codebase && php artisan migrate:status` |
+| Roll back one batch | `cd ../Codebase && php artisan migrate:rollback` |
+| Run seed | `cd ../Codebase && php artisan db:seed` |
+| Create model | `cd ../Codebase && php artisan make:model {Model} -m` |
 
-> **UYARI:** `migrate:fresh` ve `migrate:reset` SADECE gecici test veritabaninda kullanilir. Production'da ASLA.
+> **WARNING:** `migrate:fresh` and `migrate:reset` are used ONLY on temporary test databases. NEVER in production.
 -->
 
 <!-- GENERATE: LARAVEL_PATHS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, project.subprojects
-Ornek cikti:
-## Laravel Dosya Konumlari
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.structure, project.subprojects
+Example output:
+## Laravel File Locations
 
-| Dosya | Yol |
+| File | Path |
 |---|---|
 | Migrations | `../Codebase/database/migrations/` |
 | Models | `../Codebase/app/Models/` |

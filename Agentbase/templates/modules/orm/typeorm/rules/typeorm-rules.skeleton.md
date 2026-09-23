@@ -1,111 +1,111 @@
-# TypeORM Migration Kurallari
+# TypeORM Migration Rules
 
-> Bu kurallar TypeORM kullanan projeler icin gecerlidir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules apply to projects that use TypeORM.
+> All developers and agents MUST follow these rules.
 
 ---
 
-## Yasaklar
+## Prohibitions
 
-### `synchronize: true` YASAK (Production)
+### `synchronize: true` is FORBIDDEN (Production)
 
-TypeORM config dosyasinda `synchronize: true` ayari production ortaminda YASAKTIR.
+The `synchronize: true` setting in the TypeORM config file is FORBIDDEN in production.
 
-**Neden:** Her uygulama baslangicinda entity degisikliklerini otomatik olarak DB'ye yansitir. Bu durum:
-- Migration gecmisi olmadan sema degisikligi yapar
-- Veri kaybina yol acabilir (kolon silme, tip degisikligi)
-- Diger ortamlarla senkronizasyonu bozar
+**Why:** On every application start it automatically reflects entity changes to the DB. This:
+- Changes the schema without migration history
+- Can cause data loss (column drop, type change)
+- Breaks synchronization with other environments
 
-**Dogru ayar:**
+**Correct setting:**
 ```typescript
 // data-source.ts
-synchronize: false, // HER ZAMAN false
-migrationsRun: true, // Otomatik migration calistirma (opsiyonel)
+synchronize: false, // ALWAYS false
+migrationsRun: true, // Automatic migration run (optional)
 ```
 
-### `typeorm schema:sync` YASAK
+### `typeorm schema:sync` is FORBIDDEN
 
-Migration dosyasi olmadan DB semasini entity'lere gore gunceller.
+Updates the DB schema to match entities without a migration file.
 
-**Neden:** `prisma db push` ile ayni tehlike — migration gecmisi olusturmaz.
+**Why:** Same danger as `prisma db push` — does not create migration history.
 
-**Dogru alternatif:** `npx typeorm migration:generate -- -n <MigrationAdi>`
+**Correct alternative:** `npx typeorm migration:generate -- -n <MigrationName>`
 
-### `typeorm schema:drop` YASAK
+### `typeorm schema:drop` is FORBIDDEN
 
-Veritabanindaki tum tablolari siler.
+Deletes all tables in the database.
 
-**Neden:** Geri donulemez veri kaybi.
+**Why:** Irreversible data loss.
 
 ---
 
-## Yasak Komutlar Tablosu
+## Forbidden Commands Table
 
-| Komut | Neden | Alternatif |
+| Command | Why | Alternative |
 |-------|-------|------------|
-| `typeorm schema:sync` | Migration olmadan DB gunceller | `typeorm migration:generate` |
-| `typeorm schema:drop` | Tum tablolari siler | Kullanma |
-| `synchronize: true` | Otomatik sema senkronizasyonu | `synchronize: false` + migration |
+| `typeorm schema:sync` | Updates DB without migration | `typeorm migration:generate` |
+| `typeorm schema:drop` | Deletes all tables | Do not use |
+| `synchronize: true` | Automatic schema sync | `synchronize: false` + migration |
 
 ---
 
-## Migration Olusturma Akisi
+## Migration Creation Flow
 
 ```
-Entity dosyasini duzenle
+Edit entity file
         |
-npx typeorm migration:generate -- -n <MigrationAdi>
+npx typeorm migration:generate -- -n <MigrationName>
         |
-Olusturulan migration dosyasini incele (up + down metotlari)
+Inspect generated migration file (up + down methods)
         |
 npx typeorm migration:run
         |
-Yikici degisiklik varsa:
-        | (yikici degisiklik varsa)
-Veri yedegi planla + kullaniciyla onayla
+If destructive change exists:
+        | (if destructive change exists)
+Plan data backup + confirm with user
         |
-Uygulama kodunu guncelle
+Update application code
         |
-Testleri calistir
+Run tests
         |
-Commit (entity + migration dosyasi BIRLIKTE)
+Commit (entity + migration file TOGETHER)
 ```
 
-**ASLA** entity dosyasini degistirip migration olusturmadan birakma.
+**NEVER** change an entity file and leave it without creating a migration.
 
 ---
 
-## Migration Risk Tablosu
+## Migration Risk Table
 
-| Degisiklik | Risk | Aksiyon |
+| Change | Risk | Action |
 |-----------|------|---------|
-| Yeni entity (tablo) | Dusuk | Normal akis |
-| Yeni nullable kolon | Dusuk | Normal akis |
-| Yeni NOT NULL kolon (default ile) | Orta | Mevcut veri kontrolu |
-| `dropColumn` (migration icinde) | Kritik | Kullaniciya bildir |
-| `dropTable` (migration icinde) | Kritik | ASLA otomatik yapma |
-| `renameColumn` | Yuksek | Veri kaybi riski, tum referanslar guncellenmeli |
-| `renameTable` | Yuksek | Tum referanslar guncellenmeli |
-| Kolon tipi degisikligi | Orta | Veri truncation riski |
-| `dropIndex` | Orta | Performans etkilenebilir |
-| `dropForeignKey` | Orta | Referans butunlugu kaybolur |
-| `addUniqueConstraint` | Orta | Mevcut verinin unique'ligini dogrula |
+| New entity (table) | Low | Normal flow |
+| New nullable column | Low | Normal flow |
+| New NOT NULL column (with default) | Medium | Check existing data |
+| `dropColumn` (inside migration) | Critical | Notify the user |
+| `dropTable` (inside migration) | Critical | NEVER do automatically |
+| `renameColumn` | High | Data loss risk; all references must be updated |
+| `renameTable` | High | All references must be updated |
+| Column type change | Medium | Data truncation risk |
+| `dropIndex` | Medium | Performance may be affected |
+| `dropForeignKey` | Medium | Referential integrity is lost |
+| `addUniqueConstraint` | Medium | Verify uniqueness of existing data |
 
 ---
 
-## Data Source Konfigurasyonu
+## Data Source Configuration
 
 ```typescript
-// data-source.ts — dogru konfigurasyon
+// data-source.ts — correct configuration
 import { DataSource } from 'typeorm';
 
 export const AppDataSource = new DataSource({
-  type: 'postgres', // veya mysql, sqlite vb.
-  // ... baglanti ayarlari
+  type: 'postgres', // or mysql, sqlite, etc.
+  // ... connection settings
 
-  synchronize: false,     // YASAK: true yapmak
-  migrationsRun: false,   // CI/CD pipeline'da true olabilir
-  logging: true,          // Gelistirmede SQL loglarini goster
+  synchronize: false,     // FORBIDDEN: setting true
+  migrationsRun: false,   // may be true in CI/CD pipeline
+  logging: true,          // Show SQL logs in development
 
   entities: ['src/entity/**/*.ts'],
   migrations: ['src/migrations/**/*.ts'],
@@ -115,7 +115,7 @@ export const AppDataSource = new DataSource({
 
 ---
 
-## Migration Dosya Yapisi
+## Migration File Structure
 
 ```typescript
 import { MigrationInterface, QueryRunner } from 'typeorm';
@@ -133,51 +133,51 @@ export class AddEmailToUsers1234567890 implements MigrationInterface {
 }
 ```
 
-**Kurallar:**
-- `up()` ve `down()` metotlari HER ZAMAN implement edilir.
-- `down()` metodu `up()` islemini tam olarak geri alabilmeli.
-- Migration isimleri aciklayici olmali (sinif adi + timestamp).
+**Rules:**
+- `up()` and `down()` methods are ALWAYS implemented.
+- `down()` must fully reverse the `up()` operation.
+- Migration names must be descriptive (class name + timestamp).
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-1. **`synchronize: false` ZORUNLU.** Production config'inde `synchronize: true` kesinlikle kullanilmaz.
-2. **Entity + Migration BIRLIKTE commit edilir.** Entity degisikligi migration dosyasi olmadan commit'lenemez.
-3. **Her migration'da `down()` metodu yazilir.** Geri alma senaryosu icin zorunludur.
-4. **Migration SQL incelenir.** `migration:generate` ciktisini korukorune commit'leme.
-5. **Yikici migration'larda veri yedegi ZORUNLU.** `dropColumn`, `dropTable` iceren migration'lardan once yedek plani olustur.
-6. **Migration dosyalari elle duzenlenmez** (zorunlu durumlar haric). `migration:generate` yeniden calistirilir.
-7. **`schema:sync` ASLA kullanilmaz.** Gelistirme ortaminda bile migration kullanin.
+1. **`synchronize: false` is REQUIRED.** Never use `synchronize: true` in production config.
+2. **Entity + Migration are committed TOGETHER.** An entity change cannot be committed without a migration file.
+3. **Every migration implements a `down()` method.** Required for rollback scenarios.
+4. **Migration SQL is inspected.** Do not blindly commit `migration:generate` output.
+5. **Data backup is REQUIRED for destructive migrations.** Create a backup plan before migrations that contain `dropColumn` or `dropTable`.
+6. **Migration files are not edited by hand** (except when required). Re-run `migration:generate`.
+7. **`schema:sync` is NEVER used.** Use migrations even in development.
 
 ---
 
 <!-- GENERATE: MIGRATION_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: subprojects[].path, project.package_manager
-Ornek cikti:
-## Migration Komutlari
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: subprojects[].path, project.package_manager
+Example output:
+## Migration Commands
 
-Bu proje icin kullanilacak tam komutlar:
+Full commands to use for this project:
 
-| Islem | Komut |
+| Operation | Command |
 |---|---|
-| Migration olustur | `cd ../Codebase && npx typeorm migration:generate -- -n <MigrationAdi>` |
-| Migration calistir | `cd ../Codebase && npx typeorm migration:run` |
-| Migration geri al | `cd ../Codebase && npx typeorm migration:revert` |
-| Migration goster | `cd ../Codebase && npx typeorm migration:show` |
-| Bos migration olustur | `cd ../Codebase && npx typeorm migration:create -- -n <MigrationAdi>` |
+| Create migration | `cd ../Codebase && npx typeorm migration:generate -- -n <MigrationName>` |
+| Run migration | `cd ../Codebase && npx typeorm migration:run` |
+| Revert migration | `cd ../Codebase && npx typeorm migration:revert` |
+| Show migrations | `cd ../Codebase && npx typeorm migration:show` |
+| Create empty migration | `cd ../Codebase && npx typeorm migration:create -- -n <MigrationName>` |
 
-> **UYARI:** `schema:sync` ve `schema:drop` ASLA kullanilmaz. `synchronize: true` YASAKTIR.
+> **WARNING:** `schema:sync` and `schema:drop` are NEVER used. `synchronize: true` is FORBIDDEN.
 -->
 
 <!-- GENERATE: TYPEORM_PATHS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, project.subprojects
-Ornek cikti:
-## TypeORM Dosya Konumlari
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.structure, project.subprojects
+Example output:
+## TypeORM File Locations
 
-| Dosya | Yol |
+| File | Path |
 |---|---|
 | Data Source | `../Codebase/src/data-source.ts` |
 | Entities | `../Codebase/src/entity/` |

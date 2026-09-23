@@ -1,4 +1,4 @@
-# OpenAPI/Swagger Modul Tespiti
+# OpenAPI/Swagger Module Detection
 
 ## Checks
 
@@ -17,7 +17,7 @@
 
 ## Affects Core
 
-- code-review: Endpoint <-> spec uyumu kontrolu
-- pre-deploy: openapi validate komutu
-- CLAUDE.md: OpenAPI kurallari
-- settings.json: 1 hook tanimi
+- code-review: Endpoint <-> spec consistency check
+- pre-deploy: openapi validate command
+- CLAUDE.md: OpenAPI rules
+- settings.json: 1 hook definition

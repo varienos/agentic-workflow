@@ -43,7 +43,7 @@ describe('eloquent and framework guard hooks', () => {
     const result = runHook(hookPath, makeHookInput(filePath));
     const systemMessage = JSON.parse(result.stdout).systemMessage;
 
-    assert.match(systemMessage, /YIKICI MIGRATION/);
+    assert.match(systemMessage, /DESTRUCTIVE MIGRATION/);
     assert.match(systemMessage, /Schema::dropIfExists/);
   });
 
@@ -59,7 +59,7 @@ describe('eloquent and framework guard hooks', () => {
     const result = runHook(hookPath, makeHookInput(filePath));
     const systemMessage = JSON.parse(result.stdout).systemMessage;
 
-    assert.doesNotMatch(systemMessage, /YIKICI MIGRATION/);
+    assert.doesNotMatch(systemMessage, /DESTRUCTIVE MIGRATION/);
     assert.match(systemMessage, /php artisan migrate/);
   });
 

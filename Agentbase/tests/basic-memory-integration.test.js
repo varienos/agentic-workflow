@@ -53,8 +53,8 @@ describe('basic-memory MCP integration (TASK-236)', () => {
 
     it('ADIM 1.1.5 basic-memory MCP kontrolu icermeli', () => {
       assert.ok(
-        bootstrap.includes('### 1.1.5 basic-memory MCP Kontrolu'),
-        'ADIM 1.1.5 baslik bulunmali'
+        bootstrap.includes('### 1.1.5 basic-memory MCP check'),
+        'STEP 1.1.5 heading must be present'
       );
     });
 
@@ -164,8 +164,8 @@ describe('basic-memory MCP integration (TASK-236)', () => {
 
     it('KUTSAL KURAL 2 .mcp.json icin zorunlu uretim isaretler', () => {
       assert.ok(
-        bootstrap.includes('`.mcp.json` (zorunlu'),
-        '.mcp.json artik zorunlu olarak isaretlenmeli (gerekirse degil)'
+        bootstrap.includes('`.mcp.json` (required'),
+        '.mcp.json must be marked required'
       );
     });
   });
@@ -175,7 +175,7 @@ describe('basic-memory MCP integration (TASK-236)', () => {
 
     it('Bagimliliklar baslik icermeli', () => {
       assert.ok(
-        projectSkeleton.includes('## Bağımlılıklar'),
+        projectSkeleton.includes('## Dependencies'),
         'PROJECT.md skeleton Bagimliliklar bolumu icermeli'
       );
     });
@@ -208,8 +208,9 @@ describe('basic-memory MCP integration (TASK-236)', () => {
   });
 
   describe('README zorunlu bagimliliklar callout', () => {
-    const readmeTr = readRepoFile('README.md');
-    const readmeEn = readRepoFile('README.en.md');
+    const readme = readRepoFile('README.md');
+    const readmeTr = readme;
+    const readmeEn = readme;
 
     it('TR README basic-memory + Backlog.md ikilisini IMPORTANT callout icinde listeler', () => {
       const importantSection = readmeTr.split('> [!IMPORTANT]')[1]?.split('## ')[0] || '';

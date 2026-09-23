@@ -1,192 +1,192 @@
-# Notlar
+# Notes
 
-## Öğrenilen Dersler
+## Lessons Learned
 
-1. Gereksiz MCP tool'ları kullanmak context'i gereksiz şişiriyor. Agent'ın bash erişimi varsa ve CLI ile yapılabiliyorsa MCP ekleme. MCP kullanımı majör bir ihtiyaç değilse proje bazında değerlendirilmeli.
-2. Agent disiplini 3 katmanda sağlanır:
-   - **Context kuralları** (CLAUDE.md'ye yaz) → %80'ini çözer, hemen uygulanır
-   - **Hooks** (pre-commit, lint-staged) → Sistem zorlar, agent bypass edemez, proje başlayınca kurulur
-   - **Review agent** (ikinci agent kontrol eder) → Kalite garantisi, mimari olgunlaşınca eklenir
-3. Hook senaryoları (proje başlayınca kurulacak):
-   - **pre-commit** → Lint + formatter çalıştır, geçemezse commit'i engelle
-   - **pre-commit** → Dosya tipine göre syntax doğrulaması (php -l, tsc --noEmit, python -m py_compile)
-   - **pre-commit** → Docblock/docstring eksik fonksiyon varsa uyar
-   - **pre-commit** → .env, credentials gibi hassas dosyaların commit'e girmesini engelle
-   - **pre-push** → Test suite çalıştır, kırık test varsa push'u engelle
-   - **pre-push** → Static analysis çalıştır (PHPStan, mypy, ESLint --max-warnings=0)
-   - **post-merge** → Dependency değişikliği varsa otomatik install (composer install, npm install)
-   - **commit-msg** → Commit mesajı formatını doğrula (conventional commits: feat:, fix:, docs: vb.)
-   - Araçlar: `husky` + `lint-staged` (JS/TS), `pre-commit` framework (Python), `captainhook` (PHP)
-4. Git Hook tipleri:
+1. Unnecessary MCP tools inflate context. If the agent has bash access and the job can be done via CLI, do not add MCP. Evaluate MCP per project unless there is a major need.
+2. Agent discipline is enforced in 3 layers:
+   - **Context rules** (write in CLAUDE.md) → solves ~80%, applies immediately
+   - **Hooks** (pre-commit, lint-staged) → system enforces, agent cannot bypass; set up when the project starts
+   - **Review agent** (second agent checks) → quality guarantee; add when architecture matures
+3. Hook scenarios (to set up when the project starts):
+   - **pre-commit** → Run lint + formatter; block commit on failure
+   - **pre-commit** → Syntax validation by file type (php -l, tsc --noEmit, python -m py_compile)
+   - **pre-commit** → Warn if functions lack docblock/docstring
+   - **pre-commit** → Block committing sensitive files (.env, credentials)
+   - **pre-push** → Run test suite; block push if tests are broken
+   - **pre-push** → Run static analysis (PHPStan, mypy, ESLint --max-warnings=0)
+   - **post-merge** → Auto-install when dependencies change (composer install, npm install)
+   - **commit-msg** → Validate commit message format (conventional commits: feat:, fix:, docs:, etc.)
+   - Tools: `husky` + `lint-staged` (JS/TS), `pre-commit` framework (Python), `captainhook` (PHP)
+4. Git hook types:
 
-   | Hook | Ne zaman çalışır? | Örnek senaryo |
+   | Hook | When it runs | Example scenario |
    |---|---|---|
-   | `pre-commit` | Commit oluşmadan hemen önce | Lint, format, syntax kontrolü, hassas dosya engelleme |
-   | `prepare-commit-msg` | Commit mesajı editöre açılmadan önce | Branch adından otomatik prefix ekleme (`feature/login` → `feat: ...`) |
-   | `commit-msg` | Commit mesajı yazıldıktan sonra | Conventional commit formatı doğrulama |
-   | `post-commit` | Commit başarıyla oluştuktan sonra | Bildirim gönderme, log kaydetme |
-   | `pre-push` | Push öncesi | Test suite ve static analysis çalıştırma |
-   | `post-merge` | Merge tamamlandıktan sonra | Dependency değişikliği varsa otomatik install |
-   | `post-checkout` | Branch değiştirildiğinde | Ortam değişkenlerini güncelleme, cache temizleme |
-   | `pre-rebase` | Rebase başlamadan önce | Korumalı branch'lerde rebase'i engelleme |
-   | `post-rewrite` | Commit amend veya rebase sonrası | Test çalıştırma, hook'ları yeniden tetikleme |
+   | `pre-commit` | Immediately before a commit is created | Lint, format, syntax check, block sensitive files |
+   | `prepare-commit-msg` | Before the commit message editor opens | Auto-prefix from branch name (`feature/login` → `feat: ...`) |
+   | `commit-msg` | After the commit message is written | Validate conventional commit format |
+   | `post-commit` | After a successful commit | Send notification, write log |
+   | `pre-push` | Before push | Run test suite and static analysis |
+   | `post-merge` | After merge completes | Auto-install when dependencies change |
+   | `post-checkout` | When switching branches | Update env vars, clear cache |
+   | `pre-rebase` | Before rebase starts | Block rebase on protected branches |
+   | `post-rewrite` | After commit amend or rebase | Run tests, re-trigger hooks |
 
-5. Skill/plugin seçimini geliştirici yapmasın, Opus yapsın. Her şeyi yüklemek context'i şişirir ve agent'ın performansını düşürür. Bootstrap sırasında Opus, proje ihtiyacına göre extensions-registry.yaml'dan sadece gerekli olanları seçmeli; extensions-registry.md insanlara yönelik hızlı referanstır. Az ama doğru > çok ama gereksiz.
-6. Agent mimari karar veremez. Kod, test, review yazabilir ama "bu sistemde bu olmasın" diyemez, beklenmedik mantıksızlıkları kendi başına fark edemez. Mimari kararlar, sınırlar ve "hayır"lar insana ait. Agent verilen mimariyi uygular — mimariyi tasarlamaz. Temel bilmeyen biri AI ile doğru ürün oluşturamaz, yapsa bile sürdürülebilir olmaz.
-7. Agent "test fail, benim değişikliğim değil" deyip durmamalı. Baseline comparison ile pre-existing hatayı tespit et, backlog'a kaydet, kendi işine devam et. Pre-existing hatalar ayrı task olarak takip edilmeli — yoksa kaybolur, kimse düzeltmez.
+5. Do not let the developer pick every skill/plugin — let Opus decide. Loading everything inflates context and hurts agent performance. During Bootstrap, Opus should select only what is needed from extensions-registry.yaml; extensions-registry.md is a human-facing quick reference. Few and correct > many and unused.
+6. An agent cannot make architecture decisions. It can write code, tests, and reviews, but it cannot say "this must not exist in this system" or independently notice unexpected nonsense. Architecture decisions, boundaries, and "no"s belong to humans. The agent applies the given architecture — it does not design it. Someone without fundamentals cannot build a correct product with AI, and even if they do, it will not be sustainable.
+7. An agent must not stop with "test fail, not my change." Detect pre-existing failures via baseline comparison, record them in the backlog, and continue its own work. Pre-existing failures must be tracked as separate tasks — otherwise they vanish and nobody fixes them.
 
 ---
 
-## Skill vs Command vs Agent — Kavram Karşılaştırması
+## Skill vs Command vs Agent — Concept Comparison
 
 ### Claude Code
 
-| Kavram | Ne? | Tetikleyen | Context | Ne zaman? |
+| Concept | What? | Trigger | Context | When? |
 |---|---|---|---|---|
-| **Command** | Slash komutu (`/commit`) | Kullanıcı manuel | Ana context içinde | Tekrarlayan, kısa, tek adımlı işler |
-| **Skill** | `.md` talimat dosyası | Otomatik veya `@` ile | Ana context'e enjekte | "Nasıl yapılacağını" öğretmek |
-| **Agent** | Bağımsız alt-süreç | Claude kendisi spawn eder | Kendi ayrı context'i | Uzun, izole, paralel işler |
+| **Command** | Slash command (`/commit`) | User manual | Inside main context | Repeating, short, single-step work |
+| **Skill** | `.md` instruction file | Automatic or via `@` | Injected into main context | Teaching "how to do it" |
+| **Agent** | Independent subprocess | Claude spawns itself | Its own separate context | Long, isolated, parallel work |
 
 ### Gemini CLI
 
-| Kavram | Ne? | Tetikleyen | Context | Ne zaman? |
+| Concept | What? | Trigger | Context | When? |
 |---|---|---|---|---|
-| **Slash Command** | `.toml` dosyaları (`.gemini/commands/`) | Kullanıcı `/` ile | Ana context | Namespace destekli, parametreli, shell çalıştırabilir |
-| **Agent Skill** | `SKILL.md` (`.gemini/skills/`) | Lazy-loading — ihtiyaç olunca `activate_skill` ile | Ana context'e enjekte | YAML frontmatter + Markdown, otomatik taranır |
-| **Subagent** | `.gemini/agents/*.md` | Gemini tetikler | Ayrı context (deneysel) | Henüz paralel çalışamıyor, sıralı |
+| **Slash Command** | `.toml` files (`.gemini/commands/`) | User via `/` | Main context | Namespace-capable, parameterized, can run shell |
+| **Agent Skill** | `SKILL.md` (`.gemini/skills/`) | Lazy-loading — via `activate_skill` when needed | Injected into main context | YAML frontmatter + Markdown, auto-scanned |
+| **Subagent** | `.gemini/agents/*.md` | Gemini triggers | Separate context (experimental) | Not parallel yet; sequential |
 
-Transform ile üretilen Gemini TOML prompt-only kabul edilir; shell exec eklenmez. Manuel `.gemini/commands/*.toml` yazılırsa shell exec sadece allowlist'li, kullanıcı girdisiyle interpolate edilmeyen, quote edilmiş ve secret göstermeyen komutlarla kullanılmalı.
+Gemini TOML produced by transform is prompt-only; shell exec is not added. If you write manual `.gemini/commands/*.toml`, shell exec should only use allowlist-safe commands that are quoted, do not interpolate raw user input, and do not expose secrets.
 
 ### Antigravity 2.0
 
-| Kavram | Ne? | Tetikleyen | Context | Ne zaman? |
+| Concept | What? | Trigger | Context | When? |
 |---|---|---|---|---|
-| **Workflow** | Markdown dosyası (`.agents/workflows/*.md`) | Kullanıcı `/workflow-name` ile | Ana agent trajectory | Tekrarlayan agent adımları ve SOP'ler |
-| **Agent Skill** | `SKILL.md` (`.agents/skills/*/SKILL.md`) | Lazy-loading — ihtiyaç olunca | Ana context'e enjekte | Proje-spesifik yöntem ve uzmanlık paketleri |
-| **Workspace Rule** | Markdown dosyası (`.agents/rules/*.md`) | Always-on/model/glob/manual aktivasyon | Prompt-level kalıcı kural | Proje kuralları, güvenlik ve çalışma disiplini |
+| **Workflow** | Markdown file (`.agents/workflows/*.md`) | User via `/workflow-name` | Main agent trajectory | Repeating agent steps and SOPs |
+| **Agent Skill** | `SKILL.md` (`.agents/skills/*/SKILL.md`) | Lazy-loading — when needed | Injected into main context | Project-specific methods and expertise packages |
+| **Workspace Rule** | Markdown file (`.agents/rules/*.md`) | Always-on/model/glob/manual activation | Prompt-level persistent rule | Project rules, security, and work discipline |
 
 ### Codex CLI
 
-| Kavram | Ne? | Tetikleyen | Context | Ne zaman? |
+| Concept | What? | Trigger | Context | When? |
 |---|---|---|---|---|
-| **Slash Command** | Built-in + özel prompt'lar | Kullanıcı `/` veya `$` ile | Ana context | `/skills` ile skill'lere de erişir |
-| **Agent Skill** | `SKILL.md` (`.agents/skills/`) | Progressive disclosure — otomatik | Ana context'e enjekte | `$skill-creator` ile interaktif oluşturulabilir |
-| **Multi-agent** | `/experimental` ile aktif | Codex tetikler | Ayrı context (deneysel) | CSV tabanlı paralel görev dağıtımı destekler |
+| **Slash Command** | Built-in + custom prompts | User via `/` or `$` | Main context | Also reaches skills via `/skills` |
+| **Agent Skill** | `SKILL.md` (`.agents/skills/`) | Progressive disclosure — automatic | Injected into main context | Interactively creatable via `$skill-creator` |
+| **Multi-agent** | Enabled via `/experimental` | Codex triggers | Separate context (experimental) | Supports CSV-based parallel task distribution |
 
-Codex ürün kabiliyetleri ile bu repo'nun transform çıktısı ayrı değerlendirilir: agentic-workflow Codex hedefi skill/context yüzeyidir; native slash command garantisi vermez, Claude Code hook runtime'ını otomatik taşımaz ve otomatik hook parity iddiası kurmaz.
+Codex product capabilities and this repo's transform output are evaluated separately: The agentic-workflow Codex target is a skill/context surface; it does not guarantee native slash commands, does not automatically carry Claude Code hook runtime, and does not claim automatic hook parity.
 
-### Eşleştirme Özeti
+### Mapping Summary
 
 | Claude Code | Gemini CLI | Antigravity 2.0 | Codex CLI |
 |---|---|---|---|
 | `CLAUDE.md` | `GEMINI.md` | `GEMINI.md` + `.agents/rules/*.md` | `AGENTS.md` |
 | `~/.claude/CLAUDE.md` (global) | `~/.gemini/GEMINI.md` | `~/.gemini/GEMINI.md` + project `.agents/` | `~/.codex/AGENTS.md` |
-| Skill: saf `.md`, `@` ile yükle | Skill: `SKILL.md` + YAML frontmatter, lazy-load | Skill: `.agents/skills/*/SKILL.md` | Skill: `SKILL.md` + YAML frontmatter, progressive |
-| Agent: native paralel, production-ready | Subagent: deneysel, sıralı | Dynamic subagents + workflows | Multi-agent: deneysel, CSV paralel |
+| Skill: plain `.md`, load via `@` | Skill: `SKILL.md` + YAML frontmatter, lazy-load | Skill: `.agents/skills/*/SKILL.md` | Skill: `SKILL.md` + YAML frontmatter, progressive |
+| Agent: native parallel, production-ready | Subagent: experimental, sequential | Dynamic subagents + workflows | Multi-agent: experimental, CSV parallel |
 
-### Önemli Farklar
+### Important Differences
 
-- **Gemini** — En güçlü custom slash command sistemi (`.toml`, namespace); shell exec yalnızca allowlist'li ve güvenli komutlarda kullanılmalı
-- **Antigravity** — Güncel varsayılan `.agents/rules` ve `.agents/skills`; workflow'lar Markdown slash command olarak çağrılır
-- **Codex** — `$skill-creator` ile interaktif skill oluşturma; bu repo hedefinde çıktı `.agents/skills/*/SKILL.md` + `AGENTS.md` skill/context yüzeyidir
-- **Claude** — Alt-agent'lar native paralel çalışır (diğerlerinde deneysel), skill yapısı en basit (saf `.md`)
-
----
-
-## Mimari Prensipler
-
-- **SOLID** — Tek sorumluluk, genişletmeye açık/değiştirmeye kapalı, Liskov, arayüz ayrımı, bağımlılık terslemesi
-- **DRY** — Tek bir yerde aynı kodun tekrar etmemesi
-- **Separation of Concerns** — Controller → akış, Service → iş mantığı, Repository/Model → veri erişimi
-- **Loose Coupling / High Cohesion** — Bağımlılıkları azalt, her modülün tek sorumluluğu olsun
-- **Clean Code** — Okunabilirlik, sade isimlendirme, küçük fonksiyonlar, anlaşılır akış
-- **Convention over Configuration** — Framework'in standart yolunu kullan
-- **Defensive Programming** — Hatalı input, null veri, beklenmeyen durumları hesaba kat
+- **Gemini** — Strongest custom slash command system (`.toml`, namespace); shell exec only for allowlist-safe commands
+- **Antigravity** — Current default `.agents/rules` and `.agents/skills`; workflows are invoked as Markdown slash commands
+- **Codex** — Interactive skill creation via `$skill-creator`; in this repo target the output is `.agents/skills/*/SKILL.md` + `AGENTS.md` skill/context surface
+- **Claude** — Sub-agents run natively in parallel (experimental elsewhere); simplest skill structure (plain `.md`)
 
 ---
 
-## Kod Yazım Standartları
+## Architecture Principles
 
-| Kavram | Ne yapar? | Örnek araç |
+- **SOLID** — Single responsibility, open/closed, Liskov, interface segregation, dependency inversion
+- **DRY** — Do not repeat the same code in more than one place
+- **Separation of Concerns** — Controller → flow, Service → business logic, Repository/Model → data access
+- **Loose Coupling / High Cohesion** — Reduce dependencies; give each module a single responsibility
+- **Clean Code** — Readability, clear naming, small functions, understandable flow
+- **Convention over Configuration** — Prefer the framework's standard path
+- **Defensive Programming** — Account for bad input, null data, and unexpected states
+
+---
+
+## Coding Standards
+
+| Concept | What it does | Example tools |
 |---|---|---|
-| **Linter** | Hatalı/riskli kod kalıplarını tespit eder | ESLint, Pylint |
-| **Formatter** | Kod biçimini otomatik düzenler | Prettier, Black |
-| **Static Analyzer** | Tip hataları, dead code, güvenlik açıklarını bulur | PHPStan, mypy |
+| **Linter** | Detects bad/risky code patterns | ESLint, Pylint |
+| **Formatter** | Auto-formats code style | Prettier, Black |
+| **Static Analyzer** | Finds type errors, dead code, security issues | PHPStan, mypy |
 
-### Dile Göre Araçlar
+### Tools by Language
 
-| Dil | Formatter | Linter / Analyzer |
+| Language | Formatter | Linter / Analyzer |
 |---|---|---|
 | **JavaScript / TypeScript** | Prettier, Biome | ESLint, Biome |
 | **PHP** | PHP-CS-Fixer | PHP_CodeSniffer, PHPStan, Psalm |
 | **Python** | Black, Ruff | Flake8, Pylint, Ruff, mypy |
-| **Go** | `gofmt` _(resmi)_ | golangci-lint |
+| **Go** | `gofmt` _(official)_ | golangci-lint |
 | **Java** | Google Java Format | Checkstyle, PMD, SpotBugs |
 | **C# / .NET** | `dotnet format` | StyleCop, Roslyn Analyzers |
 | **Ruby** | RuboCop | RuboCop |
-| **Rust** | `rustfmt` _(resmi)_ | Clippy _(resmi)_ |
+| **Rust** | `rustfmt` _(official)_ | Clippy _(official)_ |
 | **CSS / SCSS** | Prettier | Stylelint |
 | **HTML** | Prettier | HTMLHint |
 | **SQL** | sqlfmt | sqlfluff |
 
-### Entegrasyon Noktaları
+### Integration Points
 
 - **IDE** → save-on-format
 - **Pre-commit hook** → `husky`, `lint-staged`
-- **CI pipeline** → her PR'da otomatik kontrol
+- **CI pipeline** → automatic check on every PR
 
 ---
 
 ## Autoloading Standards — PSR-4
 
-- Namespace → dizin eşlemesi ile otomatik sınıf yükleme
-- Composer `autoload.psr-4` ile entegre çalışır
-- Modern PHP projelerinin standart yöntemi
+- Automatic class loading via namespace → directory mapping
+- Integrates with Composer `autoload.psr-4`
+- Standard approach for modern PHP projects
 
 ---
 
-## Teknik Sözleşme (Contract)
+## Technical Contract
 
-| Başlık | Açıklama |
+| Title | Description |
 |---|---|
-| Amaç | Sistem bileşenleri arasında ortak ve net bir iletişim standardı oluşturmak |
-| Kullanım Alanı | API endpoint'leri, request/response yapıları, veri modelleri, servis metodları, event yapıları |
-| Sağladığı Fayda | Yanlış anlaşılmayı azaltır, geliştirme hızını artırır, test süreçlerini kolaylaştırır |
-| Belirlenmezse Oluşan Risk | Entegrasyon hataları, alan uyumsuzlukları, belirsiz hata yönetimi, bakım zorluğu |
-| Temel Unsurlar | Alan isimleri, veri tipleri, zorunlu alanlar, validasyon kuralları, hata formatı, versiyonlama |
-| Dokümantasyon Biçimi | Swagger / OpenAPI, Postman Collection, Markdown teknik doküman, ERD ve şema dökümleri |
+| Purpose | Create a shared, clear communication standard between system components |
+| Scope | API endpoints, request/response shapes, data models, service methods, event structures |
+| Benefit | Reduces misunderstanding, speeds development, eases testing |
+| Risk if missing | Integration errors, field mismatches, unclear error handling, harder maintenance |
+| Core elements | Field names, data types, required fields, validation rules, error format, versioning |
+| Documentation form | Swagger / OpenAPI, Postman Collection, Markdown technical docs, ERD and schema dumps |
 
 ---
 
-## Öğrenimler (Best Practices)
+## Learnings (Best Practices)
 
-Kaynak: [shanraisshan/claude-code-best-practice](https://github.com/shanraisshan/claude-code-best-practice)
+Source: [shanraisshan/claude-code-best-practice](https://github.com/shanraisshan/claude-code-best-practice)
 
-- Her zaman plan mode kullanın, Claude'a doğrulama yapabileceği bir yol verin
-- Paralel geliştirme için Git Worktrees kullanın
-- `/loop` ile 3 güne kadar tekrarlayan görevler planlayın
-- Code Review yapın — yeni context pencereleri, ilk agent'ın kaçırdığı bug'ları yakalayabilir
-- Aşama aşama planlar oluşturun ve her aşamaya test koyun
-- CLAUDE.md dosyası mümkünse 200 satırın altında olmalı
-- Workflow'lar için sub-agent yerine command kullanın
-- Feature-özel sub-agent + skills > genel QA/backend agent
-- Küçük işler için vanilla Claude Code, karmaşık workflow'lardan daha iyi çalışır
+- Always use plan mode; give Claude a path it can verify
+- Use Git Worktrees for parallel development
+- Plan repeating tasks for up to 3 days with `/loop`
+- Do code review — new context windows can catch bugs the first agent missed
+- Build stage-by-stage plans and put tests in every stage
+- Keep CLAUDE.md under 200 lines when possible
+- Prefer commands over sub-agents for workflows
+- Feature-specific sub-agent + skills > generic QA/backend agent
+- For small jobs, vanilla Claude Code works better than complex workflows
 
-> **Not:** Metodlar → [methods.md](methods.md), eklentiler → [extensions-registry.md](../extensions-registry.md)'e taşındı.
-
----
-
-## Öğrenimler (Verim Artışı)
-
-En büyük verim artışı sadece daha iyi prompt yazmaktan gelmiyor. Asıl farkı yaratan: multi-agent orkestrasyonu, kalıcı hafıza, yapısal planlama ve alan-özel skill'ler.
+> **Note:** Methods → moved to [methods.md](methods.md); extensions → [extensions-registry.md](../extensions-registry.md).
 
 ---
 
-## Kaynaklar
+## Learnings (Throughput Gains)
 
-- Claude Native Hafıza — https://code.claude.com/docs/en/memory
-- Claude Native Planlanmış Görevler — https://code.claude.com/docs/en/scheduled-tasks
-- Loot Drop — https://www.loot-drop.io/ _(startup temalı AI agent rehberi)_
-- Can I Run — https://www.canirun.ai/ _(bilgisayarın hangi LLM modellerini çalıştırabilir? VRAM, performans, token hızı tahmini — local AI için pratik)_
-- Cloudflare Browser Rendering API — https://developers.cloudflare.com/browser-rendering/ _(tek API çağrısı ile site crawl, Markdown/JSON çıktı — RAG ve AI veri toplama için. Workers Paid plan gerektirir)_
-- Awesome Agent Skills — https://github.com/VoltAgent/awesome-agent-skills _(500+ skill, Claude/Gemini/Codex uyumlu — skill yazmadan önce mutlaka bak)_
+The biggest throughput gains do not come from writing better prompts alone. What actually moves the needle: multi-agent orchestration, persistent memory, structured planning, and domain-specific skills.
+
+---
+
+## Resources
+
+- Claude Native Memory — https://code.claude.com/docs/en/memory
+- Claude Native Scheduled Tasks — https://code.claude.com/docs/en/scheduled-tasks
+- Loot Drop — https://www.loot-drop.io/ _(startup-themed AI agent guide)_
+- Can I Run — https://www.canirun.ai/ _(which LLM models can your machine run? VRAM, performance, token-speed estimates — practical for local AI)_
+- Cloudflare Browser Rendering API — https://developers.cloudflare.com/browser-rendering/ _(crawl a site with a single API call, Markdown/JSON output — for RAG and AI data collection. Requires Workers Paid plan)_
+- Awesome Agent Skills — https://github.com/VoltAgent/awesome-agent-skills _(500+ skills, Claude/Gemini/Codex compatible — check before writing a skill)_

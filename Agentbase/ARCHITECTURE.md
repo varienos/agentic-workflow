@@ -1,6 +1,6 @@
 # Architecture
 
-<!-- Bu dosya Bootstrap tarafindan doldurulur. -->
-<!-- Icerik: Katman yapisi, dizin haritasi, veri akisi, bagimlilik kurallari -->
-<!-- Kaynak: Codebase analizi + roportaj -->
-<!-- Feature gelistirme ve planlama sirasinda @ ile enjekte edilir -->
+<!-- This file is filled by Bootstrap. -->
+<!-- Content: layer structure, directory map, data flow, dependency rules -->
+<!-- Source: Codebase analysis + interview -->
+<!-- Injected via @ during feature development and planning -->

@@ -4,8 +4,8 @@
  * codebase-guard.js
  * PreToolUse (Edit|Write) hook
  *
- * Codebase icine .claude/, CLAUDE.md, .claude-ignore, .mcp.json yazmayi engeller.
- * Agent config dosyalari Agentbase/.claude/ altinda yasar — kutsal kural.
+ * Blocks writing .claude/, CLAUDE.md, .claude-ignore, .mcp.json into Codebase.
+ * Agent config files live under Agentbase/.claude/ — invariant rule.
  */
 
 const path = require('path');
@@ -29,19 +29,19 @@ function isCodebaseConfigPath(filePath) {
     return false;
   }
 
-  // Codebase disindaki yollara dokunma
+  // Do not touch paths outside Codebase
   if (!resolved.startsWith(CODEBASE_ROOT + path.sep) && resolved !== CODEBASE_ROOT) {
     return false;
   }
 
-  // Codebase icerisindeki korunmus yollar
+  // Protected paths inside Codebase
   const relPath = '/' + path.relative(CODEBASE_ROOT, resolved).replace(/\\/g, '/');
 
   for (const pattern of BLOCKED_PATTERNS) {
     if (relPath.startsWith(pattern) || relPath === pattern) return true;
   }
 
-  // Codebase/CLAUDE.md (kok seviye)
+  // Codebase/CLAUDE.md (root level)
   if (relPath === '/CLAUDE.md') return true;
 
   return false;
@@ -58,18 +58,18 @@ async function main() {
     if (isCodebaseConfigPath(filePath)) {
       const result = {
         decision: 'block',
-        reason: 'Codebase icine agent config yazilamaz. .claude/, CLAUDE.md, .mcp.json dosyalari Agentbase/.claude/ altinda yasar. Hedef dizininizi kontrol edin.',
+        reason: 'Cannot write agent config into Codebase. .claude/, CLAUDE.md, .mcp.json files live under Agentbase/.claude/. Check your target directory.',
       };
       process.stdout.write(JSON.stringify(result));
     }
 
-    // Eslesmezse sessizce cik
+    // Exit silently if no match
   } catch (e) {
-    // Hook hatalari sessizce yutulur
+    // Hook errors are swallowed silently
   }
 }
 
-// Test icin export
+// Export for tests
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { isCodebaseConfigPath, CODEBASE_ROOT, BLOCKED_PATTERNS };
 }

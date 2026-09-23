@@ -136,7 +136,7 @@ function isSingleFileTarget(command) {
 /**
  * Cache okuma — bozuk cache veya izin problemi durumunda recovery uygular:
  *   - ENOENT (ilk calistirma): sessizce bos cache dondurur
- *   - Diger hatalar (parse, EACCES, vb.): stderr'e tek satir uyari yazar
+ *   - Diger hatalar (parse, EACCES, vb.): stderr'e tek line uyari yazar
  *     ve bozuk cache dosyasini siler (sonraki writeCache fresh yazsin)
  * Hook akisini bloklamaz — her durumda {} dondurur.
  */
@@ -157,7 +157,7 @@ function readCache() {
 }
 
 /**
- * Cache yazma — hata durumunda DEBUG bagimsiz tek satir stderr uyarisi.
+ * Cache yazma — hata durumunda DEBUG bagimsiz tek line stderr uyarisi.
  * Hook akisini bloklamaz; cache hit'i basarisiz olur, sonraki query yine
  * graphify CLI'yi cagirir (yavas ama dogru).
  */
@@ -296,7 +296,7 @@ if (graphResult.matches === 0) {
 ask(
   '🚨 Graphify-First v2 — kod ilişkisi araması tespit edildi:\n\n' +
   `   Aranan: "${pattern}"\n\n` +
-  `   📊 Graphify'da ${graphResult.matches} sonuç bulundu:\n` +
+  `   📊 Graphify'da ${graphResult.matches} sonuç found:\n` +
   graphResult.summary.split('\n').map(l => `   ${l}`).join('\n') +
   '\n\n   Öneri: graphify query ile devam et (BFS traversal, daha verimli).\n' +
   '   Komut: /g query "' + pattern + '"\n\n' +

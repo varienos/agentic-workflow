@@ -1,37 +1,37 @@
-# React Native Kurallari
+# React Native rules
 
-> Bu kurallar plain React Native (Expo'suz) projeler icin gecerlidir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules apply to plain React Native projects (without Expo).
+> All developers and agents MUST follow these rules.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Ornek cikti:
-## Proje Baglami
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.name, project.description, project.structure
+Example output:
+## Project context
 
-- **Proje:** MyApp — Finansal takip mobil uygulamasi
-- **Yapi:** Monorepo (`apps/mobile/` altinda RN projesi)
-- **RN Versiyonu:** 0.73.x (New Architecture aktif)
-- **State Management:** Zustand
+- **Project:** MyApp — Financial tracking mobile app
+- **Structure:** Monorepo (RN project under `apps/mobile/`)
+- **RN version:** 0.73.x (New Architecture enabled)
+- **State management:** Zustand
 - **Navigation:** React Navigation v6
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Platform-Spesifik Kod Kurallari
+## Platform-specific code rules
 
-### Platform Ayirimi
+### Platform separation
 
 ```typescript
 import { Platform } from 'react-native';
 
-// DOGRU — Platform.select kullan
+// CORRECT — Use Platform.select
 const styles = StyleSheet.create({
   container: {
     ...Platform.select({
@@ -41,32 +41,32 @@ const styles = StyleSheet.create({
   },
 });
 
-// DOGRU — Platform-spesifik dosya uzantisi
+// CORRECT — Platform-specific file extension
 // Button.ios.tsx / Button.android.tsx
-// RN bundler otomatik olarak dogru dosyayi secer
+// RN bundler automatically picks the correct file
 
-// YANLIS (YASAK) — Ternary ile platform kontrolu
+// WRONG (FORBIDDEN) — Platform check with ternary
 const shadow = Platform.OS === 'ios'
   ? { shadowColor: '#000' }
   : { elevation: 4 };
 ```
 
-### Platform-Spesifik Dosya Yapisi
+### Platform-specific file structure
 
-| Durum | Yaklasim | Ornek |
+| Situation | Approach | Example |
 |---|---|---|
-| Kucuk fark (1-2 satir) | `Platform.select()` | Golge stili |
-| Orta fark (component logic) | `Platform.OS` kontrolu | Izin isteme akisi |
-| Buyuk fark (farkli UI) | `.ios.tsx` / `.android.tsx` dosyalari | Tarih secici |
+| Small difference (1-2 lines) | `Platform.select()` | Shadow style |
+| Medium difference (component logic) | `Platform.OS` check | Permission request flow |
+| Large difference (different UI) | `.ios.tsx` / `.android.tsx` files | Date picker |
 
 ---
 
-## Performans Kurallari
+## Performance rules
 
-### Liste Performansi
+### List performance
 
 ```typescript
-// DOGRU — FlatList kullan (uzun listeler icin)
+// CORRECT — Use FlatList (for long lists)
 <FlatList
   data={items}
   renderItem={renderItem}
@@ -81,14 +81,14 @@ const shadow = Platform.OS === 'ios'
   windowSize={5}
 />
 
-// DOGRU — Liste ogesi memo'lanmali
+// CORRECT — List item must be memoized
 const ListItem = React.memo(({ item }: { item: Item }) => (
   <View style={styles.item}>
     <Text>{item.title}</Text>
   </View>
 ));
 
-// YANLIS (YASAK) — ScrollView ile uzun liste
+// WRONG (FORBIDDEN) — Long list with ScrollView
 <ScrollView>
   {items.map((item) => (
     <View key={item.id}><Text>{item.title}</Text></View>
@@ -96,26 +96,26 @@ const ListItem = React.memo(({ item }: { item: Item }) => (
 </ScrollView>
 ```
 
-### Genel Performans
+### General performance
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `React.memo` | Liste ogesi component'lerinde ZORUNLU |
-| `useCallback` | Event handler'lari memo'la (ozellikle FlatList renderItem) |
-| `useMemo` | Agir hesaplamalar icin kullan |
-| Inline style YASAK | Her render'da yeni nesne olusturur, `StyleSheet.create` kullan |
-| Inline function YASAK (liste icinde) | `renderItem` disarida tanimla |
-| Image boyutu | Gosterim boyutuna uygun kaynak kullan, buyuk gorselleri kucult |
-| Console.log | Production build'de kaldirilmali (`babel-plugin-transform-remove-console`) |
+| `React.memo` | REQUIRED on list item components |
+| `useCallback` | Memoize event handlers (especially FlatList renderItem) |
+| `useMemo` | Use for expensive computations |
+| Inline style FORBIDDEN | Creates a new object every render — use `StyleSheet.create` |
+| Inline function FORBIDDEN (inside lists) | Define `renderItem` outside |
+| Image size | Use a source sized for display; shrink large images |
+| Console.log | Must be removed in production builds (`babel-plugin-transform-remove-console`) |
 
 ---
 
-## Navigation Kurallari (React Navigation)
+## Navigation rules (React Navigation)
 
-### Yapi
+### Structure
 
 ```typescript
-// DOGRU — Type-safe navigation
+// CORRECT — Type-safe navigation
 type RootStackParamList = {
   Home: undefined;
   Profile: { userId: string };
@@ -124,74 +124,74 @@ type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// DOGRU — Navigation hook
+// CORRECT — Navigation hook
 const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 navigation.navigate('Profile', { userId: '123' });
 
-// YANLIS (YASAK) — Type'siz navigation
-navigation.navigate('Profile'); // parametre eksik
+// WRONG (FORBIDDEN) — Untyped navigation
+navigation.navigate('Profile'); // missing parameter
 ```
 
-### Navigation Best Practices
+### Navigation best practices
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Type-safe parametre | `ParamList` type'i ZORUNLU |
-| Deep linking | `linking` config her zaman tanimlanmali |
-| Tab navigator | 5'ten fazla tab YASAK |
-| Nested navigator | Maximum 3 seviye ic ice |
-| Screen options | `screenOptions` navigator seviyesinde, `options` screen seviyesinde |
-| Header | Custom header component tercih edilir |
+| Type-safe parameters | `ParamList` type REQUIRED |
+| Deep linking | `linking` config must always be defined |
+| Tab navigator | More than 5 tabs FORBIDDEN |
+| Nested navigator | Maximum 3 nested levels |
+| Screen options | `screenOptions` at navigator level, `options` at screen level |
+| Header | Prefer a custom header component |
 
 ---
 
-## Native Modul Kurallari
+## Native module rules
 
-### Native Linking
+### Native linking
 
 ```typescript
-// DOGRU — Auto-linking (RN 0.60+)
+// CORRECT — Auto-linking (RN 0.60+)
 // 1. npm install react-native-camera
 // 2. cd ios && pod install
-// Artik otomatik link'lenir
+// Linking is automatic now
 
-// YANLIS (YASAK) — Manuel linking
+// WRONG (FORBIDDEN) — Manual linking
 // react-native link react-native-camera
 ```
 
-### Izin Yonetimi
+### Permission management
 
 ```typescript
 import { PermissionsAndroid, Platform } from 'react-native';
 
-// DOGRU — Platform'a gore izin iste
+// CORRECT — Request permission per platform
 const requestCameraPermission = async () => {
   if (Platform.OS === 'android') {
     const granted = await PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.CAMERA,
       {
-        title: 'Kamera Izni',
-        message: 'Uygulama kameraniza erismek istiyor',
-        buttonPositive: 'Izin Ver',
+        title: 'Camera permission',
+        message: 'The app wants to access your camera',
+        buttonPositive: 'Allow',
       }
     );
     return granted === PermissionsAndroid.RESULTS.GRANTED;
   }
-  // iOS: Info.plist'te NSCameraUsageDescription tanimlanmali
+  // iOS: NSCameraUsageDescription must be set in Info.plist
   return true;
 };
 ```
 
 ---
 
-## Gorsel Yonetimi
+## Image management
 
-### Image Kurallari
+### Image rules
 
 ```typescript
 import { Image } from 'react-native';
 
-// DOGRU — Boyut ve resizeMode belirt
+// CORRECT — Specify size and resizeMode
 <Image
   source={{ uri: imageUrl }}
   style={{ width: 200, height: 150 }}
@@ -199,7 +199,7 @@ import { Image } from 'react-native';
   defaultSource={require('./placeholder.png')}
 />
 
-// DOGRU — Buyuk listeler icin FastImage kullan
+// CORRECT — Use FastImage for large lists
 import FastImage from 'react-native-fast-image';
 
 <FastImage
@@ -208,26 +208,26 @@ import FastImage from 'react-native-fast-image';
   resizeMode={FastImage.resizeMode.cover}
 />
 
-// YANLIS (YASAK) — Boyutsuz gorsel
+// WRONG (FORBIDDEN) — Image without size
 <Image source={{ uri: imageUrl }} />
 ```
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `width` + `height` zorunlu | Boyutsuz Image layout bozar |
-| `resizeMode` zorunlu | Varsayilan davranis platforma gore degisir |
-| Buyuk listede `FastImage` | Disk cache + bellek optimizasyonu |
-| Lokal gorsel `require()` | Bundler optimizasyonu icin |
-| Placeholder | `defaultSource` ile bos alan gosterme |
+| `width` + `height` required | Image without size breaks layout |
+| `resizeMode` required | Default behavior differs by platform |
+| `FastImage` for large lists | Disk cache + memory optimization |
+| Local image with `require()` | For bundler optimization |
+| Placeholder | Avoid empty space with `defaultSource` |
 
 ---
 
-## Stil Kurallari
+## Styling rules
 
-### StyleSheet Kullanimi
+### StyleSheet usage
 
 ```typescript
-// DOGRU — StyleSheet.create kullan
+// CORRECT — Use StyleSheet.create
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -240,14 +240,14 @@ const styles = StyleSheet.create({
   },
 });
 
-// YANLIS (YASAK) — Inline style
+// WRONG (FORBIDDEN) — Inline style
 <View style={{ flex: 1, padding: 16 }}>
-  <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Baslik</Text>
+  <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Title</Text>
 </View>
 
-// YANLIS (YASAK) — Render icinde style nesnesi
+// WRONG (FORBIDDEN) — Style object created inside render
 const MyComponent = () => {
-  const myStyle = { padding: 16 }; // Her render'da yeni referans
+  const myStyle = { padding: 16 }; // New reference every render
   return <View style={myStyle} />;
 };
 ```
@@ -255,175 +255,183 @@ const MyComponent = () => {
 ---
 
 <!-- GENERATE: DESIGN_SYSTEM_NAME
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.design_system, project.theme_config
-Ornek cikti:
-## Tasarim Sistemi: AppTheme
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.design_system, project.theme_config
+Example output:
+## Design system: AppTheme
 
-- **Tema dosyasi:** `src/theme/index.ts`
-- **Hook:** `useTheme()` — tum renk, spacing, typography degerlerine erisim
-- **Provider:** `<ThemeProvider>` — `App.tsx` icinde sarmalayici
+- **Theme file:** `src/theme/index.ts`
+- **Hook:** `useTheme()` — access to all color, spacing, typography values
+- **Provider:** `<ThemeProvider>` — wrapper inside `App.tsx`
 -->
 
 ---
 
-## Renk Tokenlari
+## Color tokens
 
 <!-- GENERATE: COLOR_TOKENS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.theme_config, project.color_tokens
-Ornek cikti:
-### Renk Kullanim Tablosu
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.theme_config, project.color_tokens
+Example output:
+### Color usage table
 
-| Token | Light | Dark | Kullanim |
+| Token | Light | Dark | Usage |
 |---|---|---|---|
-| `colors.primary` | `#007AFF` | `#0A84FF` | Ana aksiyonlar, butonlar |
-| `colors.background` | `#FFFFFF` | `#000000` | Sayfa arka plani |
-| `colors.text` | `#000000` | `#FFFFFF` | Ana metin |
-| `colors.error` | `#FF3B30` | `#FF453A` | Hata mesajlari |
+| `colors.primary` | `#007AFF` | `#0A84FF` | Primary actions, buttons |
+| `colors.background` | `#FFFFFF` | `#000000` | Page background |
+| `colors.text` | `#000000` | `#FFFFFF` | Main text |
+| `colors.error` | `#FF3B30` | `#FF453A` | Error messages |
 
-### Renk Erisimi
+### Color access
 
 ```typescript
 const { colors } = useTheme();
 
-// DOGRU:
+// CORRECT:
 <View style={{ backgroundColor: colors.background }}>
 
-// YANLIS (YASAK):
+// WRONG (FORBIDDEN):
 <View style={{ backgroundColor: '#FFFFFF' }}>
 ```
 -->
 
 ---
 
-## Component Pattern'leri
+## Component patterns
 
 <!-- GENERATE: COMPONENT_PATTERNS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.component_library, project.ui_patterns
-Ornek cikti:
-### UI Component Kullanim Kurallari
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.component_library, project.ui_patterns
+Example output:
+### UI component usage rules
 
-| Ihtiyac | Dogru Component | Yanlis (YASAK) | Notlar |
+| Need | Correct component | Wrong (FORBIDDEN) | Notes |
 |---|---|---|---|
-| Buton | `<Button>` | `<TouchableOpacity><Text>` | Tum butonlar Button component'i |
-| Metin | `<Typography>` | `<Text>` | Ham Text YASAK |
-| Input | `<TextInput>` (themed) | RN `<TextInput>` | Tema uyumlu versiyonu kullan |
-| Kart | `<Card>` | `<View style={...}>` | Golge, kenarlik, padding dahil |
-| Liste | `<FlatList>` | `<ScrollView>` map | Performans icin FlatList |
+| Button | `<Button>` | `<TouchableOpacity><Text>` | All buttons use Button component |
+| Text | `<Typography>` | `<Text>` | Raw Text FORBIDDEN |
+| Input | `<TextInput>` (themed) | RN `<TextInput>` | Use the theme-aware version |
+| Card | `<Card>` | `<View style={...}>` | Includes shadow, border, padding |
+| List | `<FlatList>` | `<ScrollView>` map | FlatList for performance |
 -->
 
 ---
 
-## Tipografi
+## Typography
 
 <!-- GENERATE: TYPOGRAPHY
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.theme_config, project.typography
-Ornek cikti:
-### Font Ailesi
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.theme_config, project.typography
+Example output:
+### Font family
 
-| Token | Font | Weight | Kullanim |
+| Token | Font | Weight | Usage |
 |---|---|---|---|
-| `fonts.regular` | Inter-Regular | 400 | Normal metin |
-| `fonts.medium` | Inter-Medium | 500 | Vurgulu metin |
-| `fonts.bold` | Inter-Bold | 700 | Basliklar |
+| `fonts.regular` | Inter-Regular | 400 | Normal text |
+| `fonts.medium` | Inter-Medium | 500 | Emphasized text |
+| `fonts.bold` | Inter-Bold | 700 | Headings |
 
-### Font Boyutlari
+### Font sizes
 
-| Token | Boyut | Satir Yuksekligi | Kullanim |
+| Token | Size | Line height | Usage |
 |---|---|---|---|
-| `fontSize.sm` | 12 | 16 | Yardimci metin |
-| `fontSize.md` | 14 | 20 | Normal metin |
-| `fontSize.lg` | 16 | 22 | Vurgulu metin |
-| `fontSize.xl` | 20 | 28 | Alt baslik |
-| `fontSize.2xl` | 24 | 32 | Sayfa basligi |
+| `fontSize.sm` | 12 | 16 | Helper text |
+| `fontSize.md` | 14 | 20 | Normal text |
+| `fontSize.lg` | 16 | 22 | Emphasized text |
+| `fontSize.xl` | 20 | 28 | Subheading |
+| `fontSize.2xl` | 24 | 32 | Page title |
 -->
 
 ---
 
-## Test Kurallari
+## Test rules
 
 ### React Native Testing Library
 
 ```typescript
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 
-// DOGRU — Kullanici perspektifinden test
+// CORRECT — Test from the user perspective
 it('should show error when form is invalid', async () => {
   const { getByText, getByPlaceholderText } = render(<LoginScreen />);
 
-  fireEvent.changeText(getByPlaceholderText('E-posta'), '');
-  fireEvent.press(getByText('Giris Yap'));
+  fireEvent.changeText(getByPlaceholderText('Email'), '');
+  fireEvent.press(getByText('Sign in'));
 
   await waitFor(() => {
-    expect(getByText('E-posta zorunludur')).toBeTruthy();
+    expect(getByText('Email is required')).toBeTruthy();
   });
 });
 
-// YANLIS (YASAK) — Implementation detail testi
+// WRONG (FORBIDDEN) — Implementation detail test
 it('should set state', () => {
   const { UNSAFE_getByType } = render(<LoginScreen />);
-  // State'e dogrudan erisim YASAK
+  // Direct state access FORBIDDEN
 });
 ```
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `@testing-library/react-native` | Test kutuphanesi olarak ZORUNLU |
-| `getByText`, `getByPlaceholderText` | Erisilebilirlik query'leri tercih edilir |
-| `UNSAFE_*` query'ler YASAK | Implementation detail'a bagimlilik olusturur |
-| Snapshot test sinirli kullan | Kucuk, izole component'ler icin uygun |
-| Mock native moduller | `jest.mock('react-native-camera')` seklinde |
+| `@testing-library/react-native` | REQUIRED as the test library |
+| `getByText`, `getByPlaceholderText` | Prefer accessibility queries |
+| `UNSAFE_*` queries FORBIDDEN | Creates dependency on implementation details |
+| Limited snapshot tests | Suitable for small, isolated components |
+| Mock native modules | Like `jest.mock('react-native-camera')` |
 
 ---
 
-## Sik Yapilan Hatalar
+## Common mistakes
 
-| # | Hata | Aciklama | Cozum |
+| # | Mistake | Description | Fix |
 |---|---|---|---|
-| 1 | `<Text>` icinde `<View>` | Gecersiz ic ice yerlestirme | `<View>` icerigini `<Text>` disina cikar |
-| 2 | Keyboard gizleme unutma | Input alanlarinda klavye ust uste biner | `KeyboardAvoidingView` veya `react-native-keyboard-aware-scroll-view` kullan |
-| 3 | `SafeAreaView` eksik | Notch/status bar altinda icerik kalir | Kok component'te `SafeAreaView` kullan |
-| 4 | Hardcoded boyut | Farkli ekranlarda bozulur | `Dimensions`, `useWindowDimensions` veya flex kullan |
-| 5 | `TouchableOpacity` ic ice | Touch event'ler catisir | Dis container'a tek touchable koy |
-| 6 | `console.log` production'da | Performans etkisi | `babel-plugin-transform-remove-console` kullan |
-| 7 | Animated API yanlis kullanim | JS thread'i bloklar | `useNativeDriver: true` kullan |
-| 8 | StatusBar kontrolsuz | Farkli ekranlarda farkli gorunur | `<StatusBar>` component'i her ekranda kontrol et |
+| 1 | `<View>` inside `<Text>` | Invalid nesting | Move `<View>` content outside `<Text>` |
+| 2 | Forgetting to hide keyboard | Keyboard overlaps inputs | Use `KeyboardAvoidingView` or `react-native-keyboard-aware-scroll-view` |
+| 3 | Missing `SafeAreaView` | Content sits under notch/status bar | Use `SafeAreaView` in the root component |
+| 4 | Hardcoded size | Breaks on different screens | Use `Dimensions`, `useWindowDimensions`, or flex |
+| 5 | Nested `TouchableOpacity` | Touch events conflict | Put a single touchable on the outer container |
+| 6 | `console.log` in production | Performance impact | Use `babel-plugin-transform-remove-console` |
+| 7 | Incorrect Animated API usage | Blocks the JS thread | Use `useNativeDriver: true` |
+| 8 | Uncontrolled StatusBar | Looks different per screen | Control with `<StatusBar>` on every screen |
 
 ---
 
-## Yasaklar
+## Forbidden practices
 
 <!-- GENERATE: FORBIDDEN_PRACTICES
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.rules, project.conventions, project.forbidden_patterns
-Ornek cikti:
-### Kesinlikle YASAK Olan Uygulamalar
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.rules, project.conventions, project.forbidden_patterns
+Example output:
+### Strictly FORBIDDEN practices
 
-| # | Yasak | Neden | Dogru Alternatif |
+| # | Forbidden | Reason | Correct alternative |
 |---|---|---|---|
-| 1 | Inline style nesnesi | Her render'da yeni referans, performans etkisi | `StyleSheet.create` kullan |
-| 2 | `ScrollView` ile uzun liste | Tum ogeleri render eder, bellek sorunu | `FlatList` kullan |
-| 3 | Hardcoded renk degeri | Tema tutarsizligi, dark mode bozulur | Renk tokeni kullan |
-| 4 | `react-native link` (manuel) | Auto-linking var (RN 0.60+) | `pod install` yeterli |
-| 5 | `useNativeDriver: false` (gereksiz) | JS thread'i bloklar, animasyon kasma | `useNativeDriver: true` kullan |
-| 6 | `Dimensions.get` render icinde | Boyut degistiginde guncellenmez | `useWindowDimensions` hook kullan |
-| 7 | `AsyncStorage` icin buyuk veri | 6MB limit, yavas | MMKV veya SQLite kullan |
+| 1 | Inline style object | New reference every render, performance cost | Use `StyleSheet.create` |
+| 2 | Long list with `ScrollView` | Renders all items, memory issues | Use `FlatList` |
+| 3 | Hardcoded color value | Theme inconsistency, dark mode breaks | Use a color token |
+| 4 | `react-native link` (manual) | Auto-linking exists (RN 0.60+) | `pod install` is enough |
+| 5 | Unnecessary `useNativeDriver: false` | Blocks JS thread, janky animation | Use `useNativeDriver: true` |
+| 6 | `Dimensions.get` inside render | Does not update when size changes | Use `useWindowDimensions` hook |
+| 7 | Large data in `AsyncStorage` | 6MB limit, slow | Use MMKV or SQLite |
 -->
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory rules
 
-1. **StyleSheet.create ZORUNLU** — Render disinda stil tanimla, inline style nesnesi YASAK.
-2. **FlatList > ScrollView** — Uzun listelerde FlatList ZORUNLU, ScrollView ile map YASAK.
-3. **Platform.select > Ternary** — Platform-spesifik stil icin `Platform.select()` kullan.
-4. **React.memo liste ogesi** — FlatList renderItem component'i memo'lanmali.
-5. **SafeAreaView** — Kok component'te SafeAreaView kullanilmali.
-6. **KeyboardAvoidingView** — Form iceren ekranlarda klavye yonetimi ZORUNLU.
-7. **Type-safe navigation** — ParamList type'i olmadan navigate YASAK.
-8. **Image boyutu** — `width`, `height` ve `resizeMode` olmadan Image YASAK.
-9. **Native driver** — Animasyonlarda mumkun olan her yerde `useNativeDriver: true`.
-10. **Test** — `@testing-library/react-native` ile erisilebilirlik query'leri kullan.
+1. **StyleSheet.create REQUIRED** — Define styles outside render; inline style objects FORBIDDEN.
+2. **FlatList > ScrollView** — FlatList REQUIRED for long lists; ScrollView with map FORBIDDEN.
+3. **Platform.select > Ternary** — Use `Platform.select()` for platform-specific styles.
+4. **React.memo on list items** — FlatList renderItem components must be memoized.
+5. **SafeAreaView** — Use SafeAreaView in the root component.
+6. **KeyboardAvoidingView** — Keyboard management REQUIRED on screens with forms.
+7. **Type-safe navigation** — navigate without a ParamList type FORBIDDEN.
+8. **Image size** — Image without `width`, `height`, and `resizeMode` FORBIDDEN.
+9. **Native driver** — Use `useNativeDriver: true` wherever possible in animations.
+10. **Test** — Use accessibility queries with `@testing-library/react-native`.
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

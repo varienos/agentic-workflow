@@ -1,4 +1,4 @@
-# Django Modul Tespit Kurallari
+# Django Module Detection Rules
 
 ## Checks
 
@@ -17,7 +17,7 @@
 
 ## Affects Core
 
-- task-hunter: VERIFICATION_COMMANDS'a `python manage.py test` eklenir
-- workflow-lifecycle: Django komut korumalari eklenir
-- CLAUDE.md: Django kodlama kurallari bolumu eklenir
-- settings.json: 1 hook tanimi eklenir
+- task-hunter: `python manage.py test` is added to VERIFICATION_COMMANDS
+- workflow-lifecycle: Django command protections are added
+- CLAUDE.md: Django coding rules section is added
+- settings.json: 1 hook definition is added

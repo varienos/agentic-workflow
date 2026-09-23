@@ -34,7 +34,7 @@ describe('prisma-db-push-guard hook', () => {
     assert.equal(result.status, 0);
     assert.deepEqual(JSON.parse(result.stdout), {
       decision: 'block',
-      reason: "prisma db push YASAK. Migration dosyasi olmadan DB'yi degistirir. Dogru komut: npx prisma migrate dev --name {aciklama}",
+      reason: 'prisma db push is FORBIDDEN. It changes the DB without a migration file. Correct command: npx prisma migrate dev --name {description}',
     });
   });
 
@@ -99,8 +99,8 @@ describe('prisma-migration-check hook', () => {
     });
     const systemMessage = JSON.parse(result.stdout).systemMessage;
 
-    assert.match(systemMessage, /Prisma schema validasyonu basarili/);
-    assert.match(systemMessage, /migration olusturulmamis/);
+    assert.match(systemMessage, /Prisma schema validasyonu basarili|Prisma schema validation succeeded/);
+    assert.match(systemMessage, /no migration was created/);
   });
 
   it('ozel karakter iceren schema path shell injection olmadan gecilir', t => {
@@ -165,7 +165,7 @@ describe('destructive-migration-check hook', () => {
     const result = runHook(hookPath, makeCommandInput('npx prisma migrate dev --name drop-users'));
     const systemMessage = JSON.parse(result.stdout).systemMessage;
 
-    assert.match(systemMessage, /YIKICI MIGRATION/);
+    assert.match(systemMessage, /DESTRUCTIVE MIGRATION/);
     assert.match(systemMessage, /DROP TABLE/);
     assert.match(systemMessage, /ALTER COLUMN/);
   });

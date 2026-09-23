@@ -1,28 +1,27 @@
-# PHP Backend Ortak Kurallari
+# PHP Backend Shared Rules
 
-> Bu kurallar tum PHP backend leaf'leri icin gecerlidir.
-> Framework-spesifik kurallar bu dosyaya EK olarak uygulanir.
+> These rules apply to all PHP backend leaves.
+> Framework-specific rules apply in addition to this file.
 
-## Konfigurasyon ve Secret Yonetimi
+## Configuration and Secret Management
 
-- Secret degerleri kod icine hardcode etme; framework config/env mekanizmasini kullan.
-- Config okumalarini framework'un sagladigi katmanda topla; ham `$_ENV` veya `getenv()` kullanimini dagitma.
-- Yeni env degerleri eklenince ornek env dosyasi da guncellenmeli.
+- Do not hardcode secret values in code; use the framework config/env mechanism.
+- Collect config reads in the layer provided by the framework; do not scatter raw `$_ENV` or `getenv()` usage.
+- When new env values are added, the example env file must be updated as well.
 
-## Ince Controller Yaklasimi
+## Thin Controller Approach
 
-- Controller'lar request alma, validation sonucu alma ve response donme katmanidir.
-- Is logigini controller'a yigmak yerine service/action katmanina tasi.
-- DB sorgulari, external API cagrilari ve transaction yonetimi controller icinde daginik sekilde olmamali.
+- Controllers are the layer for receiving requests, receiving validation results, and returning responses.
+- Move business logic to a service/action layer instead of stacking it in the controller.
+- DB queries, external API calls, and transaction management must not be scattered inside controllers.
 
-## Validation ve Response
+## Validation and Response
 
-- External input framework validation mekanizmasindan gecmeli.
-- Basarili ve hatali response formatlari tutarli olmali; API varsa tekil bir response contract belirlenmeli.
-- Domain hatalari ve beklenmeyen exception'lar ayri ele alinmali.
+- External input must pass through the framework validation mechanism.
+- Success and error response formats must be consistent; if there is an API, define a single response contract.
+- Domain errors and unexpected exceptions must be handled separately.
 
 ## Verification Convention
 
-- Final kontrolde en azindan ilgili test komutu ve framework'un build/cache komut etkisi dusunulmeli.
-- Cache olusturan komutlari gelistirme akisini bozmayacak sekilde kullan; gerekiyorsa clear adimi belirt.
-
+- Final checks should at least consider the relevant test command and any framework build/cache command effects.
+- Use cache-producing commands in a way that does not break the development flow; specify a clear step when needed.

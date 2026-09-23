@@ -1,321 +1,297 @@
-# Bug Hunter — Otonom Hata Bulucu ve Duzeltucu
+# Bug Hunter — Autonomous Error Detector and Corrector
 
-> Hata aciklamasini alir, kok nedeni bulur, duzeltir, test eder, commit atar.
-> Kullanim: `/bug-hunter <hata_aciklamasi>`, `/bug-hunter "sepete urun eklenemiyor"`
+> Extracts the issue description, identifies the cause, corrects it, tests it, and commits.
+> Usage: `/bug-hunter <issue_description>`, `/bug-hunter "item cannot be added to cart"`
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure, project.subprojects
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- **Yapi:**
+- **Structure:**
   - `apps/web/` — Next.js frontend
   - `apps/api/` — NestJS backend
   - `apps/mobile/` — Expo React Native
-  - `packages/shared/` — Paylasilan tipler ve yardimcilar
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+  - `packages/shared/` — Shared types and utilities
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Step 1 — Hata Aciklamasini Cozumle
+## Step 1 — Extracting the Issue Description
 
-Kullanicinin hata aciklamasından asagidaki bilgileri cikar:
+Extract the following information from the user's bug report:
 
-| Alan | Aciklama | Ornek |
-|---|---|---|
-| **Belirti** | Ne oluyor? | "Sepete urun eklenemiyor" |
-| **Beklenen davranis** | Ne olmali? | "Urun sepete eklenmeli" |
-| **Baglam** | Nerede oluyor? | "Web uygulama, urun detay sayfasi" |
-| **Tekrarlanabilirlik** | Her seferinde mi? | "Her seferinde" / "Bazen" |
-| **Hata mesaji** | Varsa | "TypeError: Cannot read property..." |
+| Field | Description | Example |
+| --- | --- | --- |
+| **Description** | What's happening? | "Item cannot be added to cart" |
+| **Expected behavior** | What should happen? | "Item should be added to cart" |
+| **Context** | Where is it happening? | "Web application, item detail page" |
+| **Repeatability** | Is this happening every time? | "Every time" / "Sometimes" |
+| **Error message** | Is there an error message? | "TypeError: Cannot read property..." |
 
-> **KURAL:** Hata aciklamasi cok belirsizse (orn. "calismıyor") bile SORU SORMA. Eldeki bilgiyle analiz et.
+> **RULE:** If the report is vague, do not ask a question. Analyze with the information you have.
 
----
+>>>
+## Step 2 — Investigation of Similar Errors
 
-## Step 2 — Hafiza Arastirmasi
+Have similar errors already been fixed? In the case of episodic memory:
 
-Benzer hatalar daha once duzeltildi mi? Episodic memory'de ara:
+1. Similar error descriptions
+2. Same module/directory previous fixes
+3. Repeated error patterns
 
-1. Benzer belirti iceren gecmis oturumlar
-2. Ayni modul/dosyada yapilan onceki duzeltmeler
-3. Tekrarlayan hata pattern'leri
+If found:
+- Reference to previous solution
+- Why is this similar? Investigate further
+- Is regression or a different error distinguished?
 
-Bulgu varsa:
-- Onceki cozumu referans al
-- Ayni kok neden mi kontrol et
-- Regresyon mu yoksa farkli hata mi ayirt et
+## Step 3 — Cause Analysis
 
----
+### 3.1 — Narrow Down Scope
 
-## Step 3 — Kok Neden Analizi
+Starting from the error description:
 
-### 3.1 — Kapsami Daralt
+1. **Which sub-project?** (API, Web, Mobile, Shared)
+2. **Which module/feature?** (auth, orders, payments, ...)
+3. **Which layer?** (UI, service, data, config)
 
-Hata aciklamasindan yola cikarak:
+Identify and read relevant files.
 
-1. **Hangi alt proje?** (API, Web, Mobile, Shared)
-2. **Hangi modul/ozellik?** (auth, orders, payments, ...)
-3. **Hangi katman?** (UI, service, data, config)
+### 3.2 — Hypothesis Formation
 
-Ilgili dosyalari belirle ve oku.
-
-### 3.2 — Hipotez Olustur
-
-En olasi kok nedenler icin hipotezler olustur (max 3):
+Form hypotheses for most likely cause reasons (max 3):
 
 ```
-## Hipotezler
+## Hypotheses
 
-### Hipotez 1 (En olasi)
-- **Tahmin:** [ne yanlis olabilir]
-- **Dosya:** [hangi dosya]
-- **Neden:** [neden bu dusunuluyor]
-- **Dogrulama:** [nasil dogrulanir]
+### Hypothesis 1 (Most Likely)
+- **Assumption:** [what is wrong here]
+- **File:** [which file]
 
-### Hipotez 2
+>>>
+Here is the translated text:
+
+- **Reason:** [Why is this being considered?]
+- **Validation:** [How to validate it]
+
+### Hypothesis 2
 - ...
 
-### Hipotez 3
+### Hypothesis 3
 - ...
 ```
 
-### 3.3 — Hipotez Dogrulama
+### 3.3 — Hypothesis Validation
 
-Her hipotezi sirayla dogrula:
+Validate each hypothesis in sequence:
 
-1. Ilgili dosyayi oku
-2. Suphelenilen kodu incele
-3. Mantik akisini takip et
-4. Hatanin kaynagini bul
+1. Read the relevant file
+2. Inspect the code that needs validation
+3. Follow the logical flow
+4. Find the source of the error
 
-**Dogrulama sonuclari:**
-- ✅ Dogrulandi → Step 4'e gec
-- ❌ Yanlis → Sonraki hipoteze gec
+**Validation Results:**
+- ✅ Validated → Proceed to Step 4
+- ❌ Invalid → Move on to the next hypothesis
 
-### 3.4 — 3 Hipotez Limiti
+### 3.4 — Hypothesis Limitation
 
-> **KURAL:** 3 hipotez denendiyse ve hicbiri dogrulanmadiysa → DURDUR.
-> Kullaniciya bildir: "3 hipotez denendi, kok neden bulunamadi. Daha fazla baglam gerekli."
-
----
-
-## Step 4 — Duzeltme Plani
-
-### 4.1 — Plan Olustur
-
-```
-## Duzeltme Plani
-
-### Kok Neden
-[bulunan kok neden]
-
-### Duzeltme
-- **Dosya:** [yol]
-- **Degisiklik:** [ne yapilacak]
-- **Neden:** [neden bu cozum]
-
-### Yan Etki Analizi
-- [bu duzeltme baska yerleri etkiler mi?]
-- [mevcut testler kirilir mi?]
-- [performans etkisi var mi?]
-```
-
-### 4.2 — Minimal Duzeltme Ilkesi
-
-> **KURAL:** SADECE hatayi duzelt. Refactor YAPMA, iyilestirme YAPMA, cleanup YAPMA.
-> Hatanin cozumu icin gereken minimum degisikligi uygula.
+> **RULE:** If all three hypotheses are attempted and none are validated, then **BLOCK**.
+> Inform the user: "Three hypotheses were attempted, but no error was found. More debugging is required."
 
 ---
 
-## Step 5 — Duzeltmeyi Uygula
+## Step 4 — Troubleshooting Plan
 
-1. Kok neden dosyasini oku (zaten okunmus olmali)
-2. Duzeltmeyi uygula
-3. Degisikligi dogrula (syntax kontrolu)
+### 4.1 — Create a Plan
 
-> **KURAL:** Duzeltme sirasinda "bunu da iyilestireyim" dusuncesine KAPILMA. Sadece hata duzeltmesi.
+```
+## Troubleshooting Plan
+
+### What Went Wrong
+[The reason for the issue]
+```
+### Correction
+
+#### Adjustment
+- **File:** [path]
+- **Changes:** [what to do]
+- **Reason:** [why this solution]
+
+#### Side Effect Analysis
+- Does this adjustment affect other areas?
+- Do current tests fail after applying this change?
+- Is there a performance impact?
 
 ---
 
-## Step 6 — Dogrulama Kapisi
+#### Minimal Adjustment Principle (4.2)
 
-### 6.1 — Test Yaz
+> **RULE:** Only fix the error. Refactor, improve, or clean up only when necessary.
+> The minimum change required to fix the error must be applied.
 
-Hatanin tekrarlanmadigini dogrulayan bir test yaz:
+---
+
+## Step 5 — Applying the Adjustment
+
+1. Read the file that needs adjustment (even if it's already read)
+2. Apply the adjustment
+3. Verify the changes (syntax checking)
+
+> **RULE:** Never consider "and also improve this" in the adjustment process. Only fix the error.
+
+---
+
+## Step 6 — Verification Checkpoint
+
+### 6.1 — Writing a Test
+
+Write a test to verify that the error is no longer repeated:
 
 ```
-// Bu test, [hata_aciklamasi] hatasinin duzeltildigini dogrular
-test('[hata_senaryosu] artik dogru calisiyor', () => {
-  // Hatayi tetikleyen senaryo
-  // Beklenen dogru davranis
+// This test verifies that [error_description] error is fixed
+test('[error_scenario] works correctly again', () => {
+  // The scenario that triggered the error
+  // Expected correct behavior
 });
-```
 
-### 6.2 — Testleri Calistir
+>>>
+```
+### 6.2 — Running Tests
 
 <!-- GENERATE: VERIFICATION_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, project.scripts, stack.test_framework
-Ornek cikti:
-Her alt proje icin test ve dogrulama komutlari:
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.subprojects, project.scripts, stack.test_framework
+Example output:
+Tests and verification commands for each subproject:
 
-| Alt Proje | Komut | Aciklama |
+| Subproject | Command | Description |
 |---|---|---|
-| API | `cd ../Codebase/apps/api && npm run test` | Jest birim testleri |
-| API (lint) | `cd ../Codebase/apps/api && npm run lint` | ESLint kontrolu |
-| API (type) | `cd ../Codebase/apps/api && npx tsc --noEmit` | TypeScript tip kontrolu |
-| Web | `cd ../Codebase/apps/web && npm run test` | Birim testleri |
-| Web (build) | `cd ../Codebase/apps/web && npm run build` | Build dogrulamasi |
-| Mobile | `cd ../Codebase/apps/mobile && npx tsc --noEmit` | TypeScript tip kontrolu |
+| API | `cd ../Codebase/apps/api && npm run test` | Unit tests |
+| API (lint) | `cd ../Codebase/apps/api && npm run lint` | ESLint checks |
+| API (type) | `cd ../Codebase/apps/api && npx tsc --noEmit` | TypeScript type checking |
+| Web | `cd ../Codebase/apps/web && npm run test` | Unit tests |
+| Web (build) | `cd ../Codebase/apps/web && npm run build` | Build validation |
+| Mobile | `cd ../Codebase/apps/mobile && npx tsc --noEmit` | TypeScript type checking |
 -->
 
-### 6.3 — Test Sonucu Degerlendirme
+### 6.3 — Evaluating Test Results
 
-- **Tum testler gecti** → Step 7'ye gec
-- **Yeni test basarisiz** → Duzeltmeyi gozden gecir (max 3 deneme)
-- **Mevcut test basarisiz** → Onceden var olan hata protokolu:
+- **All tests passed** → Proceed to Step 7
+- **New test failed** → Review and revise (max 3 attempts)
+- **Existing test failed** → Follow the existing error protocol:
 
-**Onceden Var Olan Hata Protokolu:**
-1. Duzeltmeyi geri al (git stash)
-2. Testi calistir — hala basarisiz mi?
-3. EVET → Onceden var olan hata, yoksay. Duzeltmeyi geri yukle.
-4. HAYIR → Duzeltme mevcut testi bozmus, duzeltmeyi revize et.
+**Existing Error Protocol:**
+1. Revert changes (git stash)
+2. Run the test — did it pass?
+3. YES → Ignore the previous error, revert changes.
+4. NO → The revision caused a current test to fail; review and revise.
 
 ---
 
 ## Step 7 — Commit
 
-### 7.1 — Dosya Hazirlama
+### 7.1 — Preparing Files
 
 ```bash
-git add <duzeltme_dosyasi> <test_dosyasi>
-```
+git add <revision_file> <test_file>
 
-> **KURAL:** Sadece duzeltme ve ilgili test dosyalarini ekle. `git add .` YASAK.
+>>>
+> **Rule:** Only update and add related test files. `git add .` IS PROHIBITED.
 
-### 7.2 — Iliskili Gorev Tespiti
+### 7.2 — Task Identification
 
-Backlog'da bu hatayla ilgili gorev var mi?
+Check if there is a task related to this issue in the backlog?
 
 ```
 backlog task list --plain
 ```
 
-Baslik veya aciklamada eslesen gorev bul. Bulursa commit mesajinda referans ver.
+Find the task by title or description. If found, reference it in the commit message.
 
-### 7.3 — Commit Mesaji
+### 7.3 — Commit Message
 
 <!-- GENERATE: COMMIT_CONVENTION
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: conventions.commit_language, conventions.commit_format
-Ornek cikti:
+Description: This section will be filled by Bootstrap with manifest data.
+Required manifest fields: conventions.commit_language, conventions.commit_format
+Example output:
 ### Commit Format (Bug Fix)
 
 ```
-fix: <hata_ozeti>
+fix: <bug description>
 ```
 
-Iliskili gorev varsa:
+If related task exists:
+
 ```
-fix: <hata_ozeti> (#<task_id>)
+fix: <bug description> (#<task_id>)
 ```
 
-**Dil:** Turkce
-**Ornek:** `fix: sepete urun ekleme hatasi duzeltildi (#34)`
+**Language:** Turkish
+**Example:** `fix: Adding product to cart error fixed (#34)`
 -->
-
----
-
-## Step 8 — Backlog Gorevi
-
-### 8.1 — Mevcut Gorev Guncelleme
-
-Eger iliskili gorev bulunduysa:
+If the related task exists:
 ```
-backlog task edit <id> -s "Done" --append-notes "[BUG FIX] <ozet>"
+backlog task edit <id> -s "Done" --append-notes "[BUG FIX] <summary>"
 ```
 
-### 8.2 — Yeni Gorev Olusturma
+### 8.2 — Creating a New Task
 
-Eger iliskili gorev yoksa, yapilan isi kaydet:
+If the related task does not exist, record the done work:
 ```
 backlog task create \
-  "fix: <hata_ozeti>" \
-  --description "<detay>" \
+  "fix: <error_summary>" \
+  --description "<detail>" \
   --priority "high" \
   --labels "bug" \
   -s "Done"
 ```
-
----
-
-## Step 9 — Kullanici Raporu
-
-```
-## Bug Fix Raporu
-
-### Hata
-**Belirti:** [kullanicinin aciklamasi]
-**Kok Neden:** [bulunan kok neden]
-**Dosya:** [etkilenen dosya(lar)]
-
-### Duzeltme
-| Dosya | Degisiklik |
-|---|---|
-| `<yol>` | <ne yapildi> |
-
-### Test
-- [x] Regresyon testi yazildi: [test_adi]
-- [x] Mevcut testler gecti
-- [x] Lint/Type kontrolu temiz
-
 ### Commit
-`<hash>` — `<mesaj>`
+`<hash>` — `<message>`
 
-### Kok Neden Analizi
-**Hipotez sureci:**
-1. [Hipotez 1] — [sonuc]
-2. [Hipotez 2] — [sonuc] (eger denendiyse)
+### Code Analysis
 
-**Neden bu hata olustu:**
-[kisa aciklama — gelecekte benzer hatalari onlemeye yardimci olacak bilgi]
-```
+**Hypothesis Period:**
+1. [Hypothesis 1] — [Result]
+2. [Hypothesis 2] — [Result] (if applicable)
+
+**Why this error occurred:**
+[ Brief explanation — Future similar errors will be mitigated with this information]
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — Only `.claude/`, `CLAUDE.md`, `.mcp.json`, and `.claude-ignore` files should exist within the Agentbase directory. Creating a `.claude/` directory outside of the Codebase is forbidden.
+2. **Git runs only in Codebase** — All Git operations (commit, push, branch) must be performed within the `../Codebase/` directory. The Agentbase does not have Git installed.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) are readable and can be refactored as needed. Config files (`.claude/`, `CLAUDE.md`) should not be written in the Codebase.
 
-1. **Kok nedeni bul** — Belirtiyi degil, kok nedeni duzelt. Band-aid cozum YASAK.
-2. **Minimal duzeltme** — Sadece hatayi duzelt. Refactor, iyilestirme, cleanup YAPMA.
-3. **Otonom calis** — Hata aciklamasi belirsiz olsa bile soru sorma, analiz et.
-4. **3 hipotez limiti** — 3 hipotez basarisiz olursa DUR, kullaniciya bildir.
-5. **Test yaz** — Her duzeltme icin regresyon testi zorunlu.
-6. **Onceden var olan hatalari yoksay** — Senin duzeltmenden once var olan testleri DUZELTME.
-7. **Sadece duzeltme dosyalarini commit'le** — `git add .` yasak.
-8. **Iliskili gorev ara** — Backlog'da bu hatayla ilgili gorev varsa referans ver.
-9. **Pattern'leri koru** — Duzeltme sirasinda mevcut pattern'leri takip et.
-10. **Backlog CLI kullan** — Gorev islemlerini SADECE CLI ile yap.
-11. **Codebase yolu** — Tum dosya erisimleri `../Codebase/` uzerinden.
-12. **Guvenlik** — Credential, secret, `.env` degerleri ASLA log'a yazilmaz.
+1. **Identify the root cause** — Fix the root cause, not just mask it with a band-aid.
+2. **Minimal fix** — Only fix the issue at hand. Refactor, improve, and clean up are not allowed.
+3. **Autonomous operation** — Ask questions or analyze even if the error is unclear.
+4. **Three hypothesis limit** — If three hypotheses fail, STOP and inform the user.
+5. **Write tests** — Mandatory for every fix.
+6. **Prioritize existing errors** — Refactor existing tests before introducing new ones.
+7. **Only commit fix files** — `git add .` is forbidden.
+8. **Reference related tasks** — If a task in the backlog is related to this error, reference it.
+9. **Follow patterns** — Follow established patterns during the refactoring process.
+10. **Use Backlog CLI** — Only use the Backlog CLI for task operations.
+11. **Codebase path** — All file access should be through `../Codebase/`.
+12. **Security** — Credential, secret, and `.env` values are never logged to the log.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap this marker for common use.
+Self-Refresh section will replace this. The command will review its own content in the project's current state: small discrepancy Edit or large change backlog task is reported.
+
+>>>
 -->

@@ -4,10 +4,10 @@
  * prisma-migration-check.js
  * PostToolUse (Edit|Write) hook
  *
- * schema.prisma dosyasi duzenlendiginde:
- * 1. `npx prisma validate` calistirir
- * 2. Migration durumunu kontrol eder
- * 3. Dosya icinde `prisma db push` metni varsa uyari verir (ikinci katman savunma)
+ * When the schema.prisma file is edited:
+ * 1. `npx prisma validate` runs
+ * 2. Checks migration status
+ * 3. Warns if the file contains the text `prisma db push` (second-layer defense)
  */
 
 const path = require('path');
@@ -19,17 +19,17 @@ const { readStdin, resolveCodebaseRoot } = require(path.join(__dirname, 'shared-
 const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
 /**
- * Codebase icinde prisma/schema.prisma dosyasini arar.
- * Hem kok dizinde hem alt dizinlerde arar.
+ * Searches for prisma/schema.prisma inside Codebase.
+ * Searches both in the root directory and in subdirectories.
  */
 function findPrismaDir() {
-  // Direkt kok
+  // Direct root
   const rootPrisma = path.join(CODEBASE_ROOT, 'prisma');
   if (fs.existsSync(path.join(rootPrisma, 'schema.prisma'))) {
     return rootPrisma;
   }
 
-  // Alt dizinlerde ara (apps/*, packages/*, src/*)
+  // Search subdirectories (apps/*, packages/*, src/*)
   const searchDirs = ['apps', 'packages', 'src', '.'];
   for (const dir of searchDirs) {
     const base = path.join(CODEBASE_ROOT, dir);
@@ -75,7 +75,7 @@ function checkMigrationStatus(prismaDir) {
       || /database schema is not in sync/i.test(output);
     return { synced: !hasPending, output };
   } catch (e) {
-    // migrate status bazi durumlarda hata donebilir (DB baglantisi yok vs.)
+    // migrate status may error in some cases (no DB connection, etc.)
     return { synced: null, output: e.stderr?.toString() || e.message };
   }
 }
@@ -97,32 +97,32 @@ async function main() {
 
     const filePath = parsed?.tool_input?.file_path || parsed?.tool_input?.path || '';
 
-    // schema.prisma duzenlenip duzenlenmedigini kontrol et
+    // Check whether schema.prisma was edited
     const isSchemaEdit = filePath.endsWith('schema.prisma');
 
-    // Dosya icinde prisma db push metni var mi? (ikinci katman savunma)
+    // Does the file contain prisma db push text? (second-layer defense)
     const hasDbPushText = checkFileForDbPush(filePath);
 
     const messages = [];
 
     if (hasDbPushText) {
       messages.push(
-        '⛔ UYARI: Bu dosyada `prisma db push` komutu tespit edildi. ' +
-        '`prisma db push` YASAKTIR. Bunun yerine `npx prisma migrate dev --name <aciklama>` kullanilmalidir.'
+        '⛔ WARNING: The `prisma db push` command was detected in this file. ' +
+        '`prisma db push` is FORBIDDEN. Use `npx prisma migrate dev --name <description>` instead.'
       );
     }
 
     if (isSchemaEdit) {
       const prismaDir = findPrismaDir();
       if (!prismaDir) {
-        messages.push('⚠️ Prisma dizini bulunamadi. schema.prisma dosyasinin konumunu kontrol edin.');
+        messages.push('⚠️ Prisma directory not found. Check the location of the schema.prisma file.');
       } else {
         // 1. Validate
         const validation = runPrismaValidate(prismaDir);
         if (!validation.valid) {
           messages.push(
             '❌ PRISMA VALIDATE HATASI:\n' +
-            'Schema dosyasinda hata var. Devam etmeden once duzeltilmeli.\n\n' +
+            'There is an error in the schema file. It must be fixed before continuing.\n\n' +
             '```\n' + (validation.error || 'Bilinmeyen hata') + '\n```'
           );
         } else {
@@ -133,26 +133,26 @@ async function main() {
         const migration = checkMigrationStatus(prismaDir);
         if (migration.synced === false) {
           messages.push(
-            '⚠️ MIGRATION UYARISI:\n' +
-            'Schema degisikligi yapildi ancak migration olusturulmamis.\n' +
-            'Asagidaki komutu calistirmayi unutmayin:\n\n' +
-            '```\nnpx prisma migrate dev --name <degisiklik_aciklamasi>\n```'
+            '⚠️ MIGRATION WARNING:\n' +
+            'A schema change was made but no migration was created.\n' +
+            'Do not forget to run the following command:\n\n' +
+            '```\nnpx prisma migrate dev --name <change_description>\n```'
           );
         } else if (migration.synced === true) {
           messages.push('✅ Migration durumu senkron.');
         }
-        // synced === null ise DB baglantisi yok, sessizce gec
+        // if synced === null there is no DB connection; skip silently
       }
     }
 
     if (messages.length > 0) {
       const result = {
-        systemMessage: '🔍 **Prisma Migration Kontrolu**\n\n' + messages.join('\n\n')
+        systemMessage: '🔍 **Prisma Migration Check**\n\n' + messages.join('\n\n')
       };
       process.stdout.write(JSON.stringify(result));
     }
   } catch (e) {
-    // Hook hatalari sessizce yutulur
+    // Hook errors are swallowed silently
   }
 }
 

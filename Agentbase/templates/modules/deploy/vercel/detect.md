@@ -1,4 +1,4 @@
-# Vercel Modul Tespiti
+# Vercel Module Detection
 
 ## Checks
 
@@ -17,5 +17,5 @@
 
 ## Affects Core
 
-- workflow-lifecycle: Vercel deploy akisi eklenir (pre-deploy → vercel deploy)
-- CLAUDE.md: Vercel deploy kurallari bolumu eklenir
+- workflow-lifecycle: Vercel deploy flow is added (pre-deploy → vercel deploy)
+- CLAUDE.md: Vercel deploy rules section is added

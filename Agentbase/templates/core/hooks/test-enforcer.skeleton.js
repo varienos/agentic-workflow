@@ -2,70 +2,70 @@
 /**
  * Test Enforcer Hook
  * Bootstrap tarafindan uretilmistir.
- * PostToolUse (Edit|Write) — kaynak dosya icin test zorlama talimati.
+ * PostToolUse (Edit|Write) — test-enforcement instruction for a source file.
  *
- * Hook davranisi:
- * - Edit veya Write tool'u calistirildiginda tetiklenir
- * - Dosyanin test dosyasi olup olmadigini kontrol eder (test dosyasi ise atla)
- * - Kaynak dosyayi test eslestirme tablosuna karsi esler
- * - Test dosyasi YOKSA: systemMessage ile "TEST EKSIK" talimati verir
- * - Test dosyasi VARSA: systemMessage ile "Test guncelle" talimati verir
- * - Debounce: ayni dosya icin 5 dakika icinde tekrar talimat vermez
- * - stdin'den gelen veriyi her zaman stdout'a yazar (non-blocking)
+ * Hook behavior:
+ * - Triggers when an Edit or Write tool runs
+ * - Checks whether the file is a test file (skip if it is)
+ * - Matches the source file against the test mapping table
+ * - If the test file is MISSING: issues a "TEST MISSING" systemMessage
+ * - If the test file EXISTS: issues an "Update the test" systemMessage
+ * - Debounce: do not instruct again for the same file within 5 minutes
+ * - Always writes stdin data to stdout (non-blocking)
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// ─── GENERATE BOLUMU BASLANGIC ───
+// ─── GENERATE SECTION START ───
 
-// Katman-test eslesmesi — kaynak dosya hangi katmana ait?
+// Layer-test mapping — which layer does the source file belong to?
 const LAYER_TESTS = [
   /* GENERATE: LAYER_TESTS
-   * Bootstrap manifest.project.subprojects[] ve manifest.stack.test_commands bilgilerini
-   * kullanarak her katman icin bir test eslesmesi uretir.
+   * Bootstrap uses manifest.project.subprojects[] and manifest.stack.test_commands
+   * to produce one test match per layer.
    *
-   * Ornek:
+   * Example:
    * { pattern: /api\/src\//, layer: 'API', command: 'cd ../Codebase/api && npm test', extra: null },
    */
   /* END GENERATE */
 ];
 
-// Kaynak → test dosyasi eslestirme tablosu
+// Source → test file mapping table
 const TEST_FILE_MAPPING = [
   /* GENERATE: TEST_FILE_MAPPING
-   * Bootstrap manifest'teki stack bilgisine gore kaynak-test eslestirme
-   * pattern'leri uretir. Her entry icin:
-   *   sourcePattern: kaynak dosya yolunu eslestiren regex (capture group ile)
-   *   testPath:      test dosyasi yolu ($1 = dosya adi, $2 = uzanti)
-   *   framework:     test framework adi (jest, vitest, pytest, phpunit, vb.)
+   * Bootstrap builds source-to-test patterns from the manifest stack.
+   * Each entry has:
+   *   sourcePattern: regex that matches the source path (with a capture group)
+   *   testPath:      test file path ($1 = file name, $2 = extension)
+   *   framework:     test framework name (jest, vitest, pytest, phpunit, and so on)
    *
-   * Ornek (Node.js/TypeScript):
+   * Example (Node.js/TypeScript):
    * { sourcePattern: /(.+)\/(controllers|services|utils|middleware)\/(.+)\.(ts|js)$/, testPath: '$1/__tests__/$2/$3.test.$4', framework: 'jest' },
    *
-   * Ornek (Python/Django):
+   * Example (Python/Django):
    * { sourcePattern: /(.+)\/(views|models|serializers)\/(.+)\.py$/, testPath: '$1/tests/test_$3.py', framework: 'pytest' },
    */
   /* END GENERATE */
 ];
 
-// Kontrol edilecek kod dosya uzantilari
+// Code file extensions to check
 const CODE_EXTENSIONS = [
   /* GENERATE: CODE_EXTENSIONS
-   * Bootstrap tespit edilen stack'e gore kod dosya uzantilarini doldurur.
-   * Ornek: '.ts', '.tsx', '.js', '.jsx', '.py', '.php'
+   * Bootstrap fills code extensions from the detected stack.
+   * Example: '.ts', '.tsx', '.js', '.jsx', '.py', '.php'
    */
   /* END GENERATE */
 ];
 
-// ─── GENERATE BOLUMU BITIS ───
+// ─── GENERATE SECTION END ───
 
-// === KONFIGÜRASYON ===
+// === CONFIGURATION ===
 
-const DEBOUNCE_MS = 5 * 60 * 1000; // 5 dakika — ayni dosya icin tekrar talimat verme
+const DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes — do not instruct for the same file again
 const STATE_FILE = path.join(__dirname, '.test-enforcer-state.json');
 
-// Test dosyasi pattern'leri — bu dosyalar icin talimat VERME
+// Test file patterns — do NOT instruct for these files
 const TEST_FILE_PATTERNS = [
   /\.test\.[jt]sx?$/,
   /\.spec\.[jt]sx?$/,
@@ -100,11 +100,11 @@ function saveState(state) {
     state.timestamp = Date.now();
     fs.writeFileSync(STATE_FILE, JSON.stringify(state));
   } catch {
-    // Yazilamazsa sessizce devam et
+    // If it cannot be written, continue silently
   }
 }
 
-// === YARDIMCI FONKSIYONLAR ===
+// === HELPER FUNCTIONS ===
 
 /**
  * Dosya bir test dosyasi mi?
@@ -136,7 +136,7 @@ function detectLayer(filePath) {
 }
 
 /**
- * Kaynak dosya icin beklenen test dosyasi yolunu hesapla
+ * Compute the expected test file path for a source file
  */
 function resolveTestPath(filePath) {
   for (const mapping of TEST_FILE_MAPPING) {
@@ -151,7 +151,7 @@ function resolveTestPath(filePath) {
 }
 
 /**
- * Debounce kontrolu — ayni dosya icin son 5 dakikada talimat verilmis mi?
+ * Debounce check — was an instruction already sent for this file in the last 5 minutes?
  */
 function isOnDebounce(filePath, state) {
   const lastTime = state.files[filePath];
@@ -189,13 +189,13 @@ async function main() {
       process.exit(0);
     }
 
-    // Kod dosyasi degilse — gecir
+    // If not a code file — skip
     if (!isCodeFile(filePath)) {
       process.stdout.write(inputData);
       process.exit(0);
     }
 
-    // Test dosyasi ise — gecir (test dosyasi icin test yazma talimati verme)
+    // If this is a test file, skip it (do not ask for a test of a test)
     if (isTestFile(filePath)) {
       process.stdout.write(inputData);
       process.exit(0);
@@ -220,7 +220,7 @@ async function main() {
         saveState(state);
 
         const output = JSON.stringify({
-          systemMessage: `${layer.layer} katmaninda kaynak dosya duzenlendi: ${path.basename(filePath)}. Uygun bir noktada testleri calistir: ${layer.command}`,
+          systemMessage: `Source file edited in ${layer.layer} layer: ${path.basename(filePath)}. Run tests at a suitable point: ${layer.command}`,
         });
         process.stdout.write(output);
         process.exit(0);
@@ -238,18 +238,18 @@ async function main() {
 
     let message;
     if (!testExists) {
-      message = `TEST EKSIK — ${path.basename(filePath)} icin test dosyasi bulunamadi.\n` +
-        `  Beklenen konum: ${testInfo.testPath}\n` +
-        `  Bu dosya olusturulmali ve temel senaryolar yazilmali.\n` +
+      message = `TEST MISSING — no test file found for ${path.basename(filePath)}.\n` +
+        `  Expected path: ${testInfo.testPath}\n` +
+        `  This file should be created and basic scenarios written.\n` +
         `  Test framework: ${testInfo.framework}`;
     } else {
-      message = `Test guncelle — ${path.basename(filePath)} duzenlendi.\n` +
-        `  Test dosyasi: ${testInfo.testPath}\n` +
-        `  Davranis degistiyse yeni test case ekle, mevcut case'leri guncelle.`;
+      message = `Update the test — ${path.basename(filePath)} was edited.\n` +
+        `  Test file: ${testInfo.testPath}\n` +
+        `  If behavior changed, add a new test case and update existing cases.`;
     }
 
     if (layer) {
-      message += `\n  Test komutu: ${layer.command}`;
+      message += `\n  Test command: ${layer.command}`;
     }
 
     const output = JSON.stringify({ systemMessage: message });

@@ -1,4 +1,4 @@
-# Sentry Modul Tespiti
+# Sentry Module Detection
 
 ## Checks
 
@@ -16,6 +16,6 @@
 
 ## Affects Core
 
-- code-review: Error boundary kontrolu, unhandled rejection tespiti
-- pre-deploy: Source map upload kontrolu, release tagging
-- CLAUDE.md: Sentry entegrasyon kurallari bolumu eklenir
+- code-review: Error boundary check, unhandled rejection detection
+- pre-deploy: Source map upload check, release tagging
+- CLAUDE.md: Sentry integration rules section is added

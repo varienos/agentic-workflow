@@ -5,20 +5,20 @@
  * git-checkpoint.js
  * PreToolUse (Bash) hook
  *
- * Shadow Git Checkpointing — `git commit` komutu calismadan once mevcut HEAD'i
+ * Shadow Git Checkpointing — before a `git commit` command runs, records current HEAD
  * gizli bir ref olarak kaydeder: refs/checkpoints/agent/<id>-<ts>
  *
  * Refs yaklasimi tercih edildi cunku:
  *  - `git branch` / `git tag` listesinde gorunmez (shadow ozellik)
  *  - Hafif: sadece tek SHA pointer
  *  - `git gc` temizleyebilir (yapilandirilabilir)
- *  - `/rollback` komutu `git for-each-ref refs/checkpoints/agent/` ile listeler
+ *  - `/rollback` lists via `git for-each-ref refs/checkpoints/agent/`
  *
- * Hook ASLA bloklamaz — `decision` dondurmez. `git commit` her durumda calisir.
- * Hata durumunda sessizce yutulur — hook protokolu geregi.
+ * Hook NEVER blocks — does not return `decision`. `git commit` always runs.
+ * Errors are swallowed silently — per hook protocol.
  *
  * Guvenlik: Tum git cagrilari `execFileSync('git', [...])` ile yapilir;
- * shell expansion DEVRE DISI, komut injection riski yoktur.
+ * shell expansion DISABLED; no command-injection risk.
  */
 
 const path = require('path');
@@ -94,7 +94,7 @@ async function main() {
     const ref = buildCheckpointRef(detectTaskId());
     createCheckpoint(cwd, ref);
   } catch (err) {
-    logSilently(`checkpoint olusturulamadi: ${err && err.message ? err.message : err}`);
+    logSilently(`checkpoint could not be created: ${err && err.message ? err.message : err}`);
   }
 }
 

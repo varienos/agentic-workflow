@@ -62,14 +62,14 @@ async function askOne(rl, question, detection) {
   const def = resolveDefault(question, detection);
   if (question.type === 'select') {
     const lines = question.options
-      .map((o, i) => `  ${i + 1}) ${o.label}${o.value === def ? '  (varsayılan)' : ''}`)
+      .map((o, i) => `  ${i + 1}) ${o.label}${o.value === def ? '  (default)' : ''}`)
       .join('\n');
     while (true) {
       const raw = (await rl.question(`\n${question.prompt}\n${lines}\n› `)).trim();
       if (raw === '') return def;
       const norm = normalizeAnswer(question, raw);
       if (norm != null) return norm;
-      rl.output.write('  Geçersiz seçim, tekrar dene.\n');
+      rl.output.write('  Invalid choice, try again.\n');
     }
   }
   if (question.type === 'confirm') {
@@ -78,7 +78,7 @@ async function askOne(rl, question, detection) {
     return raw === '' ? def : normalizeAnswer(question, raw);
   }
   // text
-  const defHint = def ? ` [${def}]` : (question.optional ? ' [boş geçilebilir]' : '');
+  const defHint = def ? ` [${def}]` : (question.optional ? ' [optional]' : '');
   const raw = (await rl.question(`\n${question.prompt}${defHint}\n› `)).trim();
   if (raw === '') return def || '';
   return raw;

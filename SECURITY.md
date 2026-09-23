@@ -1,33 +1,33 @@
-# Guvenlik Politikasi
+# Security Policy
 
-## Desteklenen Surumler
+## Supported Versions
 
-| Surum | Destek |
-|-------|--------|
-| Son commit (main) | Aktif |
+| Version | Support |
+|---------|---------|
+| Latest commit (main) | Active |
 
-## Guvenlik Acigi Bildirimi
+## Reporting a Vulnerability
 
-Guvenlik acigi tespit ettiyseniz **lutfen public issue ACMAYIN**.
+If you find a security vulnerability, **please do NOT open a public issue**.
 
-Bunun yerine hello@varien.software adresine e-posta gonderin. Asagidaki bilgileri ekleyin:
+Instead, email hello@varien.software. Include:
 
-- Acigin aciklamasi
-- Yeniden uretme adimlari
-- Olasi etki degerlendirmesi
-- Varsa cozum onerisi
+- Description of the vulnerability
+- Steps to reproduce
+- Possible impact assessment
+- A suggested fix if you have one
 
-48 saat icinde geri donus yapilir.
+You will receive a response within 48 hours.
 
-## Kapsam
+## Scope
 
-Bu politika asagidakileri kapsar:
+This policy covers:
 
-- `generate.js` ve uretim mantigi
-- Hook dosyalari (guvenlik taramasi, migration korumasi)
-- Bootstrap komutu ve manifest isleme
-- Session tracker ve monitor
+- `generate.js` and generation logic
+- Hook files (security scanning, migration protection)
+- The Bootstrap command and manifest processing
+- Session tracker and monitor
 
-## Sorumluluk
+## Responsibility
 
-Bu bir sablon deposudur. Uretilen dosyalarin guvenliginden kullanici sorumludur. Sablonlar en iyi pratikleri takip eder ancak hedef projenin guvenligi kullanicinin yapilandirmasina baglidir.
+This is a template repository. Users are responsible for the security of generated files. Templates follow best practices, but the security of the target project depends on the user's configuration.

@@ -1,16 +1,16 @@
-# Test Zorlama Kurallari
+# Test Enforcement Rules
 
-Bu kurallar tum komutlar ve agent'lar tarafindan referans alinir. test-enforcer hook'u bu kurallara gore systemMessage uretir.
+These rules are referenced by all commands and agents. The test-enforcer hook produces systemMessages according to these rules.
 
 ---
 
-## Kaynak → Test Dosyasi Eslestirme
+## Source → Test File Mapping
 
 <!-- GENERATE: TEST_FILE_TABLE
-Aciklama: Bootstrap manifest'teki stack bilgisine gore kaynak-test eslestirme tablosu uretir.
-Gerekli manifest alanlari: stack.primary, stack.test_framework
-Ornek cikti:
-| Kaynak Pattern | Test Dosyasi | Framework |
+Description: Bootstrap emits a source-to-test mapping table from stack info in the manifest.
+Required manifest fields: stack.primary, stack.test_framework
+Example output:
+| Source Pattern | Test File | Framework |
 |---|---|---|
 | `controllers/{name}.ts` | `__tests__/controllers/{name}.test.ts` | jest |
 | `services/{name}.ts` | `__tests__/services/{name}.test.ts` | jest |
@@ -21,43 +21,43 @@ Ornek cikti:
 
 ---
 
-## Test Yazma Karar Matrisi
+## Test Writing Decision Matrix
 
-| Degisiklik Tipi | Test Yaz? | Aciklama |
+| Change Type | Write a test? | Description |
 |---|---|---|
-| Yeni fonksiyon/metot | EVET | Happy path + en az 1 edge case |
-| Davranis degisikligi | EVET | Mevcut testi guncelle veya yeni case ekle |
-| Bug fix | EVET | Regresyon testi: bug'in tekrar olusmadigini dogrula |
-| Refactoring (davranis ayni) | HAYIR | Mevcut testlerin hala gectigini dogrula yeterli |
-| Tip degisikligi (type-only) | HAYIR | Derleme kontrolu yeterli |
-| Config/env degisikligi | HAYIR | Manuel dogrulama yeterli |
-| Dokumantasyon | HAYIR | Test gerektirmez |
-| Import/export yeniden duzenleme | HAYIR | Mevcut testler yeterli |
+| New function/method | YES | Happy path + at least 1 edge case |
+| Behavior change | YES | Update the existing test or add a new case |
+| Bug fix | YES | Regression test: verify the bug does not return |
+| Refactoring (behavior unchanged) | NO | Verifying existing tests still pass is enough |
+| Type-only change | NO | Compile check is enough |
+| Config/env change | NO | Manual verification is enough |
+| Documentation | NO | No test required |
+| Import/export reordering | NO | Existing tests are enough |
 
 ---
 
-## Minimum Senaryo Kapsamasi
+## Minimum Scenario Coverage
 
-Her test dosyasi en az su senaryolari kapsamali:
+Every test file must cover at least these scenarios:
 
-1. **Happy path** — Normal kullanim senaryosu
-2. **Bos/null girdi** — Edge case: undefined, null, bos string
-3. **Hata durumu** — Beklenen hata: yanlis tip, gecersiz deger, timeout
+1. **Happy path** — Normal usage scenario
+2. **Empty/null input** — Edge case: undefined, null, empty string
+3. **Error case** — Expected error: wrong type, invalid value, timeout
 
-Karmasik is mantigi icin ek senaryolar:
-- Sinir degerleri (boundary)
-- Eslesen/eslesmeyen kosullar
-- Concurrent/async davranis
+For complex business logic, add:
+- Boundary values
+- Matching/non-matching conditions
+- Concurrent/async behavior
 
 ---
 
-## 4 Katmanli Zorlama Mimarisi
+## 4-Layer Enforcement Architecture
 
 ```
-Katman 1: test-enforcer.js hook     → Claude'a systemMessage ile talimat
-Katman 2: task-hunter verification   → Gorev kapatmada test kontrolu
-Katman 3: pre-commit git hook        → npm test fail = commit ENGEL
-Katman 4: CI (GitHub Actions)        → npm test fail = merge ENGEL
+Layer 1: test-enforcer.js hook     → Instruct Claude via systemMessage
+Layer 2: task-hunter verification   → Test check when closing a task
+Layer 3: pre-commit git hook        → npm test fail = commit BLOCKED
+Layer 4: CI (GitHub Actions)        → npm test fail = merge BLOCKED
 ```
 
-Her katman bir oncekinin kaciracagini yakalar. Tek katmana guvenme.
+Each layer catches what the previous one can miss. Do not rely on a single layer.

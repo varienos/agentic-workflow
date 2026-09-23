@@ -1,4 +1,4 @@
-# NestJS Modul Tespit Kurallari
+# NestJS Module Detection Rules
 
 ## Checks
 
@@ -16,5 +16,5 @@
 
 ## Affects Core
 
-- task-hunter: `test`, `lint` ve varsa `test:e2e` convention'lari beklenir
-- CLAUDE.md: NestJS module/provider/controller kurallari eklenir
+- task-hunter: `test`, `lint`, and if present `test:e2e` conventions are expected
+- CLAUDE.md: NestJS module/provider/controller rules are added

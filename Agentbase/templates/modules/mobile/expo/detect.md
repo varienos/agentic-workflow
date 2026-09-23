@@ -1,4 +1,4 @@
-# Expo Modul Tespiti
+# Expo Module Detection
 
 ## Checks
 
@@ -16,6 +16,6 @@
 
 ## Affects Core
 
-- code-review: Tema kullanim kontrol listesi eklenir
-- task-hunter: React Native kurallari eklenir
-- settings.json: Expo plugin konfigurasyonu eklenir
+- code-review: Theme usage checklist is added
+- task-hunter: React Native rules are added
+- settings.json: Expo plugin configuration is added

@@ -1,119 +1,116 @@
 # Phase 3 — Developer Profile
 
 > **Feeds:** `DEVELOPER.md`, agent behavior calibration
-> **Goal:** Gelistiricinin deneyim seviyesini, dil tercihini ve otonom calisma beklentisini belirlemek.
+> **Goal:** Determine the developer's experience level, language preference, and autonomy expectations.
 
 ---
 
 ## Auto-Detection
 
-Bu phase'de otomatik tespit yoktur. Tum sorular her zaman sorulur.
+There is no automatic detection in this phase. All questions are always asked.
 
 ---
 
 ## Questions
 
-### Q1 — Deneyim Seviyesi
-- **Text:** `"Deneyim seviyeniz? (Agent'ların açıklama derinliğini belirler)"`
+### Q1 — Experience Level
+- **Text:** `"Your experience level? (Sets how deep agent explanations go)"`
 - **Options:**
-  - `a)` Junior — detayli aciklama ve rehberlik isterim
-  - `b)` Mid — baglami anliyorum, sadece karar noktalarini goster
-  - `c)` Senior — kisa ve oz, gereksiz aciklama yapma
-  - `d)` Bu stack'te yeniyim ama genel deneyimim var
+  - `a)` Junior — I want detailed explanation and guidance
+  - `b)` Mid — I understand the context; show only decision points
+  - `c)` Senior — short and dense; no unnecessary explanation
+  - `d)` New to this stack but I have general experience
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.developer.experience`
 - **Downstream:**
   - **a → junior:**
-    - Agent aciklamalari detayli ve adim adim
-    - Kod snippet'larinda yorum satiri eklenir
-    - Karar noktalarinda alternatifler gosterilir
+    - Agent explanations are detailed and step-by-step
+    - Comment lines are added in code snippets
+    - Alternatives are shown at decision points
     - `DEVELOPER.md` explanation_depth: detailed
   - **b → mid:**
-    - Sadece karar noktalarinda aciklama
-    - Standart islemler sessizce yapilir
+    - Explanation only at decision points
+    - Standard operations run silently
     - `DEVELOPER.md` explanation_depth: moderate
   - **c → senior:**
-    - Minimum aciklama, maksimum verimlilik
-    - Sadece sonuc ve degisiklik ozeti
+    - Minimum explanation, maximum efficiency
+    - Only result and change summary
     - `DEVELOPER.md` explanation_depth: minimal
   - **d → stack-newcomer:**
-    - Stack-spesifik konularda detayli aciklama
-    - Genel yazilim konularinda kisa tutulur
+    - Detailed explanation on stack-specific topics
+    - Kept short on general software topics
     - `DEVELOPER.md` explanation_depth: stack-focused
 
-### Q2 — Calisma Dili
-- **Text:** `"Calisma dili? (Commit, yorum, agent iletisimi)"`
+### Q2 — Workflow Language
+- **Text:** `"Workflow language? (Commits, comments, agent communication)"`
 - **Options:**
-  - `a)` Turkce
-  - `b)` English
-  - `c)` Diger (belirt)
-- **Follow-up (if c):** `"Hangi dil?"`
+  - `a)` English
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.project.language`
 - **Downstream:**
-  - Agent iletisim dili
-  - Commit mesaj dili
-  - Kod icindeki yorum dili
-  - Dokumantasyon dili
+  - Agent communication language
+  - Commit message language
+  - In-code comment language
+  - Documentation language
   - `DEVELOPER.md` language field
   - All generated markdown files language
 
-### Q3 — Agent Otonomi Seviyesi
-- **Text:** `"Agent'lar ne kadar otonom olmali?"`
+### Q3 — Agent Autonomy Level
+- **Text:** `"How autonomous should agents be?"`
 - **Options:**
-  - `a)` Her adimda onay iste
-  - `b)` Plan goster, onayladiktan sonra otonom calis
-  - `c)` Tam otonom — sadece sonucu goster
+  - `a)` Ask for approval at every step
+  - `b)` Show a plan; work autonomously after approval
+  - `c)` Fully autonomous — show only the result
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.developer.autonomy`
 - **Downstream:**
   - **a → ask-every-step:**
-    - task-hunter her dosya degisikligi oncesi onay ister
-    - Her komut calistirmadan once soru sorar
-    - Yuksek guvenlik, dusuk hiz
+    - task-hunter asks for approval before every file change
+    - Asks before running every command
+    - High safety, low speed
     - Hook: confirmation_required = always
-    - Enforce: task-hunter.skeleton.md ADIM 2.3 "Onay BEKLEME" → "Onay BEKLE"
+    - Enforce: task-hunter.skeleton.md STEP 2.3 "WAIT for approval" → "WAIT for approval"
   - **b → plan-then-autonomous:**
-    - task-hunter once plan sunar
-    - Plan onaylaninca otonom calisir
-    - Dengeli guvenlik/hiz
+    - task-hunter presents a plan first
+    - Works autonomously once the plan is approved
+    - Balanced safety/speed
     - Hook: confirmation_required = plan-phase-only
-    - Enforce: task-hunter.skeleton.md ADIM 2.3 "Planı kullanıcıya göster ve onay bekle"
+    - Enforce: task-hunter.skeleton.md STEP 2.3 "Show the plan to the user and wait for approval"
   - **c → full-autonomous:**
-    - task-hunter plani gosterip direkt calisir
-    - Sadece hata veya belirsizlikte durur
-    - Dusuk guvenlik, yuksek hiz
+    - task-hunter shows the plan and starts immediately
+    - Stops only on error or ambiguity
+    - Low safety, high speed
     - Hook: confirmation_required = on-error-only
-    - Enforce: task-hunter.skeleton.md ADIM 2.3 "Plani kaydet ve HEMEN uygulamaya basla"
+    - Enforce: task-hunter.skeleton.md STEP 2.3 "Save the plan and START applying immediately"
 
-### Q4 — Calisma Modu
-- **Text:** `"Projede tek mi calisiyorsun, ekip mi?"`
+### Q4 — Work Mode
+- **Text:** `"Are you working solo on this project, or as a team?"`
 - **Options:**
-  - `a)` Solo — tek gelistirici
-  - `b)` Kucuk ekip (2-4 kisi)
-  - `c)` Buyuk ekip (5+ kisi)
+  - `a)` Solo — single developer
+  - `b)` Small team (2-4 people)
+  - `c)` Large team (5+ people)
 - **Skip condition:** never — always ask
 - **Maps to:** `manifest.project.team_size`
 - **Downstream:**
   - **a → solo:**
-    - Self-review yeterli, PR zorunlulugu yok
-    - task-review onerir ama zorlamaz
-    - `WORKFLOWS.md` review sureci: opsiyonel
+    - Self-review is enough; PR not mandatory
+    - task-review suggests but does not force
+    - `WORKFLOWS.md` review process: optional
   - **b → small-team:**
-    - PR onerisi (zorunlu degil), review-module sprint sonunda
-    - Branch protection onerisi
-    - `WORKFLOWS.md` review sureci: onerilen
+    - PR suggested (not mandatory); review-module at sprint end
+    - Branch protection suggested
+    - `WORKFLOWS.md` review process: recommended
   - **c → large-team:**
-    - PR zorunlu, branch protection kurallari
-    - Code ownership dosyasi (CODEOWNERS) onerisi
-    - Her PR'da en az 1 review zorunlu
-    - `WORKFLOWS.md` review sureci: zorunlu
+    - PR mandatory; branch protection rules
+    - Code ownership file (CODEOWNERS) suggested
+    - At least 1 review required on every PR
+    - `WORKFLOWS.md` review process: mandatory
 
 ---
 
 ## Batch Delivery
 
-Tüm 4 soru subjektiftir ve birbirinden bağımsızdır. Bootstrap, ADIM 3'te bu phase'i **tek `AskUserQuestion` çağrısında 4 element olarak** sorar (questions array). Bireysel sırayla sormaz. Bkz: `bootstrap.md` ADIM 3 KURAL 1 ve Faz 3 batch tanımı.
+All 4 questions are subjective and independent. In STEP 3, Bootstrap asks this phase as **4 elements in a single `AskUserQuestion` call** (questions array). It does not ask them one by one. See: `bootstrap.md` STEP 3 RULE 1 and Phase 3 batch definition.
 
 ---
 

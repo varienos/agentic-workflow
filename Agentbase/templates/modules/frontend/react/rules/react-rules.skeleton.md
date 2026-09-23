@@ -1,39 +1,39 @@
-# React SPA Kurallari
+# React SPA rules
 
-> Bu kurallar standalone React SPA projeleri icin gecerlidir (Vite, CRA, custom bundler).
-> Next.js projeleri icin `frontend/nextjs/` modulu kullanilir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules apply to standalone React SPA projects (Vite, CRA, custom bundler).
+> For Next.js projects, use the `frontend/nextjs/` module.
+> All developers and agents MUST follow these rules.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Ornek cikti:
-## Proje Baglami
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.name, project.description, project.structure
+Example output:
+## Project context
 
-- **Proje:** MyApp — Admin panel SPA
-- **Yapi:** Monorepo (`apps/web/` altinda React projesi)
+- **Project:** MyApp — Admin panel SPA
+- **Structure:** Monorepo (React project under `apps/web/`)
 - **Bundler:** Vite
-- **TypeScript:** Aktif
+- **TypeScript:** Enabled
 - **State:** Zustand
 - **Router:** React Router v6
 - **Styling:** Tailwind CSS
 - **Test:** Vitest + React Testing Library
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Component Yapisi
+## Component structure
 
-### Functional Component
+### Functional component
 
 ```typescript
-// DOGRU — Functional component + interface props
+// CORRECT — Functional component + interface props
 interface ProductCardProps {
   product: Product;
   onAddToCart: (productId: string) => void;
@@ -45,26 +45,26 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
       <h3>{product.name}</h3>
       <p>{product.description}</p>
       <button onClick={() => onAddToCart(product.id)}>
-        Sepete Ekle
+        Add to cart
       </button>
     </article>
   );
 }
 
-// YANLIS (YASAK) — Class component
+// WRONG (FORBIDDEN) — Class component
 class ProductCard extends React.Component<ProductCardProps> {
   render() {
-    // Class component kullanma — functional component tercih et
+    // Do not use class components — prefer functional components
   }
 }
 
-// YANLIS (YASAK) — type yerine interface kullan
-type ProductCardProps = { // extend edilemez — interface kullan
+// WRONG (FORBIDDEN) — Use interface instead of type
+type ProductCardProps = { // not extendable — use interface
   product: Product;
 };
 ```
 
-### Dosya Yapisi
+### File structure
 
 ```
 src/
@@ -72,45 +72,45 @@ src/
 │   ├── ProductCard/
 │   │   ├── ProductCard.tsx           # Component
 │   │   ├── ProductCard.test.tsx      # Test
-│   │   ├── ProductCard.module.css    # Stil (opsiyonel)
+│   │   ├── ProductCard.module.css    # Styles (optional)
 │   │   └── index.ts                 # Re-export
-│   └── ui/                          # Temel UI component'leri
+│   └── ui/                          # Base UI components
 │       ├── Button/
 │       ├── Input/
 │       └── Modal/
-├── features/                        # Feature bazli organizasyon
+├── features/                        # Feature-based organization
 │   ├── auth/
 │   ├── products/
 │   └── cart/
-├── hooks/                           # Custom hook'lar
-├── services/                        # API servisleri
-├── stores/                          # State yonetimi
-├── types/                           # TypeScript tipleri
-├── utils/                           # Yardimci fonksiyonlar
+├── hooks/                           # Custom hooks
+├── services/                        # API services
+├── stores/                          # State management
+├── types/                           # TypeScript types
+├── utils/                           # Helper functions
 ├── App.tsx
 └── main.tsx
 ```
 
-### Component Kurallar Tablosu
+### Component rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Functional component | Class component YASAK (legacy haric) |
-| Props icin `interface` | `type` degil `interface` — extend edilebilirlik |
-| Tek export | Her dosyada TEK default export edilen component |
-| Dosya yapisi | `Component.tsx` + `Component.test.tsx` + stil dosyasi |
-| Yardimci component ayri | Ayni dosyada ikinci component tanimlamak YASAK |
+| Functional component | Class components FORBIDDEN (except legacy) |
+| `interface` for props | Use `interface`, not `type` — extendability |
+| Single export | Exactly ONE default-exported component per file |
+| File structure | `Component.tsx` + `Component.test.tsx` + style file |
+| Helper components separate | Defining a second component in the same file is FORBIDDEN |
 
 ---
 
-## Hook Kurallari
+## Hook rules
 
-### Hook Kullanim Kurallari
+### Hook usage rules
 
 ```typescript
-// DOGRU — Hook'lar component'in en ustunde, kosullu bloklarin disinda
+// CORRECT — Hooks at the top of the component, outside conditional blocks
 function UserProfile({ userId }: { userId: string }) {
-  // Hook'lar en ustte
+  // Hooks at the top
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -129,11 +129,11 @@ function UserProfile({ userId }: { userId: string }) {
 
     fetchUser();
 
-    // ZORUNLU — Cleanup fonksiyonu
+    // REQUIRED — Cleanup function
     return () => {
       cancelled = true;
     };
-  }, [userId]); // Dependency dizisi tam olmali
+  }, [userId]); // Dependency array must be complete
 
   if (isLoading) return <Spinner />;
   if (!user) return <NotFound />;
@@ -141,74 +141,74 @@ function UserProfile({ userId }: { userId: string }) {
   return <div>{user.name}</div>;
 }
 
-// YANLIS (YASAK) — Kosullu hook
+// WRONG (FORBIDDEN) — Conditional hook
 function UserProfile({ userId }: { userId: string }) {
-  if (!userId) return null; // Hook'tan ONCE return — YASAK
+  if (!userId) return null; // return BEFORE hooks — FORBIDDEN
 
-  const [user, setUser] = useState(null); // Hook sirasi bozulur
+  const [user, setUser] = useState(null); // Hook order breaks
 }
 ```
 
-### Custom Hook
+### Custom hook
 
 ```typescript
-// DOGRU — Custom hook `use` prefix'i ile, hooks/ dizininde
+// CORRECT — Custom hook with `use` prefix, in hooks/ directory
 // hooks/useDebounce.ts
 export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer); // Cleanup ZORUNLU
+    return () => clearTimeout(timer); // Cleanup REQUIRED
   }, [value, delay]);
 
   return debouncedValue;
 }
 
-// YANLIS (YASAK) — use prefix'siz custom hook
+// WRONG (FORBIDDEN) — Custom hook without use prefix
 export function debounceValue<T>(value: T, delay: number): T {
-  // `use` prefix'i EKSIK — React hook kurallarini ihlal eder
+  // Missing `use` prefix — violates React hook rules
 }
 ```
 
-### Hook Kurallar Tablosu
+### Hook rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| En ustte, kosulsuz | Hook'lar component'in en ustunde, kosullu bloklarin disinda |
-| `use` prefix'i | Custom hook'lar `use` ile baslar, `hooks/` dizininde |
-| Dependency dizisi tam | ESLint `exhaustive-deps` kurali aktif olmali |
-| Cleanup ZORUNLU | Subscription, timer, event listener icin cleanup fonksiyonu |
-| `useCallback`/`useMemo` olcumlu | Premature optimization yapma, gercek sorun oldugunda kullan |
+| Top-level, unconditional | Hooks at the top of the component, outside conditionals |
+| `use` prefix | Custom hooks start with `use`, live in `hooks/` |
+| Complete dependency array | ESLint `exhaustive-deps` must be enabled |
+| Cleanup REQUIRED | Cleanup for subscriptions, timers, event listeners |
+| Measured `useCallback`/`useMemo` | No premature optimization — use when there is a real problem |
 
 ---
 
 <!-- GENERATE: STATE_MANAGEMENT
-Aciklama: Bu bolum Bootstrap tarafindan otomatik tespit edilir.
-Gerekli manifest alanlari: project.dependencies, project.state_management
-Ornek cikti:
-## State Yonetimi: Zustand
+Explanation: This section is detected automatically by Bootstrap.
+Required manifest fields: project.dependencies, project.state_management
+Example output:
+## State management: Zustand
 
-- **Tespit:** `package.json`'da `zustand` dependency'si mevcut
-- **Store dosyalari:** `src/stores/` altinda
-- **Pattern:** Slice pattern ile modular store
-- **DevTools:** `zustand/middleware` ile aktif
+- **Detection:** `zustand` dependency present in `package.json`
+- **Store files:** under `src/stores/`
+- **Pattern:** Modular store with slice pattern
+- **DevTools:** Enabled via `zustand/middleware`
 -->
 
 ---
 
-## State Yonetimi Kurallari
+## State management rules
 
-### State Katmanlari
+### State layers
 
 ```typescript
-// LOCAL STATE — Basit component state
+// LOCAL STATE — Simple component state
 const [isOpen, setIsOpen] = useState(false);
 
-// LOCAL STATE — Karmasik component state
+// LOCAL STATE — Complex component state
 const [formState, dispatch] = useReducer(formReducer, initialState);
 
-// GLOBAL STATE — Uygulama geneli (Zustand ornegi)
+// GLOBAL STATE — App-wide (Zustand example)
 const useAuthStore = create<AuthState>((set) => ({
   user: null,
   login: async (credentials) => {
@@ -218,65 +218,65 @@ const useAuthStore = create<AuthState>((set) => ({
   logout: () => set({ user: null }),
 }));
 
-// SERVER STATE — API verileri (TanStack Query ornegi)
+// SERVER STATE — API data (TanStack Query example)
 const { data: products, isLoading } = useQuery({
   queryKey: ['products', filters],
   queryFn: () => productService.getAll(filters),
 });
 ```
 
-### State Kurallar Tablosu
+### State rules table
 
-| Katman | Arac | Kullanim |
+| Layer | Tool | Usage |
 |---|---|---|
-| Local state (basit) | `useState` | Toggle, form input, UI state |
-| Local state (karmasik) | `useReducer` | Coklu alan, karmasik gecisler |
-| Global state | Zustand / Jotai / Redux | Auth, tema, kullanici tercihleri |
-| Server state | TanStack Query / SWR | API verileri, cache, refetch |
-| Form state | React Hook Form / Formik | Form validasyonu, submission |
-| URL state | `useSearchParams` | Filtre, sayfalama, siralama |
+| Local state (simple) | `useState` | Toggle, form input, UI state |
+| Local state (complex) | `useReducer` | Multiple fields, complex transitions |
+| Global state | Zustand / Jotai / Redux | Auth, theme, user preferences |
+| Server state | TanStack Query / SWR | API data, cache, refetch |
+| Form state | React Hook Form / Formik | Form validation, submission |
+| URL state | `useSearchParams` | Filters, pagination, sorting |
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| En dusuk seviyede tut | State'i mumkun olan en yakın component'te |
-| Lifting state up | Ortak parent'a tasimak gerekirse prop ile gec |
-| Prop drilling siniri | 3+ seviye prop geciyor → Context veya global state |
-| Server state ayri | API verileri icin TanStack Query veya SWR kullan |
+| Keep it as low as possible | Put state in the nearest component that needs it |
+| Lifting state up | If shared, move to common parent and pass via props |
+| Prop drilling limit | 3+ levels of props → Context or global state |
+| Separate server state | Use TanStack Query or SWR for API data |
 
 ---
 
-## Rendering Kurallari
+## Rendering rules
 
-### Liste Rendering
+### List rendering
 
 ```typescript
-// DOGRU — Benzersiz ve stabil key
+// CORRECT — Unique and stable key
 {products.map((product) => (
   <ProductCard key={product.id} product={product} />
 ))}
 
-// YANLIS (YASAK) — Index key (siralama/filtreleme varsa)
+// WRONG (FORBIDDEN) — Index key (when sorting/filtering)
 {products.map((product, index) => (
-  <ProductCard key={index} product={product} /> // Siralama degisince bozulur
+  <ProductCard key={index} product={product} /> // Breaks when order changes
 ))}
 ```
 
-### Conditional Rendering
+### Conditional rendering
 
 ```typescript
-// DOGRU — Early return
+// CORRECT — Early return
 if (!user) return <LoginPrompt />;
 if (isLoading) return <Spinner />;
 return <Dashboard user={user} />;
 
-// DOGRU — Ternary (kisa kosullar)
+// CORRECT — Ternary (short conditions)
 {isLoggedIn ? <UserMenu /> : <LoginButton />}
 
-// DIKKAT — && operatoru (falsy deger tuzagi)
-{items.length > 0 && <ItemList items={items} />} // DOGRU — boolean sonuc
-{items.length && <ItemList items={items} />}      // YANLIS — 0 render eder
+// CAUTION — && operator (falsy value trap)
+{items.length > 0 && <ItemList items={items} />} // CORRECT — boolean result
+{items.length && <ItemList items={items} />}      // WRONG — renders 0
 
-// DOGRU — Fragment (gereksiz div wrapper yerine)
+// CORRECT — Fragment (instead of unnecessary div wrapper)
 <>
   <Header />
   <Main />
@@ -287,7 +287,7 @@ return <Dashboard user={user} />;
 ### Portal
 
 ```typescript
-// DOGRU — Modal, tooltip icin Portal
+// CORRECT — Portal for modal, tooltip
 import { createPortal } from 'react-dom';
 
 function Modal({ children, isOpen }: ModalProps) {
@@ -305,28 +305,28 @@ function Modal({ children, isOpen }: ModalProps) {
 ---
 
 <!-- GENERATE: ROUTER
-Aciklama: Bu bolum Bootstrap tarafindan otomatik tespit edilir.
-Gerekli manifest alanlari: project.dependencies, project.router_config
-Ornek cikti:
+Explanation: This section is detected automatically by Bootstrap.
+Required manifest fields: project.dependencies, project.router_config
+Example output:
 ## Router: React Router v6
 
-- **Tespit:** `package.json`'da `react-router-dom` v6 dependency'si
-- **Yapi:** `createBrowserRouter` ile route tanimlari
-- **Lazy loading:** `React.lazy()` ile route-based code splitting
-- **Auth:** `ProtectedRoute` component'i ile korumali route'lar
+- **Detection:** `react-router-dom` v6 dependency in `package.json`
+- **Structure:** Route definitions with `createBrowserRouter`
+- **Lazy loading:** Route-based code splitting with `React.lazy()`
+- **Auth:** Protected routes via `ProtectedRoute` component
 -->
 
 ---
 
-## Routing Kurallari
+## Routing rules
 
-### Route Tanimlari ve Lazy Loading
+### Route definitions and lazy loading
 
 ```typescript
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 
-// DOGRU — Lazy loading ile route-based code splitting
+// CORRECT — Route-based code splitting with lazy loading
 const Dashboard = lazy(() => import('./features/dashboard/DashboardPage'));
 const Products = lazy(() => import('./features/products/ProductsPage'));
 const Settings = lazy(() => import('./features/settings/SettingsPage'));
@@ -370,10 +370,10 @@ export default function App() {
 }
 ```
 
-### Protected Route
+### Protected route
 
 ```typescript
-// DOGRU — Auth kontrolu route seviyesinde
+// CORRECT — Auth check at route level
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuthStore();
   const location = useLocation();
@@ -387,7 +387,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Kullanim
+// Usage
 {
   path: 'dashboard',
   element: (
@@ -398,59 +398,59 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 ```
 
-### Routing Kurallar Tablosu
+### Routing rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `React.lazy()` + `Suspense` | Route-based code splitting ZORUNLU |
-| Protected route pattern | Auth kontrolu route seviyesinde |
-| `useParams` / `useSearchParams` | URL parametreleri icin hook kullan |
-| Error boundary | Her route segment'te `errorElement` |
-| `Navigate` component | Programmatic redirect icin |
+| `React.lazy()` + `Suspense` | Route-based code splitting REQUIRED |
+| Protected route pattern | Auth check at route level |
+| `useParams` / `useSearchParams` | Use hooks for URL parameters |
+| Error boundary | `errorElement` on each route segment |
+| `Navigate` component | For programmatic redirects |
 
 ---
 
 <!-- GENERATE: STYLING_APPROACH
-Aciklama: Bu bolum Bootstrap tarafindan otomatik tespit edilir.
-Gerekli manifest alanlari: project.styling, project.css_framework
-Ornek cikti:
-## Stil Yaklasimi: Tailwind CSS
+Explanation: This section is detected automatically by Bootstrap.
+Required manifest fields: project.styling, project.css_framework
+Example output:
+## Styling approach: Tailwind CSS
 
-- **Tespit:** `tailwind.config.js` mevcut, `package.json`'da `tailwindcss`
-- **Utility-first:** Inline class'lar tercih edilir
-- **cn() helper:** `clsx` + `tailwind-merge` ile kosullu class
-- **Theme:** `tailwind.config.js`'de custom tema tanimlari
+- **Detection:** `tailwind.config.js` present, `tailwindcss` in `package.json`
+- **Utility-first:** Inline classes preferred
+- **cn() helper:** Conditional classes with `clsx` + `tailwind-merge`
+- **Theme:** Custom theme definitions in `tailwind.config.js`
 -->
 
 ---
 
-## Stil Kurallari
+## Styling rules
 
-### Genel Prensipler
+### General principles
 
 ```typescript
-// DOGRU — Proje genelinde TEK stil yaklasimi
-// CSS Modules, Tailwind veya styled-components — KARISTIRMA
+// CORRECT — ONE styling approach across the project
+// CSS Modules, Tailwind, or styled-components — DO NOT MIX
 
-// DOGRU — Design token / tema degiskeni kullan
-<button className={styles.primaryButton}>Kaydet</button>
+// CORRECT — Use design token / theme variable
+<button className={styles.primaryButton}>Save</button>
 
-// YANLIS (YASAK) — Hardcoded renk/boyut
+// WRONG (FORBIDDEN) — Hardcoded color/size
 <button style={{ backgroundColor: '#1e88e5', padding: '8px 16px' }}>
-  Kaydet
+  Save
 </button>
 ```
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| TEK yaklasim | CSS Modules / Tailwind / styled-components — karistirma |
-| Design token | Hardcoded renk/boyut YASAK, tema degiskeni kullan |
-| Responsive | Mobile-first media query'ler |
-| Inline style sinirli | Sadece dinamik degerler icin (JS hesaplama sonucu) |
+| ONE approach | CSS Modules / Tailwind / styled-components — do not mix |
+| Design token | Hardcoded color/size FORBIDDEN — use theme variables |
+| Responsive | Mobile-first media queries |
+| Inline style limited | Only for dynamic values (JS computation results) |
 
 ---
 
-## Test Kurallari
+## Test rules
 
 ### React Testing Library
 
@@ -458,19 +458,19 @@ Ornek cikti:
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// DOGRU — Davranis bazli test
+// CORRECT — Behavior-based test
 describe('LoginForm', () => {
   it('should show error for invalid email', async () => {
     const user = userEvent.setup();
     render(<LoginForm />);
 
-    const emailInput = screen.getByRole('textbox', { name: /e-posta/i });
+    const emailInput = screen.getByRole('textbox', { name: /email/i });
     await user.type(emailInput, 'invalid-email');
 
-    const submitButton = screen.getByRole('button', { name: /giris/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     await user.click(submitButton);
 
-    expect(screen.getByText(/gecerli bir e-posta girin/i)).toBeInTheDocument();
+    expect(screen.getByText(/enter a valid email/i)).toBeInTheDocument();
   });
 
   it('should call onSubmit with valid data', async () => {
@@ -478,9 +478,9 @@ describe('LoginForm', () => {
     const user = userEvent.setup();
     render(<LoginForm onSubmit={handleSubmit} />);
 
-    await user.type(screen.getByRole('textbox', { name: /e-posta/i }), 'ali@test.com');
-    await user.type(screen.getByLabelText(/sifre/i), 'password123');
-    await user.click(screen.getByRole('button', { name: /giris/i }));
+    await user.type(screen.getByRole('textbox', { name: /email/i }), 'ali@test.com');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(handleSubmit).toHaveBeenCalledWith({
       email: 'ali@test.com',
@@ -489,32 +489,32 @@ describe('LoginForm', () => {
   });
 });
 
-// YANLIS (YASAK) — Implementation detail testi
+// WRONG (FORBIDDEN) — Implementation detail test
 it('should set state', () => {
   const { result } = renderHook(() => useState(false));
-  // State'e dogrudan erisim YASAK — davranis test et
+  // Direct state access FORBIDDEN — test behavior
 });
 ```
 
-### Test Kurallar Tablosu
+### Test rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| RTL (React Testing Library) | Implementation degil davranis test et |
-| `screen.getByRole`, `getByText` | Erisilebilirlik query'leri tercih et |
-| `getByTestId` son care | Diger query'ler islemiyorsa |
-| `userEvent` | `fireEvent` yerine `@testing-library/user-event` |
-| API mock | MSW tercih edilir, component mock'lama YASAK |
-| Snapshot test sinirli | Anlamli olan yerlerde, az kullan |
+| RTL (React Testing Library) | Test behavior, not implementation |
+| `screen.getByRole`, `getByText` | Prefer accessibility queries |
+| `getByTestId` last resort | Only when other queries fail |
+| `userEvent` | Prefer `@testing-library/user-event` over `fireEvent` |
+| API mock | Prefer MSW; mocking components is FORBIDDEN |
+| Snapshot tests limited | Use sparingly where meaningful |
 
 ---
 
-## Performans Kurallari
+## Performance rules
 
-### Memo ve Optimization
+### Memo and optimization
 
 ```typescript
-// DOGRU — React.memo sadece gercek performans sorunu oldugunda
+// CORRECT — React.memo only when there is a real performance problem
 const ExpensiveList = React.memo(function ExpensiveList({ items }: Props) {
   return (
     <ul>
@@ -525,7 +525,7 @@ const ExpensiveList = React.memo(function ExpensiveList({ items }: Props) {
   );
 });
 
-// DOGRU — Buyuk listeler icin virtualization
+// CORRECT — Virtualization for large lists
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 function VirtualList({ items }: { items: Item[] }) {
@@ -558,74 +558,82 @@ function VirtualList({ items }: { items: Item[] }) {
   );
 }
 
-// DOGRU — Agir kutuphane icin dynamic import
+// CORRECT — Dynamic import for heavy libraries
 const HeavyEditor = lazy(() => import('./HeavyEditor'));
 ```
 
-### Performans Kurallar Tablosu
+### Performance rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `React.memo()` olcumlu | Sadece sik re-render olan ve pahali component'lerde |
-| `useMemo`/`useCallback` olcumlu | Premature optimization YASAK, olculmus sorunlarda |
-| Virtualization | Buyuk listeler icin `react-window` veya `react-virtuoso` |
-| Bundle analizi | `source-map-explorer` veya `rollup-plugin-visualizer` |
-| Lazy import | Agir kutuphaneleri `React.lazy()` ile yukle |
-| Code splitting | Route bazli splitting ZORUNLU |
+| Measured `React.memo()` | Only for frequently re-rendered expensive components |
+| Measured `useMemo`/`useCallback` | Premature optimization FORBIDDEN — use for measured issues |
+| Virtualization | `react-window` or `react-virtuoso` for large lists |
+| Bundle analysis | `source-map-explorer` or `rollup-plugin-visualizer` |
+| Lazy import | Load heavy libraries with `React.lazy()` |
+| Code splitting | Route-based splitting REQUIRED |
 
 ---
 
 <!-- GENERATE: PROJECT_CONVENTIONS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.conventions, project.rules, project.folder_structure
-Ornek cikti:
-## Proje Konvansiyonlari
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.conventions, project.rules, project.folder_structure
+Example output:
+## Project conventions
 
-### Dosya Isimlendirme
+### File naming
 - Component: PascalCase (`ProductCard.tsx`)
 - Hook: camelCase + use prefix (`useAuth.ts`)
 - Util: camelCase (`formatDate.ts`)
-- Test: `*.test.tsx` veya `*.spec.tsx`
-- Stil: `*.module.css` veya component ismi ile
+- Test: `*.test.tsx` or `*.spec.tsx`
+- Style: `*.module.css` or named after the component
 
-### Import Sirasi
+### Import order
 1. React
-2. Ucuncu parti kutuphaneler
-3. Proje component'leri (`@/components/`)
-4. Hook'lar (`@/hooks/`)
-5. Servisler (`@/services/`)
-6. Tipler (`@/types/`)
-7. Stiller
+2. Third-party libraries
+3. Project components (`@/components/`)
+4. Hooks (`@/hooks/`)
+5. Services (`@/services/`)
+6. Types (`@/types/`)
+7. Styles
 -->
 
 ---
 
-## Yasak Pratikler
+## Forbidden practices
 
-| # | Yasak | Neden | Dogru Alternatif |
+| # | Forbidden | Reason | Correct alternative |
 |---|---|---|---|
-| 1 | `dangerouslySetInnerHTML` | XSS riski | Sadece sanitize edilmis icerikle, yoksa kullanma |
-| 2 | `findDOMNode` | Deprecated | `useRef` kullan |
-| 3 | String ref (`ref="myRef"`) | Legacy API | `useRef` hook kullan |
-| 4 | Component icinde component | Her render'da yeniden olusturulur | Ayri dosyada tanimla |
-| 5 | `any` tipi | TypeScript tip guvenligini kirar | Doğru tip tanimla |
-| 6 | Index key (dinamik liste) | Siralama/filtreleme degisince bozulur | Benzersiz `id` kullan |
-| 7 | Class component | Legacy, hook kullanilamaz | Functional component |
-| 8 | `useEffect` icinde dogrudan async | Race condition | Cleanup + cancelled flag |
-| 9 | `// eslint-disable` gereksiz | Lint kurallarini devre disi birakma | Sorunu duzelt |
-| 10 | Barrel export (buyuk projelerde) | Tree-shaking bozulur | Dogrudan import |
+| 1 | `dangerouslySetInnerHTML` | XSS risk | Only with sanitized content, otherwise do not use |
+| 2 | `findDOMNode` | Deprecated | Use `useRef` |
+| 3 | String ref (`ref="myRef"`) | Legacy API | Use `useRef` hook |
+| 4 | Component inside component | Recreated on every render | Define in a separate file |
+| 5 | `any` type | Breaks TypeScript safety | Use a real type |
+| 6 | Index key (dynamic list) | Breaks when sort/filter changes | Use unique `id` |
+| 7 | Class component | Legacy, hooks unavailable | Functional component |
+| 8 | Direct async inside `useEffect` | Race condition | Cleanup + cancelled flag |
+| 9 | Unnecessary `// eslint-disable` | Disables lint rules | Fix the problem |
+| 10 | Barrel export (large projects) | Breaks tree-shaking | Direct import |
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory rules
 
-1. **Functional component** — Class component YASAK (legacy haric).
-2. **Props icin `interface`** — `type` degil `interface` kullan, extend edilebilirlik icin.
-3. **Hook kurallari** — En ustte, kosulsuz. Dependency dizisi tam. Cleanup ZORUNLU.
-4. **State en dusuk seviyede** — Mumkun olan en yakin component'te tut.
-5. **Benzersiz key** — Liste render'da stabil, benzersiz key kullan. Index key YASAK.
-6. **Lazy loading** — Route bazli code splitting `React.lazy()` + `Suspense` ile.
-7. **Protected route** — Auth kontrolu route seviyesinde.
-8. **Test** — RTL ile davranis test et, `userEvent` kullan, implementation detail YASAK.
-9. **Tek stil yaklasimi** — CSS Modules / Tailwind / styled-components — proje genelinde TEK.
-10. **`any` YASAK** — TypeScript'te tip guvenligi koru, `any` yerine dogru tip tanimla.
+1. **Functional component** — Class components FORBIDDEN (except legacy).
+2. **`interface` for props** — Use `interface`, not `type`, for extendability.
+3. **Hook rules** — Top-level, unconditional. Complete dependency array. Cleanup REQUIRED.
+4. **State at the lowest level** — Keep it in the nearest possible component.
+5. **Unique key** — Stable, unique key in list rendering. Index key FORBIDDEN.
+6. **Lazy loading** — Route-based code splitting with `React.lazy()` + `Suspense`.
+7. **Protected route** — Auth check at route level.
+8. **Test** — Test behavior with RTL, use `userEvent`, implementation details FORBIDDEN.
+9. **One styling approach** — CSS Modules / Tailwind / styled-components — ONE across the project.
+10. **`any` FORBIDDEN** — Keep TypeScript type safety; define a proper type instead of `any`.
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

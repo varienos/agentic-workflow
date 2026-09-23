@@ -1,10 +1,10 @@
-# Docker Modul Tespiti
+# Docker Module Detection
 
 ## Checks
 
-- file_exists: Dockerfile | */Dockerfile
-- file_exists: docker-compose.yml | docker-compose.yaml | compose.yml
-- file_exists: .dockerignore
+- `file_exists`: Dockerfile or /Dockerfile
+- `file_exists`: docker-compose.yml, docker-compose.yaml, or compose.yml
+- `file_exists`: .dockerignore
 
 ## Minimum Match
 
@@ -12,11 +12,11 @@
 
 ## Activates
 
-- commands/pre-deploy.skeleton.md (slash command)
-- commands/post-deploy.skeleton.md (slash command)
-- agents/devops.skeleton.md (sub-agent)
+- `/commands/pre-deploy.skeleton.md` (slash command)
+- `/commands/post-deploy.skeleton.md` (slash command)
+- `/agents/devops.skeleton.md` (sub-agent)
 
 ## Affects Core
 
-- workflow-lifecycle: Deploy akisi eklenir (pre-deploy → deploy → post-deploy)
-- CLAUDE.md: Deploy kurallari bolumu eklenir
+- `workflow-lifecycle`: Deploy flow is added (pre-deploy → deploy → post-deploy)
+- `CLAUDE.md`: Deploy rules section is added

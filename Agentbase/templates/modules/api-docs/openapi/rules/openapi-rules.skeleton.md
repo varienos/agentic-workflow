@@ -1,67 +1,67 @@
-# OpenAPI Kurallari
+# OpenAPI Rules
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.name, project.description, project.structure
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Spec Dosyasi Standartlari
+## Spec File Standards
 
-- OpenAPI 3.0+ kullanimi **zorunludur**. Swagger 2.0 yeni projelerde kabul edilmez.
-- Spec dosyasinda asagidaki alanlar **zorunlu** olmalidir:
-  - `info.title` — API'nin adi
-  - `info.version` — Semantik versiyon (ornegin `1.2.0`)
-  - `info.description` — API'nin kisa aciklamasi
-- `servers` alani en az bir ortam (development, staging, production) icermelidir.
+- OpenAPI 3.0+ usage is **required**. Swagger 2.0 is not accepted in new projects.
+- The following fields are **required** in the spec file:
+  - `info.title` — API name
+  - `info.version` — Semantic version (for example `1.2.0`)
+  - `info.description` — Short API description
+- The `servers` field must include at least one environment (development, staging, production).
 
 ---
 
-## Endpoint Dokumantasyonu
+## Endpoint Documentation
 
-Her endpoint (`paths` altindaki her operasyon) icin asagidakiler **zorunludur**:
+For every endpoint (each operation under `paths`), the following are **required**:
 
-| Alan | Aciklama |
+| Field | Description |
 |------|----------|
-| `summary` | Endpoint'in tek satirlik aciklamasi |
-| `description` | Detayli kullanim bilgisi |
-| `requestBody.content.schema` | Request body olan endpoint'lerde zorunlu |
-| `responses.2xx.content.schema` | Basarili response'un schema tanimi |
-| `responses.4xx` | En az bir hata response'u (400, 401, 404 vb.) |
-| `responses.5xx` | Sunucu hatasi response tanimi |
-| `tags` | Gruplandirma icin en az bir tag |
+| `summary` | One-line description of the endpoint |
+| `description` | Detailed usage information |
+| `requestBody.content.schema` | Required for endpoints with a request body |
+| `responses.2xx.content.schema` | Schema definition for the successful response |
+| `responses.4xx` | At least one error response (400, 401, 404, etc.) |
+| `responses.5xx` | Server error response definition |
+| `tags` | At least one tag for grouping |
 
 ---
 
-## Senkronizasyon Kurallari
+## Synchronization Rules
 
-1. **Route degistiginde spec guncellenmeli.** Bir endpoint'in path'i, method'u, request/response yapisi degistiginde ilgili spec dosyasi ayni commit'te guncellenmelidir.
-2. **Yeni endpoint eklendiginde spec'e eklenmeli.** Yeni bir route tanimlandiysa, spec dosyasina karsilik gelen operasyon tanimlanmalidir.
-3. **Endpoint kaldirildiginda spec'ten cikarilmali.** Silinen veya devre disi birakilan endpoint'ler spec'ten kaldirilmali ya da `deprecated: true` ile isaretlenmelidir.
-4. **Schema degisiklikleri yansitilmali.** Model/DTO degisiklikleri `components/schemas` altinda guncellenmeli.
-
----
-
-## Dogrulama
-
-- Pre-deploy asamasinda spec validation **calistirilmalidir** (ornegin `npx @redocly/cli lint openapi.yaml`).
-- Schema `$ref` referanslari gecerli olmalidir — kirik referans deploy'u engelleyici hata olarak degerlendirilir.
-- CI pipeline'da spec dogrulama adimi eklenmesi **onerilir**.
+1. **Update the spec when a route changes.** When an endpoint path, method, or request/response shape changes, the related spec file must be updated in the same commit.
+2. **Add new endpoints to the spec.** When a new route is defined, the matching operation must be defined in the spec file.
+3. **Remove endpoints from the spec when deleted.** Deleted or disabled endpoints must be removed from the spec or marked with `deprecated: true`.
+4. **Reflect schema changes.** Model/DTO changes must be updated under `components/schemas`.
 
 ---
 
-## Anti-Pattern'ler
+## Validation
 
-| Anti-Pattern | Dogru Yaklasim |
+- Spec validation **must be run** during pre-deploy (for example `npx @redocly/cli lint openapi.yaml`).
+- Schema `$ref` references must be valid — broken references are treated as deploy-blocking errors.
+- Adding a spec validation step in the CI pipeline is **recommended**.
+
+---
+
+## Anti-Patterns
+
+| Anti-Pattern | Correct Approach |
 |-------------|----------------|
-| Hardcoded ornek degerler (`example: "john"`) yerine schema kullanmamak | `schema` ile tip tanimlayin, `example` opsiyonel olarak ekleyin |
-| Eksik error response tanimlari | Her endpoint'te en az `400`, `401`, `500` response tanimlayin |
-| Deprecated endpoint'lerin spec'te isaretlenmemesi | `deprecated: true` ekleyin ve `description`'da alternatif endpoint'i belirtin |
-| Tum schema'larin inline tanimlanmasi | `components/schemas` altinda tanimlayin, `$ref` ile referans verin |
-| Spec dosyasinin version'inin guncellenmemesi | API degisikliklerinde `info.version`'i semantik versiyonlamaya uygun artirin |
-| Farkli ortamlar icin ayri spec dosyasi tutmak | Tek spec + `servers` alani ile ortamlari tanimlyin |
+| Skipping schemas in favor of hardcoded example values (`example: "john"`) | Define types with `schema`; add `example` optionally |
+| Missing error response definitions | Define at least `400`, `401`, and `500` responses on every endpoint |
+| Not marking deprecated endpoints in the spec | Add `deprecated: true` and mention the alternative endpoint in `description` |
+| Defining all schemas inline | Define under `components/schemas` and reference with `$ref` |
+| Not updating the spec file version | Bump `info.version` semantically on API changes |
+| Keeping separate spec files per environment | Use a single spec + `servers` field to define environments |

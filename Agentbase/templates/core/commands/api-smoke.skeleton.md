@@ -1,126 +1,125 @@
 # API Smoke Test
 
-> API endpoint lerini hizlica dogrular. Post-deploy sonrasi veya bagimsiz olarak calistirilabilir.
-> Kullanim: `/api-smoke`, `/api-smoke staging`, `/api-smoke https://custom-url.com`
+> Quickly verifies API endpoints. Can run after a post-deploy or independently.
+> Usage: `/api-smoke`, `/api-smoke staging`, `/api-smoke https://custom-url.com`
 
 ---
 
-## Kural: OTONOM CALIS
+## Rule: WORK AUTONOMOUSLY
 
-- Kullaniciya soru SORMA — smoke test calistir, sonuclari raporla.
-- Basarisiz endpoint leri DETAYLI goster.
-- Tum adimlari CALISTIR — bir adimi atlama.
+- Do NOT ask the user questions — run the smoke test and report results.
+- Show failed endpoints IN DETAIL.
+- RUN every step — do not skip a step.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, environments
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret API
+Description: This section is filled by Bootstrap from manifest data.
+Required manifest fields: project.description, stack.primary, environments
+Example output:
+## Project Context
+- **Project:** E-commerce API
 - **Stack:** Node.js + Express
 - **Production:** https://api.example.com
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## ADIM 1 — Ortam Secimi
+## STEP 1 — Environment Selection
 
-Argumani cozumle:
+Resolve the argument:
 
-| Arguman | Ortam |
+| Argument | Environment |
 |---|---|
-| Bos | Production (manifest environments[0]) |
-| `staging` | Staging ortami |
-| `https://...` | Ozel URL |
+| Empty | Production (manifest environments[0]) |
+| `staging` | Staging environment |
+| `https://...` | Custom URL |
 
 ---
 
-## ADIM 2 — Smoke Test Calistir
+## STEP 2 — Run Smoke Test
 
-### 2.1 Smoke Test Endpoint Listesi
+### 2.1 Smoke Test Endpoint List
 
 <!-- GENERATE: SMOKE_TEST_ENDPOINTS
-Aciklama: Manifest ten dinamik endpoint tablosu.
-Gerekli manifest alanlari: environments, api_endpoints, project.api_prefix
+Description: Dynamic endpoint table from the manifest.
+Required manifest fields: environments, api_endpoints, project.api_prefix
 -->
 
-### 2.2 Curl Script Calistir
+### 2.2 Run Curl Script
 
-Asagidaki script i Bash ile calistir:
+Run the following script with Bash:
 
 ```bash
 <!-- GENERATE: API_SMOKE_SCRIPT
-Aciklama: Manifest ten curl bazli smoke test script i.
-Gerekli manifest alanlari: environments, api_endpoints, project.api_prefix
+Description: Curl-based smoke test script from the manifest.
+Required manifest fields: environments, api_endpoints, project.api_prefix
 -->
 ```
 
-**NOT:** Auth gerektiren endpoint ler icin `SMOKE_TEST_TOKEN` env variable set edilmeli veya script e parametre olarak verilmeli.
+**NOTE:** For endpoints that require auth, set the `SMOKE_TEST_TOKEN` env variable or pass it as a script parameter.
 
-### 2.3 Node.js Test Dosyasi (CI Entegrasyonu)
+### 2.3 Node.js Test File (CI Integration)
 
-CI ortaminda calistirilabilir node:test bazli smoke test:
+node:test-based smoke test that can run in CI:
 
 ```javascript
 <!-- GENERATE: API_SMOKE_NODE_TESTS
-Aciklama: Manifest ten node:test bazli smoke test dosyasi.
-Gerekli manifest alanlari: environments, api_endpoints, project.api_prefix
+Description: node:test-based smoke test file from the manifest.
+Required manifest fields: environments, api_endpoints, project.api_prefix
 -->
 ```
 
-Calistirma: `SMOKE_TEST_URL=https://api.example.com SMOKE_TEST_TOKEN=xxx node --test smoke-test.js`
+Run: `SMOKE_TEST_URL=https://api.example.com SMOKE_TEST_TOKEN=xxx node --test smoke-test.js`
 
 ---
 
-## ADIM 3 — Sonuc Raporu
+## STEP 3 — Result Report
 
 ```markdown
-## Smoke Test Raporu
+## Smoke Test Report
 
-| # | Endpoint | Sonuc | Status |
+| # | Endpoint | Result | Status |
 |---|----------|-------|--------|
 | 1 | GET /health | PASS/FAIL | 200/xxx |
 | 2 | ... | ... | ... |
 
-### Ozet
-- **Toplam:** X endpoint
-- **Basarili:** Y
-- **Basarisiz:** Z
-- **Sonuc:** PASS / FAIL
+### Summary
+- **Total:** X endpoints
+- **Passed:** Y
+- **Failed:** Z
+- **Result:** PASS / FAIL
 
-### Basarisiz Endpoint Detaylari
-[Her basarisiz endpoint icin: beklenen vs gercek status, olasi neden]
+### Failed Endpoint Details
+[For each failed endpoint: expected vs actual status, possible cause]
 ```
 
 ---
 
-## Hata Durumlari
+## Error Cases
 
-| Durum | Aksiyon |
+| Case | Action |
 |---|---|
-| Token yok, auth endpoint var | UYAR: "SMOKE_TEST_TOKEN set edilmeli" |
-| URL erisilemez | FAIL: "Baglanti kurulamadi" |
-| Timeout | FAIL: "10sn icerisinde yanit alinamadi" |
+| No token, auth endpoint present | WARN: "SMOKE_TEST_TOKEN must be set" |
+| URL unreachable | FAIL: "Could not establish connection" |
+| Timeout | FAIL: "No response within 10s" |
 
 ---
 
-## Zorunlu Kurallar
+## Required Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/` directory inside Codebase or writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and, if the task requires it, edited. Config files (`.claude/`, `CLAUDE.md`) cannot be written inside Codebase.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->

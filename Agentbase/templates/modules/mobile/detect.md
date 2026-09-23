@@ -1,23 +1,23 @@
-# Mobile Kategori Tespiti
+# Mobile Category Detection
 
-Bu kategori mobil uygulama gelistirme icin tasarim sistemi kurallari ve platform-spesifik kontroller saglar.
+This category provides design system rules and platform-specific checks for mobile app development.
 
 ## Variants
 
-| Varyant | Tespit Dosyasi | Oncelik | Not |
+| Variant | Detection File | Priority | Note |
 |---------|---------------|---------|-----|
-| Expo | `mobile/expo/detect.md` | 1 | Expo tespit edilirse plain RN aktive edilmez |
-| React Native (plain) | `mobile/react-native/detect.md` | 2 | Sadece Expo kullanilmayan RN projeleri |
-| Flutter | `mobile/flutter/detect.md` | 3 | Farkli teknoloji stack'i, diger modullerle catismaz |
+| Expo | `mobile/expo/detect.md` | 1 | If Expo is detected, plain RN is not activated |
+| React Native (plain) | `mobile/react-native/detect.md` | 2 | RN projects that do not use Expo |
+| Flutter | `mobile/flutter/detect.md` | 3 | Different technology stack; does not conflict with other modules |
 
 ## Provides
 
-- Tasarim sistemi kural dosyasi (renk, tipografi, bilesenler)
-- Code review agent'a tema/stil kontrolu eklenir
-- Platform-spesifik kurallar (iOS/Android farkliliklari)
+- Design system rule file (colors, typography, components)
+- Theme/style check added to the code review agent
+- Platform-specific rules (iOS/Android differences)
 
 ## Affects Core
 
-- code-review: tema/renk kullanim kontrolu
-- task-hunter: IMPLEMENTATION_RULES'a RN pattern'leri eklenir
-- settings.json: ilgili plugin'ler aktive edilir
+- code-review: theme/color usage check
+- task-hunter: RN patterns added to IMPLEMENTATION_RULES
+- settings.json: related plugins are activated

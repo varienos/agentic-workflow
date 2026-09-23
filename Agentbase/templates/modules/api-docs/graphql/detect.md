@@ -1,4 +1,4 @@
-# GraphQL Modul Tespiti
+# GraphQL Module Detection
 
 ## Checks
 
@@ -16,5 +16,5 @@
 
 ## Affects Core
 
-- code-review: Schema <-> resolver uyumu kontrolu
-- CLAUDE.md: GraphQL kurallari
+- code-review: Schema <-> resolver consistency check
+- CLAUDE.md: GraphQL rules

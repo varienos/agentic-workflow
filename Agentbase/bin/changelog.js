@@ -4,16 +4,16 @@
 /**
  * Changelog Generator — Agentic Workflow
  *
- * Git commit tarihçesinden otomatik CHANGELOG.md üretir.
- * Conventional Commits formatını parse eder.
- * Tag-aware: git tag'larını tanır ve her versiyon için ayrı bölüm üretir.
+ * Builds CHANGELOG.md from git history.
+ * Parses Conventional Commits.
+ * Tag-aware: each git tag becomes its own section.
  *
- * Kullanım:
- *   node bin/changelog.js                    # Son tag'den bu yana
- *   node bin/changelog.js --all              # Tüm tarihçe (tag bazlı bölümler)
- *   node bin/changelog.js --from v0.1.0      # Belirli tag'den bu yana
- *   node bin/changelog.js --release v1.0.0   # Yayınlanmamış → v1.0.0 olarak etiketle
- *   node bin/changelog.js --dry-run          # Dosyaya yazmadan göster
+ * Usage:
+ *   node bin/changelog.js                    # Since the latest tag
+ *   node bin/changelog.js --all              # Full history (one section per tag)
+ *   node bin/changelog.js --from v0.1.0      # Since a specific tag
+ *   node bin/changelog.js --release v1.0.0   # Label the open section as v1.0.0
+ *   node bin/changelog.js --dry-run          # Print without writing
  */
 
 const { spawnSync } = require('child_process');
@@ -24,19 +24,19 @@ const REPO_ROOT = path.resolve(__dirname, '../..');
 const CHANGELOG_PATH = path.join(REPO_ROOT, 'CHANGELOG.md');
 
 const CATEGORIES = {
-  feat: { label: 'Eklenen' },
-  fix: { label: 'Düzeltilen' },
-  refactor: { label: 'Yeniden Düzenlenen' },
-  docs: { label: 'Dokümantasyon' },
-  test: { label: 'Test' },
-  chore: { label: 'Bakım' },
-  perf: { label: 'Performans' },
-  style: { label: 'Stil' },
+  feat: { label: 'Added' },
+  fix: { label: 'Fixed' },
+  refactor: { label: 'Changed' },
+  docs: { label: 'Documentation' },
+  test: { label: 'Tests' },
+  chore: { label: 'Maintenance' },
+  perf: { label: 'Performance' },
+  style: { label: 'Style' },
   ci: { label: 'CI/CD' },
-  release: { label: 'Sürüm' },
+  release: { label: 'Release' },
 };
 
-const HEADER = '# Değişiklik Günlüğü\n\nTüm önemli değişiklikler bu dosyada belgelenir.\nFormat [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.\n\n';
+const HEADER = '# Changelog\n\nNotable changes are documented in this file.\nThe format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).\n\n';
 
 function gitSpawn(...args) {
   const result = spawnSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' });
@@ -114,7 +114,7 @@ function generateSection(version, date, commits) {
     const group = groups[type];
     if (!group || group.length === 0) continue;
 
-    const cat = CATEGORIES[type] || { label: 'Diğer' };
+    const cat = CATEGORIES[type] || { label: 'Other' };
     lines.push(`### ${cat.label}`);
     lines.push('');
 
@@ -137,7 +137,7 @@ function generateAllSections() {
     const lastTag = tags[tags.length - 1];
     const unreleased = getCommits(lastTag, null);
     if (unreleased.length > 0) {
-      sections.push(generateSection('Yayınlanmamış', formatDate(unreleased[0]?.date), unreleased));
+      sections.push(generateSection('Unreleased', formatDate(unreleased[0]?.date), unreleased));
     }
   }
 
@@ -157,7 +157,7 @@ function generateAllSections() {
   if (tags.length === 0) {
     const all = getCommits(null, null);
     if (all.length > 0) {
-      sections.push(generateSection('Yayınlanmamış', formatDate(all[0]?.date), all));
+      sections.push(generateSection('Unreleased', formatDate(all[0]?.date), all));
     }
   }
 
@@ -168,7 +168,7 @@ function releaseVersion(version, options = {}) {
   const { changelogPath = CHANGELOG_PATH, dryRun = false } = options;
 
   if (!fs.existsSync(changelogPath)) {
-    console.error('Hata: CHANGELOG.md bulunamadı.');
+    console.error('Error: CHANGELOG.md was not found.');
     process.exit(1);
   }
 
@@ -176,20 +176,18 @@ function releaseVersion(version, options = {}) {
   const displayVersion = version.replace(/^v/, '');
   const today = new Date().toISOString().slice(0, 10);
 
-  // [Yayınlanmamış] / [Unreleased] → [version]; ardindan TAZE bir [Yayınlanmamış]
-  // bolumu (standing basic-memory bagimlilik notuyla) ust tarafa yeniden eklenir.
-  // Keep a Changelog standardi: Unreleased bolumu kalici olmalidir. Eski davranis
-  // bu bolumu TUKETIYORDU → her release sonrasi "Unreleased bolumu" testi (ve CI)
-  // kiriliyor, pre-push hook push'u bloklıyordu.
-  // Marker-aware: girdi hangi dildeyse (Yayınlanmamış / Unreleased) taze bolum de o dilde kalsin.
-  const noteLine = '> Bağımlılık notu: `basic-memory` MCP zorunlu shared agent memory layer olarak korunur (vault: `Docbase/memory/`).';
+  // Historical changelogs may use [Yayınlanmamış] or [Unreleased].
+  // Replace that heading with a fresh open section plus the released version.
+  // Keep a Changelog requires the open section to stay. The marker language of
+  // the existing file is preserved so old Turkish headings are not rewritten.
+  const noteLine = '> Dependency note: `basic-memory` MCP stays the required shared agent memory layer (vault: `Docbase/memory/`).';
   const updated = content.replace(
     /## \[(Yayınlanmamış|Unreleased)\](?:\s*-\s*\d{4}-\d{2}-\d{2})?/,
     (match, marker) => `## [${marker}]\n\n${noteLine}\n\n## [${displayVersion}] - ${today}`
   );
 
   if (updated === content) {
-    console.error('Hata: [Yayınlanmamış] veya [Unreleased] bölümü bulunamadı.');
+    console.error('Error: no [Unreleased] or [Yayınlanmamış] section was found.');
     process.exit(1);
   }
 
@@ -199,7 +197,7 @@ function releaseVersion(version, options = {}) {
   }
 
   fs.writeFileSync(changelogPath, updated);
-  console.log(`CHANGELOG.md güncellendi: yayınlanmamış bölüm → [${displayVersion}] (${today})`);
+  console.log(`CHANGELOG.md updated: open section → [${displayVersion}] (${today})`);
   return updated;
 }
 
@@ -223,7 +221,7 @@ function main() {
     const sections = generateAllSections();
 
     if (sections.length === 0) {
-      console.log('Commit bulunamadı.');
+      console.log('No commits found.');
       return;
     }
 
@@ -232,12 +230,12 @@ function main() {
 
     if (dryRun) {
       console.log(content);
-      console.log(`\n--- ${totalCommits} satır işlendi ---`);
+      console.log(`\n--- ${totalCommits} lines processed ---`);
       return;
     }
 
     fs.writeFileSync(CHANGELOG_PATH, content);
-    console.log(`CHANGELOG.md güncellendi — ${sections.length} bölüm, tag-aware.`);
+    console.log(`CHANGELOG.md updated — ${sections.length} sections, tag-aware.`);
     return;
   }
 
@@ -246,24 +244,24 @@ function main() {
   const commits = getCommits(latestTag, null);
 
   if (commits.length === 0) {
-    console.log('Yeni commit bulunamadı.');
+    console.log('No new commits found.');
     return;
   }
 
-  const version = 'Yayınlanmamış';
+  const version = 'Unreleased';
   const date = formatDate(commits[0]?.date);
   const section = generateSection(version, date, commits);
 
   if (dryRun) {
     console.log(section);
-    console.log(`\n--- ${commits.length} commit işlendi ---`);
+    console.log(`\n--- ${commits.length} commits processed ---`);
     return;
   }
 
   let existing = '';
   if (fs.existsSync(CHANGELOG_PATH)) {
     existing = fs.readFileSync(CHANGELOG_PATH, 'utf8');
-    // Header'ı atla, Yayınlanmamış bölümünü atla, versiyonlu bölümleri koru
+    // Keep versioned sections. The open section is replaced by the new one.
     const versionedStart = existing.search(/\n## \[\d/);
     if (versionedStart !== -1) {
       existing = existing.slice(versionedStart);
@@ -274,7 +272,7 @@ function main() {
 
   const content = HEADER + section + '\n' + existing;
   fs.writeFileSync(CHANGELOG_PATH, content);
-  console.log(`CHANGELOG.md güncellendi — ${commits.length} commit işlendi.`);
+  console.log(`CHANGELOG.md updated — ${commits.length} commits processed.`);
 }
 
 if (require.main === module) {

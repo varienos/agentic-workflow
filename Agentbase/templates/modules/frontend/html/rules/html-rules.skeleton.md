@@ -1,121 +1,121 @@
-# HTML/CSS/JS (Vanilla Web) Kurallari
+# HTML/CSS/JS (vanilla web) rules
 
-> Bu kurallar framework kullanmayan vanilla web projeleri icin gecerlidir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules apply to vanilla web projects that do not use a framework.
+> All plugins and agents MUST comply with these rules.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Ornek cikti:
-## Proje Baglami
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.name, project.description, project.structure
+Example output:
+## Project structure
 
-- **Proje:** MyWebsite — Kurumsal tanitim sitesi
-- **Yapi:** Statik site, `src/` altinda organize
-- **Build Tool:** Vite (veya hicbiri)
-- **CSS Yaklasimi:** BEM + CSS custom properties
+- **Project:** MyWebsite — Corporate website
+- **Build type:** Static site, organized under `src/`
+- **Build tool:** Vite (or other)
+- **CSS approach:** BEM + CSS custom properties
 - **JS:** ES6+ modules
-- **Deploy:** Netlify / GitHub Pages
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+- **Deployment:** Netlify / GitHub Pages
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## HTML Kurallari
+## HTML rules
 
-### Semantik Yapi
+### Semantic structure
 
 ```html
-<!-- DOGRU — Semantik etiketler kullan -->
+<!-- CORRECT — Use semantic tags -->
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Sayfa aciklamasi">
-  <title>Sayfa Basligi</title>
+  <meta name="description" content="Page description">
+  <title>Page title</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <header>
     <nav>
       <ul>
-        <li><a href="/">Ana Sayfa</a></li>
-        <li><a href="/hakkimizda">Hakkimizda</a></li>
+        <li><a href="/">Home</a></li>
+        <li><a href="/about">About</a></li>
       </ul>
     </nav>
   </header>
 
   <main>
     <article>
-      <h1>Baslik</h1>
+      <h1>Title</h1>
       <section>
-        <h2>Alt Baslik</h2>
-        <p>Icerik metni...</p>
+        <h2>Subtitle</h2>
+        <p>Content text...</p>
       </section>
     </article>
   </main>
 
   <footer>
-    <p>&copy; 2024 Sirket Adi</p>
+    <p>&copy; 2024 Company Name</p>
   </footer>
 
   <script src="js/app.js" defer></script>
 </body>
 </html>
 
-<!-- YANLIS (YASAK) — Div-soup -->
+<!-- WRONG (FORBIDDEN) — Div soup -->
 <div class="header">
   <div class="nav">
-    <div class="nav-item"><a href="/">Ana Sayfa</a></div>
+    <div class="nav-item"><a href="/">Home</a></div>
   </div>
 </div>
 <div class="main">
   <div class="content">
-    <div class="title">Baslik</div>
+    <div class="title">Title</div>
   </div>
 </div>
 ```
 
-### HTML Kurallar Tablosu
+### HTML rules table
 
-| Kural | Aciklama |
-|---|---|
-| Semantik etiketler | `<header>`, `<nav>`, `<main>`, `<article>`, `<section>`, `<footer>` |
-| `<div>` sadece stil amacli | Icerik icin semantik etiket tercih et |
-| `<img alt="">` zorunlu | Her gorselde `alt` attribute olmali (erisilebirlik) |
-| `<form>` attribute'leri | `action` ve `method` belirtilmeli |
-| Meta etiketleri zorunlu | `charset`, `viewport`, `description` |
-| Dil ozelligi | `<html lang="tr">` (veya uygun dil kodu) |
-| Baslik hiyerarsisi | `h1` → `h2` → `h3` sirali, atlama YASAK |
+| Rule | Description |
+| --- | --- |
+| Semantic tags | `<header>`, `<nav>`, `<main>`, `<article>`, `<section>`, `<footer>` |
+| Prefer semantic over style-only `div` | Choose a semantic tag for content instead of a style-only `div` |
+| Required `alt` on `img` | All images must have an `alt` attribute (accessibility) |
+| Form attributes | `action` and `method` must be specified |
+| Meta tags required | `charset`, `viewport`, `description` |
+| Language setting | `<html lang="en">` (or appropriate language code) |
+| Heading hierarchy | `h1` → `h2` → `h3` in order, no skipping |
 
 ---
 
 <!-- GENERATE: CSS_METHODOLOGY
-Aciklama: Bu bolum Bootstrap tarafindan otomatik tespit edilir.
-Gerekli manifest alanlari: project.css_files, project.css_methodology
-Ornek cikti:
-## CSS Metodolojisi: BEM
+Explanation: This section is detected automatically by Bootstrap.
+Required manifest fields: project.css_files, project.css_methodology
+Example output:
+## CSS methodology: BEM
 
-- **Tespit:** Sinif isimleri `block__element--modifier` formatinda
-- **Ornek:** `.card__title--highlighted`
-- **Dosya yapisi:** Component bazli CSS dosyalari
+- **Detection:** Class names follow `block__element--modifier`
+- **Example:** `.card__title--highlighted`
+- **Directory structure:** Component-based CSS files
 -->
 
 ---
 
-## CSS Kurallari
+## CSS rules
 
-### CSS Custom Properties ve Organizasyon
+### CSS custom properties and organization
 
 ```css
-/* DOGRU — CSS custom properties (variables) */
+/* CORRECT — CSS custom properties (variables) */
 :root {
-  /* Renkler */
+  /* Colors */
   --color-primary: #1e88e5;
   --color-secondary: #43a047;
   --color-text: #212121;
@@ -124,7 +124,7 @@ Ornek cikti:
   --color-surface: #f5f5f5;
   --color-error: #d32f2f;
 
-  /* Tipografi */
+  /* Typography */
   --font-family-base: 'Inter', system-ui, sans-serif;
   --font-size-sm: 0.875rem;
   --font-size-md: 1rem;
@@ -143,7 +143,7 @@ Ornek cikti:
   --border-color: #e0e0e0;
 }
 
-/* DOGRU — Variable kullanimi */
+/* CORRECT — Variable usage */
 .card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -151,18 +151,18 @@ Ornek cikti:
   padding: var(--spacing-md);
 }
 
-/* YANLIS (YASAK) — Hardcoded degerler */
+/* WRONG (FORBIDDEN) — Hardcoded values */
 .card {
-  background-color: #f5f5f5;  /* Variable kullan */
-  border: 1px solid #e0e0e0;  /* Variable kullan */
-  padding: 16px;               /* Variable kullan */
+  background-color: #f5f5f5;  /* Use variable */
+  border: 1px solid #e0e0e0;  /* Use variable */
+  padding: 16px;               /* Use variable */
 }
 ```
 
-### BEM Isimlendirme
+### BEM naming
 
 ```css
-/* DOGRU — BEM convention */
+/* CORRECT — BEM convention */
 .card { }                      /* Block */
 .card__title { }               /* Element */
 .card__title--highlighted { }  /* Modifier */
@@ -171,30 +171,30 @@ Ornek cikti:
 .card__footer { }
 .card--featured { }            /* Block modifier */
 
-/* YANLIS (YASAK) — Tutarsiz isimlendirme */
-.cardTitle { }           /* camelCase — CSS'te kullanma */
-.card-title-big { }      /* Belirsiz convention */
-.card .title { }         /* Descendant selector — specificity sorunu */
+/* WRONG (FORBIDDEN) — Inconsistent naming */
+.cardTitle { }           /* camelCase — do not use in CSS */
+.card-title-big { }      /* Ambiguous convention */
+.card .title { }         /* Descendant selector — specificity problem */
 ```
 
 ### Layout
 
 ```css
-/* DOGRU — Flexbox ile layout */
+/* CORRECT — Layout with Flexbox */
 .nav-list {
   display: flex;
   gap: var(--spacing-md);
   align-items: center;
 }
 
-/* DOGRU — Grid ile layout */
+/* CORRECT — Layout with Grid */
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--spacing-lg);
 }
 
-/* DOGRU — Mobile-first responsive */
+/* CORRECT — Mobile-first responsive */
 .container {
   padding: var(--spacing-sm);
 }
@@ -213,32 +213,32 @@ Ornek cikti:
   }
 }
 
-/* YANLIS (YASAK) — Float layout */
+/* WRONG (FORBIDDEN) — Float layout */
 .col-left {
   float: left;
   width: 50%;
 }
 ```
 
-### CSS Kurallar Tablosu
+### CSS rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| CSS custom properties | Hardcoded renk/boyut YASAK, variable kullan |
-| BEM veya tutarli convention | `block__element--modifier` formatinda isimlendir |
-| Mobile-first | `min-width` media query'leri tercih et |
-| `!important` YASAK | Specificity sorununu kaynak seviyesinde coz |
-| Flexbox / Grid | Layout icin ZORUNLU, float layout YASAK |
-| Dosya organizasyonu | reset, variables, base, components, utilities |
+| CSS custom properties | Hardcoded color/size FORBIDDEN — use variables |
+| BEM or consistent convention | Name in `block__element--modifier` format |
+| Mobile-first | Prefer `min-width` media queries |
+| `!important` FORBIDDEN | Fix specificity problems at the source |
+| Flexbox / Grid | REQUIRED for layout — float layout FORBIDDEN |
+| File organization | reset, variables, base, components, utilities |
 
 ---
 
-## JavaScript Kurallari
+## JavaScript rules
 
-### Modern ES6+ Syntax
+### Modern ES6+ syntax
 
 ```javascript
-// DOGRU — const/let, arrow functions, template literals
+// CORRECT — const/let, arrow functions, template literals
 const API_URL = 'https://api.example.com';
 
 const fetchUsers = async () => {
@@ -249,34 +249,34 @@ const fetchUsers = async () => {
   return response.json();
 };
 
-// DOGRU — Destructuring
+// CORRECT — Destructuring
 const { name, email, role } = user;
 const [first, ...rest] = items;
 
-// DOGRU — ES Modules
+// CORRECT — ES Modules
 // utils.js
 export const formatDate = (date) => {
-  return new Intl.DateTimeFormat('tr-TR').format(date);
+  return new Intl.DateTimeFormat('en-US').format(date);
 };
 
 // app.js
 import { formatDate } from './utils.js';
 
-// YANLIS (YASAK) — var kullanma
-var userName = 'Ali';  // const veya let kullan
+// WRONG (FORBIDDEN) — Do not use var
+var userName = 'Ali';  // Use const or let
 
-// YANLIS (YASAK) — string concatenation
-const greeting = 'Merhaba ' + userName + '!';  // Template literal kullan
+// WRONG (FORBIDDEN) — String concatenation
+const greeting = 'Hello ' + userName + '!';  // Use template literal
 ```
 
-### DOM Manipulasyonu
+### DOM manipulation
 
 ```javascript
-// DOGRU — querySelector kullan
+// CORRECT — Use querySelector
 const button = document.querySelector('.submit-btn');
 const items = document.querySelectorAll('.list-item');
 
-// DOGRU — Event delegation
+// CORRECT — Event delegation
 document.querySelector('.todo-list').addEventListener('click', (e) => {
   const item = e.target.closest('.todo-item');
   if (!item) return;
@@ -288,7 +288,7 @@ document.querySelector('.todo-list').addEventListener('click', (e) => {
   }
 });
 
-// YANLIS (YASAK) — Her elemana ayri listener
+// WRONG (FORBIDDEN) — Separate listener on every element
 items.forEach((item) => {
   item.querySelector('.delete-btn').addEventListener('click', () => {
     item.remove();
@@ -299,10 +299,10 @@ items.forEach((item) => {
 });
 ```
 
-### Async Islemler
+### Async operations
 
 ```javascript
-// DOGRU — async/await
+// CORRECT — async/await
 const loadData = async () => {
   try {
     const [users, products] = await Promise.all([
@@ -316,219 +316,230 @@ const loadData = async () => {
   }
 };
 
-// YANLIS (YASAK) — Callback hell
+// WRONG (FORBIDDEN) — Callback hell
 fetchUsers((users) => {
   fetchProducts((products) => {
     fetchOrders((orders) => {
-      // Callback hell — async/await kullan
+      // Callback hell — use async/await
     });
   });
 });
 ```
 
-### JavaScript Kurallar Tablosu
+### JavaScript rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `const` tercih | Degiskenlik gerekiyorsa `let`, `var` YASAK |
-| Arrow functions | Kisa fonksiyonlar icin, `this` binding gerekmedikce |
-| Template literals | String birlestirme yerine backtick kullan |
-| Destructuring | Nesne ve dizi ogelerine erisimde tercih et |
-| ES Modules | `import`/`export` kullan, global degiskenlerden kacin |
-| `querySelector` | DOM erisimi icin `getElementById` yerine |
-| Event delegation | Ortak parent'a tek listener, her ogeye ayri YASAK |
-| `async/await` | Callback ve `.then()` zinciri yerine |
+| Prefer `const` | Use `let` when reassignment is needed; `var` FORBIDDEN |
+| Arrow functions | For short functions, unless `this` binding is required |
+| Template literals | Use backticks instead of string concatenation |
+| Destructuring | Prefer for object and array access |
+| ES Modules | Use `import`/`export`; avoid global variables |
+| `querySelector` | Prefer over `getElementById` for DOM access |
+| Event delegation | Single listener on common parent — per-element listeners FORBIDDEN |
+| `async/await` | Prefer over callbacks and `.then()` chains |
 
 ---
 
-## Erisilebirlik (a11y) Kurallari
+## Accessibility (a11y) rules
 
 ```html
-<!-- DOGRU — ARIA ve erisilebirlik -->
-<button aria-label="Menu'yu ac" aria-expanded="false">
+<!-- CORRECT — ARIA and accessibility -->
+<button aria-label="Open menu" aria-expanded="false">
   <svg><!-- hamburger icon --></svg>
 </button>
 
-<nav aria-label="Ana navigasyon">
+<nav aria-label="Main navigation">
   <ul role="menubar">
-    <li role="none"><a role="menuitem" href="/">Ana Sayfa</a></li>
+    <li role="none"><a role="menuitem" href="/">Home</a></li>
   </ul>
 </nav>
 
-<!-- DOGRU — Form label'lari -->
-<label for="email">E-posta</label>
+<!-- CORRECT — Form labels -->
+<label for="email">Email</label>
 <input type="email" id="email" name="email" required
        aria-describedby="email-help">
-<span id="email-help">Is e-posta adresinizi girin</span>
+<span id="email-help">Enter your work email address</span>
 
-<!-- DOGRU — Skip navigation -->
-<a href="#main-content" class="skip-link">Iceriye atla</a>
+<!-- CORRECT — Skip navigation -->
+<a href="#main-content" class="skip-link">Skip to content</a>
 
-<!-- YANLIS (YASAK) — Label'siz form -->
-<input type="email" placeholder="E-posta"> <!-- label EKSIK -->
+<!-- WRONG (FORBIDDEN) — Form without label -->
+<input type="email" placeholder="Email"> <!-- label MISSING -->
 ```
 
-| Kural | Aciklama |
-|---|---|
-| ARIA rolleri | Uygun yerlerde `role`, `aria-label`, `aria-expanded` |
-| Klavye navigasyonu | Tab order, focus yonetimi, `tabindex` |
-| Renk kontrast | En az 4.5:1 orani (WCAG AA) |
-| Form label'lari | `<label for="...">` ile baglanmali |
-| Skip link | Uzun navigasyonlarda "iceriye atla" linki |
-| `alt` attribute | Her `<img>` etiketinde zorunlu |
+### Accessibility rules table
+
+| Rule | Description |
+| --- | --- |
+| ARIA attributes | Use `role`, `aria-label`, and `aria-expanded` where appropriate |
+| Keyboard navigation | Tab order, focus management, and `tabindex` |
+| Color contrast | At least 4.5:1 ratio (WCAG AA) |
+| Form labels | Must be connected with `<label for="...">` |
+| Skip link | "Skip to content" link for long navigation |
+| `alt` attribute | Mandatory on all `<img>` tags |
 
 ---
 
 <!-- GENERATE: BUILD_TOOL
-Aciklama: Bu bolum Bootstrap tarafindan otomatik tespit edilir.
-Gerekli manifest alanlari: project.build_tool, project.scripts
-Ornek cikti:
-## Build Tool: Vite
+Explanation: This section is automatically detected by Bootstrap.
+Required manifest fields: project.build_tool, project.scripts
+Example output:
+## Build tool: Vite
 
-- **Tespit:** `vite.config.js` mevcut
-- **Dev server:** `npm run dev` → `vite`
+- **Detection:** `vite.config.js` exists
+- **Development server:** `npm run dev` → `vite`
 - **Build:** `npm run build` → `vite build`
-- **Output:** `dist/` dizini
-- **Eklentiler:** `vite-plugin-html`
+- **Output:** `dist/` directory
+- **Plugins:** `vite-plugin-html`
 -->
 
 ---
 
-## Performans Kurallari
+## Performance rules
 
-### Kaynak Yukleme Sirasi
+### Resource loading order
 
 ```html
-<!-- DOGRU — CSS head'de, JS defer ile -->
+<!-- CORRECT — CSS in head, JS with defer -->
 <head>
   <!-- Critical CSS inline -->
   <style>
-    /* Above-the-fold stiller */
+    /* Above-the-fold styles */
     body { margin: 0; font-family: var(--font-family-base); }
   </style>
 
-  <!-- Ana CSS dosyasi -->
+  <!-- Main CSS file -->
   <link rel="stylesheet" href="css/styles.css">
 
-  <!-- Preconnect — ucuncu parti kaynaklar icin -->
+  <!-- Preconnect — for third-party resources -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
 </head>
 <body>
-  <!-- Icerik -->
+  <!-- Content -->
 
-  <!-- JS — body sonunda veya defer ile -->
+  <!-- JS — at end of body or with defer -->
   <script src="js/app.js" defer></script>
 </body>
 
-<!-- YANLIS (YASAK) — JS head'de bloklayici -->
+<!-- WRONG (FORBIDDEN) — Blocking JS in head -->
 <head>
-  <script src="js/heavy-lib.js"></script> <!-- Render'i bloklar -->
+  <script src="js/heavy-lib.js"></script> <!-- Blocks rendering -->
 </head>
 ```
 
-### Gorsel Optimizasyonu
+### Image optimization
 
 ```html
-<!-- DOGRU — Lazy loading ve modern format -->
+<!-- CORRECT — Lazy loading and modern format -->
 <img
   src="images/hero.webp"
-  alt="Hero gorsel"
+  alt="Hero image"
   width="1200"
   height="600"
   loading="lazy"
   decoding="async"
 >
 
-<!-- DOGRU — Responsive gorsel -->
+<!-- CORRECT — Responsive image -->
 <picture>
   <source media="(min-width: 1024px)" srcset="images/hero-lg.webp" type="image/webp">
   <source media="(min-width: 768px)" srcset="images/hero-md.webp" type="image/webp">
-  <img src="images/hero-sm.jpg" alt="Hero gorsel" width="400" height="200" loading="lazy">
+  <img src="images/hero-sm.jpg" alt="Hero image" width="400" height="200" loading="lazy">
 </picture>
 ```
 
-### Performans Kurallar Tablosu
+### Performance rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| CSS `<head>`'de | Render-blocking CSS minimize edilmeli |
-| JS `defer` veya body sonunda | Render'i bloklama |
-| Lazy loading | `loading="lazy"` ile gorunur alandaki olmayan gorseller |
-| WebP format | Modern gorsel formati tercih et |
-| `width` + `height` | Layout shift (CLS) onleme |
-| Critical CSS inline | Above-the-fold icin inline stil |
-| Preconnect | Ucuncu parti domain'ler icin `<link rel="preconnect">` |
+| CSS in `<head>` | Minimize render-blocking CSS |
+| JS with `defer` or at end of body | Prevent render blocking |
+| Lazy loading | Use `loading="lazy"` for off-screen images |
+| WebP format | Prefer modern image formats |
+| `width` + `height` | Mitigate layout shift (CLS) |
+| Critical CSS inline | Inline styles for above-the-fold content |
+| Preconnect | `<link rel="preconnect">` for third-party domains |
 
 ---
 
 <!-- GENERATE: PROJECT_CONVENTIONS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.conventions, project.rules, project.folder_structure
-Ornek cikti:
-## Proje Konvansiyonlari
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.conventions, project.rules, project.folder_structure
+Example output:
+## Project conventions
 
-### Dosya Yapisi
+### File structure
 ```
 src/
-├── index.html          # Ana sayfa
-├── pages/              # Diger sayfalar
+├── index.html          # Home page
+├── pages/              # Other pages
 │   ├── about.html
 │   └── contact.html
 ├── css/
 │   ├── reset.css       # CSS reset/normalize
 │   ├── variables.css   # CSS custom properties
-│   ├── base.css        # Temel stiller
-│   ├── components/     # Component stilleri
+│   ├── base.css        # Base styles
+│   ├── components/     # Component styles
 │   │   ├── card.css
 │   │   └── button.css
-│   └── utilities.css   # Yardimci siniflar
+│   └── utilities.css   # Utility classes
 ├── js/
-│   ├── app.js          # Ana giris noktasi
-│   ├── modules/        # JS modulleri
+│   ├── app.js          # Main entry point
+│   ├── modules/        # JS modules
 │   │   ├── nav.js
 │   │   └── form.js
-│   └── utils/          # Yardimci fonksiyonlar
-├── images/             # Gorseller
-└── fonts/              # Fontlar
+│   └── utils/          # Helper functions
+├── images/             # Images
+└── fonts/              # Fonts
 ```
 
-### Isimlendirme
-- HTML dosyalari: `kebab-case.html`
-- CSS dosyalari: `kebab-case.css`
-- JS dosyalari: `camelCase.js` veya `kebab-case.js`
-- CSS siniflar: BEM (`block__element--modifier`)
-- JS degiskenler: camelCase
-- JS sabitler: UPPER_SNAKE_CASE
+### Naming conventions
+
+- HTML files: `kebab-case.html`
+- CSS files: `kebab-case.css`
+- JavaScript files: `camelCase.js` or `kebab-case.js`
+- CSS classes: BEM (`block__element--modifier`)
+- JavaScript variables: camelCase
+- JavaScript constants: UPPER_SNAKE_CASE
 -->
 
 ---
 
-## Yasak Pratikler
+## Forbidden practices
 
-| # | Yasak | Neden | Dogru Alternatif |
+| # | Forbidden | Reason | Alternative |
 |---|---|---|---|
-| 1 | Inline `style=""` attribute | CSS dosyasinda yonetilmeli | CSS sinifi kullan |
-| 2 | Inline `onclick=""` handler | JS dosyasinda yonetilmeli | `addEventListener` kullan |
-| 3 | `document.write()` | Render'i bloklar, guvenlik riski | DOM API kullan |
-| 4 | jQuery | Modern vanilla JS yeterli | Native DOM API, fetch, ES6+ |
-| 5 | Table-based layout | Semantik degil, responsive degil | Flexbox veya Grid kullan |
-| 6 | `var` kullanimi | Scope sorunlari, hoisting | `const` veya `let` kullan |
-| 7 | Hardcoded renk/boyut | Bakim zor, tutarsizlik | CSS custom properties kullan |
-| 8 | `!important` | Specificity sorunlarini gizler | Specificity'yi kaynak seviyesinde coz |
-| 9 | Float layout | Karmasik, kirilgan | Flexbox veya Grid kullan |
-| 10 | Global JS degiskenler | Namespace kirliligi, catisma | ES Modules veya IIFE kullan |
+| 1 | Inline `style=""` attribute | Belongs in CSS file | Use a CSS class |
+| 2 | Inline `onclick=""` handler | Belongs in JavaScript file | Use `addEventListener` |
+| 3 | `document.write()` | Blocks rendering, security risk | Use DOM API |
+| 4 | jQuery | Modern vanilla JS is enough | Native DOM API, fetch, ES6+ |
+| 5 | Table-based layout | Not semantic, not responsive | Use Flexbox or Grid |
+| 6 | Using `var` | Scope issues, hoisting | Use `const` or `let` |
+| 7 | Hardcoded color/size | Hard to maintain, inconsistent | Use CSS custom properties |
+| 8 | Using `!important` | Hides specificity issues | Fix specificity at the source |
+| 9 | Float layout | Unpredictable, bug-prone | Use Flexbox or Grid |
+| 10 | Global JavaScript variables | Namespace pollution, collisions | Use ES Modules or IIFE |
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory rules
 
-1. **Semantik HTML** — `<header>`, `<nav>`, `<main>`, `<article>`, `<section>`, `<footer>` kullan, div-soup YASAK.
-2. **CSS custom properties** — Hardcoded renk/boyut YASAK, variable tanimla ve kullan.
-3. **BEM veya tutarli convention** — CSS sinif isimlendirmesi proje genelinde tutarli olmali.
-4. **Mobile-first** — `min-width` media query'leri ile responsive tasarim.
-5. **ES6+ syntax** — `const`/`let` kullan, `var` YASAK. Arrow function, template literal, destructuring.
-6. **Event delegation** — Ortak parent'a tek listener, her ogeye ayri listener YASAK.
-7. **Erisilebirlik** — `alt` attribute, form label'lari, ARIA rolleri, klavye navigasyonu.
-8. **Performans** — CSS head'de, JS defer ile. Lazy loading, WebP format.
-9. **Inline stil/handler YASAK** — Tum stil CSS dosyasinda, tum JS event'ler addEventListener ile.
-10. **Global degisken YASAK** — ES Modules veya modul pattern kullan.
+1. **Semantic HTML** — Use `<header>`, `<nav>`, `<main>`, `<article>`, `<section>`, `<footer>`; div soup FORBIDDEN.
+2. **CSS custom properties** — Hardcoded color/size FORBIDDEN; define and use variables.
+3. **BEM or consistent convention** — CSS class naming must be consistent across the project.
+4. **Mobile-first** — Implement responsive design with `min-width` media queries.
+5. **ES6+ syntax** — `const`/`let` instead of `var`, arrow functions, template literals, destructuring.
+6. **Event delegation** — Single listener on the common parent; separate listeners per element FORBIDDEN.
+7. **Accessibility** — `alt` attributes, labels, ARIA roles, keyboard navigation.
+8. **Performance** — CSS in head, JS with defer, lazy loading, and WebP format.
+9. **Inline styles/handlers FORBIDDEN** — Styles in CSS files; event handlers via `addEventListener`.
+10. **Global variables FORBIDDEN** — Use ES Modules or the module pattern.
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

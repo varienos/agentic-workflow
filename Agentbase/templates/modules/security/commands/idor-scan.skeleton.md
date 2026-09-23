@@ -1,47 +1,47 @@
-# IDOR Scan — Guvenlik Denetimi
+# IDOR Scan — Security Audit
 
-> Tum API endpoint'lerini IDOR (Insecure Direct Object Reference) aciklari icin tarar.
-> Kullanim: `/idor-scan`, `/idor-scan auth`, `/idor-scan <modul_adi>`
+> Scans all API endpoints for IDOR (Insecure Direct Object Reference) vulnerabilities.
+> Usage: `/idor-scan`, `/idor-scan auth`, `/idor-scan <module_name>`
 
 ---
 
-## Kural: OTONOM CALIS
+## Rule: WORK AUTONOMOUSLY
 
-- Kullaniciya soru SORMA — tum endpoint'leri tara ve raporla.
-- Basit IDOR sorunlarini (eksik ownership filter) DIREKT duzelt.
-- Karmasik sorunlari (mimari degisiklik gerektiren) backlog'a KAYDET.
-- Tum adimlari CALISTIR — bir adimi atlama.
+- Do NOT ask the user questions — scan all endpoints and report.
+- Fix simple IDOR issues (missing ownership filter) DIRECTLY.
+- RECORD complex issues (requiring architectural change) in the backlog.
+- RUN every step — do not skip a step.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure, project.subprojects
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL
 - **API Framework:** NestJS
 - **Auth:** JWT + Guard pattern
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Step 1 — Endpoint Envanteri
+## Step 1 — Endpoint Inventory
 
-Tum API endpoint'lerini bul ve listele.
+Find and list all API endpoints.
 
 <!-- GENERATE: CONTROLLER_TABLE
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, project.api_endpoints, project.modules
-Ornek cikti:
-### Controller/Handler Dosyalari
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.structure, project.api_endpoints, project.modules
+Example output:
+### Controller/Handler Files
 
-| Oncelik | Dosya | Modul | Endpoint Sayisi | Auth |
+| Priority | File | Module | Endpoint Count | Auth |
 |---|---|---|---|---|
 | 🔴 P1 | `apps/api/src/modules/users/users.controller.ts` | users | 8 | JWT Guard |
 | 🔴 P1 | `apps/api/src/modules/orders/orders.controller.ts` | orders | 12 | JWT Guard |
@@ -49,87 +49,87 @@ Ornek cikti:
 | 🟠 P2 | `apps/api/src/modules/products/products.controller.ts` | products | 10 | Mixed |
 | 🟢 P3 | `apps/api/src/modules/categories/categories.controller.ts` | categories | 4 | Public |
 
-**Onceliklendirme:**
-- 🔴 P1: Kullaniciya ozel veri iceren endpoint'ler (siparis, odeme, profil)
-- 🟠 P2: Karma erisimli endpoint'ler (public + authenticated)
-- 🟢 P3: Tamamen public endpoint'ler
+**Prioritization:**
+- 🔴 P1: Endpoints containing user-specific data (order, payment, profile)
+- 🟠 P2: Mixed-access endpoints (public + authenticated)
+- 🟢 P3: Fully public endpoints
 -->
 
-Eger kullanici belirli bir modul belirttiyse, sadece o modulu tara. Aksi halde P1'den baslayarak tum controller'lari tara.
+If the user specified a module, scan only that module. Otherwise scan all controllers starting from P1.
 
 ---
 
-## Step 2 — 5 Nokta IDOR Kontrol Matrisi
+## Step 2 — 5-Point IDOR Control Matrix
 
-Her endpoint icin asagidaki 5 kontrolu uygula:
+Apply the following 5 checks for each endpoint:
 
-### Kontrol 1 — Parametre Erisimi
-**Soru:** Endpoint URL veya body'sinde ID parametresi aliyor mu?
-**Aranan:** `:id`, `params.id`, `body.userId`, `query.orderId` vb.
-**Risk:** ID parametresi olan her endpoint potansiyel IDOR hedefidir.
-
-```
-ORNEK IDOR:
-GET /api/orders/:id  →  Baska kullanicinin siparisini gorebilir mi?
-PUT /api/users/:id   →  Baska kullanicinin profilini degistirebilir mi?
-```
-
-### Kontrol 2 — Sahiplik Filtresi (Ownership Filter)
-**Soru:** Veritabani sorgusunda `userId` veya `ownerId` filtresi var mi?
-**Aranan:** `where: { userId: req.user.id }`, `findFirst({ where: { id, userId } })` vb.
-**Risk:** Sahiplik filtresi yoksa IDOR acigi kesin.
+### Check 1 — Parameter Access
+**Question:** Does the endpoint take an ID parameter in the URL or body?
+**Look for:** `:id`, `params.id`, `body.userId`, `query.orderId`, etc.
+**Risk:** Every endpoint with an ID parameter is a potential IDOR target.
 
 ```
-GUVENLI:
+EXAMPLE IDOR:
+GET /api/orders/:id  →  Can another user's order be viewed?
+PUT /api/users/:id   →  Can another user's profile be changed?
+```
+
+### Check 2 — Ownership Filter
+**Question:** Is there a `userId` or `ownerId` filter in the database query?
+**Look for:** `where: { userId: req.user.id }`, `findFirst({ where: { id, userId } })`, etc.
+**Risk:** Missing ownership filter means a definite IDOR vulnerability.
+
+```
+SAFE:
 prisma.order.findFirst({ where: { id: orderId, userId: req.user.id } })
 
-GUVENSIIZ (IDOR):
+UNSAFE (IDOR):
 prisma.order.findFirst({ where: { id: orderId } })
 ```
 
-### Kontrol 3 — Blok Kontrolu (Authorization Block)
-**Soru:** Endpoint'e erisim icin yetkilendirme kontrolu var mi?
-**Aranan:** Guard, middleware, decorator (@Roles, @Auth), permission check
-**Risk:** Yetkilendirme olmadan herkes erisebilir.
+### Check 3 — Authorization Block
+**Question:** Is there an authorization check for endpoint access?
+**Look for:** Guard, middleware, decorator (@Roles, @Auth), permission check
+**Risk:** Without authorization, anyone can access it.
 
-### Kontrol 4 — Konusma Taraf Kontrolu (Conversation Party)
-**Soru:** Islem yapan kullanici, etkilenen kaynaginin sahibi mi?
-**Aranan:** `req.user.id === resource.userId` kontrolu
-**Risk:** Baska kullanicinin kaynagi uzerinde islem yapilabilir.
+### Check 4 — Acting Party Check
+**Question:** Is the acting user the owner of the affected resource?
+**Look for:** `req.user.id === resource.userId` check
+**Risk:** Actions can be performed on another user's resource.
 
 ```
-ORNEK:
-// Siparis iptali — siparis sahibi mi kontrol et
+EXAMPLE:
+// Order cancel — verify order owner
 const order = await prisma.order.findUnique({ where: { id } });
 if (order.userId !== req.user.id) throw new ForbiddenException();
 ```
 
-### Kontrol 5 — Response Bilgi Sizintisi
-**Soru:** Response'da gereksiz hassas bilgi donuyor mu?
-**Aranan:** Sifre hash'i, dahili ID'ler, diger kullanicilarin bilgileri, sistem bilgileri
-**Risk:** Bilgi sizintisi baska saldirilara zemin hazirlayabilir.
+### Check 5 — Response Information Leak
+**Question:** Does the response return unnecessary sensitive information?
+**Look for:** Password hash, internal IDs, other users' data, system information
+**Risk:** Information leaks can enable other attacks.
 
 ```
-GUVENSIIZ:
-return user;  // tum alanlar donuyor (password hash dahil)
+UNSAFE:
+return user;  // all fields returned (including password hash)
 
-GUVENLI:
+SAFE:
 return { id: user.id, name: user.name, email: user.email };
 ```
 
 ---
 
-## Step 3 — Tarama Uygulama
+## Step 3 — Apply the Scan
 
-Her controller dosyasini ac ve endpoint endpoint incele:
+Open each controller file and review endpoint by endpoint:
 
 <!-- GENERATE: MODULE_MAPPING
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, project.modules
-Ornek cikti:
-### Modul → Dosya Esleme
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.structure, project.modules
+Example output:
+### Module → File Mapping
 
-| Modul | Controller | Service | DTO | Test |
+| Module | Controller | Service | DTO | Test |
 |---|---|---|---|---|
 | users | `users.controller.ts` | `users.service.ts` | `dto/update-user.dto.ts` | `users.controller.spec.ts` |
 | orders | `orders.controller.ts` | `orders.service.ts` | `dto/create-order.dto.ts` | `orders.controller.spec.ts` |
@@ -137,16 +137,16 @@ Ornek cikti:
 -->
 
 <!-- GENERATE: KNOWN_PATTERNS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: stack.api_framework, project.conventions, project.auth_pattern
-Ornek cikti:
-### Bilinen Guvenli Pattern'ler
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: stack.api_framework, project.conventions, project.auth_pattern
+Example output:
+### Known Safe Patterns
 
-Bu projede kullanilan guvenli pattern'ler:
+Safe patterns used in this project:
 
 **Ownership Filter Pattern (NestJS + Prisma):**
 ```typescript
-// Service katmaninda — her sorguda userId filtresi
+// In the service layer — userId filter on every query
 async findOne(id: string, userId: string) {
   const record = await this.prisma.order.findFirst({
     where: { id, userId },
@@ -167,148 +167,158 @@ async findOne(@Param('id') id: string, @CurrentUser() user: User) {
 
 **DTO Response Pattern:**
 ```typescript
-// Response'da sadece gerekli alanlari don
+// Return only required fields in the response
 return plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
 ```
 -->
 
-Her endpoint icin 5 kontrolun sonucunu kaydet.
+Record the result of all 5 checks for each endpoint.
 
 ---
 
-## Step 4 — Risk Degerlendirmesi
+## Step 4 — Risk Assessment
 
-### Bulgu Siniflandirmasi
+### Finding Classification
 
-| Seviye | Aciklama | Aksiyon |
+| Level | Description | Action |
 |---|---|---|
-| 🔴 CRITICAL | Sahiplik filtresi YOK + hassas veri | Hemen duzelt |
-| 🟠 HIGH | Sahiplik filtresi EKSIK (bazi sorgularda) | Hemen duzelt |
-| 🟡 MEDIUM | Bilgi sizintisi, eksik guard | Duzelt veya backlog |
-| 🟢 LOW | Iyilestirme onerisi | Raporla |
-| ⚪ INFO | Pattern onerisi, best practice | Raporla |
+| 🔴 CRITICAL | Ownership filter MISSING + sensitive data | Fix immediately |
+| 🟠 HIGH | Ownership filter INCOMPLETE (on some queries) | Fix immediately |
+| 🟡 MEDIUM | Information leak, missing guard | Fix or backlog |
+| 🟢 LOW | Improvement suggestion | Report |
+| ⚪ INFO | Pattern suggestion, best practice | Report |
 
-### Karar Tablosu
+### Decision Table
 
-| Kontrol 1 | Kontrol 2 | Kontrol 3 | Kontrol 4 | Kontrol 5 | Sonuc |
+| Check 1 | Check 2 | Check 3 | Check 4 | Check 5 | Result |
 |---|---|---|---|---|---|
-| ID var | Filter YOK | Guard VAR | Kontrol YOK | Sizinti YOK | 🔴 CRITICAL |
-| ID var | Filter VAR | Guard VAR | Kontrol VAR | Sizinti YOK | ✅ GUVENLI |
-| ID var | Filter VAR | Guard VAR | Kontrol YOK | Sizinti YOK | 🟡 MEDIUM |
-| ID var | Filter YOK | Guard YOK | Kontrol YOK | Sizinti VAR | 🔴 CRITICAL |
-| ID yok | - | Guard VAR | - | Sizinti YOK | ✅ GUVENLI |
-| ID yok | - | Guard YOK | - | Sizinti VAR | 🟡 MEDIUM |
+| ID present | Filter MISSING | Guard PRESENT | Check MISSING | Leak MISSING | 🔴 CRITICAL |
+| ID present | Filter PRESENT | Guard PRESENT | Check PRESENT | Leak MISSING | ✅ SAFE |
+| ID present | Filter PRESENT | Guard PRESENT | Check MISSING | Leak MISSING | 🟡 MEDIUM |
+| ID present | Filter MISSING | Guard MISSING | Check MISSING | Leak PRESENT | 🔴 CRITICAL |
+| No ID | - | Guard PRESENT | - | Leak MISSING | ✅ SAFE |
+| No ID | - | Guard MISSING | - | Leak PRESENT | 🟡 MEDIUM |
 
 ---
 
-## Step 5 — Duzeltmeler
+## Step 5 — Fixes
 
-### Direkt Duzeltme Kurallari
+### Direct Fix Rules
 
-CRITICAL ve HIGH bulgulari icin hemen duzelt:
+Fix CRITICAL and HIGH findings immediately:
 
-1. **Eksik ownership filter:** Service katmaninda sorguya `userId` filtresi ekle.
-2. **Eksik guard:** Controller endpoint'ine `@UseGuards(JwtAuthGuard)` ekle.
-3. **Bilgi sizintisi:** Response DTO'su olustur ve `exclude` uygula.
-4. **Eksik taraf kontrolu:** Kaynak sahibi kontrolu ekle.
+1. **Missing ownership filter:** Add a `userId` filter to the query in the service layer.
+2. **Missing guard:** Add `@UseGuards(JwtAuthGuard)` to the controller endpoint.
+3. **Information leak:** Create a response DTO and apply `exclude`.
+4. **Missing party check:** Add a resource-owner check.
 
-### Backlog Gorev Kurallari
+### Backlog Task Rules
 
-Asagidaki durumlar backlog'a kaydedilir:
-- Mimari degisiklik gerektiren sorunlar (ortak middleware, global guard)
-- Birden fazla controller'i etkileyen sistematik sorunlar
-- Yeni DTO/response class gerektiren degisiklikler (kapsamli)
+The following cases are recorded in the backlog:
+- Issues requiring architectural change (shared middleware, global guard)
+- Systematic issues affecting multiple controllers
+- Changes that need new DTO/response classes (broad scope)
 
 ```bash
-backlog task create "IDOR: <modul> modulunde <sorun>" --description "<detay>" --priority high --labels "security,idor"
+backlog task create "IDOR: <issue> in <module> module" --description "<detail>" --priority high --labels "security,idor"
 ```
 
 ---
 
-## Step 6 — Dogrulama
+## Step 6 — Verification
 
-Duzeltme yapildiysa:
+If a fix was made:
 
-1. Tip kontrolu calistir
-2. Mevcut testleri calistir
-3. Duzeltilen endpoint'i test senaryosuyla dogrula
+1. Run type check
+2. Run existing tests
+3. Validate the fixed endpoint with a test scenario
 
 ```bash
 cd ../Codebase && npx tsc --noEmit
 cd ../Codebase && npm run test -- --passWithNoTests
 ```
 
+Commit completed non-sensitive work in the same session without asking. Do not push unless the user asks.
+
 ---
 
-## Step 7 — Sonuc Raporu
+## Step 7 — Result Report
 
 ```
-## 🛡️ IDOR Scan Raporu
+## 🛡️ IDOR Scan Report
 
-### Kapsam
-- **Taranan controller sayisi:** X
-- **Taranan endpoint sayisi:** Y
-- **Taranan modul:** [modul listesi]
+### Scope
+- **Controllers scanned:** X
+- **Endpoints scanned:** Y
+- **Modules scanned:** [module list]
 
-### Bulgular Ozeti
+### Findings Summary
 
-| Seviye | Adet | Direkt Fix | Backlog |
+| Level | Count | Direct Fix | Backlog |
 |---|---|---|---|
 | 🔴 CRITICAL | X | Y | Z |
 | 🟠 HIGH | X | Y | Z |
 | 🟡 MEDIUM | X | Y | Z |
 | 🟢 LOW | X | - | - |
-| **Toplam** | **X** | **Y** | **Z** |
+| **Total** | **X** | **Y** | **Z** |
 
-### Detayli Bulgular
+### Detailed Findings
 
-| # | Endpoint | Modul | Kontrol Sonuclari | Seviye | Aksiyon |
+| # | Endpoint | Module | Check Results | Level | Action |
 |---|---|---|---|---|---|
 | 1 | `GET /api/orders/:id` | orders | ❌❌✅❌✅ | 🔴 CRITICAL | FIXED |
 | 2 | `PUT /api/users/:id` | users | ❌✅✅❌✅ | 🟠 HIGH | FIXED |
-| 3 | `GET /api/products/:id` | products | ✅✅✅✅✅ | ✅ GUVENLI | - |
+| 3 | `GET /api/products/:id` | products | ✅✅✅✅✅ | ✅ SAFE | - |
 
-### 5 Nokta Kontrol Aciklamasi
-1️⃣ Parametre Erisimi | 2️⃣ Sahiplik Filtresi | 3️⃣ Blok Kontrolu | 4️⃣ Taraf Kontrolu | 5️⃣ Bilgi Sizintisi
+### 5-Point Check Legend
+1️⃣ Parameter Access | 2️⃣ Ownership Filter | 3️⃣ Authorization Block | 4️⃣ Party Check | 5️⃣ Information Leak
 
-### Yapilan Duzeltmeler
-| # | Dosya | Degisiklik |
+### Fixes Applied
+| # | File | Change |
 |---|---|---|
-| 1 | `<yol>` | Ownership filter eklendi |
+| 1 | `<path>` | Ownership filter added |
 
-### Olusturulan Backlog Gorevleri
-| # | Baslik | Oncelik |
+### Backlog Tasks Created
+| # | Title | Priority |
 |---|---|---|
-| 1 | <baslik> | P1 |
+| 1 | <title> | P1 |
 
-### Genel Degerlendirme
-[projenin IDOR guvenlik durumu hakkinda 2-3 cumle]
+### Overall Assessment
+[2-3 sentences about the project's IDOR security posture]
 ```
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Do not create a `.claude/` directory inside Codebase; writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and edited when the task requires it. Config files (`.claude/`, `CLAUDE.md`) CANNOT be written inside Codebase.
 
-1. **Otonom calis** — Soru sorma, tara ve raporla.
-2. **Once oku, sonra yaz** — Endpoint'i ve service'i anlamadan duzeltme yapma.
-3. **Pattern takip et** — Mevcut guvenlik pattern'ini takip et.
-4. **CRITICAL hemen duzeltilir** — Kritik IDOR acigini backlog'a atma, hemen duzelt.
-5. **Service katmaninda duzelt** — Ownership filter'i controller'da degil, service'te ekle.
-6. **Test calistir** — Duzeltme sonrasi tip kontrolu ve testleri calistir.
-7. **Rapor ZORUNLU** — Her durumda sonuc raporu olustur.
-8. **False positive'e dikkat** — Public endpoint'lerde IDOR arama (ornegin urun listeleme).
-9. **Admin endpoint'leri ayri** — Admin panel endpoint'leri farkli kurallara tabi (role-based, IDOR degil).
-10. **Codebase yolu** — Tum proje dosyalarina `../Codebase/` uzerinden eris.
+1. **Work autonomously** — Do not ask questions; scan and report.
+2. **Read first, write later** — Do not fix before understanding the endpoint and service.
+3. **Follow patterns** — Follow the existing security pattern.
+4. **CRITICAL is fixed immediately** — Do not put a critical IDOR vulnerability on the backlog; fix it now.
+5. **Fix in the service layer** — Add the ownership filter in the service, not the controller.
+6. **Run tests** — After a fix, run type check and tests.
+7. **Report is MANDATORY** — Always produce a result report.
+8. **Watch for false positives** — Do not hunt IDOR on public endpoints (for example product listing).
+9. **Admin endpoints are separate** — Admin panel endpoints follow different rules (role-based, not IDOR).
+10. **Codebase path** — Access all project files via `../Codebase/`.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->
+
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

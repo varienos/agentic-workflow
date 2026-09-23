@@ -1,23 +1,22 @@
-# Fastify Kodlama Kurallari
+# Fastify Coding Rules
 
-> Bu kurallar Fastify kullanan projeler icin gecerlidir.
-> `backend/nodejs` aile kurallari bu dosyayla birlikte uygulanir.
+> These rules apply to projects that use Fastify.
+> `backend/nodejs` family rules apply together with this file.
 
 ## Schema-First API
 
-- Route tanimlari request/response schema ile birlikte yazilmali.
-- Validation ve serialization Fastify schema katmani uzerinden yapilmali; handler icinde manuel sekil kontrolu minimumda tutulmali.
-- OpenAPI/Swagger uretimi varsa schema ile ayni kaynaktan beslenmeli.
+- Route definitions must be written together with request/response schemas.
+- Validation and serialization should go through the Fastify schema layer; keep manual shape checks inside handlers to a minimum.
+- If OpenAPI/Swagger generation exists, it must be fed from the same schema source.
 
-## Plugin Mimarisi
+## Plugin Architecture
 
-- Buyuk uygulamalarda route, auth, db ve external client kurulumlari plugin bazli ayrilmali.
-- `decorate`/`decorateRequest` kullanimlari kontrollu olmali; gizli global bagimlilik olusturma.
-- Encapsulation sinirlarini bilerek ihlal et; gerekiyorsa nedenini yorumla.
+- In large apps, route, auth, db, and external client setup should be separated by plugin.
+- Use `decorate`/`decorateRequest` carefully; do not create hidden global dependencies.
+- Know encapsulation boundaries before violating them; comment the reason when necessary.
 
-## Handler Disiplini
+## Handler Discipline
 
-- Handler'lar yalnizca validated input ile calismali.
-- `reply.code(...).send(...)` veya return edilen degerler tutarli bir desen izlemeli.
-- Fastify instance uzerinden rastgele global state tasima.
-
+- Handlers must work only with validated input.
+- `reply.code(...).send(...)` or returned values must follow a consistent pattern.
+- Do not carry arbitrary global state on the Fastify instance.

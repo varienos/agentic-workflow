@@ -1,4 +1,4 @@
-# HTML/CSS/JS (Vanilla Web) Modul Tespiti
+# HTML/CSS/JS (Vanilla Web) Module Detection
 
 ## Checks
 
@@ -16,6 +16,6 @@
 
 ## Affects Core
 
-- code-review: Semantik HTML, erisilebirlik ve performans kontrolu eklenir
-- task-hunter: IMPLEMENTATION_RULES'a vanilla web best practice kurallari eklenir
-- settings.json: HTML/CSS/JS linter konfigurasyonu eklenir
+- code-review: Semantic HTML, accessibility, and performance checks are added
+- task-hunter: Vanilla web best practice rules are added to IMPLEMENTATION_RULES
+- settings.json: HTML/CSS/JS linter configuration is added

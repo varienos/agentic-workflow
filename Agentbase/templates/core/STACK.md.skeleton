@@ -1,31 +1,31 @@
 # Tech Stack
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Stack bilgileri — runtime, diller, framework'ler.
-Gerekli manifest alanlari: stack.primary, stack.detected, stack.runtime
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Description: Stack details — runtime, languages, frameworks.
+Required manifest fields: stack.primary, stack.detected, stack.runtime
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ## Test
 
 <!-- GENERATE: VERIFICATION_COMMANDS
-Aciklama: Her subproject icin test komutu.
-Gerekli manifest alanlari: project.subprojects, stack.test_commands
+Description: Test command for each subproject.
+Required manifest fields: project.subprojects, stack.test_commands
 -->
 
-## Dosya Uzantilari
+## File Extensions
 
 <!-- GENERATE: FILE_EXTENSIONS
-Aciklama: Projede kullanilan kod dosya uzantilari.
-Gerekli manifest alanlari: stack.primary, stack.detected
+Description: Source file extensions used in the project.
+Required manifest fields: stack.primary, stack.detected
 -->
 
-## Guvenlik Pattern'leri
+## Security Patterns
 
 <!-- GENERATE: SECURITY_PATTERNS
-Aciklama: Stack'e gore guvenlik kontrol pattern'leri.
-Gerekli manifest alanlari: stack.primary, stack.detected, stack.orm
+Description: Security check patterns by stack.
+Required manifest fields: stack.primary, stack.detected, stack.orm
 -->

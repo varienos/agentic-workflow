@@ -1,819 +1,786 @@
-# Workflow Lifecycle Kurallari
+# Workflow Lifecycle Rules
 
-> Bu dosya tum workflow'larin yasam dongusu kurallarini, akim diyagramlarini ve hata yonetim protokollerini tanimlar.
+> This file defines the rules for the workflow lifecycle, diagrams, and error management protocols.
 
 ---
 
-## Tekil Task Akisi
+## Individual Task Summary
+
+Task: read the backlog item, implement only that scope, and run the verification named in its acceptance checks.
 
 ```
-kullanici → /task-hunter <task-no>
+user → /task-hunter <task-no>
   │
-  ├─ 1. Backlog'dan task detayini oku
-  ├─ 2. Ilgili dosyalari analiz et
-  ├─ 3. Implementasyon planini olustur
-  ├─ 3b. Mimari karar varsa ADR kapisini uygula
-  ├─ 4. Kodu yaz/duzenle
-  │     └─ [auto-test-runner hook: erken test sinyali — opsiyonel]
-  ├─ 4b. FINAL VERIFICATION — testleri calistir (ZORUNLU)
-  ├─ 6. Degisiklikleri commit et
-  ├─ 7. Backlog task'ini DONE yap
-  └─ 8. Ogrenim kaydini degerlendir (memory-protocol)
+  ├─ 1. Read task details from backlog
+  ├─ 2. Analyze related files
+  ├─ 3. Create implementation plan
+  ├─ 3b. Apply Architecture decision (ADR) gate if necessary
+  ├─ 4. Write/modify code
+  │     └─ [auto-test-runner hook: early test signal — optional]
+  ├─ 4b. FINAL VERIFICATION — run tests (Mandatory)
+  ├─ 6. Commit changes
+  ├─ 7. Mark backlog task as DONE
+  └─ 8. Evaluate learning record (memory-protocol)
 ```
 
-### Test Tetikleme Katmanlari
+### Test Trigger Layers
 
-| Katman | Ne zaman | Zorunlu mu | Amac |
+| Layer | When | Mandatory | Purpose |
 |--------|----------|------------|------|
-| **auto-test-runner hook** | Edit/Write sonrasi (debounce ile) | HAYIR | Erken geri bildirim — hata hemen farkedilsin |
-| **Final verification (Step 4)** | Task tamamlamadan once | EVET | Tum testlerin gectigi garanti edilsin |
-| **pre-commit hook** | git commit sirasinda | EVET | Commit oncesi son engel |
-| **pre-push hook** | git push sirasinda | EVET | Push oncesi son engel |
+| **auto-test-runner hook** | Edit/Write after debounce (delay) | NO | Early feedback — detect errors immediately |
+| **Final verification (Step 4)** | Before task completion | YES | Guarantee all tests pass |
+| **pre-commit hook** | During git commit | YES | Commit-time barrier |
+| **pre-push hook** | During git push | YES | Push-time barrier |
 
-> **KURAL:** auto-test-runner sinyali final verification'in YERINI ALMAZ. Hook basarisiz olsa bile Step 5 tum testleri calistirir.
-
----
-
-## Mimari Karar (ADR) Kapisi
-
-Mimari davranis degisikligi iceren task'larda uygulama baslamadan once ADR kapisi calisir.
-
-ADR gerektiren tetikleyiciler:
-
-- Katman siniri, modul sahipligi veya public API kontrati degisiyor
-- Veri akisi, kalicilik modeli, migration stratejisi veya entegrasyon kontrati degisiyor
-- Runtime, deploy modeli, framework, package manager veya ana teknoloji secimi degisiyor
-- Guvenlik, auth, yetki, loglama, hata yonetimi veya observability gibi cross-cutting policy degisiyor
-- Birden fazla alt projeyi etkileyen yeni workflow veya otomasyon ekleniyor
-
-Zorunlu cikti:
-
-- Yeni karar icin `backlog/decisions/YYYYMMDD-kebab-case-karar-basligi.md` dosyasi yazilir; format icin `backlog/decisions/0000-adr-template.md` kullanilir.
-- Daha once alinmis karar uygulanacaksa task notu ve final summary mevcut ADR dosya yolunu referans verir.
-- ADR gerekmiyorsa task notunda kisa gerekce yazilir: kucuk refactor, typo, test ekleme veya mevcut karari uygulayan dar fix.
+> **RULE:** auto-test-runner signal does not replace Final verification. If the hook fails, Step 5 will run all tests regardless.
 
 ---
 
-## Coklu Task Akisi
+## Architecture decision (ADR) gate
+
+For tasks that change architectural behavior, the Architecture decision (ADR) gate runs before implementation starts.
+Commit completed non-sensitive work in the same session without asking. Do not push unless the user asks.
+
+ADR required triggers:
+
+- Layer boundary, module ownership or public API contract changes
+- Data flow, cyclic model, migration strategy or integration contract changes
+- Runtime, deploy model, framework, package manager or primary technology switch
+- Security, auth, permission, logging, error management or observability cross-cutting policies change
+- New workflow or automation affecting multiple sub-projects
+
+Mandatory cycle:
+
+### Discipline for Database Migrations
+
+#### New Decision File
+
+- For new decisions, files are written in `backlog/decisions/YYYYMMDD-kebab-case-decision-title.md` format; templates used in `backlog/decisions/0000-adr-template.md`.
+
+- If a previously made decision is applied, the task note and final summary refer to the existing ADR file path.
+
+#### No Decision Required
+
+- If no decision is required, write a short justification in the task note: small refactor, typo, test addition, or applying an existing decision with a minor fix.
+
+---
+
+### Multi-Task Procedure
 
 ```
-kullanici → /task-hunter <task-1> <task-2> ...
+user → /task-hunter <task-1> <task-2> ...
   │
-  ├─ 1. Tum task'lari oku, bagimlilik sirasi belirle
-  ├─ 2. Bagimsiz task'lari paralel, bagimli olanlari sirali isle
-  ├─ 3. Her task icin: plan → implement → test → commit
-  ├─ 4. Bir task basarisiz olursa:
-  │     ├─ Bagimsizsa: diger task'lara devam et, basarisizi raporla
-  │     └─ Bagimli task'lar varsa: zinciri durdur, raporla
-  └─ 5. Ozet rapor sun
+  ├─ 1. Read all tasks, determine dependency order
+  ├─ 2. Parallelize independent tasks, sequence dependent ones
+  ├─ 3. For each task: plan → implement → test → commit
+  ├─ 4. If a task fails:
+  │     ├─ Independent one: continue with other tasks and report failure
+  │     └─ Dependent tasks: stop the chain, report failure
+  └─ 5. Summarize the report
 ```
 
 ---
 
-## Bug Fix Akisi
+### Bug Fix Procedure
 
 ```
-kullanici → /bug-hunter <aciklama>
+user → /bug-hunter <description>
   │
-  ├─ 1. Hata aciklamasini analiz et
-  ├─ 2. Ilgili kodu bul (Grep, Glob, Read)
-  ├─ 3. Root cause analizi (maks 3 hipotez — asagiya bkz.)
-  ├─ 4. Fix uygula
-  ├─ 5. Yan etki kontrolu
-  ├─ 6. Test calistir
-  ├─ 7. Commit et
-  └─ 8. Backlog'a kaydet (bug-fix task olarak)
+  ├─ 1. Analyze error description
+  ├─ 2. Find related code (Grep, Glob, Read)
+  ├─ 3. Root cause analysis (max 3 hypotheses — see below for details)
+  ├─ 4. Apply fix
+  ├─ 5. Check side effects
+  ├─ 6. Test
+  ├─ 7. Commit
+  └─ 8. Save to backlog (as a bug-fix task)
 ```
 
 ---
 
-## Review Akisi
+### Review Procedure
+
+Review: review the diff for correctness, silent failures, and regressions before closing the task.
 
 ```
-kullanici → /task-review veya /bug-review
+user → /task-review or /bug-review
   │
-  ├─ 1. Son commit'lerin diff'ini al
-  ├─ 2. code-review agent'i spawn et → kalite analizi
-  ├─ 3. regression-analyzer agent'i spawn et → regresyon riski
-  ├─ 4. (bug-review icin) silent-failure-hunter → sessiz hata taramasi
-  ├─ 5. Tum agent raporlarini birlestirilmis ozet olarak sun
-  └─ 6. APPROVE / REQUEST_CHANGES / CRITICAL_BLOCK sonucu bildir
+  ├─ 1. Get the diff of last commits
+  ├─ 2. Spawn code-review agent → quality analysis
+  ├─ 3. Spawn regression-analyzer agent → risk assessment
+  ├─ 4. (For bug-review) silent-failure-hunter → silent failure detection
+  ├─ 5. Combine all agents' reports into a summarized overview
+```
+
+### 6. APPROVE / REQUEST_CHANGES / CRITICAL_BLOCK Result
+
+---
+
+## Auto Review Summary
+
+```
+user → /auto-review
+  |
+  |-- 1. Identify the diff target and current HEAD
+  |-- 2. Calculate the diff hash
+  |-- 3. Read `.claude/tracking/auto-review-state.json` file
+  |-- 4. Skip if same hash or own fix commit exists
+  |-- 5. Shallow review for new diff
+  |-- 6. Apply minor issues locally with verify and separate commit
+  |-- 7. Create backlog task for major issues
+  |-- 8. Write report to `.claude/reports/reviews/`
+  |-- 9. Update hash/state information after one pass
+```
+
+> **Loop principle:** Same diff hash is not reviewed again. Auto-review does not review its own fix commit until a new human diff arrives.
+
+---
+
+## Module Review Summary
+
+```
+user → /review-module <module-name>
+  |
+  |-- 1. Define module boundaries (directories, files, dependencies)
+  |-- 2. Read all files in the module
+  |-- 3. Perform full module review with code-review agent
+  |-- 4. Analyze cross-module effects with regression-analyzer
+  |-- 5. Present integrated report
+  |-- 6. Create list of suggestions (backlog task candidates)
 ```
 
 ---
 
-## Auto Review Akisi
+## Autonomous Review Summary
 
 ```
-kullanici → /auto-review
+user → /variant <request>
+  |
+  |-- 1. Analyze request from engineering perspective
+  |-- 2. Create task breakdown
+  |-- 3. For each task:
+  |     |-- Implement plan write
+  |     |-- Risk assessment
+```
+### Effort Estimation
+
+#### 4. Create Backlog Tasks
+
+#### 5. Present Summary Plan
+
+---
+
+## Conductor Flow
+
+```markdown
+conductor → manages sub-agents
   │
-  ├─ 1. Diff target'ini ve mevcut HEAD'i belirle
-  ├─ 2. Diff hash'ini hesapla
-  ├─ 3. `.claude/tracking/auto-review-state.json` dosyasini oku
-  ├─ 4. Ayni hash veya kendi fix commit'i ise SKIP et
-  ├─ 5. Yeni diff varsa shallow review yap
-  ├─ 6. MINOR bulgulari lokal fix + verify + ayri commit olarak uygula
-  ├─ 7. MAJOR bulgular icin backlog task ac
-  ├─ 8. Raporu `.claude/reports/reviews/` altina yaz
-  └─ 9. Hash/state bilgisini guncelleyip tek pas sonunda cik
-```
-
-> **Loop prensibi:** Ayni diff hash ikinci kez incelenmez. Auto-review kendi olusturdugu fix commit'ini yeni insan diff'i gelmeden tekrar review etmez.
-
----
-
-## Modul Review Akisi
-
-```
-kullanici → /review-module <modul-adi>
-  │
-  ├─ 1. Modul sinirlarini belirle (dizin, dosyalar, bagimliliklari)
-  ├─ 2. Moduldeki tum dosyalari oku
-  ├─ 3. code-review agent'i ile tam modul review'u
-  ├─ 4. regression-analyzer ile cross-module etki analizi
-  ├─ 5. Birlestirilmis rapor sun
-  └─ 6. Oneri listesi olustur (backlog task adaylari)
+  ├─ 1. Assign tasks to sub-governors
+  ├─ 2. Select suitable agent for each task
+  ├─ 3. Execute agents in sequence or parallel
+  ├─ 4. Evaluate agent results
+  │     ├─ Successful → next step
+  │     └─ Unsuccessful → retry or escalate (see table below)
+  └─ 5. Integrate all results, present to user
 ```
 
 ---
 
-## Otonom Review Akisi
+## Deploy Flow
 
-```
-kullanici → /varien <istek>
-  │
-  ├─ 1. Istegi muhendislik perspektifinden analiz et
-  ├─ 2. Task breakdown olustur
-  ├─ 3. Her task icin:
-  │     ├─ Implementasyon planini yaz
-  │     ├─ Risk degerlendirmesi yap
-  │     └─ Effort tahmini ver
-  ├─ 4. Backlog task'larini olustur
-  └─ 5. Ozet planı sun
-```
-
----
-
-## Conductor Akisi
-
-```
-conductor → alt-agent'lari yonetir
-  │
-  ├─ 1. Gorevi alt gorevlere bol
-  ├─ 2. Her alt gorev icin uygun agent'i sec
-  ├─ 3. Agent'lari sirayla veya paralel calistir
-  ├─ 4. Her agent sonucunu degerlendir
-  │     ├─ Basarili → sonraki adima gec
-  │     └─ Basarisiz → retry veya escalate (asagidaki tabloya bkz.)
-  └─ 5. Tum sonuclari birlestir, kullaniciya sun
-```
-
----
-
-## Deploy Akisi
-
-```
+```markdown
 pre-deploy → deploy → post-deploy
   │
   ├─ PRE-DEPLOY:
-  │   ├─ Testleri calistir (tumu gecmeli)
-  │   ├─ Build kontrol (basarili olmali)
-  │   ├─ Migration durumu kontrol (pending migration varsa uyar)
-  │   └─ Environment degiskenleri kontrol
+  │   ├─ Run tests (mandatory for all)
+  │   ├─ Build validation (must be successful)
+  │   ├─ Migration status check (check pending migration if any)
+  │   └─ Environment variables control
   │
   ├─ DEPLOY:
-  │   ├─ Build ve push (Docker ise image build + push)
-  │   ├─ Deployment tetikle (platform-spesifik)
-  │   └─ Health check bekle
+  │   ├─ Build and push (Docker build + push if applicable)
+  │   ├─ Deployment trigger (platform-specific)
+  │   └─ Health check wait
   │
   └─ POST-DEPLOY:
-      ├─ Health check dogrula
-      ├─ Smoke test calistir (varsa)
-      ├─ Rollback plani hazir tut
-      └─ Deploy kaydini logla
+      ├─ Health check validation
+      ├─ Smoke test run (if applicable)
+      ├─ Rollback plan preparation
+      └─ Deploy record logging
 ```
 
 ---
 
-## Hata Kaskadi Onleme Tablosu
+## Error Cascade Resolution Table
 
-Bir adim basarisiz oldugunda ne yapilacagi:
+### Failure Handling Steps
 
-| Adim | Maks Retry | Retry Arasi | Basarisizlik Aksiyonu |
+| Step | Max Retry | Retry Interval | Action on Failure |
 |------|-----------|-------------|----------------------|
-| Test calistirma | 2 | Aninda | Hatayi analiz et, fix dene, 2. retry sonrasi durdur ve raporla |
-| Build | 1 | Aninda | Hatayi raporla, devam etme |
-| Lint/Format | 1 | Aninda | Auto-fix dene, basarisizsa raporla |
-| Agent spawn | 2 | 5 saniye | Alternatif agent dene, yoksa raporla |
-| Git commit | 1 | Aninda | Hook hatasini fix et, YENI commit olustur (amend YAPMA) |
-| Deploy | 0 | — | Otomatik retry YOK — kullanici onayiyla tekrar dene |
-| Migration | 0 | — | Otomatik retry YOK — rollback planini sun |
+| Test Initiation | 2 | In-Place | Analyze error, fix, retry after 2nd attempt, stop and report |
+| Build | 1 | In-Place | Report error, continue |
+| Lint/Format | 1 | In-Place | Auto-fix, report failure if unsuccessful |
+| Agent Spawn | 2 | 5 seconds | Try alternative agent, report if none available |
+| Git Commit | 1 | In-Place | Fix hook error, create new commit (do NOT amend) |
+| Deploy | 0 | — | No retry, user interaction required to repeat |
+| Migration | 0 | — | No retry, rollback plan provided |
 
-**Kritik kural:** 3 ardisik basarisizlik = akisi tamamen durdur, durumu raporla, kullanici mudahalesi bekle.
+### Critical Rule: 3 consecutive failures = stop completely, report status, wait for user intervention
 
 ---
 
-## Pre-Commit Hook Hata Kurtarma
+## Pre-Commit Hook Error Prevention
 
-Pre-commit hook basarisiz oldugunda:
+Pre-commit hook failure:
 
 ```
-hook basarisiz
+hook failed
   │
-  ├─ 1. Hata mesajini oku ve analiz et
-  ├─ 2. Hatanin turunu belirle:
-  │     ├─ Lint hatasi → auto-fix calistir, tekrar stage et
-  │     ├─ Format hatasi → formatter calistir, tekrar stage et
-  │     ├─ Test hatasi → testi fix et
-  │     └─ Custom hook hatasi → hata mesajina gore islem yap
-  ├─ 3. Fix uygulandiktan sonra:
-  │     ├─ Degisiklikleri TEKRAR STAGE ET (git add)
-  │     └─ YENI COMMIT OLUSTUR (git commit -m "...")
-  │         ⚠ ASLA git commit --amend YAPMA
-  │         ⚠ --amend onceki commit'i degistirir, calismani kaybedebilirsin
-  └─ 4. 2 denemeden sonra hala basarisizsa → durdur, raporla
+  ├─ 1. Read error message and analyze it
+  ├─ 2. Determine error type:
+  │     ├─ Lint error → run auto-fix, repeat stage
+  │     ├─ Format error → run formatter, repeat stage
+  │     ├─ Test error → fix test
+  │     └─ Custom hook error → perform action based on error message
+  ├─ 3. After fixing:
+  │     ├─ Repeat stage (git add)
+  │     └─ Create new commit (git commit -m "...") ⚠️ NEVER use git commit --amend
+  │         ⚠️ — amend rewrites the previous commit and can lose your work
+  └─ 4. After 2 attempts → stop, report
 ```
 
 ---
 
-## Root Cause Analizi — 3 Hipotez Limiti
+## Root Cause Analysis — 3 Hypothesis Limit
 
-Bug fix sirasinda root cause ararken:
+During bug fix process:
 
-1. **Maksimum 3 hipotez** olustur
-2. Her hipotezi sirayla test et
-3. Hipotez dogrulandiginda dur, geriye kalan hipotezleri atla
-4. 3 hipotezin hicbiri dogrulanmazsa:
-   - Toplanan kanıtları ozetle
-   - Kullaniciya danıs
-   - Daha fazla baglam iste
+1. **Maximum 3 hypotheses** created
+2. Test each hypothesis in sequence
+3. Stop if a hypothesis is proven correct, skip remaining hypotheses
+4. If none of the hypotheses are proven correct:
+   - Summarize collected evidence
+   - Inform user
+   - Request additional context
 
-**Anti-pattern:** 10 farkli olasıligi araştırarak zaman kaybetme. Ilk 3 hipotez cogunlukla yeterlidir.
+**Anti-pattern:** Exploring 10 different possible scenarios wastes time. The first three hypotheses are sufficient most of the time.
 
 ---
 
 <!-- GENERATE: COMMIT_CONVENTION
-Commit mesaji kurallari — prefix map, dil, format ve ornekler.
+Commit message conventions — prefix map, language, format and examples.
 Required manifest fields: workflows.commit_convention, workflows.commit_prefix_map
 
-Bootstrap manifest'teki commit convention tercihine gore bu bolumu doldurur.
-Conventional commits secildiyse prefix haritasi ve ornekler uretilir.
+The section will be filled in according to the preferred commit convention in the Bootstrap manifest. Conventional commits will result in creating a prefix map and examples.
 
 Example output:
 
 ## Commit Convention
 
-**Format:** `{prefix}: {aciklama}`
-**Dil:** Turkce
-**Mood:** Imperative (yap, ekle, duzelt — yapildi, eklendi DEGIL)
+**Format:** `{prefix}: {description}`
+**Language:** English
+**Mood:** Imperative (add, append, update — not done, added)
 
-### Prefix Haritasi
+### Prefix Map
 
-| Prefix | Kullanim | Ornek |
+| Prefix | Usage | Example |
 |--------|----------|-------|
-| `feat` | Yeni ozellik | `feat: siparis raporu sayfasi ekle` |
-| `fix` | Bug fix | `fix: JWT token yenileme hatasini duzelt` |
-| `refactor` | Kod yeniden yapilandirma | `refactor: auth middleware'i ayir` |
-| `style` | Gorsel/format degisikligi | `style: profil sayfasi spacing duzelt` |
-| `docs` | Dokumantasyon | `docs: API endpoint listesini guncelle` |
-| `test` | Test ekleme/duzeltme | `test: auth controller unit testleri ekle` |
-| `chore` | Arac/config degisikligi | `chore: eslint kurallarini guncelle` |
-| `perf` | Performance iyilestirme | `perf: kullanici listesi sorgusunu optimize et` |
-| `ci` | CI/CD degisikligi | `ci: deploy workflow'una staging ekle` |
+| `feat` | New feature | `feat: add order report page` |
+| `fix` | Bug fix | `fix: JWT token renewal error fixed` |
+| `refactor` | Code refactoring | `refactor: auth middleware separation` |
+| `style` | Visual/format changes | `style: profile page spacing updated` |
+| `docs` | Documentation | `docs: API endpoint list updated` |
+| `test` | Adding/Updating tests | `test: auth controller unit test added` |
+| `chore` | Configuration/arbitrary change | `chore: ESLint rules updated` |
+| `perf` | Performance improvement | `perf: user list query optimized` |
+| `ci` | CI/CD changes | `ci: deploy workflow stage added` |
 
-### Kurallar
+### Rules
 
-- Baslik satiri maks 72 karakter
-- Baslik kucuk harfle baslar (prefix'ten sonra)
-- Satir sonu nokta konmaz
-- Body gerekiyorsa bos satir birak, detayi acikla
--->
-
----
-
-<!-- GENERATE: DEPLOY_WORKFLOW
-Deploy topolojisi ve rollback prosedürleri.
-Required manifest fields: environments[], environments[].deploy_platform, environments[].deploy_trigger
-
-Bu blok SADECE docker modulu aktifse veya deploy konfigürasyonu varsa eklenir.
-Yoksa bu bolumun tamami atlanir.
-
-Example output (Coolify + Docker projesi):
-
+- Title line maximum 72 characters
+- Title starts with small letter (after prefix)
+- No period at the end of line
+- If body is required, leave a blank line for detail explanation
 ## Deploy Workflow
 
-### Topoloji
+### Topology
 
-<!-- GENERATE: DEPLOY_TOPOLOGY
-Aciklama: Bootstrap manifest'teki environments ve deploy bilgisinden uretilir.
-Gerekli manifest alanlari: environments[], deploy_platform, deploy_trigger
-Ornek cikti:
-| Ortam | Platform | Tetikleyici | URL |
-|-------|----------|-------------|-----|
-| Production | Coolify | `main` branch push | api.example.com |
-| Staging | Coolify | `develop` branch push | staging-api.example.com |
--->
+<!-- GENERATE: DEPLOY_TOPOLOGY -->
+Description: The deploy topology is generated from the environments and deploy information in the bootstrap manifest.
+Required manifest fields: environments[], deploy_platform, deploy_trigger
+Example output:
+| Environment | Platform | Trigger | URL |
+|-------------|----------|---------|-----|
+| Production   | Coolify  | `main` branch push | api.example.com |
+| Staging      | Coolify  | `develop` branch push | staging-api.example.com |
 
-### Deploy Adimlari
+### Deploy Phases
 
-<!-- GENERATE: DEPLOY_STEPS
-Aciklama: Deploy platformuna gore adimlar.
-Ornek cikti (Coolify):
-1. `main`'e merge/push yapilir
-2. Coolify webhook tetiklenir
-3. Docker image build edilir
-4. Container yeniden baslatilir
-Ornek cikti (Vercel):
-1. `main`'e merge/push yapilir
-2. Vercel otomatik build baslatir
-3. Preview deploy olusturulur
-4. Production'a promote edilir
--->
-5. Health check dogrulanir
+<!-- GENERATE: DEPLOY_STEPS -->
+Description: The deploy phases are related to the deploy platform.
+Example output (Coolify):
+1. Merge/push to `main`
+2. Coolify webhook is triggered
+3. Docker image is built
+4. Container is restarted
+Example output (Vercel):
+1. Merge/push to `main`
+2. Vercel automatic build starts
+3. Preview deploy is created
+4. Promoted to Production
 
-### Rollback Proseduru — 6 Senaryo Karar Agaci
+### Health Check
 
-Deploy basarisizliginda asagidaki karar agacini takip et. Once senaryoyu tespit et, sonra ilgili protokolu uygula.
+5. Health check is performed
+
+### Rollback Procedure — 6 Scenario Decision Tree
+
+Follow the decision tree below in case of deployment failure. Once the scenario is detected, apply the relevant protocol.
 
 ```
-Deploy sonucu nedir?
+Deploy result?
   │
-  ├─ Build BASARISIZ → S1
-  ├─ Migration BASARISIZ → S2
-  ├─ Migration OK + uygulama BASARISIZ → S3
-  ├─ Deploy OK + runtime HATA (calisirken cokuyor) → S4
-  ├─ Deploy OK + veri SILINDI (DROP TABLE vb.) → S5
-  └─ Her sey OK + is mantigi HATALI → S6
+  ├─ Build FAILED → S1
+  ├─ Migration FAILED → S2
+  ├─ Migration OK + application FAILED → S3
+  ├─ Deploy OK + runtime ERROR (running slowly) → S4
+  ├─ Deploy OK + data DROPPED (DROP TABLE etc.) → S5
+  └─ Everything OK + logic ERROR → S6
 ```
 
-#### RTO Hedefleri
+#### RTO Goals
 
-| Senaryo | RTO | Aciklama |
+| Scenario | RTO | Description |
 |---------|-----|----------|
-| S1: Build fail | 0 dk | Eski container/deployment zaten calisiyor |
-| S2: Migration fail | 5-15 dk | Kismi migration geri alinmali |
-| S3: Migration OK + app fail | 15-30 dk | Migration rollback + container rollback |
-| S4: Runtime hata | 5 dk | Onceki deployment'a rollback |
-| S5: Veri silindi | 1-4 saat | Backup restore + migration replay |
-| S6: Is mantigi hatali | 30-60 dk | Hotfix veya revert deploy |
+| S1: Build Failure | 0 hours | Old container/deployment was still running |
+| S2: Migration Failure | 5-15 minutes | Partial migration must be retried |
+| S3: Migration OK + App Failure | 15-30 minutes | Migration rollback + container rollback |
+| S4: Runtime Error | 5 minutes | Rollback to previous deployment |
+| S5: Data Deleted | 1-4 hours | Backup restore + migration replay |
+| S6: Incorrect Logic | 30-60 minutes | Hotfix or revert deploy |
 
 ---
 
-#### S1 — Build Basarisiz (Eski Container Calisiyor)
+#### S1 — Build Failure (Old Container Running)
 
-**Durum:** Build/CI pipeline basarisiz oldu. Yeni image/artifact olusturulamadi.
-**Etki:** SIFIR — eski deployment hala calisiyor.
+**Status:** Build/CI pipeline failed. New image/artifact could not be created.
+**Impact:** ZERO — old deployment is still running.
 
-**Protokol:**
-1. Build hatasini oku (CI log veya terminal ciktisi)
-2. Hatayi duzelt (derleme hatasi, dependency sorunu, test basarisizligi)
-3. Yeniden build et ve deploy et
-4. Backlog'a not ekle: "S1: Build basarisiz → [hata ozeti] → duzeltildi"
+**Protocol:**
+1. Read the build error (CI log or terminal output)
+2. Fix the error (compile error, dependency issue, test failure)
+3. Rebuild and deploy
+4. Log to backlog: "S1: Build failed → [error summary] → fixed"
 
-> **Agent davranisi:** Uyari ver, fix dene, kullaniciya raporla. Acil mudahale GEREKSIZ — eski deploy calisiyor.
-
----
-
-#### S2 — Migration Basarisiz (DB Kismi Degismis)
-
-**Durum:** Migration basladi ama tamamlanamadi. Veritabani TUTARSIZ durumda olabilir.
-**Etki:** YUKSEK — kismi schema degisikligi mevcut verileri bozabilir.
-
-**Protokol:**
-1. Migration hatasini oku
-2. Veritabani durumunu kontrol et:
-   - Hangi migration'lar uygulandi, hangileri uygulANMADI?
-   - Kismi degisiklik var mi? (ornekin tablo olusturuldu ama index eklenmedi)
-3. Kismi migration'i geri al:
-   - ORM rollback komutu calistir (asagidaki platform-spesifik blogu bkz.)
-   - ORM rollback desteklemiyorsa: kismi degisiklikleri MANUEL SQL ile geri al
-4. Uygulama container'ini DEGISTIRME — eski kod eski schema ile calismaya devam etsin
-5. Root cause'u duzelt, migration'i tekrar olustur ve test ortaminda dogrula
-6. Backlog'a not: "S2: Migration fail → [hata] → [geri alma yontemi]"
-
-> **Agent davranisi:** KRITIK — kullaniciya HEMEN bildir. Otomatik fix DENEME. Veritabani durumu raporla.
+> **Agent behavior:** Notify user, fix, report back. Non-urgent response REQUIRED — old deployment is running.
 
 ---
 
-#### S3 — Migration Basarili + Uygulama Basarisiz (DB Ileri Gitmis)
+#### S2 — Migration Failure (DB Partially Changed)
 
-**Durum:** Migration tamamlandi, yeni schema aktif. Ama yeni uygulama kodu calismiyor.
-**Etki:** KRITIK — eski kod yeni schema ile UYUMSUZ olabilir. Eski container'a rollback DB'yi bozabilir.
+**Status:** Migration started but not completed. Database may be in an uncertain state.
+**Impact:** HIGH — partial schema change may affect existing data.
 
-**Protokol:**
-1. **Once:** Yeni schema ile eski kodun uyumluluguny kontrol et:
-   - Yeni sutunlar eklendiyse (additive) → eski kod genellikle calismaya devam eder → S4'e gec
-   - Sutun silindi/yeniden adlandirildi (breaking) → eski kod CALISALAMAZ
-2. **Breaking change varsa:**
-   a. Migration rollback calistir (schema'yi eski haline getir)
-   b. Eski container'a rollback yap
-   c. Fix'i hazirla: migration + kod BIRLIKTE deploy edilmeli
-3. **Additive change varsa:**
-   a. Eski container calismaya devam edebilir
-   b. Uygulama hatasini duzelt
-   c. Yeni kodu tekrar deploy et
-4. Backlog'a not: "S3: Migration OK + app fail → [breaking/additive] → [rollback yontemi]"
+**Protocol:**
+1. Read the migration error
+2. Check database status:
+   - Which migrations were applied, which ones were not?
+   - Are there any partial changes (e.g., created table without index)?
+3. Partially revert migration:
+   - Use ORM rollback command (see platform-specific steps below)
+   - If ORM rollback is not supported: manually apply partial reverts using SQL
+4. Update application container — old code with old schema should continue to run
+5. Root cause fix, retry migration, and test in production environment
+6. Log to backlog: "S2: Migration failed → [error] → [revert method]"
 
-> **Agent davranisi:** KRITIK — kullaniciya HEMEN bildir. Schema degisikliginin breaking mi additive mi oldugunu analiz et ve raporla.
+> **Agent behavior:** CRITICAL — inform user IMMEDIATELY. Automated fix ATTEMPT. Report database status.
 
 ---
 
-#### S4 — Deploy Basarili + Runtime Hata (Calisirken Cokuyor)
+#### S3 — Migration Successful + App Failure (DB Advanced)
 
-**Durum:** Deployment tamamlandi, health check gecti, ama uygulama runtime'da cokuyor.
-**Etki:** YUKSEK — kullanicilar etkileniyor.
+**Status:** Migration completed, new schema is active. But the new application code does not work.
+**Impact:** CRITICAL — old code may be incompatible with the new schema. Rolling back DB to the old container can break.
 
-**Protokol:**
-1. Hata loglarini oku (container log, monitoring, error tracker)
-2. Onceki deployment'a rollback:
-   - Platform-spesifik rollback (asagidaki GENERATE blogu)
-   - Veya: `git revert HEAD && git push` ile revert commit
-3. Root cause analiz et (AECA yaklasimi: hipotez → test → fix)
-4. Fix'i staging'de test et
-5. Yeniden deploy et
-6. Backlog'a not: "S4: Runtime hata → [hata ozeti] → onceki deployment'a rollback → fix deploy edildi"
+**Protocol:**
+1. **Once:** Check compatibility of old code with new schema:
+   - If new columns are added (additive) → old code usually continues to work → S4 deployed
+   - If column is deleted or renamed (breaking) → old code will NOT WORK
+2. **Breaking change occurs:**
+   a. Roll back migration (restore schema to previous state)
+   b. Rollback to old container
+   c. Prepare fix: migration + code should be deployed together
+3. **Additive change occurs:**
+   a. Old container can continue to work
+   b. Fix application error
+   c. Deploy new code again
+4. Backlog note: "S3: Migration OK + app fail → [breaking/additive] → [rollback method]"
 
-> **Agent davranisi:** Hizli rollback → root cause analiz → fix. Rollback sonrasi kullaniciya bildir.
+> **Agent behavior:** CRITICAL — inform user IMMEDIATELY. Analyze whether the change is breaking or additive and report.
 
 ---
 
-#### S5 — Deploy Basarili + Veri Silindi (DROP TABLE vb.)
+#### S4 — Deployment Successful + Runtime Error (Running Slowly)
 
-**Durum:** Destructive migration calistirildi, veri kayboldu.
-**Etki:** KRITIK — veri kaybi geri alinamaz olabilir.
+**Status:** Deployment completed, health check passed, but application is running slowly.
+**Impact:** HIGH — users are affected.
 
-**Veri Kaybi Mudahale Plani:**
+**Protocol:**
+1. Read error logs (container log, monitoring, error tracker)
+2. Rollback to previous deployment:
+   - Platform-specific rollback (see GENERATE block below)
+   - Or: `git revert HEAD && git push` to revert commit
+3. Analyze root cause (AECM approach: hypothesis → test → fix)
+4. Test and deploy fix
+5. Deploy again
+6. Backlog note: "S4: Runtime error → [error summary] → rollback to previous deployment → fix deployed"
+
+> **Agent behavior:** Fast rollback → root cause analysis → inform user.
+
+---
+
+#### S5 — Deployment Successful + Data Deleted (DROP TABLE etc.)
+
+**Status:** Destructive migration performed, data lost.
+**Impact:** CRITICAL — data loss may not be recoverable.
+
+**Data Loss Mitigation Plan:**
 
 ```
-VERi KAYBI TESPIT EDILDI
+DATA LOSS DETECTED
   │
-  ├─ 1. PANIGE KAPILMA — sakin kal, asagidaki adimlari takip et
-  │
-  ├─ 2. Uygulamayi MAINTENANCE MODE'a al (mumkunse)
-  │     → Yeni veri yazilmasini engelle, mevcut durumu koru
-  │
-  ├─ 3. Backup mevcut mu?
-  │     ├─ EVET:
-  │     │   ├─ En son backup'in tarihini belirle
-  │     │   ├─ Backup ile mevcut durum arasindaki veri farkini degerlendir
-  │     │   ├─ Backup'i AYRI bir veritabanina restore et (production'in ustune YAZMA)
-  │     │   ├─ Eksik verileri manuel olarak aktar
-  │     │   └─ Production'i restore edilmis veritabaniyla degistir
-  │     │
-  │     └─ HAYIR:
-  │         ├─ Transaction log / WAL / binlog mevcut mu?
-  │         ├─ Cloud provider'in point-in-time recovery'si var mi?
-  │         ├─ Replika veritabani var mi?
-  │         └─ Hicbiri yoksa: VERI KAYBI KALICI — durumu belgele
-  │
-  ├─ 4. Destructive migration'i geri al:
-  │     → Yeni migration ile silinen tablo/sutunu yeniden olustur
-  │     → Restore edilen veriyi yeni yapiya aktar
-  │
-  └─ 5. Post-mortem yaz:
-        → Ne oldu, neden oldu, nasil onlenebilir
-        → pre-push hook'a destructive migration uyarisi eklendi mi kontrol et
 ```
 
-> **Agent davranisi:** KRITIK — kullaniciya HEMEN bildir, "veritabani backup'iniz var mi?" sor. Otomatik fix DENEME.
+### Migration Discipline Rules
+
+#### 1. Initial Migration — Stay Calm, Follow the Steps Below
+
+#### 2. Put the Application in Maintenance Mode (if possible)
+
+    → Prevent new data from being written, preserve the current state
+    →
+
+#### 3. Backup Existing Data?
+
+    ├─ YES:
+        ├─ Determine the date of the most recent backup
+        ├─ Evaluate the difference between the backup and the current state
+        ├─ Restore the backup to a separate database (production's ongoing write)
+        ├─ Manually transfer missing data
+        └─ Update production with the restored database
+    │
+
+    └─ NO:
+        ├─ Check if transaction log / WAL / binlog exists?
+        ├─ Is there a point-in-time recovery available for the cloud provider?
+        ├─ Is there a replica database?
+        └─ If none of the above: PERMANENT DATA LOSS — document the situation
+    │
+
+#### 4. Rollback Destructive Migration:
+
+    → Rebuild the table/structure that was deleted with the new migration
+    → Transfer restored data to the new structure
+    →
+
+#### 5. Post-Mortem Analysis:
+
+    → What happened, why did it happen, and how can it be fixed?
+    → Check if a pre-push hook has been added for destructive migration warnings
+```bash
+git checkout -b hotfix/<name>
+# Apply the fix
+# Test (especially write a test for the faulty scenario)
+git push && open PR
+```
+> **Agent Behavior:** CRITICAL — immediately inform the user, ask "Do you have a backup of your database?". Attempt automatic fix.
+---
+
+#### S6 — Everything is Fine + Logic Error
+
+**Status:** Deployment completed, tests passed, no errors. However, there is a logic error (wrong calculation, wrong filtering, etc.).
+**Impact:** MEDIUM-SEVERE — users are seeing incorrect data, but the system remains operational.
+
+**Protocol:**
+1. Determine the scope of the error:
+    - How many users/accounts were affected?
+    - Was it a data corruption or just a display issue?
+2. Make a decision:
+    - **Data Corruption:** → Rollback to the previous deployment + fix script
+    - **Only Display Issue:** → Hotfix: create and test the fix, deploy (no rollback required)
+3. Hotfix sequence:
+```bash
+git checkout -b hotfix/<name>
+# Apply the fix
+# Test (especially write a test for the faulty scenario)
+git push && open PR
+```
+### 4. Backlog Entry
+
+> **Agent Behavior:** Perform hotfix in the hotfix mode (RPI approach: research → plan → implement). Only rollback if data corruption occurs.
 
 ---
 
-#### S6 — Her Sey Basarili + Is Mantigi Hatali
+### Mini Deploy Recovery Protocol
 
-**Durum:** Deploy tamamlandi, testler gecti, hata yok. Ama is mantigi yanlis calisiyor (yanlis hesaplama, yanlis filtreleme vb.).
-**Etki:** ORTA-YUKSEK — kullanicilar yanlis veri goruyor ama sistem calisir durumda.
-
-**Protokol:**
-1. Hatanin kapsamini belirle:
-   - Kac kullanici/kayit etkilendi?
-   - Veri bozulmasi var mi yoksa sadece goruntuleme hatasi mi?
-2. Karar ver:
-   - **Veri bozulmasi VARSA** → Onceki deployment'a rollback + veri duzeltme script'i
-   - **Sadece goruntuleme** → Hotfix: fix'i hazirla, test et, deploy et (rollback gereksiz)
-3. Hotfix akisi:
-   ```
-   git checkout -b hotfix/<aciklama>
-   # Fix'i uygula
-   # Test et (ozellikle hatali senaryo icin test yaz)
-   git push && PR ac
-   ```
-4. Backlog'a not: "S6: Is mantigi hatasi → [etki kapsami] → [hotfix/rollback]"
-
-> **Agent davranisi:** Hotfix modunda calis (RPI yaklasimi: research → plan → implement). Rollback sadece veri bozulmasi varsa.
-
----
-
-### Kismi Deploy Kurtarma Protokolu
-
-Coklu servis deploy'larinda (monorepo, microservice) bazi servisler basarili, bazilari basarisiz olabilir:
+In multi-service deployments (monorepo, microservice), some services may be successful while others fail:
 
 ```
-Kismi deploy durumu:
-  Servis A: BASARILI
-  Servis B: BASARISIZ
-  Servis C: BASARILI
+Mini deploy status:
+  Service A: SUCCESSFUL
+  Service B: UNSUCCESSFUL
+  Service C: SUCCESSFUL
 
-Karar agaci:
+Decision tree:
   │
-  ├─ B, A ve C'ye bagimli mi?
-  │   ├─ EVET → TUM servisleri rollback et (tutarsiz durum tehlikeli)
-  │   └─ HAYIR → Sadece B'yi rollback et, A ve C'yi koru
+  ├─ Is B dependent on A and C?
+  │   ├─ YES → Rollback all services (inconsistent state is dangerous)
+  │   └─ NO → Only rollback B, keep A and C intact
   │
-  ├─ B'nin basarisizligi A veya C'yi etkiliyor mu?
-  │   ├─ EVET → Etkilenen servisleri de rollback et
-  │   └─ HAYIR → Sadece B'yi rollback et
+  ├─ Does B's failure affect A or C?
+  │   ├─ YES → Rollback affected services as well
+  │   └─ NO → Only rollback B
   │
-  └─ API contract degisikligi var mi?
-      ├─ EVET → Tum servisleri BIRLIKTE rollback et
-      └─ HAYIR → Bagimsiz rollback mumkun
+  └─ Is there a change in API contract?
+      ├─ YES → Rollback all services together
+      └─ NO → Is independent rollback possible
 ```
 
 ---
 
-### Platform-Spesifik Rollback Adimlari
+### Platform-Specific Rollback Steps
 
 <!-- GENERATE: ROLLBACK_PLATFORM_STEPS
-Deploy platformuna gore rollback komutlari.
+Deploy platform-specific rollback commands.
 Required manifest fields: environments[].deploy_platform
 
 Example output (Coolify):
 
 #### Coolify Rollback
-1. Coolify Dashboard → Applications → ilgili servis
-2. Deployments sekmesi → onceki basarili deployment'i sec → "Rollback" tiklA
-3. Veya API ile: `curl -X POST https://coolify.example.com/api/v1/applications/{id}/rollback`
-4. Health check'in gecmesini bekle
-5. Coolify otomatik rollback: health check basarisiz olursa eski container OTOMATIK korunur
+1. Coolify Dashboard → Applications → relevant service
+2. Deployments section → select previous successful deployment → "Rollback" button
+3. Or via API: `curl -X POST https://coolify.example.com/api/v1/applications/{id}/rollback`
+4. Wait for health check to pass
+5. Coolify automatic rollback: if health check fails, old container is preserved automatically
 
-#### Docker (Manuel) Rollback
-1. `docker ps` ile mevcut container'i bul
-2. `docker images` ile onceki image tag'ini bul
-3. `docker stop <container> && docker run -d <onceki_image>` ile eski image'i baslat
-4. Veya docker-compose ile: `docker-compose up -d --force-recreate`
+#### Docker (Manual) Rollback
+
+1. `docker ps` to find the current container
+2. `docker images` to find the previous image tag
+3. `docker stop <container> && docker run -d <previous_image>` to start the old image
+4. Or, using Docker Compose: `docker-compose up -d --force-recreate`
 
 #### Vercel Rollback
-1. Vercel Dashboard → Project → Deployments
-2. Onceki basarili deployment'i sec → "Promote to Production"
-3. Veya CLI: `vercel rollback`
-4. Instant rollback — sifir downtime
 
-#### Migration Rollback (ORM-spesifik)
+1. Vercel Dashboard → Project → Deployments
+2. Select the previous successful deployment → "Promote to Production"
+3. Or, CLI: `vercel rollback`
+4. Instant rollback — zero downtime
+
+#### Migration Rollback (ORM-specific)
+
 - Prisma: `npx prisma migrate resolve --rolled-back <migration_name>`
 - TypeORM: `npx typeorm migration:revert`
 - Eloquent: `php artisan migrate:rollback --step=1`
-- Django: `python manage.py migrate <app_name> <onceki_migration>`
--->
+- Django: `python manage.py migrate <app_name> <previous_migration>`
 
-### Dikkat Edilecekler
+### Important Notes
 
-- Migration iceren deploy'larda once migration'i ayri commit'le
-- Buyuk schema degisikliklerinde maintenance mode ac
-- Deploy sonrasi smoke test'leri calistir
-- Destructive migration (DROP) oncesi MUTLAKA backup al
-- Rollback sonrasi HER ZAMAN health check ve smoke test calistir
--->
-
----
-
-<!-- GENERATE: ENVIRONMENT_DIFFERENCES
-Development ve production ortam farkliliklari.
-Required manifest fields: environments[], environments[].config
-
-Bu blok SADECE birden fazla ortam varsa eklenir.
-
-Example output:
-
-## Ortam Farkliliklari
-
-| Ayar | Development | Production |
-|------|-------------|------------|
-| Database | localhost MySQL | Remote MySQL (connection pool) |
-| File storage | Local disk | S3/Cloud storage |
-| Email | Mailtrap/console | Gercek SMTP |
-| Debug | Acik (verbose log) | Kapali (sadece error) |
-| CORS | * (tum origin'ler) | Sadece izinli domain'ler |
-| Rate limiting | Kapali | Aktif |
-
-### Ortama Gore Dikkat
-
-- **Development:** Debug modunda calis, seed data kullan
-- **Production:** Asla `prisma db push` kullanma, her zaman `migrate deploy`
--->
+- Make sure to separate the migration from the deployment
+- Enable maintenance mode for large schema changes
+- Run smoke tests after each deployment
+- Always perform a backup before destructive migrations (DROP)
+- Perform health checks and smoke tests after rollback
+- **Development:** Debug in the mode, use seed data.
+- **Production:** Never use `prisma db push`, always use `migrate deploy`.
 
 ---
 
 <!-- GENERATE: TEAM_REVIEW_POLICY
-Ekip buyuklugune gore review sureci politikasi.
+Team size-based review process policy.
+
 Required manifest fields: project.team_size, workflows.branch_model
 
 Example output (small-team + feature-pr):
 
-## Review Sureci Politikasi
+## Review Process Policy
 
-**Ekip Buyuklugu:** Kucuk ekip (2-4 kisi)
-**Review Zorunlulugu:** Onerilen (zorunlu degil)
+**Team Size:** Small team (2-4 people)
+**Review Requirement:** Optional (not required)
 
-| Durum | Politika |
-|-------|---------|
-| Feature branch | PR acilmasi onerilen, direkt merge de kabul edilir |
-| Bug fix | PR onerilen, acil durumlarda direkt merge |
-| Hotfix | Direkt merge, post-merge review |
-| Review sayisi | En az 1 reviewer onerilen |
-| Self-merge | Kabul edilir (reviewer onayindan sonra) |
+| Condition | Policy |
+|-----------|--------|
+| Feature branch | PR is approved immediately, direct merge is accepted |
+| Bug fix | PR is approved, immediate merge in emergency cases |
+| Hotfix | Direct merge, post-merge review |
+| Review count | At least 1 reviewer is required |
+| Self-merge | Approved (after reviewer approval) |
 
 Example output (large-team + feature-pr):
 
-## Review Sureci Politikasi
+## Review Process Policy
 
-**Ekip Buyuklugu:** Buyuk ekip (5+ kisi)
-**Review Zorunlulugu:** Zorunlu
+**Team Size:** Large team (5+ people)
+**Review Requirement:** Mandatory
 
-| Durum | Politika |
-|-------|---------|
-| Feature branch | PR ZORUNLU, direkt merge YASAK |
-| Bug fix | PR zorunlu, en az 1 review |
-| Hotfix | Acil PR, post-merge review kabul edilir |
-| Review sayisi | En az 1 reviewer zorunlu, 2 onerilen |
-| Self-merge | YASAK — baskasi merge etmeli |
-| CODEOWNERS | Kritik dizinler icin owner atamasi onerilen |
+| Condition | Policy |
+|-----------|--------|
+| Feature branch | PR MANDATORY, direct merge is NOT ALLOWED |
+| Bug fix | PR Mandatory, at least 1 review |
+| Hotfix | Emergency PR, post-merge review accepted |
+| Review count | At least 1 reviewer Mandatory, 2 reviewers are required |
+| Self-merge | NOT ALLOWED — all merges must be done by owner |
+| CODEOWNERS | File ownership assignment is required for critical files |
 
 Example output (solo):
 
-## Review Sureci Politikasi
+## Review Process Policy
 
-**Ekip Buyuklugu:** Solo gelistirici
-**Review Zorunlulugu:** Opsiyonel (self-review)
+**Team Size:** Solo developer
+**Review Requirement:** Optional (self-review)
 
-| Durum | Politika |
-|-------|---------|
-| Feature branch | PR opsiyonel — direkt push kabul edilir |
-| Bug fix | Direkt commit |
-| Review | /task-review veya /auto-review ile self-review onerilen |
-| CI kontrol | Varsa CI pipeline yeterli |
--->
+| Condition | Policy |
+|-----------|--------|
+| Feature branch | Branch feature optional — direct push accepted |
+| Bug fix | Direct commit |
+| Review | /task-review or /auto-review required for self-review |
+| CI control | If available, the CI pipeline is sufficient |
 
 ---
 
 <!-- GENERATE: HOOK_BEHAVIORS
-Pre-commit ve pre-push hook'larinin kontrol ettigi seyler.
+Controls of pre-commit and pre-push hooks.
 Required manifest fields: workflows.auto_format, stack.linter, stack.formatter, rules.forbidden
 
 Example output:
 
-## Hook Davranislari
+## Hook Behaviors
 
 ### Pre-Commit Hook
 
-| Kontrol | Aksiyon | Basarisizlik |
-|---------|---------|--------------|
-| Lint (ESLint) | `npx eslint --fix` | Auto-fix dener, basarisizsa commit engellenir |
-| Format (Prettier) | `npx prettier --write` | Auto-fix, her zaman basarili |
-| Type check | `npx tsc --noEmit` | Basarisizsa commit engellenir |
-| Yasakli komut | Pattern tarama | Engellenir, uyari gosterilir |
+| Control | Action | Failure |
+|---------|---------|----------|
+| Lint (ESLint) | `npx eslint --fix` | Auto-fix attempted, fails if unsuccessful, commit blocked |
+| Format (Prettier) | `npx prettier --write` | Always successful |
+| Type check | `npx tsc --noEmit` | Blocked if unsuccessful |
+| Forbidden commands | Pattern scanning | Blocked, warning displayed |
 
 ### Pre-Push Hook
 
-| Kontrol | Aksiyon | Basarisizlik |
-|---------|---------|--------------|
-| Testler | `npm test` | Basarisizsa push engellenir |
-| Build | `npm run build` | Basarisizsa push engellenir |
-| Trial merge | `git merge-tree` ile conflict testi | Conflict varsa push engellenir |
-| Localhost leak | URL taramasi | Tespit edilirse push engellenir |
-| Migration tutarliligi | Schema vs migration karsilastirmasi | Eksik migration varsa push engellenir |
+| Control | Action | Failure |
+|---------|---------|----------|
+| Tests | `npm test` | Blocked if unsuccessful |
+| Build | `npm run build` | Blocked if unsuccessful |
+| Trial merge | Conflict testing using `git merge-tree` | Blocked if conflict exists |
+| Localhost leak | URL scanning | Detected, push blocked |
+| Migration validity | Schema vs migration comparison | Blocked if missing migration |
 -->
 
 ---
 
 <!-- GENERATE: CRITICAL_RULES
-Proje-spesifik kritik kurallar — yasakli komutlar ve zorunlu kontroller.
+Project-specific critical rules — forbidden commands and mandatory controls.
 Required manifest fields: rules.forbidden[], rules.domain[]
 
 Example output:
 
-## Kritik Kurallar
+## Critical Rules
 
-### Yasakli Komutlar
+### Forbidden Commands
 
-| Komut | Sebep | Aksiyon |
-|-------|-------|---------|
-| `prisma db push` | Production'da schema bozuldu | ENGELLE |
-| `git push --force main` | History kaybolur | ENGELLE |
-| `rm -rf /` | Acik sebep | ENGELLE |
-| `npm audit fix --force` | Breaking change riski | UYAR |
+| Command | Reason | Action |
+|---------|--------|--------|
+| `prisma db push` | Schema updated in production | BLOCK |
+| `git push --force main` | History lost | BLOCK |
+| `rm -rf /` | Clear reason | BLOCK |
+| `npm audit fix --force` | Breaking change risk | WARN |
 
-### Zorunlu Kontroller
+### Mandatory Checks
 
-- Her API endpoint'inde auth middleware olmali
-- Her Prisma sorgusunda userId filtresi olmali (IDOR onlemi)
-- Her yeni component useTheme() ile tema renklerini kullanmali
-- .env dosyalari asla commit edilmemeli
--->
+- All API endpoints must have authentication middleware
+- All Prisma queries must include a userId filter (IDOR mitigation)
+- All new components must use the `useTheme()` function to use theme colors
+- `.env` files should never be committed -->
 
 ---
 
-## Merge Conflict Yonetim Protokolu (3 Katmanli Savunma)
+## Merge Conflict Management Protocol (3-Layer Defense)
 
-Paralel teammate'ler, worktree izolasyonu ve coklu branch calismasinda merge conflict riski olusur. Asagidaki 3 katmanli savunma sistemi bu riski yonetir.
+Parallel teammates, worktree isolation and multi-branch testing can lead to merge conflict risks. The following 3-layer defense system mitigates this risk.
 
-### Katman 1 — Onleme (Planlama Seviyesi)
+### Layer 1 — Resolution (Planning Level)
 
-task-plan ve task-conductor seviyesinde conflict ONCE tespit edilir ve onlenir:
+Conflicts are detected and resolved at the task-plan and task-conductor levels:
 
-1. **task-plan** her gorev icin `Affected Files` listesi uretir (dogrudan degisecek dosyalar)
-2. **task-conductor** faz planlarken conflict graph olusturur:
-   - Ortak dosyasi olan gorevler → ayni fazda SIRAYLA islenir
-   - Ortak dosyasi olmayan gorevler → yalnizca izole worktree/branch varsa PARALEL islenebilir
-   - `plan` modu read-only kalir; kod/backlog degisikligi sadece acik `run` modunda yapilir
-3. **task-hunter** Orchestrator modunda teammate'lere dosya sinirlari verir:
-   - Her teammate sadece kendisine atanan dosyalari duzenleyebilir
-   - Iki teammate'e ayni dosya ATANMAZ
+1. **task-plan** creates an `Affected Files` list for each task (files that will be directly modified)
+2. **task-conductor** creates a conflict graph during planning:
+   - Tasks with shared files → proceed in the same phase
+   - Tasks without shared files → can only be processed in isolated worktree/branch if necessary
+   - The `plan` mode remains read-only; changes to code/backlog are only made in the `run` mode
+3. **task-hunter** provides teammates with file boundaries in the orchestrator mode:
+   - Each teammate can only modify assigned files
+   - Two teammates cannot be assigned the same file
 
-### Katman 2 — Tespit (Push Seviyesi)
+### Layer 2 — Detection (Push Level)
 
-pre-push hook'ta trial merge ile conflict ONCE tespit edilir:
+A pre-push hook detects conflicts using a trial merge:
 
 ```bash
-# Trial merge: push oncesi main ile conflict kontrolu
+# Trial merge: conflict check against main before push
 git fetch origin main
 MERGE_BASE=$(git merge-base HEAD origin/main)
 git merge-tree "$MERGE_BASE" HEAD origin/main
-# Conflict marker (<<<<<<) varsa → push engellenir
+# If conflict markers (<<<<<<) exist → push is blocked
 ```
 
-Bu kontrol otonoim calisir — agent veya insan, her push'ta calisir.
+This control is automated — the agent or human performs it for every push.
 
-### Katman 3 — Cozum (Agent Davranisi)
+### Layer 3 — Resolution (Agent Behavior)
 
-Conflict tespit edildiginde agent asagidaki karar agacini takip eder:
+When conflicts are detected, the agent follows this decision tree:
 
-```
-Conflict tespit edildi
-  │
-  ├─ Conflict tipi nedir?
-  │
-  ├─ BASIT (farkli bolumler, ayni dosya):
-  │   → Agent otomatik resolve eder
-  │   → Resolve sonrasi TESTI CALISTIR
-  │   → Testler gecerse → devam et
-  │   → Testler basarisizsa → KARMASIK'a gec
-  │
-  ├─ KARMASIK (ayni satirlar, mantik catismasi):
-  │   → Agent DURUR, kullaniciya bildirir
-  │   → Conflict detayini gosterir (her iki tarafin degisikligi)
-  │   → Backlog'a conflict-resolution gorevi acar
-  │   → Kullanici yonlendirmesi bekler
-  │
-  └─ KENDI DEGISIKLIGI ONEMSIZ:
-      → Agent kendi degisikligini geri alir (git checkout -- <dosya>)
-      → Main'den guncel versiyonu alir
-      → Gorevi yeniden uygular (sifirdan)
-      → Backlog notuna "Conflict: gorev yeniden uygulandi" yazar
-```
+Conflict Resolution Criteria
 
-### Conflict Karar Kriterleri
+| Condition | Decision | Example |
+|-----------|-----------|---------|
+| Different functions in the same file | **Automated resolve** | A: added a new endpoint, B: updated an existing endpoint |
+| Same function with different lines | **Automated resolve (careful)** | A: function start, B: function end |
+| Same lines | **Notify user** | A and B changed the same variable differently |
+| Import/dependency check | **Automated resolve** | Both sides integrate imports |
+| Migration check | **Notify user** | Two different migrations updating the same table |
+| Configuration file check | **Notify user** | package.json, tsconfig.json like shared config |
 
-| Durum | Karar | Ornek |
-|-------|-------|-------|
-| Farkli fonksiyonlar, ayni dosya | **Otomatik resolve** | A: yeni endpoint ekledi, B: mevcut endpoint'i duzenledi |
-| Ayni fonksiyon, farkli satirlar | **Otomatik resolve** (dikkatli) | A: fonksiyon basi, B: fonksiyon sonu |
-| Ayni satirlar | **Kullaniciya bildir** | A ve B ayni degiskeni farkli sekilde degistirdi |
-| Import/dependency catismasi | **Otomatik resolve** | Her iki tarafin import'larini birlestir |
-| Migration catismasi | **Kullaniciya bildir** | Iki farkli migration ayni tabloyu degistiriyor |
-| Config dosyasi catismasi | **Kullaniciya bildir** | package.json, tsconfig.json gibi paylasilan config |
-
-> **KURAL:** Otomatik resolve sonrasi TEST CALISTIRMAK ZORUNLU. Test basarisizsa resolve gecersiz — kullaniciya bildir.
-> **KURAL:** Migration ve config dosya conflict'leri ASLA otomatik resolve edilmez.
+> **RULE:** After automated resolve, TEST EXECUTION IS MANDATORY. If test fails, resolve is invalid — notify user.
+> **RULE:** Migration and configuration file conflicts should NEVER be resolved automatically.
 
 ---
 
-## Genel Workflow Kurallari
+## General Workflow Rules
 
-Bu kurallar tum workflow'lar icin gecerlidir ve GENERATE bloklarindan bagimsizdir:
+These rules apply to all workflows and are independent of the GENERATE blocks:
 
-### Dosya Islemleri
+### File Operations
 
-- Bir dosyayi duzenlemeden once **mutlaka oku**
-- Mevcut pattern'leri takip et, yeni convention icat etme
-- Yeni dosya olusturmadan once mevcut dosyalari kontrol et
+- Always read a file before editing it
+- Follow existing patterns, don't introduce new conventions
+- Check existing files before creating a new one
+### Git Operations
 
-### Git Islemleri
+- Each commit should be atomic — contain only one purpose
+- Verify changes with `git diff --cached` before committing
+- After a hook error, create a **NEW** commit; do **not** use `--amend`
+- Use `--force` push only with clear user instructions
 
-- Her commit atomik olsun — tek bir amaci kapsasin
-- Commit oncesi `git diff --cached` ile degisiklikleri dogrula
-- Hook hatasi sonrasi **YENI commit** olustur, `--amend` kullanma
-- `--force` push sadece acik kullanici talimatıyla
+### Agent Communication
 
-### Agent Iletisimi
+- Agent reports are written in English
+- Summary first, details second — prioritize the important one
+- In uncertain situations, ask the user; do not assume progress
+- Each agent stays within its own responsibility area, not trespassing on another's work
 
-- Agent raporlari Turkce yazilir
-- Ozet once, detay sonra — onemliyi one koy
-- Belirsiz durumlarda kullaniciya sor, varsayimla ilerleme
-- Her agent kendi sorumluluk alaninda kalir, baska agent'in isine karisma
+### Error Management
 
-### Hata Yonetimi
-
-- Sessiz hata yakalama (catch + ignore) YASAK
-- Her hata loglanir veya raporlanir
-- Retry limitlerine uy (yukaridaki tabloya bkz.)
-- 3 ardisik basarisizlikta dur, raporla
+- Silent error catching (catch + ignore) IS PROHIBITED
+- Every error logs or reports
+- Adhere to retry limits (see table above)
+- Stop after three consecutive failures and report

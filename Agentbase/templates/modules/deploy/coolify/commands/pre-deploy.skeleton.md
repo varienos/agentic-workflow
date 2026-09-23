@@ -1,351 +1,353 @@
-# Pre-Deploy — Coolify Production Push Kontrolu
+# Pre-Deploy — Coolify Production Push Check
 
-> Coolify uzerinden production'a deploy oncesi tum kontrolleri calistirir, sonuc raporunu sunar.
-> Kullanim: `/pre-deploy`
+> Runs all pre-deployment checks for Coolify production and presents the test report.
+
+> Usage: `/pre-deploy`
 
 ---
 
-## Kural: OTONOM CALIS
+## Rule: Work Autonomously
 
-- Kullaniciya soru SORMA — tum kontrolleri sirayla calistir.
-- Hic bir seyi PUSH etme — sadece kontrol et ve raporla.
-- Hata bulursan DUZELTME — raporla ve kullaniciya birak.
-- Tum adimlari CALISTIR — bir adimi atlama.
+* Run all checks in sequence.
+* Do not push; this command only checks.
+* If an error occurs, report it; do not ask the user mid-flow.
+* Complete every step — do not skip a step.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Ornek cikti:
-## Proje Baglami
-- **Proje:** SaaS API platformu (NestJS + PostgreSQL)
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure, project.subprojects
+Example output:
+## Project Context
+- **Project:** SaaS API platform (NestJS + PostgreSQL)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Redis
 - **Deploy:** Coolify (self-hosted, Hetzner VPS)
-- **Yapi:**
+- **Structure:**
   - `apps/api/` — NestJS backend
   - `apps/web/` — Next.js frontend
-  - `packages/shared/` — Ortak kutuphaneler
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+  - `packages/shared/` — Shared libraries
+
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Step 1 — Baslangic Kontrolu (Git Durumu + Branch)
+## Step 1 — Initial Check (Git Status + Branch)
 
 ```bash
 cd ../Codebase && git status && git branch --show-current && git log --oneline -1
 ```
 
-Kontrol et:
-- [ ] Commit edilmemis degisiklik var mi?
-- [ ] Hangi branch'tesin? (main/master disinda UYAR — Coolify genellikle main push'ta otomatik deploy yapar)
-- [ ] Remote ile senkron mu? (`git status` ciktisinda "ahead/behind" kontrolu)
+Check:
+- [ ] Are there uncommitted changes?
+- [ ] Which branch are you on? (WARN if not main/master — Coolify usually auto-deploys on main push)
+- [ ] In sync with remote? (check "ahead/behind" in `git status` output)
 
-Eger commit edilmemis degisiklik varsa:
-```
-FAIL: Commit edilmemis degisiklikler var. Once commit atilmali.
-```
+If there are uncommitted changes:
 
-Eger branch main/master degilse:
 ```
-WARN: Su an '{branch}' branch'indesin. Coolify otomatik deploy genellikle main branch'e push ile tetiklenir.
+FAIL: Uncommitted changes exist. Commit first.
 ```
 
----
+If the branch is not main/master:
 
-## Step 2 — Degisiklik Ozeti
+```
+WARN: You are on '{branch}'. Coolify auto-deploy is usually triggered by a push to main.
+```
 
-Son deploy'dan bu yana yapilan degisiklikleri listele:
+## Step 2 — Summary of Changes Since Last Deployment
 
+List changes made since the last deployment:
 ```bash
 cd ../Codebase && git log --oneline HEAD~20..HEAD
 ```
 
-Degisiklikleri kategorize et:
-- **Yeni ozellikler** (feat:)
-- **Hata duzeltmeleri** (fix:)
-- **Yikici degisiklikler** (breaking change iceren commit'ler)
-- **Veritabani degisiklikleri** (migration iceren commit'ler)
-- **Altyapi degisiklikleri** (Dockerfile, docker-compose, entrypoint.sh, CI/CD)
+Categorize:
 
-Onemli: Dockerfile, docker-compose.prod.yml veya entrypoint.sh degismisse bunu ozellikle vurgula — Coolify bunlari kullanarak build yapar.
+1. **New Features** (feat:)
+2. **Bug Fixes** (fix:)
+3. **Breaking Changes** (commits containing breaking change)
+4. **Database Migrations** (commits containing migration)
+5. **Infrastructure Updates** (Dockerfile, docker-compose, entrypoint.sh, CI/CD)
+
+Important: If Dockerfile, docker-compose.prod.yml, or entrypoint.sh changed, call that out especially because those affect the build.
 
 ---
 
-## Step 3 — Derleme Kontrolu
+## Step 3 — Build Check
 
-Tum alt projelerin basariyla derlendigi dogrulanir.
+Verify successful builds for all sub-projects.
 
 <!-- GENERATE: COMPILE_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, project.scripts, stack.primary
-Ornek cikti:
-| Alt Proje | Komut | Beklenen Sonuc |
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.subprojects, project.scripts, stack.primary
+Example output:
+| Sub-project | Command | Expected Result |
 |---|---|---|
-| API | `cd ../Codebase/apps/api && npx tsc --noEmit` | Tip hatasi yok |
-| Web | `cd ../Codebase/apps/web && npm run build` | Build basarili |
-| Shared | `cd ../Codebase/packages/shared && npx tsc --noEmit` | Tip hatasi yok |
+| API | `cd ../Codebase/apps/api && npx tsc --noEmit` | No type error |
+| Web | `cd ../Codebase/apps/web && npm run build` | Build successful |
+| Shared | `cd ../Codebase/packages/shared && npx tsc --noEmit` | No type error |
 -->
 
-Her komutu calistir. Hata varsa kaydet, durma — sonraki adima gec.
+Run each command. If an error occurs, record it and continue — move on to the next step.
 
 ---
 
-## Step 4 — Test Suiti
+## Step 4 — Test Suite
 
-Tum testleri calistir.
+Run all tests.
 
 <!-- GENERATE: TEST_COMMANDS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.subprojects, project.scripts, stack.test_framework
-Ornek cikti:
-| Alt Proje | Komut | Tip |
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.subprojects, project.scripts, stack.test_framework
+Example output:
+| Sub-project | Command | Type |
 |---|---|---|
-| API (unit) | `cd ../Codebase/apps/api && npm run test` | Jest birim testleri |
-| API (e2e) | `cd ../Codebase/apps/api && npm run test:e2e` | Uctan uca testler |
-| Web (unit) | `cd ../Codebase/apps/web && npm run test` | Vitest birim testleri |
+| API (unit) | `cd ../Codebase/apps/api && npm run test` | Jest unit tests |
+| API (e2e) | `cd ../Codebase/apps/api && npm run test:e2e` | Integration tests |
+| Web (unit) | `cd ../Codebase/apps/web && npm run test` | Vitest unit tests |
 -->
 
-Her testi calistir. Basarisiz testleri kaydet, durma — sonraki adima gec.
+Run each test. Record failed tests and continue — move on to the next step.
 
 ---
 
-## Step 5 — Veritabani Migration Kontrolu
+## Step 5 — Database Migration Check
 
-Migration durumunu kontrol et. Eger ORM modulu aktifse, o modulun migration kontrol mekanizmasini kullan.
+Check database migration status. If an ORM module is active, use its migration control mechanism.
 
 ```bash
-# Prisma kontrolu
-cd ../Codebase && npx prisma migrate status 2>/dev/null || echo "Prisma yok veya baglanti hatasi"
+# Prisma check
+cd ../Codebase && npx prisma migrate status 2>/dev/null || echo "Prisma not present or connection error"
 
-# TypeORM kontrolu (alternatif)
+# TypeORM check (alternative)
 cd ../Codebase && npx typeorm migration:show 2>/dev/null || true
 
-# Drizzle kontrolu (alternatif)
+# Drizzle check (alternative)
 cd ../Codebase && npx drizzle-kit check 2>/dev/null || true
 ```
 
-Kontrol et:
-- [ ] Uygulanmamis migration var mi? → Varsa FAIL (Coolify entrypoint.sh icinde migration calisacak — migration dosyasi commit edilmis olmali)
-- [ ] Migration dosyalari commit edilmis mi?
-- [ ] Yikici migration var mi? (DROP TABLE, DROP COLUMN, ALTER COLUMN type change)
+### Validation Checklist
 
-Eger yikici migration varsa:
+### 1. Unapplied migrations?
+*   [ ] Does an unapplied migration exist? → Yes, FAIL (Coolify entrypoint.sh runs migrations — migration file may not have been committed)
+*   [ ] Have migration files been committed?
+
+### 2. Destructive migrations?
+*   [ ] Is there a destructive migration (DROP TABLE, DROP COLUMN, ALTER COLUMN type change)?
+
+#### If Destructive Migrations Exist
 ```
-WARN: Yikici migration tespit edildi. Coolify otomatik rollback yaparsa eski container eski sema ile calisir — veri kaybi riski var.
+WARN: Destructive migration detected. If Coolify auto-rollbacks, the old container runs with the old schema — data loss risk.
 ```
 
 ---
 
-## Step 6 — Ortam Degiskeni Senkronizasyonu
+## Step 6 — Environment Variable Consistency
 
-Production ortam degiskenlerinin tutarli oldugunu dogrula.
+Enforce consistency of production environment variables.
 
 <!-- GENERATE: ENV_CHECKS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments.env_files, environments.required_vars, stack.validation
-Ornek cikti:
-### Kontrol Edilecek Ortam Degiskenleri
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: environments.env_files, environments.required_vars, stack.validation
+Example output:
+### Environment Variables to Check
 
 **Zod schema:** `apps/api/src/config/env.ts`
 **Docker Compose:** `docker-compose.prod.yml`
-**Env ornegi:** `.env.example`
+**Environment Example:** `.env.example`
 
-| Degisken | Zorunlu | Kontrol |
+| Variable | Required | Control |
 |---|---|---|
-| DATABASE_URL | Evet | Zod + docker-compose + .env.example |
-| JWT_SECRET | Evet | Zod + .env.example |
-| REDIS_URL | Evet | Zod + docker-compose |
-| COOLIFY_URL | Hayir | Coolify dashboard'dan yonetilir |
+| DATABASE_URL | Yes | Zod + docker-compose + .env.example |
+| JWT_SECRET | Yes | Zod + .env.example |
+| REDIS_URL | Yes | Zod + docker-compose |
+| COOLIFY_URL | No | Controlled by Coolify dashboard |
 -->
 
-### 6a — Kaynak Karsilastirmasi
+### 6a — Source Matching
 
-Uc kaynagi karsilastir:
+Match the three sources:
 
 ```bash
-# Zod schema'dan beklenen degiskenleri cikart (varsa)
-cd ../Codebase && grep -oE '[A-Z_]{3,}' apps/api/src/config/env.ts 2>/dev/null | sort -u || echo "Zod schema bulunamadi"
+# Extract expected variables from Zod schema (if present)
+cd ../Codebase && grep -oE '[A-Z_]{3,}' apps/api/src/config/env.ts 2>/dev/null | sort -u || echo "Zod schema not found"
 
-# docker-compose.prod.yml'dan environment degiskenlerini cikart
-cd ../Codebase && grep -A 50 'environment:' docker-compose.prod.yml 2>/dev/null | grep -oE '\$\{[A-Z_]+\}' | tr -d '${|}' | sort -u || echo "docker-compose.prod.yml bulunamadi"
+# Extract environment variables from docker-compose.prod.yml
+cd ../Codebase && grep -A 50 'environment:' docker-compose.prod.yml 2>/dev/null | grep -oE '\$\{[A-Z_]+\}' | tr -d '${|}' | sort -u || echo "docker-compose.prod.yml not found"
 
-# .env.example'dan degiskenleri cikart
-cd ../Codebase && grep -E '^[A-Z_]+=' .env.example 2>/dev/null | cut -d= -f1 | sort -u || echo ".env.example bulunamadi"
+# Extract variables from .env.example
+cd ../Codebase && grep -E '^[A-Z_]+=' .env.example 2>/dev/null | cut -d= -f1 | sort -u || echo ".env.example not found"
 ```
 
-Her uc kaynakta da tanimli olmasi gereken degiskenleri karsilastir. Eksik varsa FAIL.
+Compare variables that must be defined in all three sources. FAIL if any are missing.
 
-### 6b — Guvenlik Kontrolleri
+### 6b — Security Checks
 
 ```bash
 cd ../Codebase
 
-# NODE_ENV kontrolu — docker-compose.prod.yml icinde "production" olmali
-grep -E 'NODE_ENV' docker-compose.prod.yml 2>/dev/null || echo "NODE_ENV tanimli degil"
+# NODE_ENV check — must be "production" in docker-compose.prod.yml
+grep -E 'NODE_ENV' docker-compose.prod.yml 2>/dev/null || echo "NODE_ENV not defined"
 
-# CORS origin kontrolu — localhost veya wildcard olmamali
-grep -rn 'CORS\|cors\|origin' --include="*.ts" --include="*.js" --include="*.yml" --include="*.yaml" . 2>/dev/null | grep -iE 'localhost|127\.0\.0\.1|\*' | grep -v node_modules | grep -v '.test.' | grep -v '.spec.' || echo "CORS sorunu yok"
+# CORS origin check — must not be localhost or wildcard
+grep -rn 'CORS\|cors\|origin' --include="*.ts" --include="*.js" --include="*.yml" --include="*.yaml" . 2>/dev/null | grep -iE 'localhost|127\.0\.0\.1|\*' | grep -v node_modules | grep -v '.test.' | grep -v '.spec.' || echo "No CORS issue"
 
-# Localhost leak taramasi — test dosyalari HARIC hardcoded localhost
-grep -rn 'localhost\|127\.0\.0\.1' --include="*.ts" --include="*.js" . 2>/dev/null | grep -v node_modules | grep -v '.test.' | grep -v '.spec.' | grep -v '.mock.' | grep -v '__test__' | grep -v 'README' | head -20 || echo "Localhost referansi yok"
+# Localhost leak scan — hardcoded localhost except test files
+grep -rn 'localhost\|127\.0\.0\.1' --include="*.ts" --include="*.js" . 2>/dev/null | grep -v node_modules | grep -v '.test.' | grep -v '.spec.' | grep -v '.mock.' | grep -v '__test__' | grep -v 'README' | head -20 || echo "No localhost reference"
 
-# JWT/secret placeholder kontrolu
-grep -rn 'your-secret\|changeme\|CHANGE_ME\|TODO.*secret\|placeholder' --include="*.ts" --include="*.js" --include="*.env*" --include="*.yml" . 2>/dev/null | grep -v node_modules | grep -v '.test.' | head -10 || echo "Placeholder yok"
+# JWT/secret placeholder check
+grep -rn 'your-secret\|changeme\|CHANGE_ME\|TODO.*secret\|placeholder' --include="*.ts" --include="*.js" --include="*.env*" --include="*.yml" . 2>/dev/null | grep -v node_modules | grep -v '.test.' | head -10 || echo "No placeholder"
 ```
 
-| Kontrol | Durum | Kural |
-|---|---|---|
-| NODE_ENV = production | Zorunlu | FAIL eger "production" degilse |
-| CORS origin | Zorunlu | FAIL eger localhost veya * iceriyorsa |
-| Localhost leak | Uyari | WARN eger non-test dosyada localhost varsa |
-| JWT/secret placeholder | Zorunlu | FAIL eger placeholder deger varsa |
+| Control | Condition | Rule |
+| --- | --- | --- |
+| NODE_ENV = production | Mandatory | FAIL if "production" is not present |
+| CORS origin | Mandatory | FAIL if localhost or * is present |
+| Localhost leak | Warning | WARN if non-test files contain localhost |
+| JWT/secret placeholder | Mandatory | FAIL if placeholder value is present |
 
----
+## Step 7 — Docker Build Check (Optional)
 
-## Step 7 — Docker Build Kontrolu (Opsiyonel)
+Coolify performs the build from Docker. Local Docker build testing is optional.
 
-Coolify Docker uzerinden build yapar. Lokal Docker build testi opsiyoneldir.
+### Triggers
 
-### Tetikleme Kosullari
-
-Bu adim SADECE asagidaki dosyalardan biri degismisse calistirilir:
+This step runs ONLY if one of the following files changed:
 
 ```bash
-cd ../Codebase && git diff --name-only HEAD~5..HEAD | grep -E 'Dockerfile|docker-compose|entrypoint\.sh|package.*\.json' || echo "Docker-related degisiklik yok"
+cd ../Codebase && git diff --name-only HEAD~5..HEAD | grep -E 'Dockerfile|docker-compose|entrypoint\.sh|package.*\.json' || echo "No Docker-related changes"
 ```
 
-Eger degisiklik yoksa bu adimi ATLA, raporda SKIP olarak isaretle.
+If no changes are made, SKIP this step and mark SKIP in the report.
 
 <!-- GENERATE: DEPLOY_CONFIG
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments.deploy_platform, environments.docker_compose, project.subprojects
-Ornek cikti:
-### Docker Build Komutlari
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: environments.deploy_platform, environments.docker_compose, project.subprojects
 
-| Servis | Komut |
+Example output:
+
+### Docker Build Commands
+
+| Service | Command |
 |---|---|
 | API | `cd ../Codebase && docker build -f apps/api/Dockerfile -t coolify-api-test .` |
 | Web | `cd ../Codebase && docker build -f apps/web/Dockerfile -t coolify-web-test .` |
 
-### Docker Compose Dosyalari
+### Docker Compose Files
 - Production: `../Codebase/docker-compose.prod.yml`
 - Development: `../Codebase/docker-compose.yml`
 
-### Entrypoint Kontrolu
-```bash
-cd ../Codebase && cat entrypoint.sh 2>/dev/null || echo "entrypoint.sh yok"
-```
-
-### Health Check Konfigurasyonu
+### Health Check Configuration
 - API: `http://localhost:3000/health`
 - Interval: 30s, Timeout: 10s, Retries: 3
 
-### Coolify Build Bilgileri
-- Coolify build sirasinda `docker build` calistirir
-- `entrypoint.sh` container baslatildiginda calisir (migration, seed vb.)
-- Health check basarisiz olursa Coolify eski container'i korur (otomatik rollback)
+### Coolify Build Info
+- Coolify runs `docker build` during build
+- `entrypoint.sh` runs when the container starts (migration, seed, etc.)
+- If health check fails, Coolify keeps the old container (automatic rollback)
 -->
 
-Eger Docker build calistirilacaksa:
+If a Docker build will be run:
 
 ```bash
-# entrypoint.sh'nin executable oldugunu kontrol et
-cd ../Codebase && test -f entrypoint.sh && ls -la entrypoint.sh | grep -q 'x' && echo "entrypoint.sh executable" || echo "WARN: entrypoint.sh executable degil veya yok"
+# Check that entrypoint.sh is executable
+cd ../Codebase && test -f entrypoint.sh && ls -la entrypoint.sh | grep -q 'x' && echo "entrypoint.sh executable" || echo "WARN: entrypoint.sh not executable or missing"
 
-# Dockerfile syntax kontrolu (hadolint varsa)
-cd ../Codebase && which hadolint > /dev/null 2>&1 && hadolint Dockerfile || echo "hadolint yuklu degil, Dockerfile syntax kontrolu atlandi"
+# Dockerfile syntax check (if hadolint is available)
+cd ../Codebase && which hadolint > /dev/null 2>&1 && hadolint Dockerfile || echo "hadolint not installed; Dockerfile syntax check skipped"
 ```
 
-> **NOT:** Docker build uzun surebilir. `SKIP_DOCKER_BUILD` flag'i varsa bu adimi atla.
+> **NOTE:** Docker build time can be long. If the `SKIP_DOCKER_BUILD` flag is present, skip this step.
 
 ---
 
-## Step 8 — Sonuc Raporu
+## Step 8 — Result Report
 
-Tum adimlarin sonuclarini asagidaki formatta raporla:
+Report all steps' results in the following format:
 
 ```
-## Pre-Deploy Raporu (Coolify)
+## Pre-Deploy Report (Coolify)
 
-### Genel Durum: [PASS / FAIL / WARN]
+### Overall Status: [PASS / FAIL / WARN]
 
-### Degisiklik Ozeti
-- X yeni ozellik, Y hata duzeltme, Z diger
-- Yikici degisiklik: [var/yok]
-- DB migration: [var/yok]
-- Altyapi degisikligi: [var/yok] (Dockerfile, docker-compose, entrypoint.sh)
+### Change Summary
+- X new features, Y bug fixes, Z other
+- Breaking change: [yes/no]
+- DB migration: [yes/no]
+- Infrastructure change: [yes/no] (Dockerfile, docker-compose, entrypoint.sh)
 
-### Kontrol Sonuclari
+### Check Results
 
-| # | Adim | Durum | Detay |
+| # | Step | Status | Detail |
 |---|---|---|---|
-| 1 | Git durumu | PASS/FAIL | ... |
-| 2 | Degisiklik ozeti | INFO | X commit, Y degisiklik |
-| 3 | Derleme | PASS/FAIL | ... |
-| 4 | Testler | PASS/FAIL | X/Y gecti |
+| 1 | Git status | PASS/FAIL | ... |
+| 2 | Change summary | INFO | X commits, Y changes |
+| 3 | Build | PASS/FAIL | ... |
+| 4 | Tests | PASS/FAIL | X/Y passed |
 | 5 | Migration | PASS/FAIL/WARN | ... |
-| 6 | Env senkronizasyonu | PASS/FAIL | ... |
+| 6 | Env sync | PASS/FAIL | ... |
 | 7 | Docker build | PASS/FAIL/SKIP | ... |
 
-### Basarisiz Kontroller
-[varsa detayli liste — hangi adim, hangi hata, ne yapilmali]
+### Failed Checks
+[detailed list if any — which step, which error, what to do]
 
-### Coolify Deploy Notu
-- Push yapildiginda Coolify otomatik build baslatacak
-- Build suresi tahmini: ~60-90 saniye
-- Health check basarisiz olursa Coolify eski container'i korur
-- Deploy sonrasi `/post-deploy` komutu ile dogrulama yapilmali
+### Coolify Deploy Note
+- When pushed, Coolify will start an automatic build
+- Estimated build time: ~60-90 seconds
+- If health check fails, Coolify keeps the old container
+- After deploy, validate with `/post-deploy`
 
-### Oneriler
-[varsa aksiyonlar]
+### Recommendations
+[actions if any]
 ```
 
----
-
-## Karar Matrisi
-
-| Durum | Karar | Aksiyon |
-|---|---|---|
-| Tum adimlar PASS | PASS | Deploy edilebilir — `git push origin main` |
-| Tum PASS, bazi WARN | WARN | Deploy edilebilir — uyarilari gozden gecir |
-| Testler FAIL | FAIL | Deploy edilemez, testler duzeltilmeli |
-| Derleme FAIL | FAIL | Deploy edilemez, derleme hatalari duzeltilmeli |
-| Migration eksik | FAIL | Migration dosyasi commit edilmeli |
-| Env eksik/uyumsuz | FAIL | Ortam degiskenleri tamamlanmali |
-| NODE_ENV != production | FAIL | docker-compose.prod.yml'da NODE_ENV=production olmali |
-| CORS localhost/wildcard | FAIL | CORS konfigurasyonu duzeltilmeli |
-| Secret placeholder | FAIL | Placeholder degerler gercek degerlerle degistirilmeli |
-| Docker build FAIL | WARN | Docker build sorunu arastirilmali (Coolify'da da basarisiz olacak) |
-| Commit edilmemis degisiklik | FAIL | Once commit atilmali |
-| SKIP (tetikleme kosulu yok) | — | Atlanan adimlar sonucu etkilemez |
+Commit completed non-sensitive work in the same session without asking. Do not push unless the user asks.
 
 ---
 
-## Zorunlu Kurallar
+## Decision Matrix
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+| Condition | Decision | Action |
+| --- | --- | --- |
+| All steps PASS | PASS | Deployable — `git push origin main` |
+| All PASS, some WARN | WARN | Deployable — notify on review |
+| Tests FAIL | FAIL | Deploy not possible; tests need to be fixed |
+| Compilation FAIL | FAIL | Deploy not possible; compilation errors need to be fixed |
+| Missing migration | FAIL | Migration file needs to be committed |
+| Environment missing/unconfigured | FAIL | Environment variables need to be completed |
+| NODE_ENV != production | FAIL | `docker-compose.prod.yml` should have NODE_ENV=production |
+| CORS localhost/wildcard | FAIL | CORS configuration needs to be fixed |
+| Secret placeholder | FAIL | Placeholder values need to be replaced with actual values |
+| Docker build FAIL | WARN | Investigate Docker build issue (will also fail in Coolify) |
+| Uncommitted changes | FAIL | Commit first |
+| SKIP (no trigger condition) | — | Does not affect the result |
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+---
 
-1. **Soru sorma** — Tum kontrolleri sessizce calistir, sadece sonuc raporunu goster.
-2. **Push etme** — Bu komut sadece kontrol eder, hicbir seyi push etmez.
-3. **Duzeltme yapma** — Hata bulursan raporla, duzeltmeye calisma.
-4. **Tum adimlari calistir** — Bir adim basarisiz olsa bile sonraki adima gec.
-5. **SKIP != FAIL** — Atlanan adimlar (tetikleme kosulu saglanmamis) sonucu etkilemez.
-6. **Missing migration = FAIL** — Commit edilmemis migration dosyasi her zaman FAIL.
-7. **Kisa rapor** — Gereksiz detaydan kacin, sadece durum + aksiyon.
-8. **Sonuc raporu ZORUNLU** — Her durumda Step 8 raporu olusturulmali.
+## Mandatory Rules
+
+### Invariant rules (apply to every command)
+
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/` directory inside Codebase or writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and edited when the task requires it. Config files (`.claude/`, `CLAUDE.md`) CANNOT be written inside Codebase.
+
+1. **Do not ask questions mid-check** — All checks run silently; only the result is reported.
+2. **Do not push** — This command only checks; never pushes anything.
+3. **Report findings** — If an error is found, report it.
+4. **Run all steps** — Even if one step fails, proceed to the next step.
+5. **SKIP != FAIL** — SKIP does not affect the overall result the way FAIL does.
+6. **Missing migration = FAIL** — Uncommitted migration files always fail.
+7. **Short report** — Omit unnecessary details; only report condition + action.
+8. **Result report mandatory** — A result report is required in all situations.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->

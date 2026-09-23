@@ -1,128 +1,127 @@
-# Session Status — Oturum ve Backlog Durumu
+# Session Status — Session and Backlog Status
 
-Bu komut `.claude/tracking/sessions/` dizinindeki `session-*.json` dosyalarini okuyarak hangi agent'in hangi task uzerinde, hangi fazda ve ne bekledigini ozetler.
+This command reads `session-*.json` files under `.claude/tracking/sessions/` and summarizes which agent is on which task, in which phase, and what it is waiting on.
 
-Canli ve interaktif izleme gerekiyorsa:
+If live interactive monitoring is needed:
 
 ```bash
 node bin/session-monitor.js
 ```
 
-Bu TUI varsayilan olarak `Timeline` gorunumuyle acilir; `Tab` ile `Agent Radar` gorunumune gecilir.
+This TUI opens in the `Timeline` view by default; press `Tab` to switch to the `Agent Radar` view.
 
 ---
 
-## Adimlar
+## Steps
 
-### 1. Session Dosyalarini Oku
+### 1. Read Session Files
 
-`.claude/tracking/sessions/` dizinindeki tum `session-*.json` dosyalarini tara.
+Scan all `session-*.json` files under `.claude/tracking/sessions/`.
 
 ```bash
 ls -la .claude/tracking/sessions/session-*.json 2>/dev/null
 ```
 
-Degerlendirme:
-- Dizin yoksa: tracker aktif degil veya bu workspace henuz materyalize edilmemis olabilir
-- Dosya yoksa: hook aktif olsa bile henuz oturum verisi yazilmamis olabilir
-- Bozuk JSON varsa: hatali dosyalari atla, kalanlari gostermeye devam et
+Evaluation:
+- If the directory is missing: tracker may be inactive or this workspace may not be materialized yet
+- If no files: the hook may be active but no session data has been written yet
+- If broken JSON exists: skip bad files and keep showing the rest
 
-### 2. Durum ve Faz Bilgisi Cikar
+### 2. Extract Status and Phase Info
 
-Her session icin su alanlari oku veya turet:
+For each session, read or derive these fields:
 - `current_focus.task_id`, `title`, `status`, `priority`
 - `phase` (`planning`, `implementing`, `testing`, `reviewing`, `waiting`, `done`)
 - `waiting_on` (`none`, `test`, `user`, `review`, `dependency`)
 - `last_meaningful_action`
 - `backlog_sync.acceptance.completed/total`
 
-Oturum durumunu `last_activity` zamanina gore siniflandir:
+Classify session status by `last_activity` time:
 
-| Aralik | Durum | Simge |
+| Range | Status | Symbol |
 |--------|-------|-------|
-| < 5 dakika | aktif | `●` |
-| 5 — 30 dakika | bosta | `○` |
-| > 30 dakika | kapali | `─` |
+| < 5 minutes | active | `●` |
+| 5 — 30 minutes | idle | `○` |
+| > 30 minutes | closed | `─` |
 
-### 3. Ozet Tablosu Goster
+### 3. Show Summary Table
 
-Her satir bir agent/session olacak sekilde, agent-first ozet ver:
+Provide an agent-first summary with one row per agent/session:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Oturum Durumu
+ Session Status
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-| Oturum | Durum | Task    | Faz        | Bekliyor | Son Aksiyon     |
+| Session | Status | Task    | Phase      | Waiting  | Last Action     |
 |--------|-------|---------|------------|----------|-----------------|
 | 45012  | ●   | TASK-24 | implement  | none     | Edited monitor  |
 | 45078  | ○   | TASK-11 | waiting    | test     | npm test fail   |
 | 45123  | ─   | —       | planning   | none     | Read backlog    |
 ```
 
-Ek backlog ozeti:
-- task durumu (`In Progress`, `Done`, ...)
+Additional backlog summary:
+- task status (`In Progress`, `Done`, ...)
 - priority
-- acceptance ilerlemesi (`AC 2/5`)
-- gerekirse dependency sayisi
+- acceptance progress (`AC 2/5`)
+- dependency count if needed
 
-### 4. Detay Gosterimi
+### 4. Detail View
 
-Tek bir session secildiginde su alanlari goster:
-- task kimligi ve basligi
-- backlog status / priority / acceptance ilerlemesi
-- faz ve waiting nedeni
-- tool dagilimi
-- son okunan / yazilan dosyalar
+When a single session is selected, show these fields:
+- task id and title
+- backlog status / priority / acceptance progress
+- phase and waiting reason
+- tool distribution
+- recently read / written files
 - recent event stream
-- teammate durumu
-- hata ozeti
+- teammate status
+- error summary
 
-Ornek:
+Example:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- Oturum Detayi: 45012
+ Session Detail: 45012
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Task:        TASK-24 Merge conflict yonetimi
+Task:        TASK-24 Merge conflict management
 Backlog:     In Progress  |  high  |  AC 1/2
 Phase:       implementing
 Waiting:     none
 Action:      Edited workflow-lifecycle.skeleton.md
 
 Recent Events:
-  10sn  Started TASK-24
-   8sn  Edited workflow-lifecycle.skeleton.md
-   4sn  Teammate completed: review-agent
+  10s  Started TASK-24
+   8s  Edited workflow-lifecycle.skeleton.md
+   4s  Teammate completed: review-agent
 ```
 
-### 5. Sorun Teshisi
+### 5. Problem Diagnosis
 
-Eger veri yetersizse bunu ayri ayri belirt:
-- `Tracker inactive` — session dizini yok
-- `No session files yet` — dizin var ama session dosyasi yok
-- `Unreadable session JSON` — parse edilemeyen dosyalar var
-- `Linked backlog task missing` — session bir task'a bagli ama task markdown dosyasi bulunamadi
+If data is insufficient, state it separately:
+- `Tracker inactive` — session directory missing
+- `No session files yet` — directory exists but no session files
+- `Unreadable session JSON` — files that cannot be parsed
+- `Linked backlog task missing` — session linked to a task but task markdown file not found
 
-## Zorunlu Kurallar
+## Required Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/` directory inside Codebase or writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and, if the task requires it, edited. Config files (`.claude/`, `CLAUDE.md`) cannot be written inside Codebase.
 
-1. Sadece OKU — session veya backlog dosyalarini DEGISTIRME
-2. Session JSON eski schema ile gelirse fallback kullan — `backlog_activity` ve `last_tool` bilgileriyle en iyi tahmini yap
-3. Yerel zaman dilimini kullan
-4. Tek bozuk dosya yuzunden tum ciktayi bozma
-5. Interaktif monitor icin klavye kilavuzu:
+1. READ only — do not MODIFY session or backlog files
+2. If session JSON arrives with an old schema, use fallback — best-effort from `backlog_activity` and `last_tool`
+3. Use the local timezone
+4. Do not break the entire output because of one bad file
+5. Keyboard guide for the interactive monitor:
    `Tab`, `j/k`, `↑/↓`, `Enter`, `Esc`, `c`, `h`, `q`
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->

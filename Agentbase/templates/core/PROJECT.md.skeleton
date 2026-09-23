@@ -1,45 +1,45 @@
-# Proje
+# Project
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Proje tanimi, stack, yapi bilgileri.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure, project.subprojects
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Description: Project definition, stack, and structure.
+Required manifest fields: project.description, stack.primary, project.structure, project.subprojects
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
-## Ortamlar
+## Environments
 
 <!-- GENERATE: SMOKE_TEST_ENDPOINTS
-Aciklama: Production ve staging ortam bilgileri.
-Gerekli manifest alanlari: environments
+Description: Production and staging environment details.
+Required manifest fields: environments
 -->
 
-## Bağımlılıklar
+## Dependencies
 
-Bu workflow aşağıdaki dış MCP server'larını runtime'da çalıştırır. Tüm ajanlar (Claude Code, Codex CLI, Gemini CLI, Kimi CLI, OpenCode) aynı MCP'lere bağlanır → ortak hafıza ve paylaşılan context.
+This workflow runs the following external MCP servers at runtime. All agents (Claude Code, Codex CLI, Gemini CLI, Kimi CLI, OpenCode) connect to the same MCPs → shared memory and shared context.
 
-| Bağımlılık | Lisans | Etki Alanı | Not |
+| Dependency | License | Scope | Note |
 | --- | --- | --- | --- |
-| `basic-memory` | AGPL-3.0 | MCP subprocess (`uvx basic-memory mcp`) | Ayrı süreç olarak çalışır, bu projenin lisansını etkilemez. Vault: `Docbase/memory/` |
-| `codex` | MIT | MCP subprocess (`codex mcp-server`) | OpenAI Codex CLI'ın MCP server modu |
-| `backlog.md` | MIT | CLI | Görev yaşam döngüsü |
+| `basic-memory` | AGPL-3.0 | MCP subprocess (`uvx basic-memory mcp`) | Runs as a separate process; does not affect this project's license. Vault: `Docbase/memory/` |
+| `codex` | MIT | MCP subprocess (`codex mcp-server`) | OpenAI Codex CLI MCP server mode |
+| `backlog.md` | MIT | CLI | Task lifecycle |
 
-### Vault Gizliliği (Opsiyonel)
+### Vault Privacy (opt-in)
 
-`Docbase/memory/` vault git'e dahildir → tüm worktree'ler aynı bilgi tabanını paylaşır, PR'larda audit-friendly. Hassas içerik için git'ten dışlamak istersen Codebase'in `.gitignore` dosyasına (git Codebase tarafında çalıştığı için) Docbase yolunu ekle. Codebase ve Docbase aynı git ağacında değilse vault zaten git dışındadır.
+`Docbase/memory/` vault is included in git → all worktrees share the same knowledge base, audit-friendly in PRs. To exclude sensitive content from git, add the Docbase path to Codebase's `.gitignore` (git runs on the Codebase side). If Codebase and Docbase are not in the same git tree, the vault is already outside git.
 
 ```
-# Codebase/.gitignore (vault Docbase/ altında, Codebase'e göreli)
+# Codebase/.gitignore (vault under Docbase/, relative to Codebase)
 ../Docbase/memory/
 ```
 
-> Vault'u git'ten dışlarsan farklı makinelerde aynı hafıza erişimi için cloud sync (basic-memory cloud opsiyonu) veya manuel senkronizasyon gerekir.
+> If you exclude the vault from git, cloud sync (basic-memory cloud option) or manual sync is required for the same memory access across machines.
 
-## Onemli Kurallar
+## Important Rules
 
 <!-- CLAUDE_FILL: DOMAIN_RULES
-Bootstrap ropartajindan toplanan domain kurallari ve yasakli komutlar buraya yazilir.
-manifest.rules.domain ve manifest.rules.forbidden kullanilir.
+Domain rules and forbidden commands collected during the bootstrap interview are written here.
+Uses manifest.rules.domain and manifest.rules.forbidden.
 -->

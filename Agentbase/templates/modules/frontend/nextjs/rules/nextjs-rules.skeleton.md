@@ -1,56 +1,56 @@
-# Next.js Kurallari
+# Next.js rules
 
-> Bu kurallar Next.js projeler icin gecerlidir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules apply to Next.js projects.
+> All plugins and agents MUST comply with these rules.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Ornek cikti:
-## Proje Baglami
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.name, project.description, project.structure
+Example output:
+## Project context
 
-- **Proje:** MyApp — E-ticaret platformu
-- **Yapi:** Monorepo (`apps/web/` altinda Next.js projesi)
-- **Next.js Versiyonu:** 14.x (App Router)
-- **Deploy:** Vercel
+- **Project:** MyApp — E-commerce platform
+- **Structure:** Monorepo (Next.js project under `apps/web/`)
+- **Next.js version:** 14.x (App Router)
+- **Deployment:** Vercel
 - **Styling:** Tailwind CSS
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
 <!-- GENERATE: ROUTER_TYPE
-Aciklama: Bu bolum Bootstrap tarafindan otomatik tespit edilir.
-Gerekli manifest alanlari: project.structure, project.framework_config
-Ornek cikti:
-## Router Tipi: App Router
+Explanation: This section is populated by Bootstrap automatically.
+Required manifest fields: project.structure, project.framework_config
+Example output:
+## Router type: App Router
 
-- **Tespit:** `app/` dizini mevcut, `next.config.js`'de `appDir` aktif
-- **Layout sistemi:** `layout.tsx` dosyalari ile nested layout
+- **Detection:** Presence of `app/` directory, `appDir` enabled in `next.config.js`
+- **Layout system:** Nested layouts via `layout.tsx` files in folders
 - **Data fetching:** Server Components + async/await
 - **API:** Route Handlers (`app/api/`)
 -->
 
 ---
 
-## Rendering Stratejisi
+## Rendering strategy
 
-### Server Components (Varsayilan)
+### Server Components (default)
 
 ```typescript
-// DOGRU — Server Component (varsayilan, directive gerekmez)
+// CORRECT — Server Component (default, no directive needed)
 // app/products/page.tsx
 export default async function ProductsPage() {
-  const products = await getProducts(); // Dogrudan async/await
+  const products = await getProducts(); // Direct async/await
 
   return (
     <div>
-      <h1>Urunler</h1>
+      <h1>Products</h1>
       {products.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}
@@ -58,17 +58,17 @@ export default async function ProductsPage() {
   );
 }
 
-// YANLIS (YASAK) — Server component'te gereksiz 'use client'
-'use client'; // GEREKSIZ — interaktivite yoksa kaldır
+// WRONG (FORBIDDEN) — Unnecessary 'use client' on a Server Component
+'use client'; // unnecessary when the component has no interactivity
 export default function AboutPage() {
-  return <div>Hakkimizda</div>;
+  return <div>About us</div>;
 }
 ```
 
 ### Client Components
 
 ```typescript
-// DOGRU — Sadece interaktivite gerektiginde 'use client'
+// CORRECT — 'use client' only when interactivity is required
 'use client';
 
 import { useState } from 'react';
@@ -77,47 +77,47 @@ export default function Counter() {
   const [count, setCount] = useState(0);
   return (
     <button onClick={() => setCount(count + 1)}>
-      Sayi: {count}
+      Count: {count}
     </button>
   );
 }
 
-// YANLIS (YASAK) — Client component'te data fetching
+// WRONG (FORBIDDEN) — Data fetching in a Client Component
 'use client';
 export default function ProductList() {
   const [products, setProducts] = useState([]);
   useEffect(() => {
     fetch('/api/products').then(r => r.json()).then(setProducts);
   }, []);
-  // Server'da yapilabilecek isi client'ta yapma
+  // Do not do on the client work that can be done on the server
 }
 ```
 
-### Rendering Kurallar Tablosu
+### Rendering rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Server Component varsayilan | `'use client'` sadece gerektiginde ekle |
-| Data → Server'da al | Client component'te `fetch` + `useEffect` YASAK (server'dan prop gec) |
-| `loading.tsx` her route'ta | Streaming icin loading state dosyasi olustur |
-| `error.tsx` her route'ta | Hata siniri (error boundary) dosyasi olustur |
-| `not-found.tsx` | 404 sayfasi icin olustur |
-| Streaming | Buyuk sayfa yuklemelerini `<Suspense>` ile parcala |
+| Server Component by default | Add `'use client'` only when required |
+| Fetch data on the server | `fetch` + `useEffect` in Client Components FORBIDDEN (pass props from server) |
+| `loading.tsx` on every route | Create a loading state file for streaming |
+| `error.tsx` on every route | Create an error boundary file |
+| `not-found.tsx` | Create for 404 pages |
+| Streaming | Split large page loads with `<Suspense>` |
 
 ---
 
-## Routing Kurallari
+## Routing rules
 
-### App Router Yapisi
+### App Router structure
 
 ```
 app/
-├── layout.tsx              # Kok layout
-├── page.tsx                # Ana sayfa (/)
-├── loading.tsx             # Genel loading
-├── error.tsx               # Genel hata
+├── layout.tsx              # Root layout
+├── page.tsx                # Home page (/)
+├── loading.tsx             # Global loading
+├── error.tsx               # Global error
 ├── not-found.tsx           # 404
-├── (auth)/                 # Route group — layout paylasimi
+├── (auth)/                 # Route group — shared layout
 │   ├── layout.tsx
 │   ├── login/page.tsx      # /login
 │   └── register/page.tsx   # /register
@@ -127,7 +127,7 @@ app/
 │   └── settings/page.tsx   # /settings
 ├── products/
 │   ├── page.tsx            # /products
-│   └── [id]/               # Dinamik route
+│   └── [id]/               # Dynamic route
 │       ├── page.tsx        # /products/123
 │       └── loading.tsx
 ├── blog/
@@ -138,31 +138,31 @@ app/
         └── route.ts        # API Route Handler
 ```
 
-### Routing Best Practices
+### Routing best practices
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| App Router tercih | `pages/` dizini legacy, yeni route'lar `app/` altinda |
-| Route groups | `(auth)`, `(dashboard)` ile layout paylasimi |
-| Dinamik route | `[id]` ile parametreli sayfalar |
-| Catch-all | `[...slug]` ile esnek URL yapisi |
-| Parallel routes | `@modal`, `@sidebar` ile paralel icerik |
-| Intercepting routes | `(.)photo/[id]` ile modal pattern |
+| Prefer App Router | `pages/` is legacy; new routes go under `app/` |
+| Route groups | Share layouts with `(auth)`, `(dashboard)` |
+| Dynamic route | Parameterized pages with `[id]` |
+| Catch-all | Flexible URL structure with `[...slug]` |
+| Parallel routes | Parallel content with `@modal`, `@sidebar` |
+| Intercepting routes | Modal pattern with `(.)photo/[id]` |
 
 ---
 
-## Data Fetching Kurallari
+## Data fetching rules
 
-### Server Component Data Fetching
+### Server Component data fetching
 
 ```typescript
-// DOGRU — Server component'te dogrudan async/await
+// CORRECT — Direct async/await in Server Component
 // app/users/page.tsx
 async function getUsers() {
   const res = await fetch('https://api.example.com/users', {
-    next: { revalidate: 3600 }, // 1 saat cache
+    next: { revalidate: 3600 }, // 1 hour cache
   });
-  if (!res.ok) throw new Error('Kullanicilar alinamadi');
+  if (!res.ok) throw new Error('Failed to fetch users');
   return res.json();
 }
 
@@ -175,7 +175,7 @@ export default async function UsersPage() {
 ### Server Actions
 
 ```typescript
-// DOGRU — Server Action ile form mutation
+// CORRECT — Form mutation with Server Action
 // app/actions.ts
 'use server';
 
@@ -198,53 +198,53 @@ export async function createUser(formData: FormData) {
 }
 ```
 
-### Cache Kontrolu
+### Cache control
 
-| Yontem | Kullanim | Ornek |
+| Method | Usage | Example |
 |---|---|---|
-| `revalidate` | Zaman bazli cache | `fetch(url, { next: { revalidate: 60 } })` |
-| `revalidatePath` | Path bazli invalidasyon | `revalidatePath('/products')` |
-| `revalidateTag` | Tag bazli invalidasyon | `revalidateTag('products')` |
-| `no-store` | Cache'leme | `fetch(url, { cache: 'no-store' })` |
-| `unstable_cache` | Fonksiyon bazli cache | DB sorgusu sonuclarini cache'le |
+| `revalidate` | Time-based cache | `fetch(url, { next: { revalidate: 60 } })` |
+| `revalidatePath` | Path-based invalidation | `revalidatePath('/products')` |
+| `revalidateTag` | Tag-based invalidation | `revalidateTag('products')` |
+| `no-store` | No caching | `fetch(url, { cache: 'no-store' })` |
+| `unstable_cache` | Function-based cache | Cache DB query results |
 
 ---
 
-## Performans Kurallari
+## Performance rules
 
-### Image Optimizasyonu
+### Image optimization
 
 ```typescript
 import Image from 'next/image';
 
-// DOGRU — next/image ile otomatik optimizasyon
+// CORRECT — Automatic optimization with next/image
 <Image
   src="/hero.jpg"
-  alt="Hero gorsel"
+  alt="Hero image"
   width={1200}
   height={600}
-  priority // Above the fold gorseller icin
+  priority // For above-the-fold images
   placeholder="blur"
   blurDataURL="data:image/..."
 />
 
-// DOGRU — Responsive gorsel
+// CORRECT — Responsive image
 <Image
   src="/product.jpg"
-  alt="Urun gorseli"
+  alt="Product image"
   fill
   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
   style={{ objectFit: 'cover' }}
 />
 
-// YANLIS (YASAK) — Ham img tagi
+// WRONG (FORBIDDEN) — Raw img tag
 <img src="/hero.jpg" alt="Hero" />
 ```
 
-### Font Optimizasyonu
+### Font optimization
 
 ```typescript
-// DOGRU — next/font ile self-hosted
+// CORRECT — Self-hosted with next/font
 import { Inter } from 'next/font/google';
 
 const inter = Inter({
@@ -255,28 +255,28 @@ const inter = Inter({
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="tr" className={inter.variable}>
+    <html lang="en" className={inter.variable}>
       <body>{children}</body>
     </html>
   );
 }
 
-// YANLIS (YASAK) — CDN'den font yukleme
+// WRONG (FORBIDDEN) — Loading fonts from CDN
 // <link href="https://fonts.googleapis.com/..." rel="stylesheet" />
 ```
 
-### Bundle Optimizasyonu
+### Bundle optimization
 
 ```typescript
 import dynamic from 'next/dynamic';
 
-// DOGRU — Agir component'ler icin dynamic import
+// CORRECT — Dynamic import for heavy components
 const HeavyChart = dynamic(() => import('@/components/HeavyChart'), {
   loading: () => <ChartSkeleton />,
   ssr: false, // Client-only component
 });
 
-// DOGRU — Metadata ile SEO
+// CORRECT — SEO with Metadata
 import { Metadata } from 'next';
 
 export async function generateMetadata({ params }): Promise<Metadata> {
@@ -289,25 +289,25 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 }
 ```
 
-### Performans Kurallar Tablosu
+### Performance rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `next/image` ZORUNLU | `<img>` tagi YASAK, otomatik optimizasyon kaybi |
-| `width` + `height` zorunlu | Layout shift onleme (CLS) |
-| `priority` above-the-fold | LCP iyilestirme icin ilk gorunen gorsellere ekle |
-| `next/font` ZORUNLU | CDN font yukleme YASAK, layout shift onleme |
-| `next/dynamic` agir component'ler | Code splitting ile bundle boyutunu dusur |
-| `generateMetadata` | Hardcoded `<title>` yerine dinamik metadata |
+| `next/image` REQUIRED | `<img>` tag FORBIDDEN — loses automatic optimization |
+| `width` + `height` required | Prevent layout shift (CLS) |
+| `priority` above-the-fold | Add to first-visible images to improve LCP |
+| `next/font` REQUIRED | CDN font loading FORBIDDEN — prevents layout shift |
+| `next/dynamic` for heavy components | Reduce bundle size with code splitting |
+| `generateMetadata` | Dynamic metadata instead of hardcoded `<title>` |
 
 ---
 
-## API Route Kurallari
+## API route rules
 
 ### Route Handlers
 
 ```typescript
-// DOGRU — app/api/users/route.ts
+// CORRECT — app/api/users/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -320,7 +320,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  // Input validasyonu
+  // Input validation
   const validated = createUserSchema.parse(body);
   const user = await createUser(validated);
   return NextResponse.json(user, { status: 201 });
@@ -330,12 +330,12 @@ export async function POST(request: NextRequest) {
 ### Middleware
 
 ```typescript
-// DOGRU — middleware.ts (proje kokunde)
+// CORRECT — middleware.ts (project root)
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Auth kontrolu
+  // Auth check
   const token = request.cookies.get('token');
   if (!token && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url));
@@ -349,22 +349,22 @@ export const config = {
 };
 ```
 
-### API Kurallar Tablosu
+### API rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Route Handlers | `app/api/` altinda `route.ts` dosyalari |
-| Edge Runtime | Hafif islemler icin `export const runtime = 'edge'` |
-| Input validasyonu | Zod ile ZORUNLU, dogrudan `body` kullanma |
-| Error handling | try/catch ile hata yakala, anlamli HTTP status dondur |
-| Middleware | Auth, redirect, rewrite icin `middleware.ts` |
-| Rate limiting | API route'larda rate limit ZORUNLU |
+| Route Handlers | `route.ts` files under `app/api/` |
+| Edge Runtime | `export const runtime = 'edge'` for lightweight work |
+| Input validation | REQUIRED with Zod — do not use raw `body` |
+| Error handling | Catch errors with try/catch, return meaningful HTTP status |
+| Middleware | `middleware.ts` for auth, redirect, rewrite |
+| Rate limiting | Rate limit on API routes REQUIRED |
 
 ---
 
-## Guvenlik Kurallari
+## Security rules
 
-### Server Actions Guvenligi
+### Server Actions security
 
 ```typescript
 'use server';
@@ -372,125 +372,122 @@ export const config = {
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 
-// DOGRU — Input validasyonu + yetki kontrolu
+// CORRECT — Input validation + authorization check
 export async function deleteUser(userId: string) {
-  // 1. Yetki kontrolu
+  // 1. Authorization check
   const session = await getSession(cookies());
   if (!session?.isAdmin) {
-    throw new Error('Yetkisiz islem');
+    throw new Error('Unauthorized');
   }
 
-  // 2. Input validasyonu
+  // 2. Input validation
   const id = z.string().uuid().parse(userId);
 
-  // 3. Islem
+  // 3. Operation
   await db.user.delete({ where: { id } });
   revalidatePath('/users');
 }
 ```
 
-### Guvenlik Kurallar Tablosu
+### Security rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Server Actions input validasyonu | Zod ile ZORUNLU |
-| CSRF koruması | Server Actions otomatik koruma saglar |
-| Env variable guvenlik | `NEXT_PUBLIC_` prefix'i olmadan client'a sizmaz |
-| `headers()`, `cookies()` | Sadece server tarafinda kullanilir |
-| Auth middleware | Korunmasi gereken route'larda ZORUNLU |
-| SQL injection | ORM veya parametreli sorgu kullan, string concat YASAK |
+| Server Actions input validation | REQUIRED with Zod |
+| CSRF protection | Server Actions provide it |
+| Env variable security | Without `NEXT_PUBLIC_` prefix, values do not leak to the client |
+| `headers()`, `cookies()` | Server-side only |
+| Auth middleware | REQUIRED on protected routes |
+| SQL injection | Use ORM or parameterized queries — string concat FORBIDDEN |
 
-### Env Variable Kurallari
+### Env variable rules
 
 ```typescript
-// DOGRU — Server-only env variable
+// CORRECT — Server-only env variable
 // .env
-DATABASE_URL="postgresql://..." // Client'a SIZMAZ
+DATABASE_URL="postgresql://..." // Does NOT leak to the client
 
-// DOGRU — Client'ta kullanilacak env
+// CORRECT — Env used on the client
 // .env
-NEXT_PUBLIC_API_URL="https://api.example.com" // Client'ta erisilebilir
+NEXT_PUBLIC_API_URL="https://api.example.com" // Accessible on the client
 
-// YANLIS (YASAK) — Hardcoded URL
-const API_URL = 'https://api.example.com'; // Env variable kullan
+// WRONG (FORBIDDEN) — Hardcoded URL
+const API_URL = 'https://api.example.com'; // Use env variable
 ```
 
----
+## Forbidden practices
 
-## Yasak Pratikler
-
-| # | Yasak | Neden | Dogru Alternatif |
+| # | Forbidden | Reason | Correct alternative |
 |---|---|---|---|
-| 1 | `getServerSideProps` / `getStaticProps` | App Router'da gereksiz (legacy Pages Router) | Server Component + async/await |
-| 2 | Client component'te `fetch` + `useEffect` | Gereksiz client-side data loading | Server component'ten prop gec |
-| 3 | `'use client'` olmadan interaktif component | onClick, useState calisma hatasi verir | `'use client'` directive'i ekle |
-| 4 | `<img>` tagi | next/image optimizasyonu kaybi | `next/image` kullan |
-| 5 | CDN font yukleme | Layout shift, performans kaybi | `next/font` kullan |
-| 6 | Hardcoded env URL'ler | Ortam degistiginde bozulur | Env variable kullan |
-| 7 | `pages/` ve `app/` karisik kullanim | Routing catismasi | Tek router tipi sec |
-| 8 | Server component'te `useState`/`useEffect` | Server'da hook calisma hatasi | Client component yap veya kaldir |
-| 9 | `export default` olmayan page/layout | Next.js dosyayi taniyamaz | Default export ZORUNLU |
-| 10 | `fetch` icin hardcoded `revalidate` | Cache stratejisi tutarsiz olur | Merkezi cache config kullan |
+| 1 | `getServerSideProps` / `getStaticProps` | Legacy Pages Router | Server Component + async/await |
+| 2 | Client component `fetch` + `useEffect` | Redundant client-side data loading | Pass prop from server component |
+| 3 | Interactive components without `'use client'` | onClick, useState fail | Add `'use client'` directive |
+| 4 | `<img>` tag | Loses next/image optimization | Use `next/image` |
+| 5 | CDN font loading | Layout shift, performance loss | Use `next/font` |
+| 6 | Hardcoded env URLs | Breaks across environments | Use environment variable |
+| 7 | Mixing `pages/` and `app/` | Routing validation issues | Choose a single router type |
+| 8 | `useState`/`useEffect` in Server Component | Hooks fail on the server | Convert to client component or remove |
+| 9 | Non-exported page/layout | Next.js will not recognize the file | Use default export (REQUIRED) |
+| 10 | Ad-hoc hardcoded `revalidate` for `fetch` | Cache strategy inconsistency | Use centralized cache config |
 
 ---
 
 <!-- GENERATE: PROJECT_CONVENTIONS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.conventions, project.rules, project.folder_structure
-Ornek cikti:
-## Proje Konvansiyonlari
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.conventions, project.rules, project.folder_structure
+Example output:
+## Project conventions
 
-### Dosya Isimlendirme
-- Component: `kebab-case.tsx` (ornek: `product-card.tsx`)
-- Page: `page.tsx` (App Router convension)
+### File naming
+- Component: `kebab-case.tsx` (e.g. `product-card.tsx`)
+- Page: `page.tsx` (App Router convention)
 - Layout: `layout.tsx`
 - API: `route.ts`
 
-### Klasor Yapisi
+### Folder structure
 ```
 src/
-├── app/           # Next.js App Router sayfalari
-├── components/    # Paylasilan component'ler
-│   ├── ui/        # Temel UI component'leri
-│   └── features/  # Ozellik-spesifik component'ler
-├── lib/           # Utility fonksiyonlar
+├── app/           # Next.js App Router pages
+├── components/    # Shared components
+│   ├── ui/        # Base UI components
+│   └── features/  # Feature-specific components
+├── lib/           # Utility functions
 ├── actions/       # Server Actions
-├── types/         # TypeScript tipleri
-└── styles/        # Global stiller
+├── types/         # TypeScript types
+└── styles/        # Global styles
 ```
-
-### Import Sirasi
+### Import order
 1. React / Next.js
-2. Ucuncu parti kutuphaneler
-3. Proje component'leri (`@/components/`)
+2. Third-party libraries
+3. Project components (`@/components/`)
 4. Utility / lib (`@/lib/`)
-5. Tipler (`@/types/`)
-6. Stiller
+5. Types (`@/types/`)
+6. Styles
 -->
 
 ---
 
 <!-- GENERATE: STYLING_APPROACH
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.styling, project.css_framework
-Ornek cikti:
-## Stil Yaklasimi: Tailwind CSS
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.styling, project.css_framework
+Example output:
+## Styling approach: Tailwind CSS
 
-### Tailwind Kullanim Kurallari
+### Tailwind usage guidelines
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Utility-first | Inline Tailwind class'lari tercih edilir |
-| `cn()` helper | Kosullu class birlestirme icin `clsx` + `tailwind-merge` |
-| Component abstraction | Tekrarlanan pattern'ler component'e cekilir |
-| `@apply` sinirli kullan | Sadece cok tekrarlanan pattern'ler icin |
-| Dark mode | `dark:` prefix'i ile tema destegi |
-| Responsive | `sm:`, `md:`, `lg:` ile mobile-first |
+| Utility-first | Inline Tailwind classes preferred |
+| `cn()` helper | Conditional class combining with `clsx` + `tailwind-merge` |
+| Component abstraction | Repeated patterns abstracted into components |
+| Strict `@apply` use | Only for very repeated patterns |
+| Dark mode | Support via `dark:` prefix |
+| Responsive | Mobile-first with `sm:`, `md:`, `lg:` |
 
 ```typescript
 import { cn } from '@/lib/utils';
 
-// DOGRU — cn() ile kosullu class
+// CORRECT — Conditional classes with cn()
 <button className={cn(
   'px-4 py-2 rounded-md font-medium',
   variant === 'primary' && 'bg-blue-600 text-white',
@@ -498,22 +495,30 @@ import { cn } from '@/lib/utils';
   disabled && 'opacity-50 cursor-not-allowed',
 )}>
 
-// YANLIS (YASAK) — Inline style
+// WRONG (FORBIDDEN) — Inline style
 <button style={{ padding: '8px 16px', backgroundColor: 'blue' }}>
 ```
 -->
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory rules
 
-1. **Server Component varsayilan** — `'use client'` sadece interaktivite gerektiginde ekle.
-2. **Data fetching server'da** — Client component'te `fetch` + `useEffect` YASAK, server'dan prop gec.
-3. **`next/image` ZORUNLU** — `<img>` tagi YASAK, `width` + `height` belirt.
-4. **`next/font` ZORUNLU** — CDN font yukleme YASAK.
-5. **`loading.tsx` + `error.tsx`** — Her route segment'te olustur.
-6. **Server Actions'da validasyon** — Zod ile input validasyonu ZORUNLU.
-7. **Env variable** — Hardcoded URL YASAK, `process.env` kullan.
-8. **Metadata** — `generateMetadata` ile dinamik SEO, hardcoded `<title>` YASAK.
-9. **`next/dynamic`** — Agir component'ler icin dynamic import kullan.
-10. **Default export** — Page, layout, error, loading dosyalarinda default export ZORUNLU.
+1. **Server Component by default** — Add `'use client'` only when interactivity is required.
+2. **Fetch data on the server** — Client-side data fetching FORBIDDEN; pass data from the server via props.
+3. **`next/image` REQUIRED** — `<img>` tags FORBIDDEN; specify `width` and `height`.
+4. **`next/font` REQUIRED** — Loading fonts from CDN FORBIDDEN.
+5. **`loading.tsx` + `error.tsx`** — Create these files for every route segment.
+6. **Validation in Server Actions** — Always validate input with Zod.
+7. **Env variable** — Never hardcode URLs; use `process.env`.
+8. **Metadata** — Generate SEO dynamically with `generateMetadata`; never hardcode `<title>`.
+9. **`next/dynamic`** — Use dynamic imports for heavy components.
+10. **Default export** — Always required for page, layout, error, and loading files.
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

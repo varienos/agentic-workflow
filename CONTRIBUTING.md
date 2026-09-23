@@ -1,61 +1,59 @@
-# Katki Rehberi
+# Contributing Guide
 
-> **Note:** This document is in Turkish. For English speakers: contributions follow standard GitHub flow — fork, branch, commit (conventional format), test, PR. See sections below for details.
+Thank you for considering a contribution to Agentic Workflow!
 
-Agentic Workflow'a katki yapmayi dusundugunuz icin tesekkurler!
+## How Can I Contribute?
 
-## Nasil Katki Yapabilirim?
+### Bug Reports
 
-### Hata Bildirimi
+1. First check [existing issues](https://github.com/varienos/agentic-workflow/issues)
+2. If the same problem is not reported, open a new issue
+3. Include the steps needed to reproduce the problem
+4. State the expected and actual behavior
 
-1. Once [mevcut issue'lari](https://github.com/varienos/agentic-workflow/issues) kontrol edin
-2. Ayni sorun bildirilmemisse yeni issue acin
-3. Sorunu yeniden uretmek icin gerekli adimlari ekleyin
-4. Beklenen ve gerceklesen davranisi belirtin
+### Feature Proposals
 
-### Ozellik Onerisi
+1. Open the proposal [as an issue](https://github.com/varienos/agentic-workflow/issues/new)
+2. Explain what problem the proposal solves
+3. If possible, outline a solution approach
 
-1. Oneriyi [issue olarak acin](https://github.com/varienos/agentic-workflow/issues/new)
-2. Onerinin ne problemi cozecegini aciklayin
-3. Mumkunse cozum yaklasimini belirtin
+### Code Contributions
 
-### Kod Katkisi
+1. Fork the repo
+2. Create a new branch: `git checkout -b feat/feature-name`
+3. Make your changes
+4. Run tests: `cd Agentbase && npm test`
+5. Commit: `git commit -m "feat: description"`
+6. Push: `git push origin feat/feature-name`
+7. Open a Pull Request
 
-1. Repo'yu fork edin
-2. Yeni bir branch olusturun: `git checkout -b feat/ozellik-adi`
-3. Degisikliklerinizi yapin
-4. Testleri calistirin: `cd Agentbase && npm test`
-5. Commit atin: `git commit -m "feat: aciklama"`
-6. Push edin: `git push origin feat/ozellik-adi`
-7. Pull Request acin
+### Commit Rules
 
-### Commit Kurallari
+Use the Conventional Commits format:
 
-Conventional Commits formatini kullanin:
-
-| Prefix | Kullanim |
+| Prefix | Use |
 |--------|----------|
-| `feat:` | Yeni ozellik |
-| `fix:` | Hata duzeltme |
-| `docs:` | Dokumantasyon |
-| `test:` | Test ekleme/duzeltme |
-| `refactor:` | Yeniden duzenleme |
+| `feat:` | New feature |
+| `fix:` | Bug fix |
+| `docs:` | Documentation |
+| `test:` | Add/fix tests |
+| `refactor:` | Restructuring |
 
-### Yeni Modul Ekleme
+### Adding a New Module
 
-Yeni bir stack/framework modulu eklemek icin:
+To add a new stack/framework module:
 
-1. `Agentbase/templates/modules/` altinda uygun kategoriye dizin olusturun
-2. `detect.md` dosyasinda tespit kosullarini tanimlayin
-3. Hook, rule veya command skeleton'larini ekleyin
-4. Mevcut modulleri pattern olarak kullanin
-5. Test yazin
+1. Create a directory under `Agentbase/templates/modules/` in the appropriate category
+2. Define detection conditions in `detect.md`
+3. Add hook, rule, or command skeletons
+4. Use existing modules as patterns
+5. Write tests
 
-### detect.md Nasil Calisir?
+### How detect.md Works
 
-Her modul, o modulun projeye uygulanip uygulanmayacagini belirleyen bir `detect.md` dosyasi icerir.
+Every module contains a `detect.md` file that decides whether the module applies to the project.
 
-**Kontrol listesi (`Checks`):** Dosya varligini veya bagimlilik varligini dogrulayan maddelerin listesidir.
+**Checklist (`Checks`):** A list of items that verify file presence or dependency presence.
 
 ```markdown
 ## Checks
@@ -65,7 +63,7 @@ Her modul, o modulun projeye uygulanip uygulanmayacagini belirleyen bir `detect.
 - file_exists: .vercel/
 ```
 
-**Minimum Match:** Kac kontrolun eslemesi gerektigini belirtir. `2/3` degeri, uc kontrolden en az ikisinin gerceklestiginde modulun aktive edilecegi anlamina gelir. Bu, kullanicilarin her kontrol dosyasini olusturmak zorunda kalmadan modulu aktive etmesine olanak tanir.
+**Minimum Match:** States how many checks must match. A value of `2/3` means the module activates when at least two of three checks succeed. This lets users activate the module without creating every check file.
 
 ```markdown
 ## Minimum Match
@@ -73,11 +71,11 @@ Her modul, o modulun projeye uygulanip uygulanmayacagini belirleyen bir `detect.
 2/3
 ```
 
-**Cakisma Cozumu:** Birden fazla modul ayni dosyalara eslestiginde (ornegin Docker ve Coolify her ikisi de `docker-compose.yml` dosyasina bakabilir), Bootstrap roportajdaki "Deploy platformunuz nedir?" sorusu ile kullaniciyi netlestirir. Coolify secildiginde Docker modulu YERINE Coolify aktive edilir; Docker ciktisini ust katman olarak kullandigi icin cakisma ortadan kalkar.
+**Conflict resolution:** When multiple modules match the same files (for example Docker and Coolify may both look at `docker-compose.yml`), Bootstrap clarifies with the interview question "What is your deploy platform?". When Coolify is selected it is activated INSTEAD OF Docker; conflict disappears because Coolify uses Docker output as an upper layer.
 
-**Kategori detect.md:** Modul dizininin kokunde bulunan `detect.md`, o kategorinin tum varyantlarini listeler ve hangisinin once kontrol edilecegini belirtir. Varyantlar sirasi onem tasiyabilir (ornegin NestJS → Fastify → Express: daha spesifik olandan daha genele dogru).
+**Category detect.md:** The `detect.md` at the root of the module directory lists all variants in that category and which to check first. Variant order can matter (for example NestJS → Fastify → Express: more specific to more general).
 
-**Activates:** Modul aktive olunca `generate.js`'in uretecegi dosyalar listesidir: commands (slash komutlari), agents (sub-agent'lar), rules (kural dosyalari).
+**Activates:** The list of files `generate.js` will produce when the module activates: commands (slash commands), agents (sub-agents), rules (rule files).
 
 ```markdown
 ## Activates
@@ -86,83 +84,83 @@ Her modul, o modulun projeye uygulanip uygulanmayacagini belirleyen bir `detect.
 - agents/frontend.skeleton.md (sub-agent)
 ```
 
-### Dosya Isimlendirme Kurallari
+### File Naming Rules
 
-**`.skeleton` suffix'i:** Template dosyalari `.skeleton.md`, `.skeleton.js` veya `.skeleton.json` uzantisi kullanir. `generate.js` bu dosyalari islerken GENERATE bloklarini doldurur ve `.skeleton` uzantisini kaldirir (`task-hunter.skeleton.md` → `task-hunter.md`). Sabit dosyalar (GENERATE blogu icermeyen hook'lar gibi) `.skeleton` suffix'i olmadan saklanir ve oldugu gibi kopyalanir.
+**`.skeleton` suffix:** Template files use `.skeleton.md`, `.skeleton.js`, or `.skeleton.json`. When `generate.js` processes these files it fills GENERATE blocks and removes the `.skeleton` extension (`task-hunter.skeleton.md` → `task-hunter.md`). Static files (such as hooks with no GENERATE block) are stored without the `.skeleton` suffix and copied as-is.
 
-**Dizin yapisi:**
-- `templates/core/` — Her projede uretilen iskeletler (commands, hooks, rules, agents, git-hooks)
-- `templates/modules/{kategori}/{varyant}/` — Modul-spesifik dosyalar (sadece aktif moduller icin uretilir)
-- `templates/reference/` — Tasarim referans dokumanlari (v1 notlari, is akisi, metotlar). Bu dosyalar generate.js tarafindan ISLENMEZ — bootstrap komutunun baglam olarak okudugu dahili referanslardir.
-- `templates/interview/` — Bootstrap roportaj sablonlari. generate.js tarafindan islenmez.
+**Directory layout:**
+- `templates/core/` — Skeletons produced for every project (commands, hooks, rules, agents, git-hooks)
+- `templates/modules/{category}/{variant}/` — Module-specific files (produced only for active modules)
+- `templates/reference/` — Design reference documents (v1 notes, workflows, methods). These files are NOT processed by generate.js — they are internal references the bootstrap command reads as context.
+- `templates/interview/` — Bootstrap interview templates. Not processed by generate.js.
 
-### Onemli Dizin Aciklamalari
+### Important Directory Notes
 
-- **`Codebase/`** — Uzerinde calisilan gercek proje kodunu temsil eder. Bu dizin depoda yer tutucudur; kullanici kendi projesini symlink ile baglar (`ln -s /path/to/project Codebase`). Greenfield modunda gercek proje dosyasi icermemelidir; `.gitkeep` ve `.DS_Store` placeholder kabul edilir.
-- **`Docbase/agentic/project-manifest.yaml`** — Bootstrap tarafindan uretilen manifest dosyasi. Depoda bastan YOKTUR — ilk `/bootstrap` calistirmasinda olusturulur. `generate.js` ve `transform.js` bu dosyayi girdi olarak kullanir.
+- **`Codebase/`** — Represents the real project code being worked on. In the repository this directory is a placeholder; the user links their own project with a symlink (`ln -s /path/to/project Codebase`). In greenfield mode it must not contain real project files; `.gitkeep` and `.DS_Store` are accepted as placeholders.
+- **`Docbase/agentic/project-manifest.yaml`** — Manifest file produced by Bootstrap. It does NOT exist in the repo up front — it is created on the first `/bootstrap` run. `generate.js` and `transform.js` use this file as input.
 
-### Bootstrap Roportaj Sablonlari
+### Bootstrap Interview Templates
 
-`Agentbase/templates/interview/` dizininde dort roportaj sablon dosyasi bulunur. Bu dosyalar `generate.js` tarafindan islenmez; Bootstrap komutunun bir projeye ilk kez uygulanirken baglam olarak okudugu dahili referanslardir.
+There are four interview template files under `Agentbase/templates/interview/`. These files are not processed by `generate.js`; they are internal references the Bootstrap command reads as context the first time it is applied to a project.
 
-| Dosya | Amaç | Urettigi Dosyalar |
-|-------|------|-------------------|
-| `phase-1-project.md` | Proje temelleri — projenin ne oldugu, ortamlari, deploy yontemi | `PROJECT.md`, `ARCHITECTURE.md`, `README.md` |
-| `phase-2-technical.md` | Teknik tercihler — test stratejisi, branch modeli, commit convention, ORM, auth | `STACK.md`, `WORKFLOWS.md`, hook konfigurasyonu |
-| `phase-3-developer.md` | Gelistirici profili — deneyim seviyesi, calisma dili, otonom calisma beklentisi | `DEVELOPER.md`, agent davranis kalibrasyonu |
-| `phase-4-rules.md` | Domain kurallari — yasakli komutlar, tasarim sistemi, guvenlik seviyesi | `rules/` dizini, koruma hook'lari |
+| File | Purpose | Files Produced |
+|------|---------|----------------|
+| `phase-1-project.md` | Project fundamentals — what the project is, environments, deploy method | `PROJECT.md`, `ARCHITECTURE.md`, `README.md` |
+| `phase-2-technical.md` | Technical preferences — test strategy, branch model, commit convention, ORM, auth | `STACK.md`, `WORKFLOWS.md`, hook configuration |
+| `phase-3-developer.md` | Developer profile — experience level, working language, autonomy expectations | `DEVELOPER.md`, agent behavior calibration |
+| `phase-4-rules.md` | Domain rules — forbidden commands, design system, security level | `rules/` directory, protection hooks |
 
-**Nasil calisir:** Bootstrap, `/bootstrap` komutu calistirildiginda bu roportaj sablonlarini sirasi ile izler. Her phase, kullaniciya sorular sormadan once codebase'i otomatik olarak tarar (auto-detection) ve mevcut bilgileri on doldurur. Kullanicinin yanitleri `Docbase/agentic/project-manifest.yaml` dosyasina kaydedilir ve `generate.js` bu manifestten proje-spesifik dosyalari uretir.
+**How it works:** When `/bootstrap` runs, Bootstrap follows these interview templates in order. Each phase automatically scans the codebase before asking the user (auto-detection) and pre-fills known information. User answers are saved to `Docbase/agentic/project-manifest.yaml`, and `generate.js` produces project-specific files from that manifest.
 
-**Katkida bulunmak icin:** Yeni bir soru veya auto-detection kurali eklemek istiyorsaniz ilgili phase dosyasini duzenleyin. Mevcut soru yapisini (`Questions`, `Skip condition`, `Maps to`, `Downstream`) koru.
+**To contribute:** If you want to add a new question or auto-detection rule, edit the relevant phase file. Keep the existing question structure (`Questions`, `Skip condition`, `Maps to`, `Downstream`).
 
 ```bash
 cd Agentbase
-npm test          # Tum testler
+npm test          # All tests
 ```
 
-Yeni eklenen her JS dosyasi icin test dosyasi ZORUNLUDUR.
+A test file is REQUIRED for every newly added JS file.
 
-### Test Dosyasi Yerlesimi
+### Test File Placement
 
-| Test Dosyasi | Ne Test Eder |
+| Test File | What It Tests |
 |---|---|
-| `generate.test.js` | generate.js fonksiyonlari, SIMPLE_GENERATORS, CLI arguman parse |
-| `transform.test.js` | transform.js donusum fonksiyonlari (extractDescription, TOML/YAML formatlari) |
-| `tests/changelog.test.js` | CHANGELOG uretici yardimcilari (formatDate, groupByType) |
-| `tests/codebase-guard.test.js` | codebase-guard hook'u — Codebase config path engelleme kurallari |
-| `tests/core-hooks.test.js` | Core hook'lar (code-review, test-enforcer, team-trigger, auto-test-runner, auto-format, openapi-sync) |
-| `tests/generate-regressions.test.js` | generate.js regresyon ve CLI entegrasyon testleri |
-| `tests/git-hooks.test.js` | Git pre-commit/pre-push hook'lari (E2E: temp git repo ile) |
-| `tests/guard-hooks.test.js` | Framework guard hook'lari (artisan, spark, django, manage-py) |
-| `tests/hook-edge-cases.test.js` | Tum hook'larda edge case dayanikliligi (bos stdin, bozuk JSON, uzun path) |
-| `tests/kutsal-rules-regressions.test.js` | Kutsal kural regresyonlari — skeleton'larda config yazma ve git siniri kontrolu |
-| `tests/prisma-hooks.test.js` | Prisma-spesifik hook'lar (db-push-guard, migration-check, destructive-migration) |
-| `tests/release.test.js` | Release script yardimcilari (detectBump: major/minor/patch karar mantigi) |
-| `tests/session-observability.test.js` | Session-tracker ve session-monitor testleri |
-| `tests/interview-structure.test.js` | Interview phase dosyalarinin yapisi (Questions, Maps to, Phase Completion) |
-| `tests/markdown-links.test.js` | Repo genelinde markdown link gecerliligi ve placeholder tespiti |
+| `generate.test.js` | generate.js functions, SIMPLE_GENERATORS, CLI argument parse |
+| `transform.test.js` | transform.js conversion functions (extractDescription, TOML/YAML formats) |
+| `tests/changelog.test.js` | CHANGELOG generator helpers (formatDate, groupByType) |
+| `tests/codebase-guard.test.js` | codebase-guard hook — Codebase config path blocking rules |
+| `tests/core-hooks.test.js` | Core hooks (code-review, test-enforcer, team-trigger, auto-test-runner, auto-format, openapi-sync) |
+| `tests/generate-regressions.test.js` | generate.js regression and CLI integration tests |
+| `tests/git-hooks.test.js` | Git pre-commit/pre-push hooks (E2E: with temp git repo) |
+| `tests/guard-hooks.test.js` | Framework guard hooks (artisan, spark, django, manage-py) |
+| `tests/hook-edge-cases.test.js` | Edge-case resilience across all hooks (empty stdin, broken JSON, long path) |
+| `tests/kutsal-rules-regressions.test.js` | Sacred-rule regressions — config-write and git-boundary checks in skeletons |
+| `tests/prisma-hooks.test.js` | Prisma-specific hooks (db-push-guard, migration-check, destructive-migration) |
+| `tests/release.test.js` | Release script helpers (detectBump: major/minor/patch decision logic) |
+| `tests/session-observability.test.js` | Session-tracker and session-monitor tests |
+| `tests/interview-structure.test.js` | Interview phase file structure (Questions, Maps to, Phase Completion) |
+| `tests/markdown-links.test.js` | Repo-wide markdown link validity and placeholder detection |
 | `tests/session-monitor-runtime.test.js` | Session monitor TUI runtime (handleKey, cleanup, watcher, render) |
-| `tests/transform-cli.test.js` | Transform.js CLI entegrasyonu (E2E: manifest + dry-run + rapor) |
-| `tests/workflow-update.test.js` | Workflow update manifest meta ve diff engine entegrasyonu |
-| `tests/docs-consistency.test.js` | README TR/EN senkronizasyonu ve dokumantasyon tutarliligi |
-| `tests/shared-hook-utils.test.js` | Guard hook factory (createGuardHook, runGuard) birim testleri |
+| `tests/transform-cli.test.js` | Transform.js CLI integration (E2E: manifest + dry-run + report) |
+| `tests/workflow-update.test.js` | Workflow update manifest meta and diff engine integration |
+| `tests/docs-consistency.test.js` | README TR/EN synchronization and documentation consistency |
+| `tests/shared-hook-utils.test.js` | Guard hook factory (createGuardHook, runGuard) unit tests |
 
-### Hook Test Yardimcilari
+### Hook Test Helpers
 
-`tests/helpers/` altindaki iki yardimci:
+Two helpers under `tests/helpers/`:
 
-- **`hook-runner.js`** — `createTempProject`, `materializeHook`, `runHook`, `writeCodebaseFile`, `makeHookInput` fonksiyonlari. Hook'lari temp dizinde materyalize edip `spawnSync` ile calistirir.
-- **`module-loader.js`** — `loadModuleExports` fonksiyonu. Skeleton JS dosyalarindan pure fonksiyonlari `vm.runInNewContext` ile cikarip test etmeye yarar. `replacements` ile GENERATE bloklarini doldurup `exports` ile fonksiyon listesi belirtilir.
+- **`hook-runner.js`** — `createTempProject`, `materializeHook`, `runHook`, `writeCodebaseFile`, `makeHookInput`. Materializes hooks in a temp directory and runs them with `spawnSync`.
+- **`module-loader.js`** — `loadModuleExports`. Extracts pure functions from skeleton JS files via `vm.runInNewContext` for testing. Fills GENERATE blocks with `replacements` and specifies the function list with `exports`.
 
-### Eklenti Referanslari
+### Extension References
 
-`Agentbase/templates/extensions-registry.yaml` Bootstrap eklenti oneri sisteminin yapilandirilmis kaynagidir. `Agentbase/templates/extensions-registry.md` ise insanlar icin okunabilir referans katalogdur ve generate.js tarafindan ISLENMEZ. Yeni bir kaynagi sadece dokumantasyon referansi olarak ekliyorsaniz Markdown tablosunu, Bootstrap onerisi olarak calismasini istiyorsaniz YAML formatini da guncelleyin.
+`Agentbase/templates/extensions-registry.yaml` is the structured source for the Bootstrap extension recommendation system. `Agentbase/templates/extensions-registry.md` is the human-readable reference catalog and is NOT processed by generate.js. If you are adding a source only as a documentation reference, update the Markdown table; if you want it to work as a Bootstrap recommendation, update the YAML format as well.
 
-## Iletisim
+## Contact
 
-Sorulariniz icin: hello@varien.software
+Questions: hello@varien.software
 
-## Lisans
+## License
 
-Katkida bulunarak, katkinizin MIT lisansi altinda yayinlanacagini kabul etmis olursunuz.
+By contributing, you agree that your contribution will be published under the MIT license.

@@ -1,38 +1,38 @@
 # Architecture Decision Records
 
-Bu dizin proje mimarisini etkileyen kararlar icin ADR kayitlarini tutar.
+This directory holds ADR records for decisions that affect project architecture.
 
-## Dosya Ismi
+## File Name
 
-Yeni ADR dosyasi su formatta acilir:
+Open a new ADR file in this format:
 
 ```text
 YYYYMMDD-kebab-case-karar-basligi.md
 ```
 
-Ornek:
+Example:
 
 ```text
-20260512-agentbase-codebase-ayrimi.md
+20260512-agentbase-codebase-separation.md
 ```
 
-Taslak veya ornek icin `0000-adr-template.md` dosyasini kopyala.
+Copy `0000-adr-template.md` for a draft or example.
 
-## Ne Zaman Zorunlu?
+## When Is It Required?
 
-Asagidaki degisiklikler ADR gerektirir veya mevcut bir ADR'ye referans vermelidir:
+The following changes require an ADR or a reference to an existing ADR:
 
-- Katman siniri, modul sahipligi veya public API kontrati degisiyorsa
-- Veri akisi, kalicilik modeli, migration stratejisi veya entegrasyon kontrati degisiyorsa
-- Runtime, deploy modeli, framework, package manager veya ana teknoloji secimi degisiyorsa
-- Guvenlik, auth, yetki, loglama, hata yonetimi veya observability gibi cross-cutting policy degisiyorsa
-- Birden fazla alt projeyi etkileyen yeni workflow veya otomasyon ekleniyorsa
+- Layer boundary, module ownership, or public API contract is changing
+- Data flow, persistence model, migration strategy, or integration contract is changing
+- Runtime, deploy model, framework, package manager, or primary technology choice is changing
+- A cross-cutting policy such as security, auth, authorization, logging, error handling, or observability is changing
+- A new workflow or automation that affects multiple subprojects is being added
 
-Kucuk refactor, typo, test ekleme, lokal bug fix veya mevcut karari uygulayan dar degisiklikler icin yeni ADR acma; task notunda "ADR gerekmedi" gerekcesi yeterlidir.
+Do not open a new ADR for small refactors, typos, test additions, local bug fixes, or narrow changes that only apply an existing decision; a task note with an "ADR not required" rationale is enough.
 
-## Minimum Alanlar
+## Minimum fields
 
-Her ADR en az su alanlari icermelidir:
+Every ADR must include at least these fields:
 
 - Status
 - Date
@@ -43,10 +43,10 @@ Her ADR en az su alanlari icermelidir:
 - Rollback / Revisit Trigger
 - Related Tasks / Links
 
-## Workflow Sozlesmesi
+## Workflow Contract
 
-Mimari degisiklik iceren task'larda uygulama baslamadan once:
+On tasks that include architectural change, before implementation starts:
 
-1. Yeni ADR dosyasi yaz veya mevcut ADR dosyasina referans ver.
-2. Task kabul kriterlerine ADR kontrolunu ekle.
-3. Commit ve final summary icinde ADR dosya yolunu veya "ADR gerekmedi" gerekcesini belirt.
+1. Write a new ADR file or reference an existing ADR file.
+2. Add an ADR check to the task acceptance criteria.
+3. Include the ADR file path or an "ADR not required" rationale in the commit and final summary.

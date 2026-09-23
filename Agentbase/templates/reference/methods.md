@@ -1,63 +1,63 @@
-# Agent Workflow Metodları
+# Agent Workflow Methods
 
-## Frameworkler
+## Frameworks
 
-| Metod | Ne yapar? | Kaynak |
+| Method | What it does | Source |
 |---|---|---|
-| **RPI** (Research → Plan → Implement) | 3 aşamalı döngü — her adımda ayrı context ile çalış | Topluluk |
-| **BMAD Method** | 12+ uzman AI rolü ile tam SDLC simülasyonu (analist, mimar, PM, dev, QA) | [GitHub](https://github.com/bmad-code-org/BMAD-METHOD) |
-| **SPARC** | 5 aşama: Specification → Pseudocode → Architecture → Refinement → Completion | [GitHub](https://github.com/ruvnet/sparc) |
-| **Spec-Driven Development** | Önce detaylı spec yaz, sonra agent'a spec'ten kod ürettir | [GitHub Blog](https://github.blog/ai-and-ml/generative-ai/spec-driven-development-with-ai-get-started-with-a-new-open-source-toolkit/) |
-| **PDCA** (Plan-Do-Check-Act) | Deming döngüsünün AI kod üretimi için uyarlanmış hali | [GitHub](https://github.com/kenjudy/pdca-code-generation-process) |
-| **Three Developer Loops** | Inner (saniye), Middle (saat), Outer (hafta) — farklı zaman ölçeklerinde kontrol | [IT Revolution](https://itrevolution.com/articles/the-three-developer-loops-a-new-framework-for-ai-assisted-coding/) |
-| **AI-Augmented Scrum** | Sprint'te görevler "insan" ve "agent uygun" olarak sınıflandırılır | [Scrum.org](https://www.scrum.org/resources/blog/ai-augmented-scrum-framework-when-half-your-team-autonomous-agents) |
+| **RPI** (Research → Plan → Implement) | 3-stage loop — work with a separate context at each step | Community |
+| **BMAD Method** | Full SDLC simulation with 12+ expert AI roles (analyst, architect, PM, dev, QA) | [GitHub](https://github.com/bmad-code-org/BMAD-METHOD) |
+| **SPARC** | 5 stages: Specification → Pseudocode → Architecture → Refinement → Completion | [GitHub](https://github.com/ruvnet/sparc) |
+| **Spec-Driven Development** | Write a detailed spec first, then have the agent generate code from the spec | [GitHub Blog](https://github.blog/ai-and-ml/generative-ai/spec-driven-development-with-ai-get-started-with-a-new-open-source-toolkit/) |
+| **PDCA** (Plan-Do-Check-Act) | Deming cycle adapted for AI code generation | [GitHub](https://github.com/kenjudy/pdca-code-generation-process) |
+| **Three Developer Loops** | Inner (seconds), Middle (hours), Outer (weeks) — control at different time scales | [IT Revolution](https://itrevolution.com/articles/the-three-developer-loops-a-new-framework-for-ai-assisted-coding/) |
+| **AI-Augmented Scrum** | Sprint tasks are classified as "human" vs "agent-suitable" | [Scrum.org](https://www.scrum.org/resources/blog/ai-augmented-scrum-framework-when-half-your-team-autonomous-agents) |
 
-## Otonom / Loop Patternleri
+## Autonomous / Loop Patterns
 
-| Metod | Ne yapar? |
+| Method | What it does |
 |---|---|
-| **Ralph Wiggum Loop** | Otonom görev döngüsü, belirli aralıklarla tekrar |
-| **AECA** (Autonomous Error Correction) | Hata → düzelt → test → tekrar döngüsü |
-| **Agentic Kanban** | Her backlog item'ı otomatik agent'a atanır, board'dan takip |
-| **Self-Improving Agent Loop** | Her iterasyonda commit + diff analizi ile agent kendini iyileştirir |
-| **Plan-Act-Reflect** | Planla → kodla → ne işe yaradı/yaramadı özetle, döngüyü tekrarla |
-| **Headless / CI Agent** | `claude -p "görev" --headless` ile terminalsiz, pipeline'da otonom çalışma |
-| **Codex Full Auto Mode** | Tam otonom — planla, düzenle, derle, hata düzelt, izin sormadan. Sandbox içinde |
+| **Ralph Wiggum Loop** | Autonomous task loop that repeats at set intervals |
+| **AECA** (Autonomous Error Correction) | Error → fix → test → repeat loop |
+| **Agentic Kanban** | Each backlog item is auto-assigned to an agent and tracked on a board |
+| **Self-Improving Agent Loop** | Agent improves itself each iteration via commit + diff analysis |
+| **Plan-Act-Reflect** | Plan → code → summarize what worked/did not, repeat the loop |
+| **Headless / CI Agent** | Autonomous, terminal-less pipeline work via `claude -p "task" --headless` |
+| **Codex Full Auto Mode** | Fully autonomous — plan, edit, build, fix errors, no permission prompts. Inside a sandbox |
 
-## Multi-Agent Patternleri
+## Multi-Agent Patterns
 
-| Metod | Ne yapar? |
+| Method | What it does |
 |---|---|
-| **Teammate Mode** | Agent eşit seviyede takım arkadaşı olarak çalışır |
-| **Cross-Model Review** | Bir model yazar, farklı model review eder (Claude yaz → Codex review) |
-| **Orchestrator Pattern / Conductor** | Ana agent planlar, sub-agent'lar worktree'lerde paralel çalışır |
-| **Boomerang Pattern** | Görev alt-görevlere bölünür, her biri uzman moda devredilir, sonuç geri döner |
-| **Agent Swarm** | Merkezi kontrol olmadan özerk agent'lar, handoff protokolleriyle görev aktarır |
-| **Agent Teams** | Birden fazla Claude paralel çalışır, dosya tabanlı mailbox iletişimi |
-| **Claude Squad** | tmux panellerinde çoklu agent oturumu yönetimi |
-| **Fan-Out / Gather** | Aynı anda birden fazla agent farklı açılardan çalışır, sonuçlar birleştirilir |
-| **Generator-Critic** | Bir agent üretir, diğer bağımsız agent kriterlere göre değerlendirir |
-| **Master-Clone** | Ana agent klonlarını oluşturur, farklı perspektiflerden çözdürür, en iyisini seçer |
-| **Model Musical Chairs** | Agent takılınca farklı modele geçiş (Claude → GPT-4o → Gemini) |
-| **Context Cycling** | Uzun görevlerde periyodik yeni context aç, özeti aktar |
+| **Teammate Mode** | Agent works as an equal-level teammate |
+| **Cross-Model Review** | One model writes, a different model reviews (Claude write → Codex review) |
+| **Orchestrator Pattern / Conductor** | Main agent plans; sub-agents work in parallel in worktrees |
+| **Boomerang Pattern** | Task is split into sub-tasks; each is delegated to an expert mode; results return |
+| **Agent Swarm** | Autonomous agents without central control; hand off work via protocols |
+| **Agent Teams** | Multiple Claude instances run in parallel with file-based mailbox communication |
+| **Claude Squad** | Multi-agent session management in tmux panes |
+| **Fan-Out / Gather** | Multiple agents work from different angles at once; results are merged |
+| **Generator-Critic** | One agent produces; another independent agent evaluates against criteria |
+| **Master-Clone** | Main agent creates clones, solves from different perspectives, picks the best |
+| **Model Musical Chairs** | Switch models when stuck (Claude → GPT-4o → Gemini) |
+| **Context Cycling** | On long tasks, periodically open a new context and transfer a summary |
 
-## Kalite / Review Patternleri
+## Quality / Review Patterns
 
-| Metod | Ne yapar? |
+| Method | What it does |
 |---|---|
-| **Dual-Pass Development** | İlk agent yazar, ikinci agent (temiz context) review eder |
-| **Adversarial Testing** | Bir agent kod yazar, diğeri kırmaya çalışır |
-| **Guardian Pattern** | Watchdog agent sürekli kod kalitesini izler |
-| **Red-Green TDD for Agents** | Klasik TDD'nin agent versiyonu — önce kırmızı test, sonra geçecek kod |
-| **TDFlow** | İnsan test yazar, agent bu testleri geçecek kodu üretir |
+| **Dual-Pass Development** | First agent writes; second agent (clean context) reviews |
+| **Adversarial Testing** | One agent writes code; another tries to break it |
+| **Guardian Pattern** | Watchdog agent continuously monitors code quality |
+| **Red-Green TDD for Agents** | Classic TDD agent version — red test first, then code that passes |
+| **TDFlow** | Human writes tests; agent produces code that passes them |
 
-## Planlama / Teknik Patternleri
+## Planning / Technical Patterns
 
-| Metod | Ne yapar? |
+| Method | What it does |
 |---|---|
-| **Ultrathink / Megathink** | Extended thinking ile derin analiz — max 31.999 token düşünme bütçesi |
-| **Compact Pattern** | %70 context dolulukta proaktif sıkıştırma — otomatik (%90) yerine manuel |
-| **Context Engineering** | Modele giden tüm bilgi akışını sistematik tasarlama (RAG, hafıza, sıkıştırma) |
-| **Decision Journal (ADR)** | Her mimari karar `backlog/decisions/README.md` sozlesmesine gore kayit altina alinir |
-| **Waterfall in 15 Minutes** | Kodlamadan önce hızlı ama yapısal planlama: beyin fırtınası → spec → plan |
-| **Shadow Git Checkpointing** | Her değişiklikte gizli checkpoint — hata olursa anında geri dönüş (implement: `templates/core/hooks/git-checkpoint.js` + `/rollback` komutu) |
+| **Ultrathink / Megathink** | Deep analysis with extended thinking — up to 31,999 token thinking budget |
+| **Compact Pattern** | Proactive compression at ~70% context fill — manual instead of automatic (~90%) |
+| **Context Engineering** | Systematically design all information flow to the model (RAG, memory, compression) |
+| **Decision Journal (ADR)** | Every architecture decision is recorded per the `backlog/decisions/README.md` contract |
+| **Waterfall in 15 Minutes** | Fast but structured planning before coding: brainstorm → spec → plan |
+| **Shadow Git Checkpointing** | Hidden checkpoint on every change — instant rollback on error (implement: `templates/core/hooks/git-checkpoint.js` + `/rollback` command) |

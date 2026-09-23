@@ -1,179 +1,157 @@
-# Laravel Kodlama Kurallari
+# Invariant Rules for Laravel Development
 
-> Bu kurallar Laravel framework'u kullanan projeler icin gecerlidir.
-> `backend/php` aile kurallari bu dosyayla birlikte uygulanir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules are applicable for projects using the Laravel framework.
+
+> The backend/php family of rules can be applied to this file.
+>
+All developers and agents MUST comply with these rules.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret API (Laravel + MySQL)
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest areas: project.description, stack.primary, project.structure
+Example output:
+## Project Boundary
+- **Project:** E-commerce API (Laravel + MySQL)
 - **Stack:** PHP 8.2, Laravel 11, MySQL 8, Redis
-- **Yapi:**
-  - `app/` — Uygulama kodu
-  - `routes/` — Rota tanimlari
-  - `database/` — Migration ve seeder
-  - `tests/` — Test dosyalari
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
--->
+- **Architecture:**
+  - `app/` — Application code
+  - `routes/` — Route definitions
+  - `database/` — Migration and seeder files
+  - `tests/` — Test files
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 
 ---
 
 <!-- GENERATE: LARAVEL_VERSION
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: stack.framework_version, stack.php_version
-Ornek cikti:
-## Versiyon Bilgisi
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest areas: stack.framework_version, stack.php_version
+Example output:
+## Version Information
 - **Laravel:** 11.x
 - **PHP:** 8.2+
-- **Minimum uyumluluk:** PHP 8.1
+- **Minimum compatibility:** PHP 8.1
 -->
 
 ---
 
-## Ortam Degiskeni Yonetimi
+## Environment Variable Management
 
-### .env Dosyasi
+### .env File
 
-- `.env` dosyasi ASLA commit edilmez. `.gitignore`'da olmali.
-- `.env.example` dosyasi tum gerekli degiskenleri icerir ve her zaman guncel tutulur.
-- Yeni bir ortam degiskeni eklediginde `.env.example`'a da ekle.
+- The `.env` file MUST be excluded from commit.
+- The `.env.example` file MUST always contain the necessary variables and be up-to-date.
+- When adding a new environment variable, it must also be added to `.env.example`.
 
 ### config() vs env()
 
-- Uygulama kodunda `env()` KULLANMA. Sadece `config/` dosyalarinda `env()` cagirilir.
-- Uygulama kodunda her zaman `config('services.stripe.key')` gibi `config()` kullan.
-- Neden: `config:cache` sonrasi `env()` null doner; `config()` her zaman calisir.
+- In application code, `env()` MUST BE USED. It is only used in `config/` files.
+- In application code, `config('services.stripe.key')` style usage MUST BE USED. Never use `env()` directly.
+- Reason: If `config:cache` is run after using `env()`, it will return null; always use `config()`.
 
+  ```php
+// backend/php
+// .env.example
+# config/services/stripe.key.php
+'key' => env('STRIPE_KEY')
+```
 ```php
-// ❌ YANLIS — uygulama kodunda env() kullanimi
+// ❌ WRONG — application code uses env()
 $key = env('STRIPE_KEY');
 
-// ✅ DOGRU — config uzerinden erisim
+// ✅ RIGHT — access through config
 // config/services.php: 'stripe' => ['key' => env('STRIPE_KEY')]
 $key = config('services.stripe.key');
 ```
-
----
-
 ## Rota Conventions
 
 ### Resource Controller
 
-- CRUD operasyonlari icin her zaman resource controller kullan.
-- Gereksiz rota tanimlamaktan kacin — `Route::resource()` 7 rotayi otomatik olusturur.
+- Always use a resource controller for CRUD operations.
+- Avoid unnecessary route definitions — `Route::resource()` automatically creates 7 routes.
 
 ```php
 // ✅ DOGRU — resource controller
 Route::resource('posts', PostController::class);
 
-// Sadece belirli aksiyonlar gerekiyorsa:
+// Only specify certain actions:
 Route::resource('posts', PostController::class)->only(['index', 'show']);
 
-// ❌ YANLIS — tek tek tanimlama
+// ❌ YANLIS — manual definition
 Route::get('/posts', [PostController::class, 'index']);
 Route::get('/posts/{id}', [PostController::class, 'show']);
 Route::post('/posts', [PostController::class, 'store']);
 ```
 
+
 ### Route Model Binding
 
-- URL parametrelerini elle sorgulamak yerine Route Model Binding kullan.
-- Implicit binding varsayilan olarak `id` kolonu kullanir; farkli kolon icin `getRouteKeyName()` override et.
+- Use Route Model Binding instead of manually querying URL parameters.
+- Implicit binding uses the `id` column by default; override with `getRouteKeyName()` for different columns.
+
 
 ```php
-// ❌ YANLIS — elle sorgulama
+// ❌ YANLIS — manual query
 public function show($id) {
     $post = Post::findOrFail($id);
-}
+>>>
+php
+/**
+ * @see https://fluentphp.com/2.0/en/user-guide/routing.html#route-model-binding
+ */
 
 // ✅ DOGRU — route model binding
 public function show(Post $post) {
     return $post;
 }
-```
-
-### API Rotalari
-
-- API rotalari `routes/api.php` icinde tanimlanir.
-- Versiyon prefix'i kullan: `/api/v1/...`
-- API rotalarinda `Route::apiResource()` kullan (create/edit formlarini haric tutar).
-
----
-
-## Eloquent Best Practices
-
-### Eager Loading
-
-- N+1 sorgularindan kacinmak icin her zaman eager loading kullan.
-- Iliskili verilere eriseceksen `with()` kullan.
-
-```php
-// ❌ YANLIS — N+1 sorgu problemi
-$posts = Post::all();
-foreach ($posts as $post) {
-    echo $post->author->name; // Her iterasyonda ayri sorgu
-}
-
-// ✅ DOGRU — eager loading
-$posts = Post::with('author')->get();
-foreach ($posts as $post) {
     echo $post->author->name; // Tek sorgu
 }
 ```
+### Invariant Rules for Mass Assignment Protection
 
-### Mass Assignment Koruması
+- Define `$fillable` or `$guarded` in the model.
+- Use `$guarded = []` (empty guarded) to leave all fields open — DO NOT LEAVE ANY FIELD CLOSED.
+- Add sensitive fields (role, is_admin, balance) to `$fillable`.
 
-- Model'de `$fillable` veya `$guarded` tanimla.
-- `$guarded = []` (bos guarded) kullanMAKTAN KACIN — tum alanlari acik birakir.
-- Hassas alanlari (role, is_admin, balance) `$fillable`'a ekleME.
+  ```yml
+  // example configuration
+  protected $fillable = [
+    'role', 
+    'is_admin', 
+    'balance'
+  ];
 
-```php
-// ✅ DOGRU — acikca izin verilen alanlar
-class Post extends Model {
-    protected $fillable = ['title', 'body', 'slug'];
-}
-
-// ❌ YANLIS — tum alanlar acik
-class Post extends Model {
-    protected $guarded = [];
-}
+  protected $guarded = [];
 ```
 
-### Scope Kullanimi
+  ```php
+  use Illuminate\Http\Request;
+  use Illuminate\Support\Facades\Validator;
 
-- Tekrar eden sorgu kosullari icin scope kullan.
-- Global scope'lar dikkatli kullanilmali — beklenmedik filtrelemeye yol acebilir.
+  public function validate(Request $request)
+  {
+    $validator = Validator::make($request->all(), [
+      // validation rules
+    ]);
 
-```php
-// Model'de scope tanimla
-public function scopePublished(Builder $query): Builder {
-    return $query->where('status', 'published');
-}
-
-// Kullanim
-$posts = Post::published()->latest()->get();
+    if ($validator->fails()) {
+      return response()->json(['error' => 'Validation failed'], 422);
+    }
 ```
 
----
+php
+protected $guarded = ['id', 'created_at', 'updated_at'];
+* Always use `{{ }}` when displaying user input to prevent automatic XSS protection.
+* Use `{!! !!}` (raw output) only for trusted and sanitized HTML content.
+* Note that `{!! !!}` should not be used without a reason in the comment.
 
-## Blade Guvenlik Kurallari
-
-### Output Escaping
-
-- Kullanici girdisini gosterirken HER ZAMAN `{{ }}` kullan (otomatik escape eder).
-- `{!! !!}` (raw output) SADECE guvenilir ve sanitize edilmis HTML icin kullan.
-- `{!! !!}` kullanmadan once neden gerektigini yorum olarak belirt.
 
 ```blade
-{{-- ✅ DOGRU — otomatik XSS koruması --}}
+{{-- correct — automatic XSS protection --}}
 <p>{{ $user->name }}</p>
 
 {{-- ❌ TEHLIKELI — XSS acigi --}}
@@ -184,36 +162,28 @@ $posts = Post::published()->latest()->get();
 <div>{!! $article->sanitized_body !!}</div>
 ```
 
-### CSRF Koruması
+### Invariant Rules for CSRF Protection
 
-- Tum POST/PUT/PATCH/DELETE formlarinda `@csrf` direktifini kullan.
-- API rotalari token-based authentication kullaniyorsa CSRF harici tutulabilir.
+#### CSRF Protection in Forms
+
+* Use the `@csrf` directive in all POST/PUT/PATCH/DELETE form types.
+* If an API route uses token-based authentication, CSRF can be ignored.
 
 ---
 
-## Servis Pattern'i
+## Service Pattern
 
 ### Fat Model → Service
 
-- Is logigini controller'da veya model'de toplama. Service class'larina tasi.
-- Controller: request validation + service cagirma + response donme.
-- Service: is logigi, dis servis cagrilari, karmasik islemler.
-- Model: iliskiler, scope'lar, accessor/mutator, veri odakli islemler.
+- Collect logic in either the controller or model. Move it to service classes instead.
+- Controller: request validation + service invocation + response return.
+- Service: business logic, invoking other services, composite operations.
+- Model: relationships, scopes, accessor/mutator, data-focused operations.
 
 ```
-app/
-├── Http/Controllers/     # Ince controller'lar
-│   └── OrderController.php
-├── Services/              # Is logigi
-│   └── OrderService.php
-├── Models/                # Eloquent model'ler
-│   └── Order.php
-├── Actions/               # Tek sorumluluk siniflar (opsiyonel)
-│   └── CreateOrderAction.php
-└── Repositories/          # Veri erisim katmani (opsiyonel)
-    └── OrderRepository.php
-```
+### Controllers
 
+#### OrderController
 ```php
 // ✅ DOGRU — ince controller
 class OrderController extends Controller {
@@ -236,34 +206,14 @@ class OrderController extends Controller {
 }
 ```
 
+
+
 ---
 
 ## Test Conventions
 
-### Dizin Yapisi
+### Directory Structure
 
-```
-tests/
-├── Feature/    # Endpoint ve entegrasyon testleri (HTTP istekleri yapar)
-│   ├── Auth/
-│   │   └── LoginTest.php
-│   └── Api/
-│       └── PostTest.php
-├── Unit/       # Izole birim testleri (HTTP istegi yapmaz)
-│   ├── Services/
-│   │   └── OrderServiceTest.php
-│   └── Models/
-│       └── PostTest.php
-└── TestCase.php
-```
-
-### Kurallar
-
-- Feature testleri: `$this->get()`, `$this->post()` gibi HTTP yardimcilari kullanir. Veritabani ile calisir.
-- Unit testleri: Tek bir sinif veya metodu izole olarak test eder. Mock/stub kullanir.
-- Test metodlari `test_` prefix'i veya `#[Test]` attribute'u kullanir.
-- Factory kullan — `Model::create()` yerine `Model::factory()->create()`.
-- Her test kendi verisini olusturur — baska testlerin verisine bagimsiz olmali.
 
 ```php
 // Feature test ornegi
@@ -286,33 +236,78 @@ class PostTest extends TestCase {
     }
 }
 ```
-
 ---
 
 <!-- GENERATE: PROJECT_CONVENTIONS
-Aciklama: Bu bolum Bootstrap tarafindan interview cevaplariyla doldurulur.
-Gerekli manifest alanlari: conventions.naming, conventions.patterns, conventions.project_specific
-Ornek cikti:
-## Proje Ozel Kurallari
+Explanation: This section will be filled with answers from interviews conducted by Bootstrap.
+Required manifest areas: conventions.naming, conventions.patterns, conventions.project_specific
+Example output:
+## Project Specific Rules
 
-- **API Response formati:** Her zaman `ApiResponse::success($data)` wrapper kullan
-- **Authentication:** Sanctum token-based auth kullaniliyor
-- **Loglama:** `Log::channel('slack')` kritik hatalar icin
-- **Cache stratejisi:** Redis, 1 saat TTL varsayilan
-- **Kuyruk:** Laravel Horizon ile Redis queue kullaniliyor
+- **API Response Format:** Always use `ApiResponse::success($data)` wrapper
+- **Authentication:** Using token-based auth with Sanctum
+- **Logging:** Use `Log::channel('slack')` for critical errors
+- **Cache Strategy:** Redis, 1 hour TTL assumed
+- **Queue:** Using Laravel Horizon and Redis queue
 -->
 
 ---
 
-## Zorunlu Kurallar Ozeti
+## Invariant Rules Summary
 
-1. **`.env` commit edilmez.** `.env.example` guncel tutulur.
-2. **Kodda `env()` kullanma.** `config()` uzerinden eris.
-3. **Resource controller kullan.** CRUD icin tek tek rota tanimlama.
-4. **Route model binding kullan.** `findOrFail()` yerine type-hint.
-5. **Eager loading kullan.** N+1 sorgu probleminden kacin.
-6. **Mass assignment'a dikkat.** Hassas alanlari `$fillable`'a koyma.
-7. **Blade'de `{{ }}` kullan.** `{!! !!}` sadece sanitize edilmis icerik icin.
-8. **Is logigini service'e tasi.** Controller ince, model veri odakli olmali.
-9. **Factory kullan.** Testlerde `Model::create()` yerine factory.
-10. **Feature vs Unit ayirt et.** HTTP testleri Feature, izole testler Unit dizininde.
+1. `.env` should never be committed. `.env.example` is kept up-to-date.
+2. Use `config()` instead of `env()`.
+3. Use Resource Controllers for CRUD operations, specifying individual routes for each resource.
+4. Use Route Model Binding with `findOrFail()` replaced by type-hints.
+5. Use Eager Loading to avoid N+1 queries.
+6. Be mindful of Mass Assignment and use `$fillable` to protect sensitive fields.
+7. Use `{!! !!}` only for sanitized content in Blade templates.
+8. Move logging to a service layer, focusing on controller logic and model data.
+9. Use Factories instead of `Model::create()` in tests.
+10. Distinguish between Feature and Unit Tests: HTTP tests go in the `Feature` directory, while isolate tests go in the `Unit` directory.
+
+---
+
+## Working Boundary Rules
+
+1. `.env` files should never be committed. Instead, keep a `.env.example` file for reference.
+2. Always use the `config()` method to access environment variables instead of `env()`.
+3. Use Resource Controllers for CRUD operations and specify individual routes for each resource.
+4. Implement Route Model Binding with type-hints in place of `findOrFail()`.
+5. Utilize Eager Loading to prevent N+1 queries.
+6. Protect sensitive fields by using the `$fillable` array in mass assignment.
+7. Use `{!! !!}` only for sanitized content in Blade templates.
+8. Move logging and related logic to a service layer, keeping controller logic focused on data and model interactions.
+9. Use Factories instead of `Model::create()` in tests.
+10. Distinguish between Feature and Unit Tests: HTTP tests go in the `Feature` directory, while isolate tests go in the `Unit` directory.
+
+---
+
+## Critical Errors
+
+1. **CRITICAL** Failure to commit `.env` files; use `.env.example` instead.
+2. **CRITICAL** Misuse of `env()` for environment variable access; use `config()` instead.
+3. **MEDIUM** Inconsistent logging; move logic to a service layer.
+4. **CRITICAL** N+1 queries; implement Eager Loading.
+5. **CRITICAL** Mass assignment vulnerabilities; protect sensitive fields with `$fillable`.
+6. **CRITICAL** Unsanitized content in Blade templates; use `{!! !!}` only for sanitized data.
+
+---
+
+## High-Priority Issues
+
+1. **HIGH** Inconsistent testing practices; separate Feature and Unit Tests.
+2. **HIGH** Insufficient logging; move related logic to a service layer.
+3. **MEDIUM** Inadequate error handling; improve critical error responses.
+4. ** HIGH** Inconsistent use of Resource Controllers; specify individual routes for each resource.
+5. **HIGH** Failure to utilize Route Model Binding; implement type-hints in place of `findOrFail()`.
+6. **CRITICAL** Misuse of Factories in tests; use them instead of `Model::create()`.
+
+---
+
+## Forbidden Practices
+
+1. **FORBIDDEN** Committing non-essential files like `.env` to version control.
+2. **FORBIDDEN** Using untrusted sources for environment variables.
+3. **FORBIDDEN** Failing to protect sensitive fields with `$fillable`.
+4. **FORBIDDEN** Ignoring logging and related logic in service layers.

@@ -1,40 +1,39 @@
-# Node.js Backend Ortak Kurallari
+# Node.js Backend Shared Rules
 
-> Bu kurallar tum Node.js backend leaf'leri icin gecerlidir.
-> Framework-spesifik kurallar bu dosyaya EK olarak uygulanir.
+> These rules apply to all Node.js backend leaves.
+> Framework-specific rules apply in addition to this file.
 
-## Runtime ve Paketleme
+## Runtime and Packaging
 
-- Calistirma, test ve kalite komutlari `package.json` `scripts` altinda acikca tanimlanmis olmali.
-- Yeni bir kalite kapisi eklediginde script olarak expose et: `lint`, `test`, `typecheck`, `build`.
-- Entry point tek ve belirgin olmali. Farkli bootstrap akislari varsa nedenleri yorumda veya README'de aciklanmali.
+- Run, test, and quality commands must be defined explicitly under `package.json` `scripts`.
+- When you add a new quality gate, expose it as a script: `lint`, `test`, `typecheck`, `build`.
+- The entry point must be single and obvious. If there are different bootstrap flows, explain why in a comment or README.
 
-## Ortam Degiskenleri
+## Environment Variables
 
-- Secret degerleri kod icine hardcode etme.
-- Ortam degiskenleri bir config katmaninda toplanmali; kodun her yerine dagitilmis `process.env` okumalarindan kacin.
-- Kritik env degerleri uygulama acilisinda fail-fast dogrulanmali.
+- Do not hardcode secret values in code.
+- Collect environment variables in a config layer; avoid scattered `process.env` reads throughout the code.
+- Critical env values must be fail-fast validated at application startup.
 
 ## Request Validation
 
-- Handler'a giren her external veri bir validation katmanindan gecmeli.
-- Dogrulama yoksa `req.body`, `req.query`, `req.params` degerlerini dogrudan domain logigine gecirme.
-- Validation sonucu tiplenmis bir nesne olarak ilerlemeli.
+- Every external value entering a handler must pass through a validation layer.
+- Without validation, do not pass `req.body`, `req.query`, or `req.params` values directly into domain logic.
+- Validation results should proceed as a typed object.
 
-## Hata Yonetimi
+## Error Handling
 
-- Beklenen uygulama hatalari ile sistem hatalarini ayir.
-- Async handler'larda unhandled rejection birakma; merkezi hata akisi kullan.
-- 5xx durumlarinda kullaniciya stack trace veya secret iceren detay donme.
+- Separate expected application errors from system errors.
+- Do not leave unhandled rejections in async handlers; use a central error flow.
+- Do not return stack traces or secret-containing details to users on 5xx responses.
 
-## Logging ve Gozlemlenebilirlik
+## Logging and Observability
 
-- Production kodunda `console.log` yerine tutarli bir logger katmani tercih et.
-- Hata log'larinda request baglami, correlation/request id ve kritik input ozeti bulunmali.
-- Log'lara secret, token veya tam PII yazma.
+- Prefer a consistent logger layer over `console.log` in production code.
+- Error logs should include request context, correlation/request id, and a summary of critical inputs.
+- Do not write secrets, tokens, or full PII to logs.
 
 ## Verification Convention
 
-- Son dogrulama akisi mumkunse su sirayi izlemeli: `lint` -> `typecheck` -> `test` -> `build`.
-- Monorepo ise sadece etkilenen paketleri degil, paylasilan tip veya contract etkisi varsa bagimli paketleri de dogrula.
-
+- The final verification flow should follow this order when possible: `lint` -> `typecheck` -> `test` -> `build`.
+- In a monorepo, if shared types or contracts are affected, validate dependent packages as well — not only the touched packages.

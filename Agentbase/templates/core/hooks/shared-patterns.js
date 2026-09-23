@@ -1,11 +1,11 @@
 'use strict';
 
 /**
- * shared-patterns.js — session-tracker ve session-monitor arasinda
- * paylasilan yardimci fonksiyonlar.
+ * shared-patterns.js — Shared helpers between
+ * session-tracker and session-monitor.
  *
- * Her iki dosya bu modulu require ederek ayni pattern setini kullanir.
- * DRY prensibi: test komutu tespiti tek yerde tanimlaniyor.
+ * Both files require this module and use the same pattern set.
+ * DRY principle: test-command detection is defined in one place.
  */
 
 const TEST_COMMAND_PATTERNS = [
@@ -20,8 +20,8 @@ const TEST_COMMAND_PATTERNS = [
 ];
 
 /**
- * Komutun bir test komutu olup olmadigini kontrol eder.
- * @param {string} command - Bash komutu
+ * Checks whether a command is a test command.
+ * @param {string} command - Bash command
  * @returns {boolean}
  */
 function isTestCommand(command) {

@@ -1,4 +1,4 @@
-# CodeIgniter 4 Modul Tespit Kurallari
+# CodeIgniter 4 Module Detection Rules
 
 ## Checks
 
@@ -17,7 +17,7 @@
 
 ## Affects Core
 
-- task-hunter: VERIFICATION_COMMANDS'a `php spark test` veya proje test komutu eklenir
-- workflow-lifecycle: Spark komut korumalari eklenir
-- CLAUDE.md: CodeIgniter 4 kodlama kurallari bolumu eklenir
-- settings.json: 1 hook tanimi eklenir
+- task-hunter: `php spark test` or the project test command is added to VERIFICATION_COMMANDS
+- workflow-lifecycle: Spark command protections are added
+- CLAUDE.md: CodeIgniter 4 coding rules section is added
+- settings.json: 1 hook definition is added

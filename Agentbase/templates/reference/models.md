@@ -1,40 +1,40 @@
-# Model Seçimi
+# Model Selection
 
-Görevin karmaşıklığına, hedef CLI yüzeyine ve maliyet/latency bütçesine göre hangi model sınıfının kullanılacağına dair rehber.
+Guide for choosing which model class to use based on task complexity, target CLI surface, and cost/latency budget.
 
-Son kaynak kontrolü: 2026-06-02. Model adları hızlı değişebildiği için production yapılandırmalarında provider dokümanından doğrulanmış tam model ID'si kullan; doküman ve promptlarda ise mümkün olduğunca görev sınıfı ve seçim kriteri yaz.
+Last source check: 2026-06-02. Model names change quickly, so use a full model ID verified from the provider docs in production configs; in docs and prompts, prefer task class and selection criteria where possible.
 
-## Sağlayıcı Karşılaştırması
+## Provider comparison
 
-| Sağlayıcı / model sınıfı | Güçlü yönler | Kullanım durumu |
+| Provider / model class | Strengths | When to use |
 |---|---|---|
-| **OpenAI GPT-5.5** | En güçlü genel reasoning, coding ve profesyonel iş akışları; geniş araç kullanımı | Zor mimari kararlar, uzun ufuklu refactor, kritik debug, yüksek doğruluk isteyen review |
-| **OpenAI GPT-5.4 mini/nano** | Düşük latency ve maliyet; sub-agent ve rutin coding işleri için güçlü denge | Fan-out review, basit düzeltmeler, toplu doküman/test işleri |
-| **GPT-5.3-Codex** | Codex veya benzeri agentic coding ortamları için optimize edilmiş model; reasoning effort seviyeleri destekler | Codex CLI/App içinde uzun koşan implementasyon, lokal code review, çok adımlı repo işleri |
-| **Claude Opus 4.x** | En karmaşık reasoning, long-horizon agentic coding ve yüksek otonomi | Bootstrap, mimari karar, belirsiz root-cause analizi, riskli plan review |
-| **Claude Sonnet 4.x** | Hız/zeka dengesi, güçlü coding ve review performansı | Günlük geliştirme, code review, plan uygulama, orta riskli refactor |
-| **Claude Haiku 4.x** | En hızlı Claude sınıfı, düşük maliyetli near-frontier işler | Format dönüşümü, kısa doküman işleri, bağımsız küçük sub-agent görevleri |
-| **Gemini 3.x Pro / Advanced** | Multimodal reasoning, agentic/coding ve geniş context işleri | Büyük dosya/codebase anlama, multimodal analiz, karmaşık tasarım veya araştırma |
-| **Gemini 3.x Flash / Flash-Lite** | Hız, ölçek ve fiyat/performans; yüksek hacimli agentic/coding işleri | Paralel tarama, özetleme, doküman üretimi, düşük latency gerektiren görevler |
-| **Gemini 2.5 Pro / Flash** | Olgun multimodal thinking ailesi; Pro karmaşık reasoning, Flash düşük latency | Stabil üretim akışlarında Gemini kullanımı, thinking bütçesi ayarlanabilen işler |
+| **OpenAI GPT-5.5** | Strongest general reasoning, coding, and professional workflows; broad tool use | Hard architecture decisions, long-horizon refactors, critical debug, high-accuracy review |
+| **OpenAI GPT-5.4 mini/nano** | Low latency and cost; strong balance for sub-agent and routine coding work | Fan-out review, simple fixes, bulk docs/test jobs |
+| **GPT-5.3-Codex** | Optimized for Codex or similar agentic coding environments; supports reasoning effort levels | Long-running implementation inside Codex CLI/App, local code review, multi-step repo work |
+| **Claude Opus 4.x** | Most complex reasoning, long-horizon agentic coding, and high autonomy | Bootstrap, architecture decisions, unclear root-cause analysis, risky plan review |
+| **Claude Sonnet 4.x** | Speed/intelligence balance; strong coding and review performance | Day-to-day development, code review, plan execution, medium-risk refactor |
+| **Claude Haiku 4.x** | Fastest Claude class; low-cost near-frontier work | Format conversion, short doc jobs, independent small sub-agent tasks |
+| **Gemini 3.x Pro / Advanced** | Multimodal reasoning, agentic/coding, and wide-context work | Large file/codebase understanding, multimodal analysis, complex design or research |
+| **Gemini 3.x Flash / Flash-Lite** | Speed, scale, and price/performance; high-volume agentic/coding work | Parallel scanning, summarization, doc generation, low-latency tasks |
+| **Gemini 2.5 Pro / Flash** | Mature multimodal thinking family; Pro for complex reasoning, Flash for low latency | Stable Gemini production flows; jobs with adjustable thinking budget |
 
-## Seçim Kriterleri
+## Selection criteria
 
-- **Hedef yüzey**: Claude Code komut/hook/subagent runtime'ı için Claude modelleri; Codex skill/context ve lokal repo otomasyonu için Codex/GPT modelleri; Gemini CLI `.toml` komut ve `.gemini/agents` yüzeyi için Gemini modelleri önceliklidir.
-- **Context uzunluğu**: Uzun dosyalar veya büyük codebase için 1M context sınıfındaki modelleri tercih et; kısa ve bağımsız görevleri mini/flash/haiku sınıfına böl.
-- **Reasoning ihtiyacı**: Mimari karar, root-cause analizi ve güvenlik review için yüksek reasoning sınıfı kullan; rutin dönüşüm veya format işleri için hızlı sınıf yeterlidir.
-- **Stabilite**: Production otomasyonlarında preview/experimental alias yerine stabil veya pinned model ID kullan. Preview modelleri yalnızca bilinçli deney, araştırma veya manuel gözetimli işler için seç.
-- **Paralel görevler**: Fan-out pattern'da hızlı ve ucuz worker modeli kullan; nihai karar veya merge review için daha güçlü modele yükselt.
-- **Multimodal ihtiyaç**: Ekran görüntüsü, tasarım, PDF, ses/video veya görsel analiz varsa bunu açıkça destekleyen model ailesini seç.
+- **Target surface**: Prefer Claude models for Claude Code command/hook/subagent runtime; Codex/GPT models for Codex skill/context and local repo automation; Gemini models for Gemini CLI `.toml` commands and `.gemini/agents` surface.
+- **Context length**: Prefer 1M-context-class models for long files or large codebases; split short independent tasks to mini/flash/haiku class.
+- **Reasoning need**: Use a high-reasoning class for architecture decisions, root-cause analysis, and security review; a fast class is enough for routine conversion or format work.
+- **Stability**: In production automation, use a stable or pinned model ID instead of a preview/experimental alias. Choose preview models only for deliberate experiments, research, or manually supervised work.
+- **Parallel tasks**: In a fan-out pattern, use a fast cheap worker model; escalate to a stronger model for the final decision or merge review.
+- **Multimodal need**: If screenshots, design, PDF, audio/video, or visual analysis are involved, pick a model family that explicitly supports that.
 
-## Maliyet ve Doğruluk Optimizasyonu
+## Cost and Accuracy Optimization
 
-- Otonom loop'larda küçük/hızlı modelle başla, belirsizlik veya yüksek riskte Opus/GPT-5.5/Gemini Pro sınıfına yükselt.
-- Sub-agent hiyerarşisi tanımla: orchestrator güçlü reasoning modeli, workers düşük latency modeli, final reviewer güçlü model.
-- `--model` veya ilgili CLI model seçici ile override mümkünse, göreve özel override kullan; kalıcı config'e model ID yazmadan önce güncel provider lifecycle/deprecation bilgisini kontrol et.
-- Promptlarda model adını davranış garantisi gibi yazma. Bunun yerine "yüksek reasoning", "hızlı worker", "multimodal reviewer" gibi yetenek sınıfını belirt.
+- In autonomous loops, start with a small/fast model and escalate to Opus/GPT-5.5/Gemini Pro class on uncertainty or high risk.
+- Define a sub-agent hierarchy: orchestrator = strong reasoning model, workers = low-latency model, final reviewer = strong model.
+- If `--model` or the relevant CLI model selector allows overrides, use task-specific overrides; before writing a model ID into persistent config, check current provider lifecycle/deprecation info.
+- Do not write a model name in a prompt as if it were a behavior guarantee. Instead specify a capability class such as "high reasoning", "fast worker", or "multimodal reviewer".
 
-## Kaynaklar
+## Resources
 
 - OpenAI API Models: `https://developers.openai.com/api/docs/models`
 - OpenAI GPT-5.3-Codex model reference: `https://developers.openai.com/api/docs/models/gpt-5.3-codex`

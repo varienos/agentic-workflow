@@ -1,63 +1,63 @@
-# Auto Review - Loop Uyumlu Diff Review
+# Auto Review - Loop-Compatible Diff Review
 
-> Son review hash'ini izler, yeni diff varsa shallow review yapar, MINOR bulgulari dogrudan duzeltir, MAJOR bulgular icin backlog task acar.
-> Kullanim: `/auto-review`, `/auto-review <commit_hash>`, `/auto-review HEAD~3..HEAD`
+> Tracks the last review hash, runs a shallow review when there is a new diff, fixes MINOR findings directly, and opens backlog tasks for MAJOR findings.
+> Usage: `/auto-review`, `/auto-review <commit_hash>`, `/auto-review HEAD~3..HEAD`
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- Auto-review sirasinda stack-spesifik kurallari goz onunde bulundur.
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+- Consider stack-specific rules during auto-review.
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Step 1 - Diff ve State Tespiti
+## Step 1 - Diff and State Detection
 
-### 1.1 - Arguman Cozumleme
+### 1.1 - Argument Parsing
 
-| Girdi | Davranis |
+| Input | Behavior |
 |---|---|
-| Bos | Son commit: `cd ../Codebase && git diff HEAD~1..HEAD` |
-| Commit hash | Belirtilen commit: `cd ../Codebase && git show <hash>` |
-| Range | Aralik: `cd ../Codebase && git diff <range>` |
+| Empty | Last commit: `cd ../Codebase && git diff HEAD~1..HEAD` |
+| Commit hash | Specified commit: `cd ../Codebase && git show <hash>` |
+| Range | Range: `cd ../Codebase && git diff <range>` |
 
-### 1.2 - Normalize Diff Cikar
+### 1.2 - Extract Normalized Diff
 
-Review edilecek diff'i deterministik sekilde cikar:
+Extract the diff to review in a deterministic way:
 
 ```bash
-cd ../Codebase && git diff --no-ext-diff --minimal <range_veya_default>
+cd ../Codebase && git diff --no-ext-diff --minimal <range_or_default>
 ```
 
-Bu diff'ten su bilgileri cikar:
-- Degisen dosya listesi
-- Eklenen/silinen satir sayilari
-- Degisiklik tipi (fix, refactor, test, config)
+From this diff extract:
+- Changed file list
+- Added/deleted line counts
+- Change type (fix, refactor, test, config)
 
-> **KURAL:** Diff bossa veya sadece whitespace degisikligi varsa "Incelenecek yeni degisiklik yok" deyip DUR.
+> **RULE:** If the diff is empty or only whitespace changed, say "No new changes to review" and STOP.
 
-### 1.3 - Hash Hesapla
+### 1.3 - Compute Hash
 
-Diff hash'ini stabil sekilde hesapla:
+Compute the diff hash stably:
 
 ```bash
-CURRENT_DIFF_HASH=$(cd ../Codebase && git diff --no-ext-diff --minimal <range_veya_default> | shasum -a 256 | awk '{print $1}')
+CURRENT_DIFF_HASH=$(cd ../Codebase && git diff --no-ext-diff --minimal <range_or_default> | shasum -a 256 | awk '{print $1}')
 CURRENT_HEAD=$(cd ../Codebase && git rev-parse HEAD)
 ```
 
-### 1.4 - State Dosyasini Yukle
+### 1.4 - Load State File
 
-`.claude/tracking/auto-review-state.json` dosyasini kullan:
+Use `.claude/tracking/auto-review-state.json`:
 
 ```json
 {
@@ -70,226 +70,227 @@ CURRENT_HEAD=$(cd ../Codebase && git rev-parse HEAD)
 }
 ```
 
-Dosya yoksa olustur:
+If the file does not exist, create it:
 
 ```bash
 mkdir -p .claude/tracking .claude/reports/reviews
 ```
 
-### 1.5 - Tekrar Onleme Kapisi
+### 1.5 - Repeat-Prevention Gate
 
-State'e gore asagidaki no-op durumlarini kontrol et:
+Based on state, check these no-op cases:
 
-1. `CURRENT_DIFF_HASH == last_reviewed_hash` ise: ayni diff daha once incelenmis, DUR
-2. `CURRENT_HEAD == last_fix_commit` ve working tree temizse: son commit auto-review tarafindan olusturulmus, yeni insan diff'i yok, DUR
-3. Hedef range/hash ile state'teki `last_review_target` ayni ve yeni diff yoksa: tekrar calisma, DUR
+1. If `CURRENT_DIFF_HASH == last_reviewed_hash`: the same diff was already reviewed, STOP
+2. If `CURRENT_HEAD == last_fix_commit` and the working tree is clean: the last commit was created by auto-review, there is no new human diff, STOP
+3. If the target range/hash matches `last_review_target` in state and there is no new diff: do not run again, STOP
 
-> **KURAL:** Skip edilen durumda state'i bozma. Sadece rapora `SKIPPED_ALREADY_REVIEWED` veya `SKIPPED_AUTO_REVIEW_COMMIT` sonucu yaz.
-
----
-
-## Step 2 - Shallow Review Yap
-
-### 2.1 - Review Kapsami
-
-Bu komut full audit yapmaz. Sadece loop-uyumlu, sinirli bir inceleme yapar:
-- Sadece mevcut diff ve hemen komsu satirlari
-- Maksimum 5 dosya veya 300 degisen satir
-- Maksimum 3 gecerli bulgu
-- Tek iterasyon, tekrar spawn veya recursive review YOK
-
-### 2.2 - Shallow Kontrol Listesi
-
-Her degisiklik icin hizli ama somut kontrol uygula:
-
-- [ ] Mantik hatasi veya bariz yanlis kosul var mi?
-- [ ] Sessiz hata riski var mi? (`catch {}`, eksik `await`, kayip `return`)
-- [ ] Test veya dogrulama eksikligi net ve lokal mi?
-- [ ] Guvenlik, veri butunlugu veya API kontrati riski var mi?
-- [ ] Bu sorun diff'in kendi kodunda mi, yoksa diff-disi eski bir sorun mu?
-
-### 2.3 - Bulgulari Siniflandir
-
-#### MINOR Bulgular
-
-Asagidaki tipte bulgular MINOR sayilir:
-- Tek dosyada veya tek kucuk blokta cozulur
-- Davranis niyeti acik, cozum deterministik
-- Guvenlik, migration, veri kaybi veya API kontrati riski YOK
-- Duzeltme sonrasi hedefli dogrulama komutu bellidir
-
-#### MAJOR Bulgular
-
-Asagidaki tipte bulgular MAJOR sayilir:
-- Guvenlik, veri kaybi, yetki, migration veya production etkisi vardir
-- Birden fazla dosya/modul/subsystem etkilenir
-- Beklenen davranis belirsizdir, insan karari gerekir
-- Duzeltme ek tasarim, buyuk refactor veya kapsamli arastirma gerektirir
-
-### 2.4 - False Positive ve Diff-Disi Sorun Filtresi
-
-Her bulgu icin su siralamayi uygula:
-
-```
-Bulgu var mi?
-├── HAYIR -> Temiz rapor
-└── EVET -> Gercek sorun mu?
-    ├── HAYIR -> False positive, rapordan cikar
-    └── EVET -> Diff'in kendi kodunda mi?
-        ├── EVET -> MINOR veya MAJOR olarak siniflandir
-        └── HAYIR -> Diff-disi teknik borc, backlog task olarak kaydet
-```
-
-> **KURAL:** Diff-disi sorunu dogrudan duzeltme. Backlog'a yaz, devam et.
+> **RULE:** Do not corrupt state on skip. Only write `SKIPPED_ALREADY_REVIEWED` or `SKIPPED_AUTO_REVIEW_COMMIT` to the report.
 
 ---
 
-## Step 3 - Bulgulara Gore Aksiyon Al
+## Step 2 - Run Shallow Review
 
-### 3.1 - MINOR Bulgulari Duzelt
+### 2.1 - Review Scope
 
-MINOR bulgu varsa:
+This command does not run a full audit. It only does a loop-compatible, limited review:
+- Only the current diff and immediately adjacent lines
+- Maximum 5 files or 300 changed lines
+- Maximum 3 valid findings
+- Single iteration; no re-spawn or recursive review
 
-1. Minimal ve lokal degisikligi uygula
-2. Yalnizca etkilenen alani dogrulayan komutu calistir
-3. Duzeltmeleri ayri bir commit ile kaydet:
+### 2.2 - Shallow Checklist
 
-```bash
-git add <ilgili_dosyalar>
-git commit -m "fix: auto-review bulgusu - <kisa_ozet>"
+Apply a fast but concrete check for each change:
+
+- [ ] Is there a logic error or an obviously wrong condition?
+- [ ] Is there a silent-failure risk? (`catch {}`, missing `await`, missing `return`)
+- [ ] Is a missing test or validation clear and local?
+- [ ] Is there a security, data-integrity, or API-contract risk?
+- [ ] Is this issue in the diff's own code, or an older out-of-diff problem?
+
+### 2.3 - Classify Findings
+
+#### MINOR Findings
+
+The following count as MINOR:
+- Fixable in a single file or a small block
+- Intended behavior is clear; the fix is deterministic
+- NO security, migration, data-loss, or API-contract risk
+- A targeted verification command after the fix is obvious
+
+#### MAJOR Findings
+
+The following count as MAJOR:
+- Security, data loss, authorization, migration, or production impact
+- Multiple files/modules/subsystems are affected
+- Expected behavior is unclear; human judgment is needed
+- The fix needs extra design, a large refactor, or broad research
+
+### 2.4 - False Positive and Out-of-Diff Filter
+
+Apply this order for every finding:
+
+```
+Is there a finding?
+├── NO -> Clean report
+└── YES -> Is it a real issue?
+    ├── NO -> False positive; remove from report
+    └── YES -> Is it in the diff's own code?
+        ├── YES -> Classify as MINOR or MAJOR
+        └── NO -> Out-of-diff tech debt; record as a backlog task
 ```
 
-4. `last_fix_commit` alanina yeni commit hash'ini yaz
+> **RULE:** Do not fix out-of-diff issues directly. Write them to the backlog and continue.
 
-> **KURAL:** Bir iterasyonda en fazla 1 auto-review fix commit'i at.
-> **KURAL:** Duzeltme sonrasi AYNI KOMUTU tekrar calistirip ikinci review turu baslatma.
+---
 
-### 3.2 - MAJOR Bulgular Icin Backlog Task Ac
+## Step 3 - Act on Findings
 
-Her MAJOR bulgu icin backlog task olustur:
+### 3.1 - Fix MINOR Findings
+
+If there is a MINOR finding:
+
+1. Apply a minimal, local change
+2. Run only the command that verifies the affected area
+3. Save fixes in a separate commit:
 
 ```bash
-backlog task create "Auto-review bulgusu: <sorun_ozeti>" \
-  --description "<neden major oldugu, etkilenen dosyalar, onerilen sonraki adim>" \
+git add <related_files>
+git commit -m "fix: auto-review finding - <short_summary>"
+```
+
+4. Write the new commit hash to `last_fix_commit`
+
+> **RULE:** At most 1 auto-review fix commit per iteration.
+> **RULE:** After a fix, do not re-run the same command to start a second review pass.
+
+### 3.2 - Open Backlog Tasks for MAJOR Findings
+
+Create a backlog task for each MAJOR finding:
+
+```bash
+backlog task create "Auto-review finding: <issue_summary>" \
+  --description "<why major, affected files, suggested next step>" \
   --priority "medium" \
   --labels "review,auto-review,tech-debt"
 ```
 
-Task aciklamasinda mutlaka sunlar olsun:
-- Etkilenen diff/range veya commit
-- Sorunun neden MAJOR sayildigi
-- Risk alani (guvenlik, regresyon, veri, mimari)
-- Onerilen ilk inceleme noktasi
+The task description must include:
+- Affected diff/range or commit
+- Why the issue is MAJOR
+- Risk area (security, regression, data, architecture)
+- Suggested first inspection point
 
-### 3.3 - Diff-Disi Sorunlari Kaydet
+### 3.3 - Record Out-of-Diff Issues
 
-Review sirasinda diff disi onceki bir sorun fark edilirse:
+If an older out-of-diff issue is noticed during review:
 
 ```bash
-backlog task create "Auto-review tech-debt: <sorun_ozeti>" \
-  --description "<sorun diff disi, bu yuzden inline fix yapilmadi>" \
+backlog task create "Auto-review tech-debt: <issue_summary>" \
+  --description "<issue is out of diff, so no inline fix>" \
   --priority "low" \
   --labels "review,auto-review,tech-debt"
 ```
 
-> **KURAL:** Diff-disi bulgular icin kodu degistirme.
+> **RULE:** Do not change code for out-of-diff findings.
 
 ---
 
-## Step 4 - Rapor ve State Guncelle
+## Step 4 - Update Report and State
 
-### 4.1 - Rapor Yaz
+### 4.1 - Write Report
 
-Her calismada `.claude/reports/reviews/auto-review-<timestamp>.md` dosyasini yaz:
+On every run, write `.claude/reports/reviews/auto-review-<timestamp>.md`:
 
 ```markdown
-# Auto Review Raporu
+# Auto Review Report
 
-- Hedef: <range_veya_hash>
+- Target: <range_or_hash>
 - Diff hash: <hash>
-- Sonuc: <REVIEW_OK | FIXED_MINOR | MAJOR_TASKS_CREATED | SKIPPED_ALREADY_REVIEWED | SKIPPED_AUTO_REVIEW_COMMIT>
-- MINOR fix commit: <hash veya yok>
-- MAJOR task'lar: <id listesi veya yok>
-- Notlar: <kisa ozet>
+- Result: <REVIEW_OK | FIXED_MINOR | MAJOR_TASKS_CREATED | SKIPPED_ALREADY_REVIEWED | SKIPPED_AUTO_REVIEW_COMMIT>
+- MINOR fix commit: <hash or none>
+- MAJOR tasks: <id list or none>
+- Notes: <short summary>
 ```
 
-### 4.2 - State Guncelle
+### 4.2 - Update State
 
-Review tamamlandiysa state'i guncelle:
+If the review completed, update state:
 
 ```json
 {
   "last_reviewed_hash": "<CURRENT_DIFF_HASH>",
-  "last_review_target": "<range_veya_hash>",
-  "last_reviewed_head": "<CURRENT_HEAD veya fix sonrasi yeni HEAD>",
+  "last_review_target": "<range_or_hash>",
+  "last_reviewed_head": "<CURRENT_HEAD or new HEAD after fix>",
   "last_reviewed_at": "<timestamp>",
-  "last_fix_commit": "<varsa_fix_commit>",
+  "last_fix_commit": "<fix_commit_if_any>",
   "last_report_path": ".claude/reports/reviews/auto-review-<timestamp>.md"
 }
 ```
 
-> **KURAL:** State yalnizca review karari netlestikten sonra guncellenir.
-> **KURAL:** MAJOR task acildiysa bile hash guncellenir; ayni diff sonraki loop'ta tekrar incelenmez.
+> **RULE:** State is updated only after the review decision is clear.
+> **RULE:** Even if a MAJOR task was opened, the hash is updated so the same diff is not reviewed again in the next loop.
 
 ---
 
-## Step 5 - Sonuc Formati
+## Step 5 - Result Format
 
 ```
-## Auto Review Sonucu
+## Auto Review Result
 
-### Incelenen Hedef
-- Commit/Range: <hedef>
+### Reviewed Target
+- Commit/Range: <target>
 - Diff hash: <hash>
 
-### Aksiyonlar
-- MINOR fix sayisi: <0 veya 1>
-- MAJOR task sayisi: <0..n>
-- Diff-disi task sayisi: <0..n>
+### Actions
+- MINOR fix count: <0 or 1>
+- MAJOR task count: <0..n>
+- Out-of-diff task count: <0..n>
 
-### Sonuc
+### Result
 - REVIEW_OK / FIXED_MINOR / MAJOR_TASKS_CREATED / SKIPPED_ALREADY_REVIEWED / SKIPPED_AUTO_REVIEW_COMMIT
 
-### Sonraki Adim
-- <gerekirse insan review veya ilgili backlog task ID'leri>
+### Next Step
+- <human review or related backlog task IDs if needed>
 ```
 
----
-
-## /loop Uyumlulugu Sozlesmesi
-
-Bu komut `/loop` ile kullanildiginda su garantileri saglar:
-
-1. **Idempotent giris** - Ayni diff hash ikinci kez islenmez
-2. **Sinirli etki** - Tek iterasyonda en fazla 1 fix commit ve sinirli sayida backlog task
-3. **Kendini tekrar review etmez** - `last_fix_commit` kontrolu ile kendi commit'ine takilmaz
-4. **Tek pas** - Fix yapsa bile ayni run icinde ikinci review turu baslatmaz
-5. **Temiz cikis** - Yeni diff yoksa veya ayni hash gorulduyse hizli ve sessiz sekilde biter
+Commit completed non-sensitive work in the same session without asking. Do not push unless the user asks.
 
 ---
 
-## Zorunlu Kurallar
+## /loop Compatibility Contract
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+When used with `/loop`, this command guarantees:
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Idempotent entry** - The same diff hash is not processed twice
+2. **Bounded effect** - At most 1 fix commit and a limited number of backlog tasks per iteration
+3. **Does not re-review itself** - `last_fix_commit` prevents getting stuck on its own commit
+4. **Single pass** - Even after a fix, it does not start a second review pass in the same run
+5. **Clean exit** - Ends quickly and quietly when there is no new diff or the same hash is seen
 
-1. **Hash kontrolu zorunlu** - `last_reviewed_hash` karsilastirmasi olmadan review baslatma.
-2. **Tek iterasyon limiti** - Bu komut kendi icinde loop kurmaz, kendini tekrar cagirma.
-3. **Shallow review** - Full code audit veya kapsam genisletme YASAK.
-4. **MINOR lokal olmali** - Lokal ve deterministik olmayan hicbir bulguyu inline fix yapma.
-5. **MAJOR backlog'a gider** - Riskli veya belirsiz bulgular icin task ac, koda dokunma.
-6. **Diff-disi sorunlari duzeltme** - Backlog'a kaydet, inline fix yapma.
-7. **Ayni diff'i tekrar etme** - State guncellenmisse ayni hash icin review tekrarlanmaz.
-8. **Kendi fix commit'ine takilma** - `last_fix_commit` kontrolu zorunlu.
-9. **Backlog CLI kullan** - Task olusturma/guncelleme islemlerini SADECE `backlog` komutlari ile yap.
-10. **Codebase yolu** - Tum git ve kod erisimleri `../Codebase/` uzerinden yapilir.
+---
+
+## Mandatory Rules
+
+### Invariant rules (apply to every command)
+
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Do not create a `.claude/` directory inside Codebase; writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and edited when the task requires it. Config files (`.claude/`, `CLAUDE.md`) CANNOT be written inside Codebase.
+
+1. **Hash check is mandatory** - Do not start a review without comparing `last_reviewed_hash`.
+2. **Single-iteration limit** - This command does not build an inner loop or call itself again.
+3. **Shallow review** - Full code audit or scope expansion is FORBIDDEN.
+4. **MINOR must be local** - Do not inline-fix any finding that is not local and deterministic.
+5. **MAJOR goes to backlog** - For risky or unclear findings, open a task; do not touch the code.
+6. **Do not fix out-of-diff issues** - Record them in the backlog; do not inline-fix.
+7. **Do not repeat the same diff** - Once state is updated, the same hash is not reviewed again.
+8. **Do not get stuck on your own fix commit** - `last_fix_commit` check is mandatory.
+9. **Use backlog CLI** - Create/update tasks ONLY with `backlog` commands.
+10. **Codebase path** - All git and code access goes through `../Codebase/`.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->

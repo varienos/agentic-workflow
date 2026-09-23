@@ -2,9 +2,9 @@
 /**
  * Drift Detector Hook — Agentic Workflow
  *
- * PostToolUse hook'u — her 50 tool call'da bir root config dosyalarinin
- * hash'ini kontrol eder. Hash degismisse workflow guncelleme onerisi sunar.
- * 24 saat cooldown, agresif degil — sadece oneri.
+ * PostToolUse hook — every 50 tool calls, checks the hash of root config
+ * files. If the hash changed, suggests a workflow update.
+ * 24-hour cooldown; not aggressive — suggestion only.
  */
 
 'use strict';
@@ -17,7 +17,7 @@ const STATE_FILE = path.join(__dirname, '.drift-state.json');
 const CALL_THRESHOLD = Number(process.env.DRIFT_CALL_THRESHOLD) || 50;
 const COOLDOWN_MS = Number(process.env.DRIFT_COOLDOWN_MS) || 24 * 60 * 60 * 1000; // 24 saat
 
-// Kontrol edilecek config dosyalari (hook dizinine gore goreceli)
+// Config files to check (relative to the hook directory)
 const CONFIG_FILES = [
   path.join(__dirname, '..', 'settings.json'),
   path.join(__dirname, '..', '..', 'CLAUDE.md'),
@@ -67,7 +67,7 @@ async function main() {
       return;
     }
 
-    // Esige ulasildi — hash kontrol et
+    // Threshold reached — check hash
     state.callCount = 0;
     const currentHash = computeConfigHash();
 
@@ -75,10 +75,10 @@ async function main() {
 
     if (state.lastHash && state.lastHash !== currentHash && !isInCooldown(state.lastSuggested)) {
       state.lastSuggested = new Date().toISOString();
-      messages.push('Codebase config dosyalari degismis olabilir. /workflow-update calistirmayi dusunun.');
+      messages.push('Codebase config files may have changed. Consider running /workflow-update.');
     }
 
-    // Hook integrity: settings.json deki hook referanslari fiziksel dosyalarla eslesiyor mu?
+    // Hook integrity: do hook references in settings.json match physical files?
     const settingsPath = path.join(__dirname, '..', 'settings.json');
     try {
       const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
@@ -90,14 +90,14 @@ async function main() {
               const hookFile = hook.command.replace(/^node\s+/, '').split(' ')[0];
               const absPath = path.resolve(path.join(__dirname, '..', '..'), hookFile);
               if (!fs.existsSync(absPath)) {
-                messages.push(`Hook dosyasi eksik: ${hookFile} (settings.json da kayitli ama dosya yok)`);
+                messages.push(`Hook file missing: ${hookFile} (listed in settings.json but file not found)`);
               }
             }
           }
         }
       }
     } catch {
-      // settings.json okunamazsa sessizce gec
+      // If settings.json cannot be read, skip silently
     }
 
     state.lastHash = currentHash;
@@ -110,7 +110,7 @@ async function main() {
       return;
     }
   } catch {
-    // Hook hatalari sessizce yutulur
+    // Hook errors are swallowed silently
   }
 }
 

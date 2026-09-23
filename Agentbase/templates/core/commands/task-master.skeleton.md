@@ -1,204 +1,203 @@
-# Task Master — Backlog Oncelik Siralayici
+# Task Master — Backlog Priority Ranker
 
-> Backlog'daki tum gorevleri 4 boyutlu puanlama ile degerlendirir ve oncelik sirasi olusturur.
-> Kullanim: `/task-master`
+> Evaluates all backlog tasks with 4-dimension scoring and builds a priority order.
+> Usage: `/task-master`
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary
-Ornek cikti:
-## Proje Baglami
-- **Proje:** E-ticaret platformu (Next.js + NestJS + React Native)
+Description: This section is filled by Bootstrap from manifest data.
+Required manifest fields: project.description, stack.primary
+Example output:
+## Project Context
+- **Project:** E-commerce platform (Next.js + NestJS + React Native)
 - **Stack:** TypeScript, Prisma, PostgreSQL, Expo
-- Puanlama sirasinda proje baglamini goz onunde bulundur.
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+- Keep project context in mind while scoring.
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Step 1 — Gorevleri Topla
+## Step 1 — Collect Tasks
 
 ```
 backlog task list --plain
 ```
 
-Tum gorevleri listele. Her gorev icin asagidaki bilgileri cikar:
+List all tasks. For each task extract:
 - ID
-- Baslik
-- Durum (To Do, In Progress, Done)
-- Oncelik (varsa)
-- Etiketler (varsa)
-- Bagimlilklar (varsa)
+- Title
+- Status (To Do, In Progress, Done)
+- Priority (if any)
+- Labels (if any)
+- Dependencies (if any)
 
-> **KURAL:** "Done" durumundaki gorevleri ATLA. Sadece "To Do" ve "In Progress" gorevleri puanla.
+> **RULE:** SKIP tasks in "Done" status. Score only "To Do" and "In Progress" tasks.
 
-Her gorevi detayli okumak icin:
+To read each task in detail:
 ```
 backlog task <id> --plain
 ```
 
 ---
 
-## Step 2 — 4 Boyutlu Puanlama
+## Step 2 — 4-Dimension Scoring
 
-Her gorevi 4 boyutta degerlendir (1-10 arasi):
+Evaluate each task on 4 dimensions (1-10):
 
-### 2.1 — Etki (Impact) — Agirlik: x3
+### 2.1 — Impact — Weight: x3
 
-Gorev tamamlandiginda projeye ne kadar deger katar?
+How much value does the task add to the project when done?
 
-| Puan | Anlam |
+| Score | Meaning |
 |---|---|
-| 9-10 | Kritik is fonksiyonu, olmadan proje calismaz |
-| 7-8 | Onemli ozellik, kullanici deneyimini ciddi etkiler |
-| 5-6 | Faydali iyilestirme, gorunur fark yaratir |
-| 3-4 | Kucuk iyilestirme, "nice to have" |
-| 1-2 | Kozmetik, minimal etki |
+| 9-10 | Critical business function; project does not work without it |
+| 7-8 | Important feature; seriously affects user experience |
+| 5-6 | Useful improvement; creates a visible difference |
+| 3-4 | Small improvement; "nice to have" |
+| 1-2 | Cosmetic; minimal impact |
 
-### 2.2 — Risk (Risk) — Agirlik: x2.5
+### 2.2 — Risk — Weight: x2.5
 
-Bu gorev yapilmazsa ne olur?
+What happens if this task is not done?
 
-| Puan | Anlam |
+| Score | Meaning |
 |---|---|
-| 9-10 | Guvenlik acigi, veri kaybi riski, yasal sorun |
-| 7-8 | Performans sorunu, kullanici kaybi riski |
-| 5-6 | Teknik borc birikimi, bakim zorlugu |
-| 3-4 | Kucuk teknik borc, ileride sorun olabilir |
-| 1-2 | Risk yok, tamamen opsiyonel |
+| 9-10 | Security hole, data-loss risk, legal issue |
+| 7-8 | Performance problem, user-churn risk |
+| 5-6 | Technical debt buildup, maintenance difficulty |
+| 3-4 | Small technical debt; may become a problem later |
+| 1-2 | No risk; fully optional |
 
-### 2.3 — Bagimllik (Dependency) — Agirlik: x2
+### 2.3 — Dependency — Weight: x2
 
-Baska gorevler buna bagimli mi?
+Do other tasks depend on this?
 
-| Puan | Anlam |
+| Score | Meaning |
 |---|---|
-| 9-10 | 5+ gorev buna bagimli, blocker |
-| 7-8 | 3-4 gorev bagimli |
-| 5-6 | 1-2 gorev bagimli |
-| 3-4 | Dolayili bagimlilik var |
-| 1-2 | Bagimsiz, hicbir sey etkilemez |
+| 9-10 | 5+ tasks depend on this; blocker |
+| 7-8 | 3-4 tasks depend |
+| 5-6 | 1-2 tasks depend |
+| 3-4 | Indirect dependency exists |
+| 1-2 | Independent; affects nothing |
 
-### 2.4 — Karmasiklik (Complexity) — Agirlik: x1.5 (TERS ORANTILI)
+### 2.4 — Complexity — Weight: x1.5 (INVERSE)
 
-Gorev ne kadar kolay? (Kolay gorevler = yuksek puan, hizli kazanim)
+How easy is the task? (Easy tasks = high score, quick win)
 
-| Puan | Anlam |
+| Score | Meaning |
 |---|---|
-| 9-10 | Cok basit, 30 dk'da biter |
-| 7-8 | Basit, 1-2 saat |
-| 5-6 | Orta, yarim gun |
-| 3-4 | Karmasik, 1 gun |
-| 1-2 | Cok karmasik, birden fazla gun |
+| 9-10 | Very simple; done in 30 min |
+| 7-8 | Simple; 1-2 hours |
+| 5-6 | Medium; half a day |
+| 3-4 | Complex; 1 day |
+| 1-2 | Very complex; multiple days |
 
-### 2.5 — Toplam Puan Hesaplama
+### 2.5 — Total Score Calculation
 
 ```
-Toplam = (Etki x 3) + (Risk x 2.5) + (Bagimlilik x 2) + (Karmasiklik x 1.5)
-Maksimum = (10 x 3) + (10 x 2.5) + (10 x 2) + (10 x 1.5) = 90
+Total = (Impact x 3) + (Risk x 2.5) + (Dependency x 2) + (Complexity x 1.5)
+Maximum = (10 x 3) + (10 x 2.5) + (10 x 2) + (10 x 1.5) = 90
 ```
 
 ---
 
-## Step 3 — Bagimlilik Analizi
+## Step 3 — Dependency Analysis
 
-### 3.1 — Bagimlilik Grafi
+### 3.1 — Dependency Graph
 
-Her gorev icin:
-1. AC'lerde veya aciklamada baska gorevlere referans var mi?
-2. Ayni dosyalari etkileyecek gorevler var mi? (dosya catismasi)
-3. Mantiksal siralama gerektiren gorevler var mi? (orn: DB schema → API → Frontend)
+For each task:
+1. Are there references to other tasks in ACs or the description?
+2. Are there tasks that will affect the same files? (file conflict)
+3. Are there tasks that require logical ordering? (e.g. DB schema → API → Frontend)
 
-### 3.2 — Blocker Tespiti
+### 3.2 — Blocker Detection
 
-- Gorev A → Gorev B'ye bagimli → B tamamlanmadan A baslayamaz
-- Dongusel bagimlilik varsa: **UYAR** ve kullaniciya bildir
-- Blocker gorevlerin puanina +5 bonus ekle
-
----
-
-## Step 4 — Hafiza Kontrolu
-
-Daha once benzer puanlama yapildi mi? Episodic memory'de ara:
-- Gecmiste olusturulan oncelik raporlari
-- Kullanicinin manuel olarak degistirdigi oncelikler (bunlara saygi goster)
-
-> **KURAL:** Kullanici daha once bir gorevi "MANUAL" olarak onceliklendirdiyse, o gorevi hesaplamanin disinda birak ve raporun sonunda ayrica listele.
-
-> **NASIL TETIKLENIR:** Kullanici onceki bir oturumda "X gorevini MANUAL olarak onceliklendir" veya "X gorevini puanlamadan hep en uste koy" gibi bir yonerge vermis ve bu hafizaya kaydedilmis olmalidir. Otomatik bir tespit mekanizmasi yoktur — yalnizca hafizadaki kullanici yonergeleri MANUAL fazini tetikler.
+- Task A → depends on Task B → A cannot start until B is done
+- If there is a cyclic dependency: **WARN** and notify the user
+- Add a +5 bonus to blocker task scores
 
 ---
 
-## Step 5 — Rapor Olustur
+## Step 4 — Memory Check
 
-### 5.1 — Top 10 Tablosu
+Was similar scoring done before? Search episodic memory:
+- Priority reports created in the past
+- Priorities the user changed manually (respect these)
+
+> **RULE:** If the user previously prioritized a task as "MANUAL", leave that task outside the calculation and list it separately at the end of the report.
+
+> **HOW IT IS TRIGGERED:** In a previous session the user must have given an instruction like "prioritize task X as MANUAL" or "always put task X at the top without scoring", and that must be recorded in memory. There is no automatic detection — only user instructions in memory trigger the MANUAL phase.
+
+---
+
+## Step 5 — Build Report
+
+### 5.1 — Top 10 Table
 
 ```
-## Backlog Oncelik Raporu
+## Backlog Priority Report
 
-| Sira | ID | Baslik | Etki | Risk | Bag. | Karm. | TOPLAM | Faz |
+| Rank | ID | Title | Impact | Risk | Dep. | Comp. | TOTAL | Phase |
 |---|---|---|---|---|---|---|---|---|
-| 1 | #12 | Kullanici auth sistemi | 9 | 9 | 8 | 7 | 76.0 | Faz 1 |
-| 2 | #8 | API rate limiting | 8 | 8 | 5 | 8 | 66.0 | Faz 1 |
+| 1 | #12 | User auth system | 9 | 9 | 8 | 7 | 76.0 | Phase 1 |
+| 2 | #8 | API rate limiting | 8 | 8 | 5 | 8 | 66.0 | Phase 1 |
 | ... | ... | ... | ... | ... | ... | ... | ... | ... |
 ```
 
-### 5.2 — Faz Atamasi
+### 5.2 — Phase Assignment
 
-| Faz | Puan Araligi | Anlam |
+| Phase | Score Range | Meaning |
 |---|---|---|
-| **Faz 1 — Kritik** | 65+ | Hemen yapilmali |
-| **Faz 2 — Onemli** | 45-64 | Yakin zamanda yapilmali |
-| **Faz 3 — Planli** | 25-44 | Sirada bekleyebilir |
-| **MANUAL** | — | Kullanici tarafindan onceliklendirilmis |
+| **Phase 1 — Critical** | 65+ | Do immediately |
+| **Phase 2 — Important** | 45-64 | Do soon |
+| **Phase 3 — Planned** | 25-44 | Can wait in queue |
+| **MANUAL** | — | Prioritized by the user |
 
-### 5.3 — Bagimlilik Uyarilari
-
-```
-### Bagimlilik Uyarilari
-- ⚠️ Task #12 → Task #5 tamamlanmadan baslayamaz
-- ⚠️ Task #8 ve Task #15 ayni dosyalari etkiler (catisma riski)
-```
-
-### 5.4 — Oneriler
+### 5.3 — Dependency Warnings
 
 ```
-### Oneriler
-- **Hemen basla:** Task #12 (en yuksek puan, blocker)
-- **Hizli kazanim:** Task #22 (yuksek etki, dusuk karmasiklik)
-- **Dikkat:** Task #8 ve #15 birlikte planlanmali (dosya catismasi)
+### Dependency Warnings
+- ⚠️ Task #12 → cannot start until Task #5 is done
+- ⚠️ Task #8 and Task #15 affect the same files (conflict risk)
+```
+
+### 5.4 — Suggestions
+
+```
+### Suggestions
+- **Start now:** Task #12 (highest score, blocker)
+- **Quick win:** Task #22 (high impact, low complexity)
+- **Caution:** Task #8 and #15 should be planned together (file conflict)
 ```
 
 ---
 
-## Zorunlu Kurallar
+## Required Rules
 
-### Kutsal Kurallar (Her Komutta Gecerli)
+### Invariant rules (apply to every command)
 
-1. **Codebase e config YAZMA** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` dosyalari SADECE Agentbase icinde olusturulur. Codebase icinde `.claude/` dizini olusturma, `../Codebase/CLAUDE.md` yazma YASAK.
-2. **Git sadece Codebase de** — Tum git islemleri (commit, push, branch) `../Codebase/` icinde yapilir. Agentbase'de git YOKTUR.
-3. **Codebase OKUNUR, config YAZILMAZ** — Proje dosyalari (`src/`, `app/`, vb.) okunabilir ve gorev gerekiyorsa duzenlenebilir. Config dosyalari (`.claude/`, `CLAUDE.md`) Codebase icinde YAZILAMAZ.
+1. **Do not write config into Codebase** — `.claude/`, `CLAUDE.md`, `.mcp.json`, `.claude-ignore` files are created ONLY inside Agentbase. Creating a `.claude/` directory inside Codebase or writing `../Codebase/CLAUDE.md` is FORBIDDEN.
+2. **Git runs only in Codebase** — All git operations (commit, push, branch) run inside `../Codebase/`. There is NO git in Agentbase.
+3. **Codebase is readable; config is not written there** — Project files (`src/`, `app/`, etc.) can be read and, if the task requires it, edited. Config files (`.claude/`, `CLAUDE.md`) cannot be written inside Codebase.
 
-1. **Tum "To Do" ve "In Progress" gorevleri puanla** — Hicbirini atlama.
-2. **Puanlama objktif olmali** — Kisisel tercih degil, proje ihtiyaclarina gore puanla.
-3. **Bagimlilik analizi kritik** — Blocker gorevleri tespit et ve puana yansi.
-4. **MANUAL gorevlere dokunma** — Kullanicinin onceliklendirdigi gorevleri koru.
-5. **Dongusel bagimlilik uyar** — Tespit edersen kullaniciya bildir.
-6. **Puan hesaplamasi tutarli olmali** — Formulu degistirme, her gorevde ayni agirliklar.
-7. **Faz atamasini puan araligina gore yap** — Subjektif atama yapma.
-8. **Hizli kazanim onerisi** — Dusuk karmasiklik + yuksek etki gorevlerini vurgula.
-9. **Backlog CLI kullan** — Gorevleri SADECE `backlog` CLI ile oku. Dosyayi elle okuma.
-10. **Raporu kullaniciya sun** — Sonuclari tablo formatinda, okunabilir sekilde raporla.
-11. **Codebase yolu** — Dosya catismasi analizi icin `../Codebase/` uzerinden dosya kontrolu yap.
+1. **Score all "To Do" and "In Progress" tasks** — Skip none.
+2. **Scoring must be objective** — Score by project needs, not personal preference.
+3. **Dependency analysis is critical** — Detect blocker tasks and reflect them in the score.
+4. **Do not touch MANUAL tasks** — Preserve tasks the user prioritized.
+5. **Warn on cyclic dependency** — If detected, notify the user.
+6. **Score calculation must be consistent** — Do not change the formula; same weights on every task.
+7. **Assign phases by score range** — Do not assign subjectively.
+8. **Suggest quick wins** — Highlight low-complexity + high-impact tasks.
+9. **Use the Backlog CLI** — Read tasks ONLY with the `backlog` CLI. Do not read files by hand.
+10. **Present the report to the user** — Report results in table format, readable.
+11. **Codebase path** — For file-conflict analysis, check files via `../Codebase/`.
 
 <!-- GENERATE: SELF_REFRESH
-Aciklama: Komut son adim - self-refresh check. Bootstrap bu marker-i ortak
-Self-Refresh bolumu ile degistirir. Komut kendi metnini proje gerceginin
-isiginda gozden gecirir: kucuk uyumsuzluk Edit ile, buyuk degisim backlog
-task-i olarak rapor edilir.
+Description: Command final step - self-refresh check. Bootstrap replaces this marker
+with the shared Self-Refresh section. The command reviews its own text against the
+project reality: small mismatches via Edit, large changes reported as a backlog task.
 -->

@@ -1,4 +1,4 @@
-# Laravel Modul Tespit Kurallari
+# Laravel Module Detection Rules
 
 ## Checks
 
@@ -17,7 +17,7 @@
 
 ## Affects Core
 
-- task-hunter: VERIFICATION_COMMANDS'a `php artisan test` eklenir
-- workflow-lifecycle: Artisan komut korumalari eklenir
-- CLAUDE.md: Laravel kodlama kurallari bolumu eklenir
-- settings.json: 1 hook tanimi eklenir
+- task-hunter: `php artisan test` is added to VERIFICATION_COMMANDS
+- workflow-lifecycle: Artisan command protections are added
+- CLAUDE.md: Laravel coding rules section is added
+- settings.json: 1 hook definition is added

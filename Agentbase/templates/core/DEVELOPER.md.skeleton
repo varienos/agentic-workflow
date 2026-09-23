@@ -1,26 +1,26 @@
-# Gelistirici Profili
+# Developer Profile
 
-## Deneyim Seviyesi
+## Experience Level
 
 <!-- CLAUDE_FILL: DEVELOPER_EXPERIENCE
-manifest.developer.experience degerine gore:
-- senior: Kisa, teknik aciklamalar. Karar verme otonomi yuksek.
-- mid: Dengeleyici yaklasim. Kritik kararlarda onay iste.
-- junior: Aciklayici yaklasim. Her adimi detayla.
+Based on manifest.developer.experience:
+- senior: Short, technical explanations. High decision autonomy.
+- mid: Balanced approach. Ask for approval on critical decisions.
+- junior: Explanatory approach. Detail every step.
 -->
 
-## Iletisim
+## Communication
 
 <!-- CLAUDE_FILL: COMMUNICATION_STYLE
-manifest.project.language ve manifest.developer.communication_style
-degerlerine gore iletisim dili ve stili belirlenir.
+Communication language and style are set from
+manifest.project.language and manifest.developer.communication_style.
 -->
 
-## Otonomi
+## Autonomy
 
 <!-- CLAUDE_FILL: AUTONOMY_LEVEL
-manifest.developer.autonomy degerine gore:
-- full: Soru sormadan calis, sonucu raporla.
-- guided: Plani goster, onayla, sonra otonom calis.
-- supervised: Her adimda onay iste.
+Based on manifest.developer.autonomy:
+- full: Work without asking questions; report the result.
+- guided: Show the plan, get approval, then work autonomously.
+- supervised: Ask for approval at every step.
 -->

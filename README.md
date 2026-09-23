@@ -2,236 +2,238 @@
 
 [![Tests](https://img.shields.io/github/actions/workflow/status/varienos/agentic-workflow/test.yml?label=tests&logo=github)](https://github.com/varienos/agentic-workflow/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude_Code-Powered-blueviolet?logo=anthropic)](https://docs.anthropic.com/claude-code)
 [![GitHub Stars](https://img.shields.io/github/stars/varienos/agentic-workflow)](https://github.com/varienos/agentic-workflow)
 
-> **[English version (README.en.md)](README.en.md)**
-
 > [!IMPORTANT]
-> Bu sistem üç zorunlu bağımlılığa dayanır:
-> - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — tüm görev yaşam döngüsü (oluşturma, önceliklendirme, implementasyon, review, kapatma) Backlog.md CLI ile yönetilir.
-> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. Tüm CLI ajanları (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak hafızaya bağlanır. `uv` (Python paket yöneticisi) ve Python 3.12+ gerekir.
->   Sırlar, tokenlar, `.env` değerleri veya PII kalıcı hafızaya yazılmaz; kayıt öncesi redaction zorunludur.
-> - **[graphify](https://pypi.org/project/graphifyy/)** — knowledge graph katmanı. Kod-ilişki keşfinde (`X nerede`, `Y'yi ne kullanıyor`) grep yerine BFS query ile ~150-540x token tasarrufu sağlar. Python 3.10+ ve `uv` gerekir (basic-memory ile aynı). Skill opsiyoneldir; CLI + `graphify update` yeterlidir ve Codebase'e config yazmaz.
+> This system requires two dependencies:
+> - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — the entire task lifecycle (creation, prioritization, implementation, review, closure) is managed through the Backlog.md CLI.
+> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. Every host (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connects to the same `Docbase/memory/` vault via MCP. Never store secrets, tokens, `.env` values, or PII in persistent memory; redact before writing memory. Requires `uv`
+  (Python package manager) and Python 3.12+.
 >
-> Bootstrap, basic-memory ve graphify CLI'larını `uv` ile **otomatik kurar** (ADIM 1.1.5 / 1.1.6); Backlog.md ile `uv`'yi sizin kurmanız gerekir. Bu üçü olmadan Bootstrap çalışmaz.
+> **[graphify](https://pypi.org/project/graphifyy/)** is optional. Bootstrap does not install it and does not fail when it is absent. Select the knowledge-graph module only if you want it.
+>
+> Install Backlog.md and `uv` yourself. Bootstrap installs the basic-memory CLI when that dependency is missing. It does not install graphify.
 
-Claude Code ile yazılım geliştirmenin yaşam döngüsünü yöneten bir workflow sistemidir. Görev planlama, uygulama, review, bug fix ve deploy kontrollerini yapılandırılmış komutlar, ajanlar ve koruma mekanizmalarıyla birleştirir.
+A multi-host agent workflow for the software lifecycle: plan a task, implement it, review the diff, and commit. Claude is one host, not the product. Codex, Gemini, Antigravity, Kimi, and OpenCode receive the same task, review, and commit steps. Hooks in `settings.json` run in the Claude Code runtime only. Other hosts do not run those hooks automatically.
 
-Mevcut bir projeye entegre edebilir veya sıfırdan yeni bir proje başlatabilirsiniz. `/bootstrap` komutu projeyi tanır, eksik bilgileri kısa bir röportajla tamamlar ve projeye özel workflow dosyalarını üretir.
+You can integrate it into an existing project or start a new one. `generate.js` writes the shared workflow. `transform.js` writes a host adapter. `/bootstrap` is the interview surface on whichever host you use; it is not a Claude-only product.
 
-## Ne Sağlar?
+## Portable disciplines
 
-- **Otonom görev yönetimi** — Backlog'dan görev al, planla, implement et, test et, commit et, kapat. Tek komutla.
-- **Otomatik code review** — 3+1 agent ile her değişikliği inceler: kod kalitesi, sessiz hatalar, regresyon riski. Güvenlik değişikliklerinde koşullu Devils Advocate perspektifi.
-- **Akıllı bug fix** — Root cause analizi, maks 3 hipotez, minimal fix, regresyon testi. Sonsuz derinliğe dalmaz.
-- **Deploy güvenlik ağı** — Pre-push git hook'ları localhost leak, migration ve env sync kontrolleri yapar. `/{varyant}-pre-deploy` ve `/{varyant}-post-deploy` komutları da Docker, Coolify veya Vercel gibi hedeflere özel kontrol raporu üretir.
-- **Shared agent memory layer** — `basic-memory` MCP ile tüm CLI ajanları (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) `Docbase/memory/` vault'ı üzerinden ortak Markdown knowledge graph'ına bağlanır. Oturum ve CLI arası kalıcı, paylaşılan hafıza — bir ajanın yazdığı not diğerinden anında görünür.
-  Sırlar, tokenlar, `.env` değerleri veya PII kalıcı hafızaya yazılmaz.
-- **Codebase config koruması** — Claude Code runtime'ında `codebase-guard` hook'u Codebase içine `.claude/`, `CLAUDE.md`, `.mcp.json` yazmayı otomatik engeller. Agent config dosyaları yalnızca Agentbase'de yaşar.
-- **Test zorlama** — Claude Code runtime'ında `test-enforcer` hook'u kaynak dosya değişikliklerinde ilgili testlerin çalıştırılmasını hatırlatır. Pre-push hook'u ile test geçmeden push engellenir.
-- **Proje-spesifik kurallar** — Stack'inize göre hook'lar, framework kuralları ve koruma mekanizmaları otomatik üretilir.
-- **Canlı oturum izleme** — Birden fazla Claude Code oturumunu tek terminal ekranından takip edin.
-- **Worktree-dostu mimari** — Agentbase/Codebase ayrımı worktree kullanımını mimari olarak destekler (bkz. Worktree Avantajı bölümü).
-- **Çoklu CLI desteği** — Claude Code çıktıları `transform.js` ile Gemini CLI, Antigravity, Codex CLI, Kimi CLI ve OpenCode formatlarına dönüştürülebilir. Codex hedefi skill/context yüzeyi üretir; ikinci bootstrap veya otomatik hook parity iddiası taşımaz.
-- **Dokümantasyon senkronizasyonu** — Claude Code runtime'ında `doc-drift-check` hook'u kod değişikliği sonrası README, CHANGELOG veya OpenAPI güncellemesi gerekebileceğini hatırlatır.
-- **Eklenti öneri sistemi** — Bootstrap tamamlandığında projenize uygun üçüncü parti skill ve plugin'leri öneren dahili registry taraması.
-- **Otomatik CHANGELOG** — Conventional Commit push'ları `main` branch'inde auto-release akışını tetikler; oluşan `v*` tag'i ayrı GitHub Action ile `CHANGELOG.md` dosyasını üretip `main` branch'ine geri yazar.
-- **CI güvenlik taraması** — Her push ve PR'da gitleaks ile secret scanning, `npm audit` ile dependency güvenlik kontrolü. Dependabot haftalık npm ve GitHub Actions güncellemesi önerir.
+1. Commit completed non-sensitive work in the same session without asking. Do not push unless the user asks.
+2. When a workflow chain breaks (hook rejection, path or working-directory error, backlog CLI failure, or an MCP/tool error that blocks the chain), record a backlog item.
+3. Do not state a root cause, a numeric threshold, or that a fix works without a falsifiable measurement. Label anything unmeasured.
+4. Each acceptance check names an evidence class and an owner. Human-only acceptance is not an agent Done gate.
+5. Do not tell a subagent to call a tool that exists only in the parent session.
 
-## Temel Yaklaşım
+## Core loop
 
-Bu repo dört ana çalışma alanı üzerine kuruludur:
+1. Task: read the backlog item, implement only that scope, and run the verification named in its acceptance checks.
+2. Review: review the diff for correctness, silent failures, and regressions before closing the task.
+3. Commit: commit completed non-sensitive work in the same session without asking. Do not push unless the user asks.
 
-| Yol | Amaç |
+## What Does It Provide?
+
+- **Autonomous task management** — Pick a task from backlog, plan, implement, test, commit, close. Single command.
+- **Automatic code review** — 3+1 agents review every change: code quality, silent failures, regression risk. Conditional Devils Advocate perspective for security changes.
+- **Smart bug fix** — Root cause analysis, max 3 hypotheses, minimal fix, regression test. Doesn't dive into endless depth.
+- **Deploy safety net** — Two layers: (1) pre-push git hooks for localhost leak, migration consistency, and env sync checks, (2) `/{variant}-pre-deploy` and `/{variant}-post-deploy` slash commands for platform-specific controls (for example `/docker-pre-deploy`, `/coolify-post-deploy`, plus rollback guidance). Requires git hook activation
+  (see the Bootstrap completion report).
+- **Shared agent memory layer** — Via `basic-memory` MCP, all CLI agents (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connect to a shared Markdown knowledge graph in the `Docbase/memory/` vault. Persistent memory across sessions and CLIs — a note written by one agent is instantly visible to the others. Never store secrets, tokens,
+  `.env` values, or PII in persistent memory.
+- **Codebase config protection** — In the Claude Code runtime, the `codebase-guard` hook automatically blocks writing `.claude/`, `CLAUDE.md`, `.mcp.json` inside Codebase. Agent config lives exclusively in Agentbase.
+- **Test enforcement** — In the Claude Code runtime, the `test-enforcer` hook reminds you to run related tests when source files change. Pre-push hook prevents pushing without passing tests.
+- **Project-specific rules** — Hooks, framework rules, and protection mechanisms are auto-generated based on your stack.
+- **Live session monitoring** — Track multiple Claude Code sessions from a single terminal screen.
+- **Worktree-friendly architecture** — Agentbase/Codebase separation enables single config, multiple worktrees, parallel development.
+- **Multi-CLI support** — Claude Code outputs can be transformed to Gemini CLI, Antigravity, Codex CLI, Kimi CLI, and OpenCode formats via `transform.js`. The Codex target produces a skill/context surface; it does not imply a second bootstrap or automatic hook parity.
+- **Documentation sync** — In the Claude Code runtime, the `doc-drift-check` hook warns about README/CHANGELOG/OpenAPI staleness after code changes and points to the service-documentation agent for analysis.
+- **Extension recommendations** — Built-in registry scan suggests relevant third-party skills and plugins after bootstrap completes.
+- **Automatic CHANGELOG** — Conventional Commit pushes on the `main` branch trigger the auto-release flow; the resulting `v*` tag triggers a separate GitHub Action that regenerates `CHANGELOG.md` and writes it back to `main`.
+- **CI security scanning** — Gitleaks secret scanning and `npm audit` dependency checks run on every push and PR. Dependabot proposes weekly npm and GitHub Actions updates.
+
+## Core Approach
+
+This repo is built on four main workspaces:
+
+| Path | Purpose |
 | --- | --- |
-| `Agentbase/` | Şablonlar, üretim mantığı, Claude komutları ve yardımcı araçlar |
-| `Agentbase/backlog/` | Görev yaşam döngüsü — Backlog.md CLI ile yönetilen task'lar |
-| `Codebase/` | Üzerinde çalışılacak gerçek proje kodu |
-| `Docbase/agentic/` | Bootstrap tarafından üretilen manifest dosyası (`project-manifest.yaml`) |
+| `Agentbase/` | Templates, generation logic, Claude commands, and helper tools |
+| `Agentbase/backlog/` | Task lifecycle — tasks managed via Backlog.md CLI |
+| `Codebase/` | The actual project code to work on |
+| `Docbase/agentic/` | Manifest file generated by Bootstrap (`project-manifest.yaml`) |
 
-Bu ayrımın üç önemli sonucu vardır:
+Three important consequences of this separation:
 
-- Git işlemleri hedef proje tarafında, yani `Codebase/` içinde yürür.
-- Bootstrap süreci `Codebase/` dizinine yazmaz; üretimi `Agentbase/` ve `Docbase/agentic/` altında yapar. Backlog da `Agentbase/backlog/` içinde oluşturulur.
-- **İki-repo teslimat (opsiyonel):** Proje kökü geliştiricinin kendi git reposu olabilir (Agentbase + Docbase'i versiyonlar); `Codebase/` ayrı, bağımsız bir repo olarak kalır ve müşteriye tertemiz teslim edilir (aşağıya bakın).
+- Git operations run on the project side, inside `Codebase/`.
+- Bootstrap never writes to `Codebase/`; it produces output under `Agentbase/` and `Docbase/agentic/`. The backlog is also created inside `Agentbase/backlog/`.
+- **Two-repo delivery (optional):** The project root can be the developer's own git repo (versioning Agentbase + Docbase); `Codebase/` stays a separate, independent repo delivered to the customer clean (see below).
 
-Not: Bu template repo kendi geliştirme backlog'unu kökteki `backlog/` dizininde tutar; bootstrap ile hedef workspace için üretilen backlog ise `Agentbase/backlog/` altında yaşar.
+Note: This template repo keeps its own development backlog in the root-level `backlog/` directory; the backlog produced by bootstrap for the target workspace lives under `Agentbase/backlog/`.
 
-### İki-Repo Teslimat Modeli
+### Two-Repo Delivery Model
 
-Aynı `Agentbase/Codebase/Docbase` ayrımı, isteğe bağlı bir teslimat modelini de mümkün kılar (iki ayrı repo — submodule değil):
+The same `Agentbase/Codebase/Docbase` separation also enables an optional delivery model (two separate repos — not a submodule):
 
-- **Üst kök (proje kökü)** geliştiricinin kendi git reposu olabilir; `Agentbase/` ve `Docbase/`'i (workflow ortamı + doküman/memory) versiyonlar, `Codebase/`'i `.gitignore` ile yok sayar.
-- **`Codebase/`** kendi bağımsız git reposudur ve müşteriye **ayrı** teslim edilir.
+- **The top root (project root)** can be the developer's own git repo; it versions `Agentbase/` and `Docbase/` (the workflow environment + docs/memory) and ignores `Codebase/` via `.gitignore`.
+- **`Codebase/`** is its own independent git repo, delivered to the customer **separately**.
 
-Sonuç: geliştirici üst-kök repoyu klonlar (Agentbase + Docbase gelir) ve `Codebase`'i **ayrıca** klonlar/bağlar (gitignore'lu olduğu için üst-kök klonuyla gelmez); müşteri ise yalnızca `Codebase` reposunu klonlar — workflow düzeneğinden hiçbir iz taşımayan tertemiz bir teslimat.
+Result: the developer clones the top-root repo (Agentbase + Docbase come along) and clones/links `Codebase` **separately** (being gitignored, it does not come with the top-root clone), while the customer clones only the `Codebase` repo — a clean delivery carrying no trace of the workflow tooling.
 
-Bootstrap proje köküne hazır bir `.gitignore` üretir (`Codebase` + worktree dizinleri hariç) ve isteğe bağlı `git init` rehberi sunar; ajanlar üst-kök repoya asla dokunmaz (tüm ajan git işlemleri `../Codebase/` içinde kalır).
+Bootstrap generates a ready-made `.gitignore` at the project root (excluding `Codebase` + worktree directories) and offers optional `git init` guidance; agents never touch the top-root repo (all agent git operations stay inside `../Codebase/`).
 
-### Worktree Avantajı
+### Worktree Advantage
 
-Agentbase/Codebase ayrımı git worktree ile paralel geliştirmeyi destekler.
-Hedef Codebase yolu **tek sözleşmeden** çözülür: `Agentbase/.claude/hooks/shared-hook-utils.js` içindeki `resolveCodebaseRoot()` helper'ı tüm hook'lar tarafından çağrılır.
-Öncelik sırası: `process.env.AGENTIC_CODEBASE_DIR` > `manifest.project.structure` > `../Codebase` fallback.
+The Agentbase/Codebase separation supports parallel development with git worktrees. The target Codebase path is resolved through **a single contract**: `Agentbase/.claude/hooks/shared-hook-utils.js` exposes a `resolveCodebaseRoot()` helper called by every hook. The resolution order is `process.env.AGENTIC_CODEBASE_DIR` >
+`manifest.project.structure` > `../Codebase` fallback.
 
 ```
-Agentbase/                  ← SABIT — tüm worktree'ler aynı config'i kullanır
+Agentbase/                  ← FIXED — all worktrees share the same config
 │
-├── .claude/commands/       ← Kurallar, hook'lar, agent'lar TEK yerde
+├── .claude/commands/       ← Rules, hooks, agents in ONE place
 ├── .claude/hooks/
 │   └── shared-hook-utils.js  ← resolveCodebaseRoot(): env > manifest > fallback
 ├── .claude/rules/
 │
-Codebase/ → proje (main)            ← Ana worktree
+Codebase/ → project (main)          ← Main worktree
 Codebase/ → Codebase-wt-feat-auth   ← git worktree add (feature/auth branch)
 Codebase/ → Codebase-wt-feat-pay    ← git worktree add (feature/payment branch)
 ```
 
-Geleneksel yapıda `.claude/` proje kökünde yaşar; worktree oluştururken her birinde ayrı `.claude/` kopyası oluşur, config değişiklikleri senkronize olmaz. Agentbase ayrımı bu sorunu kökten çözer:
+In a traditional setup, `.claude/` lives in the project root; creating a worktree copies `.claude/` into each one, and config changes don't sync. The Agentbase separation solves this fundamentally:
 
-- **Tek config, çok worktree** — Hook'lar, kurallar, agent'lar hep aynı
-- **İzole git tarihçesi** — Agentbase dosyaları proje commit'lerine karışmaz
-- **Paralel oturum** — 4 terminal, 4 worktree, 4 Claude Code oturumu, tek Agentbase
+- **Single config, multiple worktrees** — Hooks, rules, agents always the same
+- **Isolated git history** — Agentbase files don't leak into project commits
+- **Parallel sessions** — 4 terminals, 4 worktrees, 4 Claude Code sessions, one Agentbase
 
-#### Hedef Worktree'yi Seçme
+#### Selecting the Target Worktree
 
-Üç yöntem, öncelik sırasına göre:
+Three methods, in priority order:
 
-| Yöntem | Komut | Kapsam |
+| Method | Command | Scope |
 | --- | --- | --- |
-| **Runtime override** | `export AGENTIC_CODEBASE_DIR=/abs/path/Codebase-wt-feat-auth && claude` | Tek terminal/oturum — env'i set eden Claude Code oturumu o yolu hedefler |
-| **Worktree symlink** | `rm Codebase && ln -s /yeni/yol Codebase` | Kalıcı, manifest sabit kalır — repo köküne tek bir aktif Codebase bağlar |
-| **Manifest güncelleme** | `Docbase/agentic/project-manifest.yaml` → `project.structure` + `/workflow-update` | Kalıcı, regenerate gerekir — üretilen hook fallback'leri yeni yolu işaret eder |
+| **Runtime override** | `export AGENTIC_CODEBASE_DIR=/abs/path/Codebase-wt-feat-auth && claude` | Single terminal/session — the Claude Code session inheriting the env targets that path |
+| **Worktree symlink** | `rm Codebase && ln -s /new/path Codebase` | Permanent, manifest unchanged — pins a single active Codebase at the repo root |
+| **Manifest update** | Edit `Docbase/agentic/project-manifest.yaml` → `project.structure` + run `/workflow-update` | Permanent, regenerate required — generated hook fallbacks point at the new path |
 
-**Pratik:** Aynı anda 4 worktree'de paralel çalışmak için her terminalde farklı bir `AGENTIC_CODEBASE_DIR` set edin. Tek bir Agentbase üzerinden tüm hook'lar doğru worktree'yi hedefler.
+**In practice:** to work on four worktrees simultaneously, export a different `AGENTIC_CODEBASE_DIR` in each terminal. One Agentbase, every hook targets the correct worktree.
 
-## Depoda Neler Var?
+## What's in the Repo?
 
-Bu repoda bulunan ana bileşenler:
+Main components:
 
-- `Agentbase/.claude/commands/bootstrap.md` — Kurulum akışını başlatan ana komut
-- `Agentbase/templates/` — Çekirdek şablonlar ve modül bazlı iskelet dosyaları
-- `Agentbase/generate.js` — Manifestten deterministik içerik üreten betik
-- `Agentbase/transform.js` — Claude Code çıktılarını Gemini/Antigravity/Codex/Kimi/OpenCode formatlarına dönüştüren pipeline
-- `Agentbase/bin/session-monitor.js` — Oturum izleme aracı
-- `Agentbase/tests/` — Üretim ve hook davranışlarını doğrulayan testler
+- `Agentbase/.claude/commands/bootstrap.md` — The main command that starts the setup flow
+- `Agentbase/templates/` — Core templates and module-based skeleton files
+- `Agentbase/generate.js` — Script that produces deterministic content from the manifest
+- `Agentbase/transform.js` — Pipeline that transforms Claude Code outputs to Gemini/Antigravity/Codex/Kimi/OpenCode formats
+- `Agentbase/bin/session-monitor.js` — Session monitoring tool
+- `Agentbase/tests/` — Tests validating generation and hook behaviors
 
-Not: Bu depodaki bazı komut dosyaları örnek veya çekirdek içerik olarak yer alır. Asıl komut seti bootstrap sonrasında hedef projenin yapısına göre üretilir.
+Note: Some command files in this repo serve as examples or core content. The actual command set is generated after bootstrap based on the target project's structure.
 
-## Gereksinimler
+## Requirements
 
-- [Claude Code CLI](https://docs.anthropic.com/claude-code)
+- One agent host. Claude Code is one option. Codex, Gemini, Antigravity, Kimi, and OpenCode are others. The generator does not require Claude.
 - [Backlog.md CLI](https://github.com/MrLesk/Backlog.md) — `npm i -g backlog.md`
-- Node.js 18+ ve npm
-- [jq](https://jqlang.github.io/jq/) — JSON işlemci, hook kuralları için gerekli (`brew install jq` veya `apt install jq`)
-- [graphify](https://pypi.org/project/graphifyy/) — **zorunlu** knowledge graph aracı; bootstrap `uv tool install graphifyy` ile otomatik kurar (paket adı çift-y `graphifyy`, komut `graphify`). Python 3.10+ gerektirir (mevcut 3.12+ ile zaten karşılanır) ve `uv` kullanır (zaten `basic-memory` için zorunlu). Ek ön koşul yoktur.
-- Git 2.38+ — pre-push hook'undaki `git merge-tree --write-tree` desteği için gerekli
-- Docker CLI — Docker veya Coolify deploy modülü aktifse gerekli (`docker build`, `docker compose` komutları için)
-- [GitHub CLI (gh)](https://cli.github.com/) — opsiyonel, `release.js` GitHub Release oluşturma için kullanır
+- Node.js 18+ and npm
+- [jq](https://jqlang.github.io/jq/) — JSON processor, required for hook rules on the Claude host (`brew install jq` or `apt install jq`)
+- [graphify](https://pypi.org/project/graphifyy/) — optional. Bootstrap does not install it and does not fail when it is absent.
+- Git 2.38+ — required for `git merge-tree --write-tree` support in pre-push hook
+- Docker CLI — required if Docker or Coolify deploy module is active (`docker build`, `docker compose` commands)
+- [GitHub CLI (gh)](https://cli.github.com/) — optional, used by `release.js` for GitHub Release creation
 
-## Hızlı Başlangıç
+## Quick Start
 
-### Mevcut projeye entegrasyon
+### Integrating into an existing project
 
 ```bash
 git clone https://github.com/varienos/agentic-workflow
 cd agentic-workflow
 
-# Codebase placeholder'ı yalnızca boşsa kaldırın; doluysa durur
+# Remove the Codebase placeholder only if it is empty; stop if it contains files
 rm -f Codebase/.gitkeep && rmdir Codebase
 ln -s /path/to/your/project Codebase
 
 cd Agentbase
-npm install              # araçların çalışması için gereken tek küçük paketi indirir (js-yaml) — birkaç saniye sürer
-claude
+npm install
+node generate.js ../Docbase/agentic/project-manifest.yaml --output-dir .
+node transform.js ../Docbase/agentic/project-manifest.yaml --targets codex --source-dir . --output-dir .
 ```
 
-Claude Code içinde:
+That writes the shared workflow body and a Codex host entry with the same task, review, and commit steps. Swap `codex` for `gemini`, `antigravity`, `kimi`, or `opencode` as needed. Hooks in the Claude adapter do not run automatically on those hosts.
 
-```
-/goal /bootstrap until "BOOTSTRAP_COMPLETE"
-```
+On the Claude host you can instead open `claude` and run `/bootstrap` until `BOOTSTRAP_COMPLETE`. That interview is one host's surface. It does not install graphify.
 
-> **Neden `/goal` ile?** Bootstrap çok adımlıdır. `/goal`, `BOOTSTRAP_COMPLETE` marker'ı üretilene kadar eksikleri yeni turda kapatır; böylece dosyaların doğru konuma yazılması ve sürecin yarıda kalmaması daha güvenilir olur. Doğrudan `/bootstrap` da çalışır, ancak hata durumunda manuel tekrar gerekir.
-
-### Sıfırdan yeni proje (greenfield)
+### Starting a new project from scratch (greenfield)
 
 ```bash
 git clone https://github.com/varienos/agentic-workflow
 cd agentic-workflow
 
-# Codebase klasörünü boş bırakın — Bootstrap greenfield moduna geçer
+# Leave Codebase empty — Bootstrap will switch to greenfield mode
 rm -f Codebase/.gitkeep
 cd Agentbase
-npm install              # araçların çalışması için gereken tek küçük paketi indirir (js-yaml) — birkaç saniye sürer
-claude
+npm install
+npm run init:dry
 ```
 
-Claude Code içinde:
+When Bootstrap detects an empty Codebase, it switches to greenfield mode: asks for stack selection, generates workflow files, and shows scaffold setup commands. The directory must not contain real project files; `.gitkeep` and `.DS_Store` are ignored as placeholders, while files like README or package manifests make bootstrap start in existing-project mode.
 
-```
-/goal /bootstrap until "BOOTSTRAP_COMPLETE"
-```
+## Bootstrap Flow
 
-Bootstrap boş Codebase tespit ettiğinde greenfield moduna geçer: stack seçimini sorar, workflow dosyalarını üretir ve scaffold kurulum komutlarını gösterir.
-Dizin gerçek proje dosyası içermemelidir; `.gitkeep` ve `.DS_Store` placeholder olarak yok sayılır.
-README veya package dosyası gibi gerçek içerik varsa bootstrap mevcut proje modu ile başlar.
+### Optional pre-step: `npm run init` (terminal seam)
 
-## Bootstrap Akışı
-
-### İsteğe bağlı ön-adım: `npm run init` (terminal dikişi)
-
-Ağır projelerde tüm yapılandırma yükünü modele bırakmak eksik/hatalı config üretebilir. Bunu azaltmak için deterministik kısmı (codebase tespiti + röportaj + manifest + `generate.js`) terminale taşıyan bir CLI vardır:
+On heavy projects, leaving the entire configuration burden to the model can produce incomplete or incorrect config. To reduce this, a CLI moves the deterministic part (codebase detection + interview + manifest + `generate.js`) into the terminal:
 
 ```bash
 cd Agentbase
-npm run init            # interaktif sihirbaz (gerçek terminal)
-npm run init:yes        # non-interaktif: tespit + varsayılanlar (CI/agent)
-npm run init:dry        # tespit raporu, dosya yazmaz
-# veya: node bin/init.js --answers init-answers.yaml   # replay
+npm run init            # interactive wizard (real terminal)
+npm run init:yes        # non-interactive: detection + defaults (CI/agent)
+npm run init:dry        # detection report, writes nothing
+# or: node bin/init.js --answers init-answers.yaml   # replay
 ```
 
-`init` manifesti `templates/manifest.schema.js` ile doğrular (fail-loud) ve `generate.js`'i çalıştırarak deterministik çıktıyı üretir. Ayrıca zorunlu graphify CLI'ı garanti eder: `which graphify` ile kontrol eder, yoksa `uv tool install graphifyy` ile otomatik kurar (idempotent; `--dry-run` kurmaz, yalnızca raporlar).
-Ardından `/bootstrap` çalıştırıldığında **SLIM PATH** devreye girer: detect/röportaj/manifest adımları atlanır, modele yalnızca `CLAUDE_FILL` narrative blokları kalır.
-`init` çalıştırılmazsa `/bootstrap` tam akışı (legacy) tek başına yürütür — geriye uyum korunur.
+`init` validates the manifest with `templates/manifest.schema.js` (fail-loud) and runs `generate.js` to produce deterministic output. graphify is optional: `init` does not install it and does not fail when it is absent. When `/bootstrap` runs afterwards the **SLIM PATH** kicks in: detect/interview/manifest steps are skipped and only the
+narrative blocks are left for the active host. If `init` is not run, `/bootstrap` performs the full flow on its own.
 
-### `/bootstrap` adımları
+### `/bootstrap` steps
 
-`/bootstrap` komutu yüksek seviyede şu adımlarla çalışır (init çalıştırıldıysa 2–4 atlanır):
+The `/bootstrap` command works through these high-level steps (steps 2–4 are skipped if `init` ran):
 
-0. **`/goal` mod zorunluluğu.** Bootstrap `/goal` modunda çalıştırılır. ADIM 8'deki tamamlama kapısı geçmeden süreç bitmiş sayılmaz. Doğru çağrı: `/goal /bootstrap until "BOOTSTRAP_COMPLETE"`.
-1. **Ön koşul kontrolleri.** Backlog CLI, `Codebase/` erişimi ve varsa önceki manifest kontrol edilir. graphify CLI varlığı `which graphify` ile teyit edilir; kurulu değilse `uv tool install graphifyy` ile otomatik kurulur (ADIM 1.1.6 — graphify zorunlu modül, başarısızsa durur).
-2. **Codebase analizi.** Proje tipi, dizin yapısı, alt projeler, paket yöneticisi, test araçları ve modül adayları çıkarılır.
-3. **Fazlı röportaj.** Proje, teknik tercih, geliştirici profili ve domain kuralları netleştirilir.
-4. **Manifest üretimi.** `Docbase/agentic/project-manifest.yaml` dosyası oluşturulur.
-5. **Dosya üretimi.** Manifeste göre komutlar, ajanlar, hook'lar, kurallar ve yardımcı dokümanlar üretilir.
-   Root dokümanlar (`PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md`, `onboarding.md`) **Agentbase root'una** yazılır; `.claude/` altına yazılmaz.
-   Böylece Claude, Gemini, Antigravity, Codex, Kimi ve OpenCode aynı kök bağlamı okuyabilir. Codex hedefi seçildiyse ayrı bootstrap çalıştırılmaz; transform sonrası opsiyonel `/codex-verify` adımı yalnızca Codex çıktı yüzeyini denetler.
-6. **Backlog başlatma.** Backlog `Agentbase/backlog/` dizininde oluşturulur ve başlangıç görevleri yaratılır.
-7. **Tamamlanma raporu.** Onboarding rehberi (`onboarding.md`), eklenti önerileri ve git hook etkinleştirme komutu gösterilir: `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
-8. **Tamamlama doğrulama kapısı.** Gate A-H + B2 seti manifesti, root doküman konumunu, root `CLAUDE.md` importlarını, `.claude/` runtime dosyalarını, backlog kurulumunu ve Codebase sızıntısı olmadığını doğrular. PASS durumunda `BOOTSTRAP_COMPLETE` marker'ı basılır; FAIL durumunda `/goal` yeni turla eksikleri kapatır.
+0. **Completion gate.** On the Claude host, an evaluator loop can re-check Step 8 until `BOOTSTRAP_COMPLETE`. Other hosts run the same steps without that loop.
+1. **Prerequisite checks.** Backlog CLI, `Codebase/` access, and any previous manifest are checked. graphify is not checked as a requirement and is not installed. Bootstrap continues when it is absent.
+2. **Codebase analysis.** Project type, directory structure, subprojects, package manager, test tools, and module candidates are extracted.
+3. **Phased interview.** Project, technical preferences, developer profile, and domain rules are clarified.
+4. **Manifest generation.** The `Docbase/agentic/project-manifest.yaml` file is created.
+5. **File generation.** Commands, agents, hooks, rules, and supporting docs are produced from the manifest. Root documents (`PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`, `CLAUDE.md`, `onboarding.md`) are written to **Agentbase root**; writing them under `.claude/` is forbidden — the reason is that all models
+(Claude, Gemini, Antigravity, Codex, Kimi, OpenCode) must be able to read the same root context. The root `CLAUDE.md` pulls in other documents via `@ import <file>.md` lines, establishing the injection chain — Claude reaches all project knowledge by reading a single context file. If target CLI tools were selected, `transform.js` converts
+the root `CLAUDE.md` into `GEMINI.md` / `AGENTS.md` / `.agents/...` / `.kimi/...` / `.opencode/...` formats — the injection chain is preserved automatically for every model. If Codex was selected, do not run a separate bootstrap; the optional `/codex-verify` step only checks the Codex target surface after transform.
+6. **Backlog initialization.** The backlog is created in `Agentbase/backlog/` with starter tasks.
+7. **Completion report.** Onboarding guide (`onboarding.md`), extension suggestions, and the git hook activation command are shown: `cd ../Codebase && git config core.hooksPath "$(realpath ../Agentbase/git-hooks/)"`
+8. **Completion verification gate.** The Gate A-H + B2 set (manifest, root document paths, root `CLAUDE.md` import chain, `.claude/` runtime files, `.claude-ignore`, no remaining `CLAUDE_FILL` markers, backlog initialized, non-empty content, no Codebase leakage) is checked with bash `test`/`find`/`grep`. On PASS the `BOOTSTRAP_COMPLETE`
+marker is printed. On FAIL the active host completes the missing checks. A Claude host may optionally continue with `/goal`; other hosts do not run that loop automatically.
 
-Yeniden çalıştırmalarda `overwrite`, `merge` ve `incremental` senaryoları desteklenir; tüm modlarda ADIM 8 tamamlama doğrulama kapısı çalışır.
+Re-runs support `overwrite`, `merge`, and `incremental` scenarios; the Step 8 completion gate runs in every mode.
 
-## Komutlar
+## Commands
 
-Bootstrap tamamlandıktan sonra kullanılabilir hale gelen komutlar:
+Commands available after bootstrap completes:
 
-Bu bölüm Claude Code slash command yüzeyini anlatır. `transform.js` ile üretilen diğer CLI hedeflerinde aynı workflow dosya/skill formatına dönüştürülür; Codex hedefinde native slash command garantisi verilmez.
+This section describes the Claude Code slash-command surface. Other CLI targets generated by `transform.js` receive the same workflows as files or skills; the Codex target does not guarantee native slash-command behavior.
 
 ### /task-plan
 
-Bir isteği analiz eder ve uygulanabilir backlog görevine dönüştürür. Etkilenen dosyaları, karmaşıklığı, kabul kriterlerini ve gerekiyorsa görev bölmeyi hazırlar. Kod yazmaz; uygulama `/task-hunter` tarafında yapılır.
+Deeply analyzes a request to create a backlog task. Scans the codebase, identifies affected files, calculates complexity score, suggests a model, and writes the task to the backlog with acceptance criteria. Splits into multiple tasks if the scope is too large. Creates tasks but does NOT write code — implementation is left to task-hunter.
 
 ```
-/task-plan "Kullanıcı profil sayfasına avatar yükleme özelliği ekle"
-/task-plan "API rate limiting implement et"
+/task-plan "Add avatar upload to user profile page"
+/task-plan "Implement API rate limiting"
 ```
 
 ### /task-master
 
-Backlog'daki açık görevleri etki, risk, bağımlılık ve karmaşıklık boyutlarıyla önceliklendirir. Çıktı faz bazlıdır: önce kritik görevler, sonra önemli ve planlı işler gelir. Kullanıcının elle önceliklendirdiği görevler ayrı MANUEL fazda gösterilir.
+Prioritizes all open tasks using 4-dimensional scoring. Calculates Impact, Risk, Dependency, and Complexity (inverse) scores for each task. Produces a phase-based work plan: Phase 1 critical tasks, Phase 2 important tasks, Phase 3 planned tasks, MANUAL phase for tasks requiring human intervention (excluded from scoring, listed separately
+at the end of the report). To trigger the MANUAL phase: a directive such as "Prioritize task X manually" must have been given in a previous session and saved to agent memory.
 
 ```
 /task-master
@@ -239,90 +241,94 @@ Backlog'daki açık görevleri etki, risk, bağımlılık ve karmaşıklık boyu
 
 ### /task-hunter
 
-Backlog'daki bir görevi uçtan uca uygular. Görevi okur, etkilenen dosyaları bulur, plan çıkarır, kodu yazar, testleri çalıştırır, commit eder ve görevi kapatır. Karmaşık işlerde paralel teammate çalışması başlatabilir.
+Autonomously implements a task from the backlog. Reads the task file, discovers affected files, prepares an implementation plan, writes code, runs tests, commits, and closes the task. Can spawn teammates for parallel work on complex tasks. After completion, suggests the next best task using hot-context scoring — minimizes context switching for vibecode flow.
 
 ```
-/task-hunter 42          # Tek görev
-/task-hunter 42,43,44    # Sırayla birden fazla görev (virgülle)
-/task-hunter auth        # Keyword ile görev arama
+/task-hunter 42          # Single task
+/task-hunter 42,43,44    # Multiple tasks in sequence (comma-separated)
+/task-hunter auth        # Search task by keyword
 ```
 
 ### /task-conductor
 
-Birden fazla görevi faz bazlı orkestre eder. Varsayılan davranış plan üretmektir; kod yazma ve backlog güncelleme yalnızca açık `run` modunda yapılır. Paralel yazım ancak izole worktree/branch ile çalışır, `all` modu ayrıca `--confirm-all` ister. Kesintiden sonra `resume` ile devam edebilir; bir fazda art arda 3 hata oluşursa durur.
+Orchestrates multiple tasks in phases. The default behavior is to produce a plan; code changes and backlog updates happen only in explicit `run` mode. Parallel writes require isolated worktrees/branches, and `all` mode additionally requires `--confirm-all`. It can resume from a state file and stops after 3 consecutive errors in a phase.
 
 ```
-/task-conductor plan top 5                  # En yüksek öncelikli 5 görev için plan
-/task-conductor plan all                    # Tüm açık görevler için plan
-/task-conductor plan 3,5,8                  # Belirli görevler için plan
-/task-conductor plan keyword auth           # Keyword ile plan
-/task-conductor run top 5 --max-parallel 2  # Kontrollü uygulama
-/task-conductor run all --confirm-all       # Tüm açık görevleri açık onayla uygula
-/task-conductor resume                      # Kaldığı yerden devam et
-/task-conductor status                      # State/lock durumunu oku
-/task-conductor abort                       # Aktif conductor run'ını kapat
+/task-conductor plan top 5                  # Plan the top 5 highest-priority tasks
+/task-conductor plan all                    # Plan all open tasks
+/task-conductor plan 3,5,8                  # Plan specific task IDs
+/task-conductor plan keyword auth           # Plan tasks matching a keyword
+/task-conductor run top 5 --max-parallel 2  # Guarded execution
+/task-conductor run all --confirm-all       # Execute all open tasks with explicit confirmation
+/task-conductor resume                      # Resume from where it left off
+/task-conductor status                      # Read state/lock status
+/task-conductor abort                       # Close the active conductor run
 ```
 
 ### /task-review
 
-Son değişiklikleri 3+1 agent ile inceler. Kod kalitesi, sessiz hata riski ve regresyon ihtimali ayrı ayrı değerlendirilir. Güvenlik, auth, ödeme veya migration değişikliklerinde Devils Advocate de çalışır. Önceden var olan önemli bulgular "scope dışı" diye atlanmaz; backlog'a kaydedilir.
+Reviews recent changes with 3+1 agents. Code Reviewer evaluates overall code quality, Silent Failure Hunter checks for silent errors and flawed error handling, Regression Analyzer assesses the risk of breaking existing functionality. For security, auth, payment, or migration changes, a conditional 4th agent (Devils Advocate) analyzes
+breaking points from an adversarial perspective. Findings are evaluated through a decision tree: issues to fix are reported, pre-existing issues are recorded in the backlog — never dismissed as "out of scope."
 
 ```
-/task-review                    # Son commit
-/task-review abc1234            # Belirli commit
-/task-review HEAD~3..HEAD       # Commit aralığı
+/task-review                    # Last commit
+/task-review abc1234            # Specific commit
+/task-review HEAD~3..HEAD       # Commit range
 ```
 
 ### /auto-review
 
-Son diff'i tekrar tekrar güvenli şekilde review eder. Aynı diff'i iki kez incelememek için hash kullanır. MINOR bulguları doğrudan düzeltir; MAJOR bulgular için backlog görevi açar. Periyodik çalıştırma senaryolarına uygundur.
+Diff-based, loop-compatible, and idempotent review. Examines changes since the last commit with hash checking — never reviews the same diff twice. Fixes MINOR findings directly and commits, opens backlog tasks for MAJOR findings. Compatible with an external `/loop` skill or plugin for periodic execution, for example the
+[superpowers](https://github.com/obra/superpowers) extension — it is not bundled with this repo. Does not re-review its own fix commits in subsequent runs.
 
 ```
-/auto-review                    # Son commit
-/auto-review abc1234            # Belirli commit
-/auto-review HEAD~3..HEAD       # Commit aralığı
+/auto-review                    # Last commit
+/auto-review abc1234            # Specific commit
+/auto-review HEAD~3..HEAD       # Commit range
 ```
 
 ### /bug-hunter
 
-Bug'in root cause'unu bulur ve düzeltir. İlgili dosyaları bulur, en fazla 3 hipotez dener, minimal fix uygular ve regresyon testi ekler. 3 denemede sonuca ulaşamazsa bulguları raporlar ve durur.
+Finds the root cause of a bug and fixes it. Takes a bug description, finds related files in the codebase, generates max 3 hypotheses and tests each one. When root cause is found, applies minimal fix, writes regression test, commits, and creates+closes a backlog task. The 3-hypothesis limit prevents diving into endless depth — reports
+findings and stops if not found in 3 attempts.
 
 ```
-/bug-hunter "Kullanıcı giriş yaptıktan sonra profil sayfası 500 hatası veriyor"
-/bug-hunter "Bildirimler sayfası sonsuz döngüye giriyor"
+/bug-hunter "Profile page returns 500 error after user login"
+/bug-hunter "Notifications page enters infinite loop"
 ```
 
 ### /bug-review
 
-Bug fix'ini 3 perspektiften inceler: kalite, sessiz hata riski ve regresyon riski. Sonsuz döngüyü önlemek için en fazla 1 düzeltme iterasyonu çalışır.
+Reviews a bug fix from 3 different perspectives. Code Reviewer evaluates fix quality and whether it targets the correct root cause, Silent Failure Hunter checks if the fix creates new silent errors, Regression Analyzer assesses the risk of breaking other areas. Infinite loop protection — max 1 iteration.
 
 ```
-/bug-review                     # Son commit
-/bug-review abc1234             # Belirli commit
-/bug-review HEAD~2..HEAD        # Commit aralığı
+/bug-review                     # Last commit
+/bug-review abc1234             # Specific commit
+/bug-review HEAD~2..HEAD        # Commit range
 ```
 
 ### /deep-audit
 
-Bir domain modülünü (auth, profil, ödeme, mesaj vb.) tüm katmanlarda (API + DB + Mobil + Frontend) uçtan uca denetler. Bulguları iki boyutta sınıflandırır: basit olanları doğrudan düzeltir, karmaşık olanları backlog'a kaydeder.
+Audits a domain module (auth, profile, payment, messaging, etc.) end-to-end across all layers (API + DB + Mobile + Frontend). Classifies findings in two dimensions: fixes simple ones directly, records complex ones in the backlog.
 
 ```
-/deep-audit auth        # Auth modülünü denetle
-/deep-audit profil      # Profil modülünü denetle
-/deep-audit odeme       # Ödeme modülünü denetle
+/deep-audit auth        # Audit auth module
+/deep-audit profile     # Audit profile module
+/deep-audit payment     # Audit payment module
 ```
 
 ### /workflow-update
 
-Mevcut workflow konfigürasyonunu Codebase'in güncel durumuyla karşılaştırır. Tam re-bootstrap yapmaz — sadece değişen parçaları günceller (yeni modül ekleme, kaldırılan dependency tespiti, subproject değişiklikleri). Drift raporu gösterir, kullanıcı onayı ile incremental güncelleme yapar.
+Compares current workflow configuration with the Codebase's current state. Does NOT perform a full re-bootstrap — only updates changed parts (new module detection, removed dependency handling, subproject changes). Shows a drift report and applies incremental updates with user confirmation.
 
 ```
-/workflow-update          # Drift raporu + onay ile güncelleme
+/workflow-update          # Drift report + update with confirmation
 ```
 
 ### /codex-verify
 
-Codex hedefi seçildiyse `transform.js` çıktısını denetleyen opsiyonel adımdır. Codex için ikinci bootstrap yoktur; bu komut manifesti, `.agents/skills/*/SKILL.md` dosyalarını ve `AGENTS.md` dosyasını kontrol eder. Hook runtime parity iddiası taşımaz ve sadece Codex hedef yüzeyindeki küçük uyumsuzlukları raporlar.
+Optional verify/adapt step for the Codex target after `transform.js` runs. In the Claude Code bootstrap session it runs as `/codex-verify`; in the Codex target the same content is generated as the `codex-verify` skill. There is no second Codex bootstrap; this command checks the manifest, `.agents/skills/*/SKILL.md`, and `AGENTS.md`. It
+does not claim hook runtime parity, and it only reports or suggests narrow adaptations for the Codex target surface.
 
 ```
 /codex-verify
@@ -330,10 +336,8 @@ Codex hedefi seçildiyse `transform.js` çıktısını denetleyen opsiyonel adı
 
 ### /memorize
 
-Oturum içerisinde öğrenilen bilgileri kalıcı hafızaya kaydeder.
-Rutin işlemleri değil, sadece tekrarlama riski olan yapısal bilgileri kaydeder: beklenmedik tuzaklar, kullanıcı tercihleri, mimari kararlar, sürpriz keşifler, yeni tool/dependency notları.
-Her kayıt `Why` (neden önemli) ve `How to apply` (nasıl uygulanacak) alanlarıyla yapılır.
-Sırlar, tokenlar, `.env` değerleri veya PII kalıcı hafızaya yazılmaz; önce redaction yapılır.
+Records learned information from the session to persistent memory. Records only structural information with repetition risk, not routine operations: unexpected traps, user preferences, architectural decisions, surprise discoveries, new tool/dependency notes. Each record includes `Why` (why it matters) and `How to apply` (how to use it) fields.
+Never store secrets, tokens, `.env` values, or PII in persistent memory; redact before writing.
 
 ```
 /memorize
@@ -341,7 +345,7 @@ Sırlar, tokenlar, `.env` değerleri veya PII kalıcı hafızaya yazılmaz; önc
 
 ### /session-status
 
-Tüm aktif, boşta ve kapalı Claude Code oturumlarını tablo formatında gösterir. Her oturumun PID'i, üzerinde çalıştığı görev, tool kullanım istatistikleri, hata sayısı ve teammate durumu görünür. Canlı dashboard için `node bin/session-monitor.js` kullanılır.
+Displays all active, idle, and closed Claude Code sessions in table format. Shows each session's PID, current task, tool usage statistics, error count, and teammate status. Use `node bin/session-monitor.js` for a live dashboard.
 
 ```
 /session-status
@@ -349,55 +353,56 @@ Tüm aktif, boşta ve kapalı Claude Code oturumlarını tablo formatında göst
 
 ### /deadcode
 
-Projede kullanılmayan kodu tespit eder ve temizlik önerir. Çağrılmayan fonksiyonlar, import edilmeyen modüller ve unreachable branch'ler taranır. Bulgular güven seviyesine göre sınıflandırılır; yüksek güvenli bulgular için otomatik temizlik önerilir.
+Detects unused code in the project and suggests cleanup. Scans for uncalled functions, unimported modules, unreachable branches. Each finding is classified by confidence level: HIGH (no references anywhere), MEDIUM (referenced only from tests), LOW (may be used via dynamic import/reflection). Automatic cleanup is suggested for high-confidence findings.
 
 ```
 /deadcode
-/deadcode api/src/services/    # Belirli dizin
+/deadcode api/src/services/    # Specific directory
 ```
 
 ### /api-smoke
 
-API endpoint'lerini hızlıca doğrular. Post-deploy sonrası veya bağımsız olarak çalıştırılabilir. Proje manifestinden base URL'yi okur (veya özel URL kabul eder) ve kritik endpoint'ler üzerinde smoke testleri çalıştırır.
+Quickly validates API endpoints. Can be run post-deploy or independently at any time. Reads base URL from project manifest (or accepts a custom URL) and runs smoke tests on critical endpoints.
 
 ```
-/api-smoke                               # Manifestteki varsayılan URL
-/api-smoke staging                       # Staging ortamı
-/api-smoke https://custom-url.com        # Özel URL
+/api-smoke                               # Default URL from manifest
+/api-smoke staging                       # Staging environment
+/api-smoke https://custom-url.com        # Custom URL
 ```
 
-### Agent'lar
+### Agents
 
-Bootstrap tarafından üretilen otonom agent'lar — komutlar bunları otomatik çağırır:
+Autonomous agents generated by bootstrap — commands invoke these automatically:
 
-| Agent | Rol |
-|-------|-----|
-| `code-review` | Genel kod kalitesi ve pattern uyumu |
-| `regression-analyzer` | Değişikliğin mevcut işlevselliği kırma riski |
-| `devils-advocate` | Güvenlik/auth/ödeme değişikliklerinde adversarial perspektif (koşullu) |
-| `frontend-expert` | Frontend mimari ve performans kararları |
-| `backend-expert` | Backend API tasarımı ve veritabanı kararları |
-| `mobile-expert` | Mobil platform-spesifik kararlar |
-| `service-documentation` | Kod değişikliği sonrası dokümantasyon güncelleme önerisi |
+| Agent | Role |
+|-------|------|
+| `code-review` | General code quality and pattern compliance |
+| `regression-analyzer` | Risk of breaking existing functionality |
+| `devils-advocate` | Adversarial perspective for security/auth/payment changes (conditional) |
+| `frontend-expert` | Frontend architecture and performance decisions |
+| `backend-expert` | Backend API design and database decisions |
+| `mobile-expert` | Mobile platform-specific decisions |
+| `service-documentation` | Post-change documentation update suggestions |
 
-### Modüler Komutlar
+### Modular Commands
 
-Bu komutlar Bootstrap'in tespit ettiği modüllere göre üretilir — her projede bulunmaz:
+These commands are generated based on modules Bootstrap detects — not present in every project:
 
-Komut adları `/{varyant}-{komut}` formatında üretilir — çakışmayı önlemek için varyant adı prefix olarak eklenir:
+Command names use `/{variant}-{command}` format to prevent collisions — variant name is added as prefix:
 
-| Komut | Modül | Ne Yapar |
-|-------|-------|----------|
-| `/docker-pre-deploy`, `/coolify-pre-deploy`, `/vercel-pre-deploy` | Deploy | Production push öncesi kontrol. Docker/Coolify: derleme, test, migration, env sync, Docker build. Vercel: TypeScript, build, env sync, edge-runtime. PASS/FAIL/WARN raporu. |
-| `/docker-post-deploy`, `/coolify-post-deploy` | Deploy | Deploy sonrası doğrulama: health check, smoke test, rollback rehberi. Vercel serverless yapısı nedeniyle desteklenmez. |
-| `/security-idor-scan` | Security | API endpoint'lerinde IDOR güvenlik açığı taraması — 5 nokta kontrol matrisi. |
-| `/monorepo-review-module <ad>` | Monorepo | Bir modülü uçtan uca denetler — 4 paralel agent, cross-layer analiz. |
+| Command | Module | What It Does |
+|---------|--------|-------------|
+| `/docker-pre-deploy`, `/coolify-pre-deploy`, `/vercel-pre-deploy` | Deploy | Pre-production push control. Docker/Coolify: compile, test, migration, env sync, Docker build. Vercel: TypeScript, build, env sync, edge-runtime. PASS/FAIL/WARN report. |
+| `/docker-post-deploy`, `/coolify-post-deploy` | Deploy | Post-deploy verification: health check, smoke test, rollback guide. Not supported for Vercel due to serverless architecture. |
+| `/security-idor-scan` | Security | IDOR vulnerability scan on API endpoints — 5-point control matrix. |
+| `/monorepo-review-module <name>` | Monorepo | Audits a module end-to-end — 4 parallel agents, cross-layer analysis. |
 
-## Canlı Oturum İzleme
+## Live Session Monitoring
 
-Birden fazla Claude Code oturumu paralel çalışırken terminal dashboard ile takip edin.
+Track multiple Claude Code sessions running in parallel with a terminal dashboard.
 
-**Ön koşul:** Bootstrap tamamlandıktan sonra `session-tracker` hook'u `.claude/hooks/` altına kopyalanır. Hook her tool çağrısında oturum durumunu `.claude/tracking/sessions/` dosyasına yazar. Bootstrap tamamlanmamışsa veya `git config core.hooksPath` komutu çalıştırılmamışsa dashboard boş görünür:
+**Prerequisite:** After bootstrap completes, the `session-tracker` hook is copied to `.claude/hooks/`. This hook writes session state to `.claude/tracking/sessions/` on every tool call. The dashboard reads these files. If the `git config core.hooksPath` command from the Bootstrap completion report hasn't been run, or bootstrap hasn't been
+completed yet, the hook won't be active and the dashboard will appear empty:
 
 ```bash
 cd Agentbase && node bin/session-monitor.js
@@ -405,135 +410,132 @@ cd Agentbase && node bin/session-monitor.js
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ AGENTIC WORKFLOW  [Timeline] [Agent Radar]  2 aktif 1 boşta 17:05            │
+│ AGENTIC WORKFLOW  [Timeline] [Agent Radar]  2 active 1 idle 17:05           │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ › ● 45012  TASK-24 Merge conflict yönetimi  [uygulama]  42dk                 │
-│   Son işlem: Edited workflow-lifecycle.skeleton.md                           │
-│   Backlog: In Progress · high · AC 1/2  |  bekleme yok  |  hata 0  |  ajan 1 │
+│ › ● 45012  TASK-24 Merge conflict management  [implement]  42min            │
+│   Action: Edited workflow-lifecycle.skeleton.md                             │
+│   Backlog: In Progress · high · AC 1/2  |  no wait  |  err 0  |  mates 1   │
 │                                                                              │
-│   ○ 45078  TASK-11 Auto-review loop  [bekleme]  18dk                         │
-│   Son işlem: Test failed: npm test                                           │
-│   Backlog: In Progress · medium · AC 2/5  |  bekleme test  |  hata 1         │
+│   ○ 45078  TASK-11 Auto-review loop  [waiting]  18min                       │
+│   Action: Test failed: npm test                                             │
+│   Backlog: In Progress · medium · AC 2/5  |  wait test  |  err 1           │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ Tab Sekme  j/k Seç  Enter Detay  c Kapalı gizle  h Yardım  q Çıkış           │
+│ Tab Switch  j/k Select  Enter Detail  c Toggle closed  h Help  q Quit       │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- Varsayılan `Timeline` görünümü agent-first çalışır: hangi agent hangi backlog task'ında, hangi fazda, neden bekliyor görülür.
-- `Tab` ile `Agent Radar` görünümüne geçilir: yoğun tablo + event stream.
-- Session state'i yerel `backlog/` dosyalarıyla zenginleştirilir; task status, priority, dependency ve acceptance ilerlemesi görünür.
-- Sıfır dependency — saf Node.js + ANSI escape kodları.
+- Default `Timeline` view works agent-first: see which agent is on which backlog task, in which phase, and why it's waiting.
+- Switch to `Agent Radar` with `Tab`: dense table + event stream.
+- Session state is enriched with local `backlog/` files; task status, priority, dependency, and acceptance progress are shown.
+- Zero dependencies — pure Node.js + ANSI escape codes.
 
-## Desteklenen Modül Aileleri
+## Supported Module Families
 
-Şablon sistemi modülerdir ve yalnızca tespit edilen aileler için içerik üretir.
+The template system is modular and only generates content for detected families:
 
-### First-class Destek
+### First-class Support
 
-Bu stack'ler için framework-spesifik hook'lar, kurallar ve koruma mekanizmaları üretilir:
+For these stacks, Bootstrap generates framework-specific hooks, rules, and protection mechanisms:
 
 - **ORM:** Prisma, Eloquent, Django ORM, TypeORM
 - **Deploy:** Docker, Coolify, Vercel
 - **Backend:** Express, Fastify, NestJS, Laravel, CodeIgniter 4, Django, FastAPI
-- **Frontend:** Next.js, React SPA, yalın HTML/CSS/JS
+- **Frontend:** Next.js, React SPA, plain HTML/CSS/JS
 - **Mobile:** Expo, React Native, Flutter
-- **Knowledge Graph:** Graphify — **zorunlu modül**, her bootstrap'ta aktif (`/g` slash komutu, BFS query, PreToolUse hook ile akıllı yönlendirme — grep yerine `graphify query` önerisi). CLI `uv tool install graphifyy` ile otomatik kurulur.
-- **Ek alanlar:** Monorepo, güvenlik taramaları, CI/CD (GitHub Actions, GitLab CI), izleme (Sentry, Datadog), API dokümantasyonu (OpenAPI, GraphQL)
+- **Knowledge graph:** Graphify — optional module. It is generated only when selected. Bootstrap does not install the CLI and does not fail when it is absent.
+- **Additional:** Monorepo, security scanning, CI/CD, monitoring, API documentation (OpenAPI, GraphQL)
 
-### Generic Bootstrap Desteği
+### Generic Bootstrap Support
 
-Aşağıdaki stack'ler bootstrap tarafından algılanır ve manifest'e yazılır, ancak framework-spesifik hook/rule/agent şablonları yoktur — yalnızca çekirdek komutlar (task-hunter, task-review vb.) ve genel korumalar (secret tarama, lock dosyası koruması) üretilir:
+The following stacks are detected and written to the manifest, but no framework-specific hook/rule/agent templates are generated for them. Bootstrap only produces the core commands (`task-hunter`, `task-review`, etc.) plus general protections such as secret scanning and lockfile protection:
 
 - **Frontend:** Vue, Svelte
 - **Backend:** Flask
 - **ORM:** Sequelize, Drizzle
 
-Go, Rust ve Java/Kotlin mevcut proje analizinde otomatik tespit edilir (`go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle`, `build.gradle.kts`).
-Greenfield modunda bu stack'ler röportajda seçilir. Bu aileler generic kapsamda kalır: framework-spesifik hook/rule/agent üretimi yapılmaz; çekirdek workflow komutları ve genel güvenlik kontrolleri üretilir.
-Listelenmeyen stack'ler için manifest elle zenginleştirilebilir.
+Go, Rust, and Java/Kotlin are also auto-detected during existing-project analysis through files such as `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle`, and `build.gradle.kts`. In greenfield mode, those stacks are chosen explicitly during the interview instead. In both cases they remain in the generic tier: no framework-specific hooks,
+rules, or agents are generated for them. Stacks not listed above may require manual manifest enrichment.
 
-## Çoklu CLI Dönüştürme
+## Multi-CLI Transform
 
-Claude Code çıktıları `transform.js` ile diğer CLI formatlarına dönüştürülebilir. Bootstrap röportajında hedef araçlar seçilir veya mevcut projeler `--targets` parametresiyle doğrudan çalıştırabilir:
+Claude Code outputs can be transformed to other CLI formats via `transform.js`. Target tools are selected during the bootstrap interview, or existing projects can run directly with the `--targets` flag:
 
 ```bash
-cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,antigravity,codex,kimi,opencode
+cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,antigravity,codex,kimi,opencode --source-dir . --output-dir .
 ```
 
-| Hedef CLI | Komut Formatı | Agent Formatı | Bağlam Dosyası |
+| Target CLI | Command Format | Agent Format | Context File |
 |-----------|--------------|---------------|----------------|
 | **Gemini CLI** | `.gemini/commands/*.toml` | `.gemini/agents/*.md` | `GEMINI.md` |
 | **Antigravity 2.0** | `.agents/workflows/*.md` | `.agents/skills/*/SKILL.md` | `GEMINI.md` + `.agents/rules/*.md` |
 | **Codex CLI** | `.agents/skills/*/SKILL.md` | — | `AGENTS.md` |
-| **Kimi CLI** | `.kimi/skills/*/SKILL.md` | `.kimi/agents/*.yaml` | `.kimi/agents/default-prompt.md` (`default.yaml` ile) |
+| **Kimi CLI** | `.kimi/skills/*/SKILL.md` | `.kimi/agents/*.yaml` | `.kimi/agents/default-prompt.md` via `default.yaml` |
 | **OpenCode** | `.opencode/skills/*/SKILL.md` | `.opencode/agents/*.md` | `.opencode/AGENTS.md` |
 
-Dönüştürme süreci `.claude/` çıktısını ana kaynak olarak kullanır ve hedef CLI'ın anlayacağı formata adapte eder. Komut çağırma sözdizimi (`/` → `$`, `@` vb.), dosya yolu referansları ve TOML/YAML/Markdown çıktıları otomatik üretilir. `generate.js` değiştirilmez; transform ayrı bir dönüştürme adımıdır.
+The transform process uses `.claude/` output as the canonical source and adapts it to the target CLI's format: invoke syntax (`/` to `$`, `@`, etc.), file path references, and TOML/YAML/Markdown serialization are handled automatically. `generate.js` is never modified — transform runs as a completely separate pass after generation.
 
-Antigravity hedefi, Gemini CLI hedefinden ayrıdır: Gemini için `.gemini/commands/*.toml` üretilirken Antigravity 2.0 için komutlar `.agents/workflows/*.md`, ajanlar `.agents/skills/*/SKILL.md`, kurallar ise `.agents/rules/*.md` olarak üretilir.
-Eski `.agent/*` yapısı Antigravity tarafında geriye dönük destekli olabilir; varsayılan çıktı güncel `.agents/*` yüzeyidir.
+The Antigravity target is separate from the Gemini CLI target: Gemini receives `.gemini/commands/*.toml`, while Antigravity 2.0 receives commands as `.agents/workflows/*.md`, agents as `.agents/skills/*/SKILL.md`, and rules as `.agents/rules/*.md`. Older `.agent/*` layouts may still be backward-compatible in Antigravity; the default
+output follows the current `.agents/*` surface.
 
-Codex hedefinde çıktı `Agentbase/.agents/skills/*/SKILL.md` ve `Agentbase/AGENTS.md` olarak üretilir.
-Codex için ikinci bootstrap yoktur: `manifest.targets` alanındaki `codex`, Claude çıktısını Codex formatına dönüştürme hedefidir.
-Codex tarafı komut runtime'ı değil, skill/context yüzeyidir; native slash command garantisi verilmez.
-Transform çağrı örneklerini hedef sözdizimine uyarlar; gerçek tetikleme Codex'in skill mekanizmasına ve oturum bağlamına bağlıdır.
-Transformdan sonra `/codex-verify` ile skill frontmatter'ını, path adaptasyonlarını ve hook parity iddiası olmadığını kontrol edebilirsiniz.
+For Codex, the output is `Agentbase/.agents/skills/*/SKILL.md` and `Agentbase/AGENTS.md`. There is no second Codex bootstrap: `codex` in `manifest.targets` means "transform the Claude canonical output for Codex." The Codex target is a skill/context surface, not a command runtime; no native slash-command guarantee is made. Transform adapts
+in-text invocation examples to the target syntax, but actual triggering depends on Codex's skill mechanism and session context. After transform, you can optionally run `/codex-verify` to check skill frontmatter, path adaptation, and that no automatic hook parity is claimed. If only Claude Code is selected, transform and Codex verify/adapt
+are skipped.
 
-## Üretimde Kanıtlanmış Desenler
+## Production-Proven Patterns
 
-Bu template'deki her kural bir production deneyiminden doğmuştur:
+Every rule in this template was born from a production experience:
 
-| Desen | Sağladığı koruma |
-|-------|--------|
-| `prisma db push` yasağı | Migration dışı schema değişikliklerinin production'a gitmesini önler |
-| 3 hipotez sınırı | Sonsuz root cause aramasını durdurur |
-| 4D skorlama | Tutarlı, tekrarlanabilir önceliklendirme |
-| 3+1 agent paralel review | Sessiz hata ve regresyon riskini ayrı perspektiflerle yakalar |
-| Faz bazlı orkestrasyon | Plan-first çalışır, paralel işi izole worktree/branch ile kontrollü fazlara böler |
-| Failure cascade tablosu | Aynı hatada tekrar eden retry döngülerini durdurur |
-| Destructive migration tespiti | Riskli migration değişikliklerini push öncesi görünür kılar |
-| `db-migration-discipline` | Schema değişikliklerinde migration, dry-run, rollback/down ve destructive taramanın zorunlu hale gelmesi |
-| Pre-existing bulgu kuralı | Önemli bulguların "scope dışı" diyerek atlanmasını önler |
+| Pattern | Story |
+|---------|-------|
+| `prisma db push` ban | 7 tables + 3 columns lost in production |
+| 3-hypothesis limit | Preventing endless root cause searching |
+| 4D scoring | Consistent, repeatable prioritization |
+| 3+1 agent parallel review | Catching silent failures a single agent misses, adversarial perspective for security changes |
+| Phase-based orchestration | Plan-first processing with parallel work guarded by isolated worktrees/branches |
+| Failure cascade table | Preventing 10+ retry loops on the same error |
+| Destructive migration detection | DROP TABLE going to production unnoticed |
+| `db-migration-discipline` | Making migration files, dry-run, rollback/down, and destructive scanning mandatory for schema changes |
+| Pre-existing finding rule | Preventing security gaps from being dismissed as "out of scope" |
 
-## Geliştirme ve Doğrulama
+## Development and Validation
 
 ```bash
 cd Agentbase && npm test                                                    # Test suite
-cd Agentbase && node bin/session-monitor.js                                 # Oturum izleme
+cd Agentbase && node bin/session-monitor.js                                 # Session monitoring
 
-# Bootstrap sonrası — manifest üretildikten sonra çalışır:
-cd Agentbase && node generate.js ../Docbase/agentic/project-manifest.yaml --dry-run  # Kuru çalıştırma
-cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,codex --dry-run  # CLI dönüştürme
+# After bootstrap — runs once manifest has been generated:
+cd Agentbase && node generate.js ../Docbase/agentic/project-manifest.yaml --dry-run  # Dry run
+cd Agentbase && node transform.js ../Docbase/agentic/project-manifest.yaml --targets gemini,codex --dry-run  # CLI transform
 ```
 
-### Release ve CHANGELOG
+### Release and CHANGELOG
 
 ```bash
-cd Agentbase && node bin/release.js auto            # Otomatik: commit'lerden bump tipi belirle
-cd Agentbase && node bin/release.js patch           # Manuel: patch release (1.2.3 → 1.2.4)
-cd Agentbase && node bin/release.js minor           # Manuel: minor release (1.2.3 → 1.3.0)
-cd Agentbase && node bin/release.js major           # Manuel: major release (1.2.3 → 2.0.0)
-cd Agentbase && node bin/release.js auto --dry-run  # Kuru çalıştırma (dosya yazmaz)
+cd Agentbase && node bin/release.js auto            # Auto: determine bump type from commits
+cd Agentbase && node bin/release.js patch           # Manual: patch release (1.2.3 → 1.2.4)
+cd Agentbase && node bin/release.js minor           # Manual: minor release (1.2.3 → 1.3.0)
+cd Agentbase && node bin/release.js major           # Manual: major release (1.2.3 → 2.0.0)
+cd Agentbase && node bin/release.js auto --dry-run  # Dry run (no file changes)
 ```
 
-`release.js` sırayla: version bump → CHANGELOG üret → commit → tag → push → GitHub Release oluşturur. GitHub Release için `gh` CLI gereklidir (opsiyonel — kurulu değilse atlanır).
+`release.js` runs sequentially: version bump → generate CHANGELOG → commit → tag → push → create GitHub Release. GitHub Release creation requires `gh` CLI (optional — skipped if not installed).
 
-GitHub Actions tarafında akış iki aşamalıdır: `main` push'u `auto-release.yml` ile bump/tag üretir; oluşan `v*` tag'i `changelog.yml` iş akışını tetikleyip `CHANGELOG.md` değişikliğini `main` branch'ine geri gönderir.
+In GitHub Actions the flow has two stages: a `main` push runs `auto-release.yml` to calculate the bump and create the tag; the resulting `v*` tag then triggers `changelog.yml`, which commits the regenerated `CHANGELOG.md` back to `main`.
 
 ```bash
-cd Agentbase && node bin/changelog.js --all         # Tüm tag'lerden CHANGELOG üret
-cd Agentbase && node bin/changelog.js --from v1.0.0 # Belirli tag'den itibaren
-cd Agentbase && node bin/changelog.js --release v2.0.0 --dry-run  # Kuru çalıştırma
+cd Agentbase && node bin/changelog.js --all          # Generate CHANGELOG from all tags
+cd Agentbase && node bin/changelog.js --from v1.0.0  # Generate from specific tag onwards
+cd Agentbase && node bin/changelog.js --release v2.0.0 --dry-run  # Dry run
 ```
 
-## Katkı
+## Contributing
 
-Katkı yapmak istiyorsanız [CONTRIBUTING.md](CONTRIBUTING.md) dosyasını okuyun.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
-## Güvenlik
+## Security
 
-Güvenlik açığı bildirimi için [SECURITY.md](SECURITY.md) dosyasını okuyun. Public issue **açmayın** — hello@varien.software adresine bildirin.
+For security vulnerability reports, see [SECURITY.md](SECURITY.md). Do **not** open a public issue — report to hello@varien.software.
 
-## Lisans
+## License
 
-Bu proje [MIT](LICENSE) lisansı ile sunulmaktadır. Copyright (c) 2026 Varien Software.
+This project is licensed under [MIT](LICENSE). Copyright (c) 2026 Varien Software.

@@ -1,37 +1,34 @@
----
-name: frontend
-tools: Read, Grep, Glob, Bash, WebFetch, WebSearch
-color: purple
----
+Invariant Rules & Vercel Deploy Expert
 
-# Frontend & Vercel Deploy Uzmani
+> Vercel deploy procedures, build issues, environment variables, and frontend infrastructure are covered by this expert.
+> Escalation: The expert is spawned as a teammate from the main agent side for Vercel deploy or frontend infrastructure issues.
 
-> Vercel deploy surecleri, build sorunlari, ortam degiskenleri ve frontend altyapisi icin uzman agent.
-> Cagrilma: Ana agent tarafindan Vercel deploy veya frontend altyapisi sorunlarinda teammate olarak spawn edilir.
+## Working boundary
 
-## Calisma Siniri
-
-Bu agent Agentbase den spawn olur ve ../Codebase/ uzerinde calisir.
-- Proje dosyalarini (`src/`, `app/`, vb.) okuyabilir ve degistirebilir
-- Codebase icinde `.claude/` dizini OLUSTURAMAZ
-- Codebase icinde `CLAUDE.md`, `.mcp.json`, `.claude-ignore` YAZAMAZ
-- Tum agent config dosyalari Agentbase/.claude/ altinda yasar
+This agent is spawned from Agentbase and works on ../Codebase/.
+- Can read and modify project files (`src/`, `app/`, etc.)
+- Cannot create a `.claude/` directory inside Codebase
+- Cannot write `CLAUDE.md`, `.mcp.json`, or `.claude-ignore`
+- All agent config files live under Agentbase/.claude/
 
 ---
 
-## Temel Yaklasim
+## Core Approach
 
-### Sorun Giderme Metodolojisi
+### Problem Resolution Methodology
 
-1. **Belirtileri topla** — Build hatalari, deployment loglari, preview URL durumu
-2. **Katmani belirle** — Sorun hangi katmanda? (Vercel Build → Framework → Uygulama → DNS)
-3. **Hipotez olustur** — En olasi nedenler listesi (en yaygindan basla)
-4. **Dogrula** — Her hipotezi sirayla test et
-5. **Coz** — Dogrulanan sorunu duzelt
-6. **Dokumante et** — Ne yapildigini ve neden yapildigini kaydet
+1.  **Gather Symptoms** — Collect build errors, deployment logs, and preview URL status.
+2.  **Determine the Layer** — Identify which layer is causing the issue (Vercel Build → Framework → Application → DNS).
+3.  **Formulate a Hypothesis** — List potential causes in order of frequency (start from most common).
+4.  **Prove It** — Test each hypothesis sequentially.
+5.  **Fix It** — Resolve confirmed issues.
+6.  **Document It** — Record what was done and why.
 
-### Katmanli Debug Sirasi
+### Layered Debug Process
 
+ 
+
+Let me know if you need anything else!
 ```
 1. Vercel Dashboard    → Build loglari, deployment durumu, fonksiyon loglari
 2. Framework Build     → Next.js/React build ciktisi, TypeScript hatalari
@@ -39,36 +36,39 @@ Bu agent Agentbase den spawn olur ve ../Codebase/ uzerinde calisir.
 4. Vercel Config       → vercel.json, redirects, rewrites, headers
 5. DNS / Domain        → Custom domain yapilandirmasi, SSL durumu
 ```
+### Invariant Rules
 
-### Guvenlik Kurallari
-
-- Secret'lari ASLA kod icine yazma — Vercel Environment Variables kullan
-- Preview deployment'larda production secret'larini KULLANMA — ayri env seti olustur
-- `NEXT_PUBLIC_` ile baslayan degiskenlerin client-side'da gorunur oldugunu unutma
-- Vercel API Token'ini ASLA acik metin olarak paylas
+- Store secrets in non-sensitive code - Use Vercel Environment Variables
+- Use production secrets in preview deployments - Create separate env sets
+- Don't forget that variables starting with `NEXT_PUBLIC_` are visible on the client-side
+- Share the Vercel API Token in clear text
 
 ---
 
 <!-- GENERATE: VERCEL_CONFIG
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: environments.deploy_platform, environments.deploy_config, environments.production_url
-Ornek cikti:
-## Vercel Konfigurasyonu
+Description: This section is populated by Bootstrap using manifest data.
+Required manifest fields: environments.deploy_platform, environments.deploy_config, environments.production_url
+Example output:
+## Vercel Configuration
 
-### Proje Bilgileri
-- **Proje:** my-project
+### Project Details
+- **Project:** my-project
 - **Production URL:** `https://my-project.vercel.app` → `https://www.example.com`
-- **Git Entegrasyonu:** GitHub — `main` branch → production, diger branchler → preview
+- **Git Integration:** GitHub — `main` branch → production, other branches → preview
 
-### Ortam Degiskenleri
+### Environment Variables
 
-| Degisken | Ortam | Aciklama |
+| Variable | Platform | Description |
 |---|---|---|
-| `DATABASE_URL` | Production, Preview | PostgreSQL baglanti dizesi |
-| `NEXTAUTH_SECRET` | Production, Preview | Auth sifrelemesi icin gizli anahtar |
-| `NEXT_PUBLIC_API_URL` | Tum | Public API endpoint |
+| `DATABASE_URL` | Production, Preview | PostgreSQL connection string |
+| `NEXTAUTH_SECRET` | Production, Preview | Secret for authentication |
+| `NEXT_PUBLIC_API_URL` | All | Public API endpoint |
 
-### vercel.json Konfigurasyonu
+---
+
+### vercel.json Configuration
+ 
+Please note that this translation is based on the provided rules and may not be 100% perfect due to the limitations of machine translation.
 ```json
 {
   "framework": "nextjs",
@@ -78,18 +78,20 @@ Ornek cikti:
   "rewrites": [...]
 }
 ```
--->
+<!-- GENERATE: BUILD_INFO -->
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest areas: project.scripts, stack.detected, stack.api_framework
+Example output:
+## Build Information
 
-<!-- GENERATE: BUILD_INFO
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.scripts, stack.detected, stack.api_framework
-Ornek cikti:
-## Build Bilgileri
+### Build Command
 
-### Build Komutu
+```bash
+```
 ```bash
 npm run build
 ```
+
 
 ### Output Dizini
 `.next/` (Next.js) veya `dist/` (Vite/CRA)
@@ -106,6 +108,7 @@ npm run build
 
 ### Vercel Build Basarisiz
 
+
 ```
 1. Vercel Dashboard → Deployments → son deployment'in build loglarini incele
 2. Lokal olarak ayni build'i test et:
@@ -120,7 +123,9 @@ npm run build
    rm -rf node_modules && npm ci
 ```
 
-### Deployment Sonrasi Sayfa Calısmiyor
+
+### Page does not load after deploy
+
 
 ```
 1. Vercel Dashboard → Deployments → Functions loglarini kontrol et
@@ -131,7 +136,9 @@ npm run build
    dig +short www.example.com
 ```
 
-### Preview Deployment Farklı Davranıyor
+
+### Preview deploy behaves differently
+
 
 ```
 1. Preview ortam degiskenlerini kontrol et — production ile ayni mi olmali?
@@ -140,7 +147,9 @@ npm run build
 4. Feature flag varsa preview icin dogru flag degerleri set edilmis mi?
 ```
 
+
 ### Custom Domain / SSL Sorunu
+
 
 ```
 1. DNS kayitlarini kontrol et:
@@ -154,14 +163,15 @@ npm run build
 
 4. www vs apex redirect yapilandirmasi dogru mu?
 ```
-
 ---
 
-## Zorunlu Kurallar
+## Invariant Rules
 
-1. **Secret'lari koda yazma** — Tum hassas degerleri Vercel Environment Variables'da tut.
-2. **Preview/Production izolasyonu** — Preview deployment'lari production veritabanina dokunmamali.
-3. **Build locally first** — Vercel'e gondermeden once `npm run build` ile lokal build dene.
-4. **Public degiskenlere dikkat** — `NEXT_PUBLIC_` ile baslayan degiskenler tarayicida gorunur.
-5. **Fonksiyon timeout'larini goz onunde bulundur** — Vercel Hobby'de 10s, Pro'da 60s limitini asma.
-6. **Dokumante et** — Yaptiginin her adimini acikla, boylece tekrarlanabilir olsun.
+1. **Secrets in code** — All sensitive values should be stored in Vercel Environment Variables.
+2. **Preview/Production Isolation** — Deployments to preview must not touch the production database.
+3. **Build Locally First** — Before sending to Vercel, perform a local build with `npm run build`.
+4. **Be Aware of Public Variables** — Variables starting with `NEXT_PUBLIC_` will be visible in the browser.
+5. **Function Timeout Limits** — Set function timeouts to visible for 10s in Vercel Hobby and 60s in Vercel Pro.
+6. **Document Your Work** — Clearly document each step, so it can be repeated.
+
+---

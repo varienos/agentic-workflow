@@ -2,8 +2,8 @@
 /**
  * Session Tracker Hook — Agentic Workflow
  *
- * PostToolUse hook'u her tool cagrisindan sonra oturum state'ini gunceller.
- * Coklu oturum guvenli: her terminal kendi dosyasina yazar.
+ * PostToolUse hook updates session state after every tool call.
+ * Multi-session safe: each terminal writes to its own file.
  */
 
 const fs = require('fs');
@@ -188,11 +188,11 @@ function saveState(state) {
     syncBacklogSnapshot(state);
     fs.writeFileSync(SESSION_FILE, JSON.stringify(state), { mode: 0o600 });
 
-    // 3+ ardisik push fail uyarisi
+    // Warning for 3+ consecutive push failures
     const pf = state.git_activity && state.git_activity.push_failures;
     if (pf && pf.count >= 3) {
       process.stdout.write(JSON.stringify({
-        systemMessage: `${pf.count}x ardisik git push basarisiz. Son hata: ${pf.last_reason || 'bilinmiyor'}. Pre-push hook ciktisini kontrol edin.`,
+        systemMessage: `${pf.count}x consecutive git push failed. Last error: ${pf.last_reason || 'unknown'}. Check the pre-push hook output.`,
       }));
       return;
     }
@@ -346,7 +346,7 @@ function analyzeBashCommand(command, state, input, hadError) {
     });
     state.phase = 'planning';
     state.waiting_on = 'none';
-    state.last_meaningful_action = `Backlog gorevi basladi: ${taskId}`;
+    state.last_meaningful_action = `Backlog task started: ${taskId}`;
     pushEvent(state, 'backlog', `${taskId} basladi`, { task_id: taskId });
     return;
   }
@@ -360,7 +360,7 @@ function analyzeBashCommand(command, state, input, hadError) {
     }
     state.phase = 'done';
     state.waiting_on = 'none';
-    state.last_meaningful_action = `Backlog gorevi tamamlandi: ${taskId}`;
+    state.last_meaningful_action = `Backlog task completed: ${taskId}`;
     pushEvent(state, 'backlog', `${taskId} tamamlandi`, { task_id: taskId });
     return;
   }
@@ -369,14 +369,14 @@ function analyzeBashCommand(command, state, input, hadError) {
   if (taskCreateMatch) {
     const title = (taskCreateMatch[1] || taskCreateMatch[2]).substring(0, 60);
     state.backlog_activity.tasks_created.push(title);
-    state.last_meaningful_action = `Backlog gorevi olusturuldu: ${title}`;
-    pushEvent(state, 'backlog', `Gorev olustu: ${title}`);
+    state.last_meaningful_action = `Backlog task created: ${title}`;
+    pushEvent(state, 'backlog', `Task created: ${title}`);
     return;
   }
 
   if (/git\s+commit\b/i.test(command)) {
     state.git_activity.commits++;
-    state.last_meaningful_action = 'Git commit olusturuldu';
+    state.last_meaningful_action = 'Git commit created';
     pushEvent(state, 'git', 'Git commit olustu');
     return;
   }
@@ -391,8 +391,8 @@ function analyzeBashCommand(command, state, input, hadError) {
       state.git_activity.push_failures.count++;
       state.git_activity.push_failures.last_reason = sanitizeSnippet(pushResultStr.substring(0, 120));
       state.git_activity.push_failures.last_at = new Date().toISOString();
-      state.last_meaningful_action = 'Git push basarisiz';
-      pushEvent(state, 'git', 'Push basarisiz');
+      state.last_meaningful_action = 'Git push failed';
+      pushEvent(state, 'git', 'Push failed');
     } else {
       state.git_activity.push_failures = { count: 0, last_reason: '', last_at: null };
       state.last_meaningful_action = 'Git push basarili';
@@ -404,7 +404,7 @@ function analyzeBashCommand(command, state, input, hadError) {
   const branchMatch = command.match(/git\s+(?:checkout\s+-b|branch)\s+["']?([^\s"']+)/i);
   if (branchMatch) {
     addUnique(state.git_activity.branches_created, branchMatch[1]);
-    state.last_meaningful_action = `Branch olusturuldu: ${branchMatch[1]}`;
+    state.last_meaningful_action = `Branch created: ${branchMatch[1]}`;
     pushEvent(state, 'git', `Branch olustu: ${branchMatch[1]}`);
     return;
   }
@@ -413,13 +413,13 @@ function analyzeBashCommand(command, state, input, hadError) {
     if (hadError) {
       state.phase = 'waiting';
       state.waiting_on = 'test';
-      state.last_meaningful_action = `Test basarisiz: ${shortened}`;
-      pushEvent(state, 'test', `Test basarisiz: ${shortened}`);
+      state.last_meaningful_action = `Test failed: ${shortened}`;
+      pushEvent(state, 'test', `Test failed: ${shortened}`);
     } else {
       state.phase = 'testing';
       state.waiting_on = 'none';
-      state.last_meaningful_action = `Test calisti: ${shortened}`;
-      pushEvent(state, 'test', `Test calisti: ${shortened}`);
+      state.last_meaningful_action = `Test ran: ${shortened}`;
+      pushEvent(state, 'test', `Test ran: ${shortened}`);
     }
     return;
   }
@@ -427,13 +427,13 @@ function analyzeBashCommand(command, state, input, hadError) {
   if (hadError) {
     state.phase = 'waiting';
     state.waiting_on = 'dependency';
-    state.last_meaningful_action = `Komut basarisiz: ${shortened}`;
-    pushEvent(state, 'error', `Komut basarisiz: ${shortened}`);
+    state.last_meaningful_action = `Command failed: ${shortened}`;
+    pushEvent(state, 'error', `Command failed: ${shortened}`);
     return;
   }
 
-  state.last_meaningful_action = `Komut calisti: ${shortened}`;
-  pushEvent(state, 'command', `Komut calisti: ${shortened}`);
+  state.last_meaningful_action = `Command ran: ${shortened}`;
+  pushEvent(state, 'command', `Command ran: ${shortened}`);
 }
 
 function detectTeammate(input, state) {
@@ -493,27 +493,27 @@ function applyToolActivity(state, input, toolType, target, hadError) {
   if (toolType === 'Read') {
     state.phase = state.phase === 'done' ? 'done' : 'planning';
     state.waiting_on = 'none';
-    state.last_meaningful_action = `${shortenPath(target) || 'dosya'} okundu`;
-    pushEvent(state, 'read', `${shortenPath(target) || 'dosya'} okundu`);
+    state.last_meaningful_action = `${shortenPath(target) || 'file'} read`;
+    pushEvent(state, 'read', `${shortenPath(target) || 'file'} read`);
     return;
   }
 
   if (toolType === 'Grep' || toolType === 'Glob') {
     state.phase = 'planning';
     state.waiting_on = 'none';
-    state.last_meaningful_action = `${target || 'calisma alani'} arandi`;
-    pushEvent(state, 'search', `${target || 'calisma alani'} arandi`);
+    state.last_meaningful_action = `${target || 'workspace'} searched`;
+    pushEvent(state, 'search', `${target || 'workspace'} searched`);
     return;
   }
 
   if (toolType === 'Edit' || toolType === 'Write') {
     state.phase = 'implementing';
     state.waiting_on = 'none';
-    state.last_meaningful_action = `${shortenPath(target) || 'dosya'} ${toolType === 'Edit' ? 'duzenlendi' : 'yazildi'}`;
+    state.last_meaningful_action = `${shortenPath(target) || 'file'} ${toolType === 'Edit' ? 'edited' : 'written'}`;
     pushEvent(
       state,
       'write',
-      `${shortenPath(target) || 'dosya'} ${toolType === 'Edit' ? 'duzenlendi' : 'yazildi'}`
+      `${shortenPath(target) || 'file'} ${toolType === 'Edit' ? 'edited' : 'written'}`
     );
     return;
   }
@@ -521,8 +521,8 @@ function applyToolActivity(state, input, toolType, target, hadError) {
   if (hadError) {
     state.phase = 'waiting';
     state.waiting_on = 'dependency';
-    state.last_meaningful_action = `${toolType} basarisiz`;
-    pushEvent(state, 'error', `${toolType} basarisiz`);
+    state.last_meaningful_action = `${toolType} failed`;
+    pushEvent(state, 'error', `${toolType} failed`);
   }
 }
 

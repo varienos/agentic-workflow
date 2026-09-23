@@ -1,4 +1,4 @@
-# Monorepo Modul Tespiti
+# Monorepo Module Detection
 
 ## Checks
 
@@ -20,6 +20,6 @@
 
 ## Affects Core
 
-- task-hunter: Coklu dizin arama stratejisi eklenir
-- task-review: Katmanlar arasi (cross-layer) analiz eklenir
-- test-enforcer: Alt proje bazinda test eslestirme ve zorlama eklenir
+- task-hunter: Multi-directory search strategy is added
+- task-review: Cross-layer analysis is added
+- test-enforcer: Per-subproject test matching and enforcement is added

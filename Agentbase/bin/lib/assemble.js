@@ -48,11 +48,9 @@ function projectLanguage(detection) {
 
 /** detected degerlerinden modules.active turet (generate.js modul secimi icin). */
 function deriveModules(detection) {
-  // knowledge-graph/graphify ZORUNLU moduldur — her projede aktif olur (bkz.
-  // docs/superpowers/specs/2026-06-08-graphify-mandatory-install-design.md).
-  // getActiveModules bu deger uzerinden 'graphify'yi aktif sayar; boylece
-  // scanSkeletonFiles hook + /g + rules dosyalarini her zaman uretir.
-  const active = { 'knowledge-graph': ['graphify'] };
+  // graphify is optional. It is not activated and not installed unless a
+  // manifest author adds knowledge-graph/graphify explicitly.
+  const active = {};
   const orm = dv(detection, 'orm');
   if (orm) active.orm = orm;
   const standalone = [];
@@ -136,7 +134,7 @@ function assemble(detection, answers, opts = {}) {
   // --- conventions ---
   manifest.conventions = {
     naming: a.naming || 'camelCase',
-    commit_language: a.communication_language || 'tr',
+    commit_language: 'en',
     commit_format: manifest.workflows.commit_convention,
   };
 
@@ -144,7 +142,7 @@ function assemble(detection, answers, opts = {}) {
   manifest.developer = {
     experience: a.experience || 'mid',
     autonomy: a.autonomy || 'plan-then-auto',
-    communication_language: a.communication_language || 'tr',
+    communication_language: 'en',
   };
 
   // --- targets ---

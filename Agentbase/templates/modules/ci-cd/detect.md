@@ -1,24 +1,24 @@
-# CI/CD Kategori Tespiti
+# CI/CD Category Detection
 
-Bu kategori CI/CD pipeline araclarini tespit eder, pipeline dogrulama kurallari ve kontrolleri saglar.
+This category detects CI/CD pipeline tools and provides pipeline validation rules and checks.
 
 ## Variants
 
-Bootstrap asagidaki varyantlari sirayla kontrol eder. Birden fazla eslesen aktive edilebilir:
+Bootstrap checks the following variants in order. Multiple matches may be activated:
 
-| Varyant | Tespit Dosyasi | Oncelik |
+| Variant | Detection File | Priority |
 |---------|---------------|---------|
 | GitHub Actions | `ci-cd/github-actions/detect.md` | 1 |
 | GitLab CI | `ci-cd/gitlab-ci/detect.md` | 2 |
 
 ## Provides
 
-- Pipeline dosyasi dogrulama (syntax check)
-- Pre-deploy CI status kontrolu
-- CI-spesifik kurallar (secret yonetimi, cache stratejisi, artifact yonetimi)
+- Pipeline file validation (syntax check)
+- Pre-deploy CI status check
+- CI-specific rules (secret management, cache strategy, artifact management)
 
 ## Affects Core
 
-- workflow-lifecycle: CI pipeline entegrasyonu
-- CLAUDE.md: CI kurallari
-- pre-deploy: Pipeline status kontrolu
+- workflow-lifecycle: CI pipeline integration
+- CLAUDE.md: CI rules
+- pre-deploy: Pipeline status check

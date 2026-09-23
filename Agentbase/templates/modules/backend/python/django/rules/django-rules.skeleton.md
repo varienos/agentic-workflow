@@ -1,80 +1,79 @@
-# Django Kodlama Kurallari
+# Invariant Rules
+## Overview
+These rules are applicable for projects using the Django framework.
 
-> Bu kurallar Django framework'u kullanan projeler icin gecerlidir.
-> `backend/python` aile kurallari bu dosyayla birlikte uygulanir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> The backend/python family of rules will be applied to this file.
+> All lists and agents must comply with these rules.
 
 ---
 
-<!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.description, stack.primary, project.structure
-Ornek cikti:
-## Proje Baglami
-- **Proje:** Blog platformu (Django + PostgreSQL)
+<!-- GENERATE: WORKING_BOUNDARY_CONTEXT
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.description, stack.primary, project.structure
+Example output:
+## Project Boundary
+- **Project:** Blog platform (Django + PostgreSQL)
 - **Stack:** Python 3.12, Django 5.0, PostgreSQL 16, Celery
-- **Yapi:**
-  - `myproject/` — Django proje konfigurasyonu
-  - `apps/` — Django uygulamalari
-  - `templates/` — Sablonlar
-  - `static/` — Statik dosyalar
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+- **Environment:**
+  - `myproject/` — Django project configuration
+  - `apps/` — Django applications
+  - `templates/` — Templates
+  - `static/` — Static files
+
+Invariant Rules:
+- Configure files should be only in Agentbase directory.
+- The `.claude/` directory should not be created inside the codebase.
+- Git repository should only work inside the codebase.
+
 -->
 
 ---
 
-<!-- GENERATE: DJANGO_VERSION
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: stack.framework_version, stack.python_version
-Ornek cikti:
-## Versiyon Bilgisi
+<!-- GENERATE: DJANGO_VERSION_CONTEXT
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: stack.framework_version, stack.python_version
+Example output:
+## Version Information
 - **Django:** 5.0.x
 - **Python:** 3.12+
-- **Minimum uyumluluk:** Python 3.10
--->
+- **Minimum compatibility:** Python 3.10
 
 ---
 
-## Ayarlar (Settings) Yonetimi
+## Settings Management
 
-### Hassas Bilgiler
+### Sensitive Data
 
-- `SECRET_KEY`, veritabani sifresi, API anahtarlari ASLA kod icinde hardcode edilmez.
-- Ortam degiskenleri uzerinden okunur: `django-environ`, `python-decouple` veya `os.environ` kullan.
-- `.env` dosyasi ASLA commit edilmez. `.gitignore`'da olmali.
+- `SECRET_KEY`, database password, API keys should not be hardcoded in plaintext.
+- Environment variables are read over: `django-environ`, `python-decouple` or `os.environ` should be used.
+- The `.env` file should never be committed. It must be in the `.gitignore` list.
 
+---
 ```python
-# ❌ YANLIS — hardcode secret
+# FORBIDDEN — hardcode secret
 SECRET_KEY = 'django-insecure-xyz123456789'
 
-# ✅ DOGRU — ortam degiskeninden oku
+# HIGH — ortam degiskeninden oku
 import environ
 env = environ.Env()
 SECRET_KEY = env('SECRET_KEY')
 ```
+### Invariant Rules Structure
 
-### Ayar Dosyasi Yapisi
-
-- Tekil `settings.py` kucuk projeler icin kabul edilebilir.
-- Buyuk projelerde `settings/` dizini kullan:
-
+- Individual `settings.py` files are acceptable for small projects.
+- For larger projects, use the `settings/` directory:
+```python
+# MEDIUM — settings directory structure
+# settings/
+#     __init__.py
+#     ...
 ```
-settings/
-├── __init__.py      # from .base import *; try: from .local import * ...
-├── base.py          # Ortak ayarlar
-├── local.py         # Gelistirme ortami (.gitignore'da)
-├── production.py    # Production ortami
-└── test.py          # Test ortami
-```
+>>>
+### DEBUG Settings
 
-### DEBUG Ayari
-
-- `DEBUG = True` SADECE gelistirme ortaminda.
-- Production'da `DEBUG = False` ZORUNLU.
-- `ALLOWED_HOSTS` production'da acikca tanimlanmali (asla `['*']` degil).
+- `DEBUG = True` ONLY in development environment.
+- In production, `DEBUG = False` IS MANDATORY.
+- `ALLOWED_HOSTS` must be defined in production (never `['*']`).
 
 ---
 
@@ -82,24 +81,22 @@ settings/
 
 ### path() vs url()
 
-- Django 2.0+ itibariyle `path()` kullan, `url()` (re_path) kullanma.
-- `re_path()` sadece regex gerektiren karmasik pattern'ler icin kabul edilebilir.
+- As of Django 2.0, use `path()`, use `url()` (re_path) for non-regex patterns only.
 
 ```python
-# ❌ YANLIS — eski usul url()
+# ❌ WRONG — old way url()
 from django.conf.urls import url
 url(r'^posts/(?P<pk>\d+)/$', views.post_detail)
 
-# ✅ DOGRU — path() ile type-safe
+# ✅ RIGHT — path() with type-safe
 from django.urls import path
 path('posts/<int:pk>/', views.post_detail, name='post-detail')
 ```
+### Namespace Usage
 
-### Namespace Kullanimi
-
-- Her app kendi `urls.py` dosyasina sahip olmali.
-- `app_name` tanimla ve URL'leri namespace ile refere et.
-- Template ve kodda URL'leri asla hardcode etme.
+- Every app must have its own `urls.py` file.
+- Define an `app_name` and refer to URLs with the namespace.
+- Never hardcode URLs in templates or code.
 
 ```python
 # apps/blog/urls.py
@@ -109,31 +106,33 @@ urlpatterns = [
     path('<int:pk>/', views.PostDetailView.as_view(), name='post-detail'),
 ]
 
-# Template'de kullanim
-# ❌ YANLIS — hardcode URL
-# <a href="/blog/42/">
+# Template usage
+# ❌ WRONG — hardcode URL
+# <a href="/blog/42/>
 
-# ✅ DOGRU — namespace ile reverse
+# ✅ RIGHT — namespace with reverse
 # <a href="{% url 'blog:post-detail' post.pk %}">
 ```
 
-### API URL'leri
+### API URLs
 
-- REST API icin DRF (Django REST Framework) router kullan.
-- Versiyon prefix'i ekle: `/api/v1/...`
+- Use DRF (Django REST Framework) router for REST APIs.
+- Add version prefix: `/api/v1/...`
 
 ---
 
 ## View Conventions
 
 ### Class-Based vs Function-Based
+### Class-Based Views (CBV)
 
-- CRUD islemleri icin CBV (Class-Based View) tercih et — kod tekrarini azaltir.
-- Ozel/karmasik mantik icin FBV (Function-Based View) kabul edilebilir.
-- Generic view'lari kullan: `ListView`, `DetailView`, `CreateView`, `UpdateView`, `DeleteView`.
+- Use CBV for CRUD operations to reduce code duplication.
+- Accept FBV for special or complex logic.
+
+- Use generic views: `ListView`, `DetailView`, `CreateView`, `UpdateView`, `DeleteView`.
 
 ```python
-# ✅ DOGRU — generic CBV
+# MEDIUM — generic CBV
 from django.views.generic import ListView, DetailView
 
 class PostListView(ListView):
@@ -147,69 +146,43 @@ class PostDetailView(DetailView):
     template_name = 'blog/post_detail.html'
 ```
 
-### API View'lari (DRF)
 
-- `APIView` veya `ViewSet` kullan.
-- Serializer ile validasyon ve serialization yap.
-- Permission class'lari ile yetkilendirme kontrol et.
+### API Views (DRF)
+
+- Use `APIView` or `ViewSet`.
+- Validate and serialize with a serializer.
+- Control permission with Permission classes.
+
 
 ```python
-# ✅ DOGRU — DRF ViewSet
+# MEDIUM — DRF ViewSet
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 class PostViewSet(ModelViewSet):
-    queryset = Post.objects.select_related('author').all()
-    serializer_class = PostSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+
+>>> 
 ```
-
----
-
-## Template Guvenlik Kurallari
-
-### Auto-Escaping
-
-- Django template'leri varsayilan olarak auto-escape uygular — bunu kapatma.
-- `{{ variable }}` guvenlidir — HTML otomatik escape edilir.
-- `{{ variable|safe }}` veya `{% autoescape off %}` SADECE guvenilir ve sanitize edilmis icerik icin.
-
-```html
-{# ✅ DOGRU — otomatik XSS korumasi #}
-<p>{{ user.bio }}</p>
-
-{# ❌ TEHLIKELI — XSS acigi #}
-<p>{{ user.bio|safe }}</p>
-
-{# ✅ KABUL EDILEBILIR — bilinen guvenli kaynak, yorum ile #}
-{# Bleach ile sanitize edilmis HTML #}
-<div>{{ article.sanitized_body|safe }}</div>
-```
-
-### CSRF Korumasi
-
-- Tum POST formlarinda `{% csrf_token %}` ZORUNLU.
-- AJAX POST isteklerinde CSRF token header'da gonderilmeli.
-- `@csrf_exempt` SADECE webhook gibi dis kaynak istekleri icin, yorum ile aciklanmali.
-
-```html
+python
+queryset = Post.objects.select_related('author').all()
+serializer_class = PostSerializer
+permission_classes = [IsAuthenticatedOrReadOnly]
 {# ✅ DOGRU — CSRF token #}
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit">Gonder</button>
+    <button type="submit">Send</button>
 </form>
-```
 
 ---
 
 ## Model Best Practices
 
-### Meta Sinifi
+### Meta Class
 
-- Her model'de `verbose_name` ve `verbose_name_plural` tanimla.
-- `ordering` tanimla — siralamasiz sorgular tutarsiz sonuc verir.
-- `__str__` metodu tanimla — admin paneli ve debug icin onemli.
+- Define `verbose_name` and `verbose_name_plural` for every model.
+- Define `ordering` to avoid inconsistent results for unsorted queries.
+- Implement the `__str__` method — crucial for admin panel and debug purposes.
 
 ```python
 class Post(models.Model):
@@ -221,18 +194,16 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = 'Yazi'
-        verbose_name_plural = 'Yazilar'
+        verbose_name = 'Post'
+        verbose_name_plural = 'Posts'
         ordering = ['-created_at']
 
     def __str__(self):
-        return self.title
 ```
+### Manager and QuerySet
 
-### Manager ve QuerySet
-
-- Tekrar eden sorgular icin custom manager veya QuerySet kullan.
-- `objects` manager'ini override etmek yerine ek manager ekle.
+- Use custom manager or QuerySet for repeated queries.
+- Instead of overriding the `objects` manager, add an additional manager.
 
 ```python
 class PublishedManager(models.Manager):
@@ -241,109 +212,73 @@ class PublishedManager(models.Manager):
 
 class Post(models.Model):
     # ...
-    objects = models.Manager()  # Varsayilan manager
-    published = PublishedManager()  # Ozel manager
+    objects = models.Manager()  # Default manager
+    published = PublishedManager()  # Custom manager
 
-# Kullanim
-Post.published.all()  # Sadece yayinlanmis yazilar
+# Usage
+Post.published.all()  # Only published posts
 ```
 
 ### select_related / prefetch_related
 
-- ForeignKey ve OneToOne icin `select_related()` kullan (JOIN yapar).
-- ManyToMany ve reverse FK icin `prefetch_related()` kullan (ayri sorgu, Python'da birlestir).
+- Use `select_related()` for ForeignKey and OneToOne fields (JOIN).
+- Use `prefetch_related()` for ManyToMany and reverse ForeignKey fields (separate query, Python-side join).
+# Print the author's name of each post
 
-```python
-# ❌ YANLIS — N+1 sorgu
-posts = Post.objects.all()
-for post in posts:
-    print(post.author.name)  # Her iterasyonda sorgu
+print(post.author.name)  # Each iteration queries the database
 
-# ✅ DOGRU
+# ✔️ Green
 posts = Post.objects.select_related('author').all()
-```
+### Invariant Rules
 
----
+- Test method names start with `test_` and clearly indicate what is being tested.
+- Use factory patterns (`factory_boy`) instead of creating models directly.
+- Each test creates its own data — tests should be independent of each other.
+- Use `setUp` / `setUpTestData` to prepare shared test data.
 
-## Test Conventions
-
-### Test Sinif Secimi
-
-| Sinif | Kullanim | Veritabani | Hiz |
-|---|---|---|---|
-| `SimpleTestCase` | Veritabani gerektirmeyen testler | Hayir | Hizli |
-| `TestCase` | Veritabani gerektiren testler | Evet (transaction rollback) | Orta |
-| `TransactionTestCase` | Transaction davranisi testi | Evet (truncate) | Yavas |
-| `LiveServerTestCase` | Selenium / browser testleri | Evet | En yavas |
-
-### Dizin Yapisi
-
-```
-apps/blog/
-├── tests/
-│   ├── __init__.py
-│   ├── test_models.py       # Model testleri
-│   ├── test_views.py        # View testleri
-│   ├── test_serializers.py  # DRF serializer testleri
-│   ├── test_forms.py        # Form testleri
-│   └── factories.py         # Factory Boy tanimlari
-└── ...
-```
-
-### Kurallar
-
-- Test metod isimleri `test_` ile baslar ve ne test ettigini aciklar.
-- Factory kullan (`factory_boy`) — elle model olusturma yerine.
-- Her test kendi verisini olusturur — testler arasi bagimlilik olMAMALI.
-- `setUp` / `setUpTestData` ile ortak test verisini hazirla.
-
-```python
-# ✅ DOGRU — factory kullanimi
-from django.test import TestCase
-from apps.blog.tests.factories import PostFactory, UserFactory
-
-class PostModelTest(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.user = UserFactory()
-        cls.post = PostFactory(author=cls.user)
-
-    def test_str_returns_title(self):
-        self.assertEqual(str(self.post), self.post.title)
-
-    def test_published_manager_filters_correctly(self):
-        PostFactory(status='draft')
-        PostFactory(status='published')
-        self.assertEqual(Post.published.count(), 1)
-```
-
----
-
-<!-- GENERATE: PROJECT_CONVENTIONS
-Aciklama: Bu bolum Bootstrap tarafindan interview cevaplariyla doldurulur.
-Gerekli manifest alanlari: conventions.naming, conventions.patterns, conventions.project_specific
-Ornek cikti:
-## Proje Ozel Kurallari
-
-- **API Framework:** Django REST Framework kullaniliyor
+- **API Framework:** Using Django REST Framework
 - **Authentication:** JWT (djangorestframework-simplejwt)
-- **Asenkron gorevler:** Celery + Redis
-- **Cache stratejisi:** Redis, django-redis
-- **Dosya depolama:** AWS S3 (django-storages)
-- **Admin paneli:** Ozellesmis admin siniflar kullaniliyor
+- **Asynchronous tasks:** Celery + Redis
+- **Cache strategy:** Redis, django-redis
+- **File storage:** AWS S3 (django-storages)
+- **Admin panel:** Custom admin classes are used
 -->
 
 ---
 
-## Zorunlu Kurallar Ozeti
+## Mandatory Rules Summary
 
-1. **Secret'lari hardcode etme.** Ortam degiskeni veya secret manager kullan.
-2. **`DEBUG = True` production'da YASAK.** `ALLOWED_HOSTS` acikca tanimla.
-3. **`path()` kullan.** `url()` (eski usul regex) kullanma.
-4. **Namespace kullan.** URL'leri hardcode etme, `{% url %}` veya `reverse()` kullan.
-5. **CSRF token her formda.** `{% csrf_token %}` atlanmaz.
-6. **Auto-escape kapatma.** `|safe` sadece sanitize edilmis icerik icin.
-7. **`__str__` ve Meta tanimla.** Her model'de verbose_name, ordering, __str__ olmali.
-8. **`select_related` / `prefetch_related` kullan.** N+1 sorgu probleminden kacin.
-9. **Dogru test sinifini sec.** DB gerekmeyen testler icin `SimpleTestCase`.
-10. **Factory kullan.** Testlerde elle model olusturma yerine factory_boy.
+1. **Avoid hardcoding secrets.** Use environment variable or secret manager instead.
+2. **`DEBUG = True` isForbidden in production.** Specify `ALLOWED_HOSTS` explicitly.
+3. **Use `path()` instead of `url()`.** Do not use the old regex method.
+4. **Use namespace.** Hardcode URL definitions, `{% url %}` or `reverse()` should be used.
+5. **CSRF token must be included in every form.** `{% csrf_token %}` should not be skipped.
+6. **Disable auto-escape for safe content only.** Only use `|safe` for sanitized content.
+7. **Implement `__str__` and Meta definitions.** Every model must have verbose_name, ordering, and `__str__`.
+8. **Use `select_related` / `prefetch_related`.** Avoid N+1 query problems.
+9. **Choose the correct test class.** Select `SimpleTestCase` for tests that do not require a database.
+10. **Use Factory Boy.** Use factory boy instead of manually creating models in tests.
+
+---
+
+# Working Boundary
+
+The following rules must be followed to ensure a consistent and maintainable codebase.
+
+# Invariant Rules
+
+- **API Framework:** Using Django REST Framework
+- **Authentication:** JWT (djangorestframework-simplejwt)
+- **Asynchronous tasks:** Celery + Redis
+- **Cache strategy:** Redis, django-redis
+- **File storage:** AWS S3 (django-storages)
+- **Admin panel:** Custom admin classes are used
+
+---
+
+# Severity Labels
+
+* CRITICAL: Kritik
+* HIGH: Yuksek
+* MEDIUM: Orta
+* FORBIDDEN: Yasak

@@ -1,34 +1,34 @@
-# AGENTIC-WORKFLOW-ROOT-GITIGNORE (iki-repo teslimat modeli — ADIM 6.6)
+# AGENTIC-WORKFLOW-ROOT-GITIGNORE (two-repo delivery model — STEP 6.6)
 # ============================================================================
-# Proje Kökü .gitignore — Geliştiricinin workflow reposu (Şık 1: iki ayrı repo)
+# Project root .gitignore — developer's workflow repo (Option 1: two separate repos)
 # ============================================================================
-# Bu dosya, proje kökünün OPSIYONEL geliştirici git reposu içindir. Bu repo
-# Agentbase ve Docbase'i (workflow ortamı + dokümanlar/memory) versiyonlar.
+# This file is for the OPTIONAL developer git repo at the project root. That repo
+# versions Agentbase and Docbase (workflow environment + docs/memory).
 #
-# Codebase KENDİ bağımsız git reposudur ve müşteriye AYRI teslim edilir.
-# Bu yüzden burada YOK SAYILIR — geliştirici üst-kök repoyu (Agentbase + Docbase)
-# klonlar ve Codebase'i **ayrica** klonlar/baglar; müşteri yalnızca Codebase'i
-# klonlar (tertemiz). İki repo birbirini tanımaz.
+# Codebase is its OWN independent git repo and is delivered SEPARATELY to the customer.
+# Therefore it is IGNORED here — the developer clones the top-level repo (Agentbase + Docbase)
+# and clones or links Codebase **separately**; the customer clones only Codebase
+# (clean). The two repos do not know each other.
 #
-# Ayrıntı: bootstrap.md → ADIM 6.6 ve KUTSAL KURALLAR madde 1.
+# Detail: bootstrap.md → STEP 6.6 and INVARIANT RULES item 1.
 # ============================================================================
 
-# --- Codebase: ayrı repo + müşteri teslimatı (gerçek dizin veya worktree symlink'i) ---
-# ROOT-ANCHORED (baştaki /): yalnızca proje kökündeki Codebase hedeflenir.
-# Anchorsuz "Codebase" git'te HER seviyede eşleşir (örn. Agentbase/docs/Codebase/...) — istenmez.
+# --- Codebase: separate repo + customer delivery (real directory or worktree symlink) ---
+# ROOT-ANCHORED (leading /): only Codebase at the project root is targeted.
+# Unanchored "Codebase" matches at EVERY level in git (e.g. Agentbase/docs/Codebase/...) — unwanted.
 /Codebase
 /Codebase/
 
-# --- Codebase git worktree dizinleri (Codebase git'ine bağlı, üst dev repoda izlenmez) ---
+# --- Codebase git worktree directories (tied to Codebase git; not tracked in the top-level dev repo) ---
 /Codebase-wt-*/
 
-# --- OS / editör gürültüsü ---
+# --- OS / editor noise ---
 .DS_Store
 *.swp
 .idea/
 .vscode/
 
-# --- Opsiyonel: hassas memory vault'u dev reposundan da çıkarmak isterseniz aşağıyı açın ---
+# --- Optional: uncomment below to also exclude a sensitive memory vault from the dev repo (opt-in) ---
 # Docbase/memory/
 
-# END-AGENTIC-WORKFLOW-ROOT-GITIGNORE (managed block sonu — repair/normalize bu satira kadar olan blogu degistirir)
+# END-AGENTIC-WORKFLOW-ROOT-GITIGNORE (end of managed block — repair/normalize rewrites the block up to this line)

@@ -1,96 +1,96 @@
-# Flutter/Dart Kurallari
+# Flutter/Dart rules
 
-> Bu kurallar Flutter projeler icin gecerlidir.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules apply to Flutter projects.
+> All developers and agents MUST follow these rules.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Ornek cikti:
-## Proje Baglami
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.name, project.description, project.structure
+Example output:
+## Project context
 
-- **Proje:** MyApp — Saglik takip mobil uygulamasi
-- **Yapi:** Monorepo (`apps/mobile/` altinda Flutter projesi)
-- **Flutter Versiyonu:** 3.x
-- **Dart Versiyonu:** 3.x
-- **State Management:** Riverpod
+- **Project:** MyApp — Health tracking mobile app
+- **Structure:** Monorepo (Flutter project under `apps/mobile/`)
+- **Flutter version:** 3.x
+- **Dart version:** 3.x
+- **State management:** Riverpod
 - **Navigation:** GoRouter
 - **Deploy:** App Store + Google Play
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## Proje Yapisi
+## Project structure
 
-### Dizin Organizasyonu
+### Directory organization
 
 ```
 lib/
-├── main.dart                  # Giris noktasi
+├── main.dart                  # Entry point
 ├── app.dart                   # MaterialApp / CupertinoApp
-├── features/                  # Feature-based modul organizasyonu
+├── features/                  # Feature-based module organization
 │   ├── auth/
 │   │   ├── data/              # Repository, data source, model
 │   │   ├── domain/            # Entity, use case, repository interface
 │   │   └── presentation/     # Screen, widget, controller/cubit
 │   ├── home/
 │   └── settings/
-├── core/                      # Paylasilan altyapi
-│   ├── theme/                 # Tema tanimlari
-│   ├── router/                # Route tanimlari
+├── core/                      # Shared infrastructure
+│   ├── theme/                 # Theme definitions
+│   ├── router/                # Route definitions
 │   ├── network/               # HTTP client, interceptor
-│   ├── constants/             # Sabitler
-│   └── utils/                 # Yardimci fonksiyonlar
-├── shared/                    # Paylasilan widget'lar
-│   ├── widgets/               # Ortak UI component'leri
-│   └── extensions/            # Dart extension method'lari
+│   ├── constants/             # Constants
+│   └── utils/                 # Helper functions
+├── shared/                    # Shared widgets
+│   ├── widgets/               # Common UI components
+│   └── extensions/            # Dart extension methods
 test/
-├── unit/                      # Unit testler
-├── widget/                    # Widget testler
-└── integration/               # Integration testler
+├── unit/                      # Unit tests
+├── widget/                    # Widget tests
+└── integration/               # Integration tests
 ```
 
-### Proje Yapisi Kurallari
+### Project structure rules
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `lib/` altinda feature-based | Her feature kendi dizininde (auth, home, vb.) |
-| `lib/main.dart` giris noktasi | `runApp()` burada cagrilir |
-| `lib/src/` veya `lib/features/` | Modul bazli organizasyon — flat yapidan kacin |
-| `core/` paylasilan altyapi | Tema, router, network, constants burada |
-| `shared/widgets/` ortak widget'lar | Birden fazla feature'da kullanilan widget'lar |
+| Feature-based under `lib/` | Each feature in its own directory (auth, home, etc.) |
+| `lib/main.dart` entry point | `runApp()` is called here |
+| `lib/src/` or `lib/features/` | Module-based organization — avoid a flat structure |
+| `core/` shared infrastructure | Theme, router, network, constants live here |
+| `shared/widgets/` common widgets | Widgets used by more than one feature |
 
 ---
 
 <!-- GENERATE: STATE_MANAGEMENT
-Aciklama: Bu bolum Bootstrap tarafindan otomatik tespit edilir.
-Gerekli manifest alanlari: project.dependencies, project.state_management
-Ornek cikti:
-## State Yonetimi: Riverpod
+Explanation: This section is detected automatically by Bootstrap.
+Required manifest fields: project.dependencies, project.state_management
+Example output:
+## State management: Riverpod
 
-- **Tespit:** `pubspec.yaml`'da `flutter_riverpod` dependency'si mevcut
-- **Provider tipleri:** `StateNotifierProvider`, `FutureProvider`, `StreamProvider`
-- **Overrides:** Test icin `ProviderScope` ile override
-- **Kod uretimi:** `riverpod_generator` + `build_runner` kullaniliyor
+- **Detection:** `flutter_riverpod` dependency present in `pubspec.yaml`
+- **Provider types:** `StateNotifierProvider`, `FutureProvider`, `StreamProvider`
+- **Overrides:** Override with `ProviderScope` for tests
+- **Code generation:** `riverpod_generator` + `build_runner` in use
 -->
 
 ---
 
-## State Yonetimi Kurallari
+## State management rules
 
-### Genel Prensipler
+### General principles
 
 ```dart
-// DOGRU — State yonetimi proje genelinde TEK yaklasim
-// Provider, Riverpod, Bloc veya GetX — KARISTIRMA
+// CORRECT — ONE state management approach across the project
+// Provider, Riverpod, Bloc, or GetX — DO NOT MIX
 
-// DOGRU — StatelessWidget tercih et, state gerektirmeyen yerlerde
+// CORRECT — Prefer StatelessWidget where state is not needed
 class ProductCard extends StatelessWidget {
   final Product product;
 
@@ -104,30 +104,30 @@ class ProductCard extends StatelessWidget {
   }
 }
 
-// YANLIS (YASAK) — State gerektirmeyen yerde StatefulWidget
-class ProductCard extends StatefulWidget { // GEREKSIZ
-  // setState bile cagrilmiyorsa StatelessWidget yap
+// WRONG (FORBIDDEN) — StatefulWidget where state is not needed
+class ProductCard extends StatefulWidget { // UNNECESSARY
+  // If setState is never called, make it StatelessWidget
 }
 ```
 
-### State Kurallar Tablosu
+### State rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| TEK yaklasim | Proje genelinde tek state yonetim paketi kullan |
-| Global vs local ayirimi | Global state (auth, tema) vs local state (form, animasyon) net olmali |
-| StatefulWidget sinirli | Sadece gercekten local state gerektiren yerlerde |
-| Immutable state | State nesneleri immutable olmali (`copyWith` pattern) |
-| State dispose | Stream, controller, subscription mutlaka dispose edilmeli |
+| ONE approach | Use a single state management package across the project |
+| Global vs local separation | Global state (auth, theme) vs local state (form, animation) must be clear |
+| Limited StatefulWidget | Only where local state is truly required |
+| Immutable state | State objects must be immutable (`copyWith` pattern) |
+| Dispose state | Streams, controllers, subscriptions must be disposed |
 
 ---
 
-## Widget Kurallari
+## Widget rules
 
-### Widget Agaci ve Composition
+### Widget tree and composition
 
 ```dart
-// DOGRU — Widget agacini parcala (3+ seviye ic ice → ayri Widget)
+// CORRECT — Split the widget tree (3+ nested levels → separate Widget)
 class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -153,7 +153,7 @@ class ProfileBody extends StatelessWidget {
   }
 }
 
-// YANLIS (YASAK) — Derin ic ice widget agaci
+// WRONG (FORBIDDEN) — Deeply nested widget tree
 class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -165,7 +165,7 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 Column(
                   children: [
-                    // 5+ seviye derinlik — OKUNAMAZ
+                    // 5+ levels deep — UNREADABLE
                   ],
                 ),
               ],
@@ -178,10 +178,10 @@ class ProfileScreen extends StatelessWidget {
 }
 ```
 
-### Const Constructor ve Performans
+### Const constructor and performance
 
 ```dart
-// DOGRU — const constructor kullanilabilecek her yerde kullan
+// CORRECT — Use const constructor wherever possible
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key}); // const constructor
 
@@ -191,31 +191,31 @@ class AppLogo extends StatelessWidget {
   }
 }
 
-// DOGRU — const widget referansi
+// CORRECT — const widget references
 Widget build(BuildContext context) {
   return Column(
     children: const [
-      AppLogo(),              // const — rebuild olmaz
-      SizedBox(height: 16),   // const — rebuild olmaz
+      AppLogo(),              // const — does not rebuild
+      SizedBox(height: 16),   // const — does not rebuild
     ],
   );
 }
 
-// YANLIS (YASAK) — const kullanilabilecek yerde kullanmamak
+// WRONG (FORBIDDEN) — Not using const where possible
 Widget build(BuildContext context) {
   return Column(
     children: [
-      AppLogo(),              // const EKSIK — her build'de yeniden olusturulur
-      SizedBox(height: 16),   // const EKSIK
+      AppLogo(),              // Missing const — recreated on every build
+      SizedBox(height: 16),   // Missing const
     ],
   );
 }
 ```
 
-### Build Method Kurallari
+### Build method rules
 
 ```dart
-// DOGRU — Build method'da hesaplama yapma
+// CORRECT — Do not compute inside build
 class UserScreen extends StatefulWidget {
   @override
   State<UserScreen> createState() => _UserScreenState();
@@ -227,42 +227,42 @@ class _UserScreenState extends State<UserScreen> {
   @override
   void initState() {
     super.initState();
-    _userService = UserService(); // initState'te baslat
+    _userService = UserService(); // Initialize in initState
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context); // Theme erisimi OK
+    final theme = Theme.of(context); // Theme access OK
     return Container(color: theme.primaryColor);
   }
 }
 
-// YANLIS (YASAK) — Build method'da agir islem
+// WRONG (FORBIDDEN) — Heavy work in build method
 Widget build(BuildContext context) {
-  final filtered = items.where((i) => i.isActive).toList(); // AGIR HESAPLAMA
-  filtered.sort((a, b) => a.name.compareTo(b.name));        // HER BUILD'DE TEKRAR
+  final filtered = items.where((i) => i.isActive).toList(); // HEAVY COMPUTATION
+  filtered.sort((a, b) => a.name.compareTo(b.name));        // REPEATED EVERY BUILD
   return ListView.builder(...);
 }
 ```
 
-### Widget Kurallar Tablosu
+### Widget rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| 3+ seviye derinlik → ayir | Derin widget agacini ayri Widget sinifina cikar |
-| `const` constructor | Her mumkun yerde `const` kullan (performans) |
-| Build method temiz | Hesaplama, filtreleme build method'da YASAK |
-| `initState` / `didChangeDependencies` | Baslatma ve bagimlilik degisiklikleri burada |
-| Hardcoded deger YASAK | Renk/boyut icin Theme veya design token kullan |
+| 3+ levels deep → split | Extract deep widget trees into separate Widget classes |
+| `const` constructor | Use `const` wherever possible (performance) |
+| Keep build clean | Computation and filtering in build FORBIDDEN |
+| `initState` / `didChangeDependencies` | Initialization and dependency changes go here |
+| Hardcoded values FORBIDDEN | Use Theme or design tokens for color/size |
 
 ---
 
-## Navigasyon Kurallari
+## Navigation rules
 
-### Route Tanimlari
+### Route definitions
 
 ```dart
-// DOGRU — Route isimleri sabit olarak tanimla (magic string YASAK)
+// CORRECT — Define route names as constants (magic strings FORBIDDEN)
 abstract class AppRoutes {
   static const home = '/';
   static const profile = '/profile';
@@ -270,7 +270,7 @@ abstract class AppRoutes {
   static const productDetail = '/products/:id';
 }
 
-// DOGRU — GoRouter ile type-safe routing
+// CORRECT — Type-safe routing with GoRouter
 final router = GoRouter(
   routes: [
     GoRoute(
@@ -287,63 +287,63 @@ final router = GoRouter(
   ],
 );
 
-// YANLIS (YASAK) — Magic string ile navigasyon
-Navigator.pushNamed(context, '/profile'); // Sabit kullan
-context.go('/products/123');              // AppRoutes.productDetail kullan
+// WRONG (FORBIDDEN) — Navigation with magic strings
+Navigator.pushNamed(context, '/profile'); // Use a constant
+context.go('/products/123');              // Use AppRoutes.productDetail
 ```
 
-### Navigasyon Kurallar Tablosu
+### Navigation rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| GoRouter veya Navigator 2.0 | Modern routing yaklasimi tercih edilir |
-| Deep linking destegi | Route'lar deep link uyumlu olmali |
-| Route isimleri sabit | `AppRoutes` sinifinda tanimla, magic string YASAK |
-| Redirect/guard | Auth kontrolu route seviyesinde (`redirect` callback) |
-| Nested navigation | Shell route ile tab bazli navigasyon |
+| GoRouter or Navigator 2.0 | Prefer modern routing approaches |
+| Deep linking support | Routes must be deep-link compatible |
+| Route names as constants | Define in `AppRoutes` class — magic strings FORBIDDEN |
+| Redirect/guard | Auth checks at route level (`redirect` callback) |
+| Nested navigation | Tab-based navigation with shell routes |
 
 ---
 
 <!-- GENERATE: DESIGN_SYSTEM
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.theme_config, project.design_system
-Ornek cikti:
-## Tasarim Sistemi
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.theme_config, project.design_system
+Example output:
+## Design system
 
-### Tema Yapisi
+### Theme structure
 
-- **Tema dosyasi:** `lib/core/theme/app_theme.dart`
-- **Light tema:** `AppTheme.light()`
-- **Dark tema:** `AppTheme.dark()`
-- **Erisim:** `Theme.of(context)` veya `context.theme` extension
+- **Theme file:** `lib/core/theme/app_theme.dart`
+- **Light theme:** `AppTheme.light()`
+- **Dark theme:** `AppTheme.dark()`
+- **Access:** `Theme.of(context)` or `context.theme` extension
 
-### Renk Tokenlari
+### Color tokens
 
-| Token | Light | Dark | Kullanim |
+| Token | Light | Dark | Usage |
 |---|---|---|---|
-| `colorScheme.primary` | `#1E88E5` | `#42A5F5` | Ana aksiyonlar |
-| `colorScheme.surface` | `#FFFFFF` | `#121212` | Kart arka plani |
-| `colorScheme.error` | `#D32F2F` | `#EF5350` | Hata mesajlari |
+| `colorScheme.primary` | `#1E88E5` | `#42A5F5` | Primary actions |
+| `colorScheme.surface` | `#FFFFFF` | `#121212` | Card background |
+| `colorScheme.error` | `#D32F2F` | `#EF5350` | Error messages |
 
 ### Spacing
 
-| Token | Deger | Kullanim |
+| Token | Value | Usage |
 |---|---|---|
-| `AppSpacing.xs` | 4 | Minimum bosluk |
-| `AppSpacing.sm` | 8 | Kucuk bosluk |
-| `AppSpacing.md` | 16 | Standart bosluk |
-| `AppSpacing.lg` | 24 | Buyuk bosluk |
-| `AppSpacing.xl` | 32 | Cok buyuk bosluk |
+| `AppSpacing.xs` | 4 | Minimum gap |
+| `AppSpacing.sm` | 8 | Small gap |
+| `AppSpacing.md` | 16 | Standard gap |
+| `AppSpacing.lg` | 24 | Large gap |
+| `AppSpacing.xl` | 32 | Extra-large gap |
 -->
 
 ---
 
-## Performans Kurallari
+## Performance rules
 
-### Liste Performansi
+### List performance
 
 ```dart
-// DOGRU — ListView.builder (buyuk listeler icin)
+// CORRECT — ListView.builder (for large lists)
 ListView.builder(
   itemCount: items.length,
   itemBuilder: (context, index) {
@@ -351,35 +351,35 @@ ListView.builder(
   },
 )
 
-// DOGRU — Cok buyuk listeler icin itemExtent belirt
+// CORRECT — Specify itemExtent for very large lists
 ListView.builder(
   itemCount: items.length,
-  itemExtent: 80.0, // Sabit yukseklik — scroll performansi artar
+  itemExtent: 80.0, // Fixed height — improves scroll performance
   itemBuilder: (context, index) => ProductTile(product: items[index]),
 )
 
-// YANLIS (YASAK) — ListView ile children (tum ogeleri bir anda olusturur)
+// WRONG (FORBIDDEN) — ListView with children (creates all items at once)
 ListView(
   children: items.map((item) => ProductCard(product: item)).toList(),
 )
 ```
 
-### Gereksiz Rebuild Onleme
+### Preventing unnecessary rebuilds
 
 ```dart
-// DOGRU — RepaintBoundary ile gereksiz repaint onleme
+// CORRECT — Isolate unnecessary repaints with RepaintBoundary
 RepaintBoundary(
   child: ComplexAnimatedWidget(),
 )
 
-// DOGRU — Selector/Consumer ile parcali dinleme (Provider ornegi)
+// CORRECT — Partial listening with Selector/Consumer (Provider example)
 Consumer<CartModel>(
   builder: (context, cart, child) {
-    return Text('${cart.itemCount} urun');
+    return Text('${cart.itemCount} items');
   },
 )
 
-// DOGRU — Image caching
+// CORRECT — Image caching
 CachedNetworkImage(
   imageUrl: product.imageUrl,
   placeholder: (context, url) => const CircularProgressIndicator(),
@@ -387,32 +387,32 @@ CachedNetworkImage(
 )
 ```
 
-### Performans Kurallar Tablosu
+### Performance rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `ListView.builder` | Buyuk listeler icin ZORUNLU — `ListView(children:)` YASAK |
-| `const` widget | Rebuild olmasin diye `const` kullan |
-| `Selector` / `Consumer` | Parcali state dinleme — gereksiz rebuild onleme |
-| `RepaintBoundary` | Animasyonlu widget'lari izole et |
-| `cached_network_image` | Network gorselleri icin disk/memory cache |
-| `itemExtent` | Sabit boyutlu liste ogeleri icin scroll performansi |
+| `ListView.builder` | REQUIRED for large lists — `ListView(children:)` FORBIDDEN |
+| `const` widget | Use `const` so widgets do not rebuild |
+| `Selector` / `Consumer` | Partial state listening — prevent unnecessary rebuilds |
+| `RepaintBoundary` | Isolate animated widgets |
+| `cached_network_image` | Disk/memory cache for network images |
+| `itemExtent` | Scroll performance for fixed-size list items |
 
 ---
 
-## Platform-Spesifik Kod Kurallari
+## Platform-specific code rules
 
 ```dart
 import 'dart:io' show Platform;
 
-// DOGRU — Platform kontrolu
+// CORRECT — Platform check
 if (Platform.isIOS) {
-  // iOS-spesifik kod
+  // iOS-specific code
 } else if (Platform.isAndroid) {
-  // Android-spesifik kod
+  // Android-specific code
 }
 
-// DOGRU — Platform channel icin ayri sinif
+// CORRECT — Separate class for platform channel
 class NativeBridge {
   static const _channel = MethodChannel('com.example.app/native');
 
@@ -422,57 +422,57 @@ class NativeBridge {
   }
 }
 
-// DOGRU — Tutarli widget secimi
-// Proje genelinde Material VEYA Cupertino — karistirma
+// CORRECT — Consistent widget choice
+// Material OR Cupertino across the project — do not mix
 Widget build(BuildContext context) {
   return Platform.isIOS
-      ? CupertinoButton(child: Text('Tamam'), onPressed: onTap)
-      : ElevatedButton(child: Text('Tamam'), onPressed: onTap);
+      ? CupertinoButton(child: Text('OK'), onPressed: onTap)
+      : ElevatedButton(child: Text('OK'), onPressed: onTap);
 }
 ```
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| `Platform.isIOS` / `Platform.isAndroid` | Platform kontrolu icin |
-| Platform channel ayri dosya | Native kod iletisimi izole edilmeli |
-| Cupertino vs Material | Proje genelinde tutarli secim |
-| `kIsWeb` kontrolu | Web platformu icin `import 'package:flutter/foundation.dart'` |
+| `Platform.isIOS` / `Platform.isAndroid` | For platform checks |
+| Platform channel in separate file | Isolate native communication |
+| Cupertino vs Material | Consistent choice across the project |
+| `kIsWeb` check | For web platform use `import 'package:flutter/foundation.dart'` |
 
 ---
 
 <!-- GENERATE: PROJECT_CONVENTIONS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.conventions, project.rules, project.folder_structure
-Ornek cikti:
-## Proje Konvansiyonlari
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.conventions, project.rules, project.folder_structure
+Example output:
+## Project conventions
 
-### Dosya Isimlendirme
-- Dart dosyalari: `snake_case.dart` (ornek: `product_card.dart`)
-- Test dosyalari: `*_test.dart` (ornek: `product_card_test.dart`)
-- Barrel dosyalari: Feature dizininde `index.dart` (opsiyonel)
+### File naming
+- Dart files: `snake_case.dart` (example: `product_card.dart`)
+- Test files: `*_test.dart` (example: `product_card_test.dart`)
+- Barrel files: `index.dart` in the feature directory (optional)
 
-### Import Sirasi
+### Import order
 1. Dart SDK (`dart:async`, `dart:io`)
 2. Flutter SDK (`package:flutter/material.dart`)
-3. Ucuncu parti paketler (`package:provider/provider.dart`)
-4. Proje iceri (`package:myapp/features/...`)
-5. Relative import (ayni feature icinde `./`, `../`)
+3. Third-party packages (`package:provider/provider.dart`)
+4. Project internals (`package:myapp/features/...`)
+5. Relative imports (within the same feature `./`, `../`)
 
-### Sinif Isimlendirme
+### Class naming
 - Widget: PascalCase (`ProductCard`, `LoginScreen`)
-- State sinifi: `_WidgetNameState` (`_LoginScreenState`)
+- State class: `_WidgetNameState` (`_LoginScreenState`)
 - Model: PascalCase (`UserModel`, `Product`)
-- Enum: PascalCase, degerleri camelCase (`enum Status { active, inactive }`)
+- Enum: PascalCase, values camelCase (`enum Status { active, inactive }`)
 -->
 
 ---
 
-## Test Kurallari
+## Test rules
 
-### Unit Test
+### Unit test
 
 ```dart
-// DOGRU — Is mantigi ve utility fonksiyonlari icin unit test
+// CORRECT — Unit tests for business logic and utilities
 import 'package:test/test.dart';
 
 void main() {
@@ -494,10 +494,10 @@ void main() {
 }
 ```
 
-### Widget Test
+### Widget test
 
 ```dart
-// DOGRU — Widget test ile UI kontrolu
+// CORRECT — UI checks with widget tests
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -514,59 +514,67 @@ void main() {
 }
 ```
 
-### Test Kurallar Tablosu
+### Test rules table
 
-| Kural | Aciklama |
+| Rule | Description |
 |---|---|
-| Unit test | Is mantigi, utility fonksiyonlari icin |
-| Widget test | UI bilesenleri, kullanici etkilesimi icin |
-| Integration test | Uctan uca akislar icin |
-| `flutter test` | Test calistirma komutu |
-| Golden test | Gorsel regresyon kontrolu icin `matchesGoldenFile` |
-| Mock/Fake | Dependency'ler icin `mockito` veya `mocktail` |
+| Unit test | For business logic and utility functions |
+| Widget test | For UI components and user interaction |
+| Integration test | For end-to-end flows |
+| `flutter test` | Command to run tests |
+| Golden test | Visual regression with `matchesGoldenFile` |
+| Mock/Fake | `mockito` or `mocktail` for dependencies |
 
 ---
 
-## Yasak Pratikler
+## Forbidden practices
 
-| # | Yasak | Neden | Dogru Alternatif |
+| # | Forbidden | Reason | Correct alternative |
 |---|---|---|---|
-| 1 | `print()` | Production'da log kirliligi | `debugPrint()` veya `logger` paketi |
-| 2 | `dynamic` tip | Tip guvenligi kaybi, runtime hatalari | Her zaman acik tip belirt |
-| 3 | `setState()` icinde async | Race condition ve memory leak riski | Async islemi disarida yap, sonucu setState'e ver |
-| 4 | Build method'da `MediaQuery.of(context)` tekrari | Her cagri widget agacini yurur | Degiskene ata: `final size = MediaQuery.sizeOf(context)` |
-| 5 | Hardcoded string | i18n destegsiz, bakim zor | `intl` veya `easy_localization` kullan |
-| 6 | `ListView(children:)` buyuk liste | Tum ogeleri bir anda olusturur, bellek sorunu | `ListView.builder` kullan |
-| 7 | `const` olmayan sabit widget | Gereksiz rebuild | `const` constructor ekle |
-| 8 | Widget agaci 5+ seviye | Okunamaz, bakim zor | Ayri Widget sinifina cikar |
+| 1 | `print()` | Log noise in production | `debugPrint()` or a `logger` package |
+| 2 | `dynamic` type | Lost type safety, runtime errors | Always declare an explicit type |
+| 3 | Async inside `setState()` | Race condition and memory leak risk | Do async work outside, then call setState with the result |
+| 4 | Repeated `MediaQuery.of(context)` in build | Each call walks the widget tree | Assign to a variable: `final size = MediaQuery.sizeOf(context)` |
+| 5 | Hardcoded string | No i18n, hard to maintain | Use `intl` or `easy_localization` |
+| 6 | `ListView(children:)` for large lists | Creates all items at once, memory issues | Use `ListView.builder` |
+| 7 | Non-const static widgets | Unnecessary rebuilds | Add a `const` constructor |
+| 8 | Widget tree 5+ levels | Unreadable, hard to maintain | Extract into a separate Widget class |
 
 ---
 
 <!-- GENERATE: FORBIDDEN_PRACTICES
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.rules, project.conventions, project.forbidden_patterns
-Ornek cikti:
-### Projeye Ozel Yasaklar
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.rules, project.conventions, project.forbidden_patterns
+Example output:
+### Project-specific forbidden items
 
-| # | Yasak | Neden | Dogru Alternatif |
+| # | Forbidden | Reason | Correct alternative |
 |---|---|---|---|
-| 1 | `GetX` kullanimi | Proje Riverpod kullaniyor | `ref.watch`, `ref.read` kullan |
-| 2 | `Navigator.push` | GoRouter kullaniliyor | `context.go()`, `context.push()` |
-| 3 | Hardcoded renk | Tema sistemi var | `Theme.of(context).colorScheme` |
-| 4 | `http` paketi | `dio` kullaniliyor | `DioClient` sinifini kullan |
+| 1 | Using `GetX` | Project uses Riverpod | Use `ref.watch`, `ref.read` |
+| 2 | `Navigator.push` | GoRouter is in use | `context.go()`, `context.push()` |
+| 3 | Hardcoded color | Theme system exists | `Theme.of(context).colorScheme` |
+| 4 | `http` package | `dio` is in use | Use the `DioClient` class |
 -->
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory rules
 
-1. **`const` constructor ZORUNLU** — Kullanilabilecek her yerde `const` kullan, performans icin kritik.
-2. **`ListView.builder` ZORUNLU** — Buyuk listelerde `ListView(children:)` YASAK.
-3. **Widget agaci derinligi** — 3+ seviye ic ice → ayri Widget sinifina cikar.
-4. **Tek state yaklasimi** — Proje genelinde Provider/Riverpod/Bloc/GetX — KARISTIRMA.
-5. **Build method temiz** — Hesaplama, filtreleme, async islem build method'da YASAK.
-6. **Route isimleri sabit** — Magic string ile navigasyon YASAK, `AppRoutes` sinifi kullan.
-7. **Tip guvenligi** — `dynamic` tip YASAK, her zaman acik tip belirt.
-8. **`debugPrint()` kullan** — `print()` YASAK, logger paketi tercih edilir.
-9. **Platform-spesifik kod izole** — Platform channel ve native kod ayri sinif/dosyada.
-10. **Test** — Unit + Widget + Integration test katmanlari, `flutter test` ile calistirilir.
+1. **`const` constructor REQUIRED** — Use `const` wherever possible; critical for performance.
+2. **`ListView.builder` REQUIRED** — `ListView(children:)` FORBIDDEN for large lists.
+3. **Widget tree depth** — 3+ nested levels → extract into a separate Widget class.
+4. **Single state approach** — Provider/Riverpod/Bloc/GetX across the project — DO NOT MIX.
+5. **Clean build method** — Computation, filtering, and async work in build FORBIDDEN.
+6. **Route names as constants** — Magic-string navigation FORBIDDEN; use `AppRoutes`.
+7. **Type safety** — `dynamic` FORBIDDEN; always declare an explicit type.
+8. **Use `debugPrint()`** — `print()` FORBIDDEN; prefer a logger package.
+9. **Isolate platform-specific code** — Platform channels and native code in separate class/file.
+10. **Test** — Unit + Widget + Integration layers, run with `flutter test`.
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

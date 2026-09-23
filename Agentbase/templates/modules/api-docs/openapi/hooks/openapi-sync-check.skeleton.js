@@ -4,26 +4,26 @@
  * openapi-sync-check.skeleton.js
  * PostToolUse (Edit|Write) hook
  *
- * Route/controller dosyasi duzenlendikten sonra OpenAPI spec dosyasinin
- * guncel olup olmadigini kontrol eder. Eger route dosyasi degismisse
- * ve spec dosyasi daha eski ise stderr uzerinden hatirlatma mesaji verir.
+ * After a route/controller file is edited, checks whether the OpenAPI spec file
+ * is up to date. If the route file changed
+ * and the spec file is older, writes a reminder message to stderr.
  *
- * GENERATE bolumleri Bootstrap tarafindan doldurulur.
+ * GENERATE sections are filled by Bootstrap.
  */
 
 const path = require('path');
 const fs = require('fs');
 const { resolveCodebaseRoot } = require(path.join(__dirname, 'shared-hook-utils.js'));
 
-// Hedef kok: env (AGENTIC_CODEBASE_DIR) > manifest fallback. Symlink'lerde realpath ile cozulur.
+// Target root: env (AGENTIC_CODEBASE_DIR) > manifest fallback. Resolved with realpath for symlinks.
 const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
-// ─── GENERATE BOLUMU BASLANGIC ───
+// ─── GENERATE SECTION START ───
 
 /* GENERATE: ROUTE_PATTERNS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, stack.primary, stack.framework
-Ornek cikti: */
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.structure, stack.primary, stack.framework
+Example output: */
 const ROUTE_PATTERNS = [
   // /controllers\//,
   // /routes\//,
@@ -35,9 +35,9 @@ const ROUTE_PATTERNS = [
 /* END GENERATE */
 
 /* GENERATE: SPEC_PATHS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.structure, project.api_docs
-Ornek cikti: */
+Description: This section is filled by Bootstrap with manifest data.
+Required manifest fields: project.structure, project.api_docs
+Example output: */
 const SPEC_PATHS = [
   // 'openapi.yaml',
   // 'docs/openapi.yaml',
@@ -45,10 +45,10 @@ const SPEC_PATHS = [
 ];
 /* END GENERATE */
 
-// ─── GENERATE BOLUMU BITIS ───
+// ─── GENERATE SECTION END ───
 
 /**
- * Dosyanin route/controller dosyasi olup olmadigini kontrol eder.
+ * Checks whether the file is a route/controller file.
  */
 function isRouteFile(filePath) {
   const relativePath = path.relative(CODEBASE_ROOT, filePath);
@@ -63,8 +63,8 @@ function isRouteFile(filePath) {
 }
 
 /**
- * Spec dosyasinin mtime degerini dondurur.
- * Dosya bulunamazsa null dondurur.
+ * Returns the mtime of the spec file.
+ * Returns null if the file is not found.
  */
 function getSpecMtime(specRelPath) {
   const fullPath = path.join(CODEBASE_ROOT, specRelPath);
@@ -77,7 +77,7 @@ function getSpecMtime(specRelPath) {
 }
 
 /**
- * Route dosyasinin mtime degerini dondurur.
+ * Returns the mtime of the route file.
  */
 function getFileMtime(filePath) {
   if (fs.existsSync(filePath)) {
@@ -88,8 +88,8 @@ function getFileMtime(filePath) {
 }
 
 /**
- * Spec dosyasinin route dosyasindan eski olup olmadigini kontrol eder.
- * Herhangi bir spec dosyasi route'tan eski ise uyari verir.
+ * Checks whether the spec file is older than the route file.
+ * Warns if any spec file is older than the route.
  */
 function checkSpecStaleness(routeFilePath) {
   const routeMtime = getFileMtime(routeFilePath);
@@ -101,10 +101,10 @@ function checkSpecStaleness(routeFilePath) {
     const specMtime = getSpecMtime(specRelPath);
 
     if (specMtime === null) {
-      // Spec dosyasi bulunamadi — bu da bir sorun olabilir
-      staleSpecs.push(`${specRelPath} (dosya bulunamadi)`);
+      // Spec file not found — this may also be a problem
+      staleSpecs.push(`${specRelPath} (file not found)`);
     } else if (specMtime < routeMtime) {
-      // Spec dosyasi route dosyasindan eski
+      // Spec file is older than the route file
       staleSpecs.push(specRelPath);
     }
   }
@@ -112,10 +112,10 @@ function checkSpecStaleness(routeFilePath) {
   if (staleSpecs.length > 0) {
     const relativePath = path.relative(CODEBASE_ROOT, routeFilePath);
     process.stderr.write(
-      `\n⚠️  OpenAPI Spec Hatirlatmasi: "${relativePath}" dosyasi degistirildi.\n` +
-      `   Asagidaki spec dosyalari guncel olmayabilir:\n` +
+      `\n⚠️  OpenAPI Spec Reminder: "${relativePath}" file was changed.\n` +
+      `   The following spec files may be out of date:\n` +
       staleSpecs.map(s => `   - ${s}`).join('\n') + '\n' +
-      `   Lutfen API spec dosyasini endpoint degisikliklerine gore guncelleyin.\n\n`
+      `   Please update the API spec file according to the endpoint changes.\n\n`
     );
   }
 }
@@ -136,22 +136,22 @@ async function main() {
   try {
     const input = await readStdin();
 
-    // Orijinal girdiyi stdout'a yaz (non-blocking, pipeline'i bloklama)
+    // Write original input to stdout (non-blocking, do not block the pipeline)
     process.stdout.write(input);
 
     const parsed = JSON.parse(input);
     const filePath = parsed?.tool_input?.file_path || parsed?.tool_input?.path || '';
 
-    // Dosya codebase icinde mi?
+    // Is the file inside the codebase?
     if (!filePath.startsWith(CODEBASE_ROOT)) return;
 
-    // Route/controller dosyasi mi?
+    // Is it a route/controller file?
     if (!isRouteFile(filePath)) return;
 
-    // Spec dosyalarinin guncelligini kontrol et
+    // Check whether spec files are up to date
     checkSpecStaleness(filePath);
   } catch {
-    // Hook hatalari sessizce yutulur — workflow'u bloklamamali
+    // Hook errors are swallowed silently — must not block the workflow
   }
 }
 

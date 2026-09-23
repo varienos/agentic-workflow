@@ -1,216 +1,224 @@
-# Design System Kurallari
+# Design system rules
 
-> Bu kurallar UI gelistirmede tutarlilik ve tasarim sistemi uyumunu saglar.
-> Tum gelistiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules ensure consistency and design-system alignment in UI development.
+> All developers and agents MUST follow these rules.
 
 ---
 
 <!-- GENERATE: DESIGN_SYSTEM_NAME
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.design_system, project.theme_config
-Ornek cikti:
-## Tasarim Sistemi: AppTheme
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.design_system, project.theme_config
+Example output:
+## Design system: AppTheme
 
-- **Tema dosyasi:** `apps/mobile/src/theme/index.ts`
-- **Hook:** `useTheme()` — tum renk, spacing, typography degerlerine erisim
-- **Provider:** `<ThemeProvider>` — `App.tsx` icinde sarmalayici
-- **Dark mode:** Destekleniyor (`useColorScheme()` ile)
+- **Theme file:** `apps/mobile/src/theme/index.ts`
+- **Hook:** `useTheme()` — access to all color, spacing, typography values
+- **Provider:** `<ThemeProvider>` — wrapper inside `App.tsx`
+- **Dark mode:** Supported (via `useColorScheme()`)
 -->
 
 ---
 
-## Renk Tokenlari
+## Color tokens
 
 <!-- GENERATE: COLOR_TOKENS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.theme_config, project.color_tokens
-Ornek cikti:
-### Renk Kullanim Tablosu
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.theme_config, project.color_tokens
+Example output:
+### Color usage table
 
-| Token | Light | Dark | Kullanim |
+| Token | Light | Dark | Usage |
 |---|---|---|---|
-| `colors.primary` | `#007AFF` | `#0A84FF` | Ana aksiyonlar, butonlar, linkler |
-| `colors.secondary` | `#5856D6` | `#5E5CE6` | Ikincil aksiyonlar |
-| `colors.background` | `#FFFFFF` | `#000000` | Sayfa arka plani |
-| `colors.surface` | `#F2F2F7` | `#1C1C1E` | Kart ve alan arka plani |
-| `colors.text` | `#000000` | `#FFFFFF` | Ana metin |
-| `colors.textSecondary` | `#8E8E93` | `#8E8E93` | Ikincil metin |
-| `colors.border` | `#C6C6C8` | `#38383A` | Cizgi ve kenarliklar |
-| `colors.error` | `#FF3B30` | `#FF453A` | Hata mesajlari |
-| `colors.success` | `#34C759` | `#30D158` | Basari mesajlari |
-| `colors.warning` | `#FF9500` | `#FF9F0A` | Uyari mesajlari |
+| `colors.primary` | `#007AFF` | `#0A84FF` | Primary actions, buttons, links |
+| `colors.secondary` | `#5856D6` | `#5E5CE6` | Secondary actions |
+| `colors.background` | `#FFFFFF` | `#000000` | Page background |
+| `colors.surface` | `#F2F2F7` | `#1C1C1E` | Card and area background |
+| `colors.text` | `#000000` | `#FFFFFF` | Main text |
+| `colors.textSecondary` | `#8E8E93` | `#8E8E93` | Secondary text |
+| `colors.border` | `#C6C6C8` | `#38383A` | Lines and borders |
+| `colors.error` | `#FF3B30` | `#FF453A` | Error messages |
+| `colors.success` | `#34C759` | `#30D158` | Success messages |
+| `colors.warning` | `#FF9500` | `#FF9F0A` | Warning messages |
 
-### Renk Erisimi
+### Color access
 ```typescript
 const { colors } = useTheme();
 
-// DOGRU:
+// CORRECT:
 <View style={{ backgroundColor: colors.background }}>
-<Text style={{ color: colors.text }}>Merhaba</Text>
+<Text style={{ color: colors.text }}>Hello</Text>
 
-// YANLIS (YASAK):
+// WRONG (FORBIDDEN):
 <View style={{ backgroundColor: '#FFFFFF' }}>
-<Text style={{ color: 'black' }}>Merhaba</Text>
+<Text style={{ color: 'black' }}>Hello</Text>
 ```
 -->
 
 ---
 
-## Component Pattern'leri
+## Component patterns
 
 <!-- GENERATE: COMPONENT_PATTERNS
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.component_library, project.ui_patterns
-Ornek cikti:
-### UI Component Kullanim Kurallari
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.component_library, project.ui_patterns
+Example output:
+### UI component usage rules
 
-| Ihtiyac | Dogru Component | Yanlis (YASAK) | Notlar |
+| Need | Correct component | Wrong (FORBIDDEN) | Notes |
 |---|---|---|---|
-| Buton | `<Button>` | `<TouchableOpacity><Text>` | Tum butonlar Button component'i |
-| Metin | `<Typography>` | `<Text>` | Ham Text YASAK |
-| Input | `<TextInput>` (themed) | RN `<TextInput>` | Tema uyumlu versiyonu kullan |
-| Kart | `<Card>` | `<View style={...}>` | Golge, kenarlik, padding dahil |
-| Liste | `<FlashList>` | `<FlatList>` | Performans icin FlashList |
-| Ikon | `<Icon name="..." />` | Inline SVG | Ikon kutuphanesi uzerinden |
-| Modal | `<BottomSheet>` | RN `<Modal>` | Platform tutarliligi icin |
-| Loading | `<Skeleton>` | `<ActivityIndicator>` | Skeleton loading UX icin |
+| Button | `<Button>` | `<TouchableOpacity><Text>` | All buttons use the Button component |
+| Text | `<Typography>` | `<Text>` | Raw Text FORBIDDEN |
+| Input | `<TextInput>` (themed) | RN `<TextInput>` | Use the theme-aware version |
+| Card | `<Card>` | `<View style={...}>` | Includes shadow, border, padding |
+| List | `<FlashList>` | `<FlatList>` | FlashList for performance |
+| Icon | `<Icon name="..." />` | Inline SVG | Through the icon library |
+| Modal | `<BottomSheet>` | RN `<Modal>` | For platform consistency |
+| Loading | `<Skeleton>` | `<ActivityIndicator>` | Skeleton loading for UX |
 
-### Component Ornekleri
+### Component examples
 
 ```typescript
-// DOGRU — Button component'i kullan
+// CORRECT — Use the Button component
 <Button
   variant="primary"
   size="md"
   onPress={handleSubmit}
   loading={isLoading}
 >
-  Kaydet
+  Save
 </Button>
 
-// YANLIS — Kendi butonunu yapma
+// WRONG — Do not build your own button
 <TouchableOpacity
   style={{ backgroundColor: '#007AFF', padding: 12 }}
   onPress={handleSubmit}
 >
-  <Text style={{ color: 'white' }}>Kaydet</Text>
+  <Text style={{ color: 'white' }}>Save</Text>
 </TouchableOpacity>
 ```
 -->
 
 ---
 
-## Tipografi
+## Typography
 
 <!-- GENERATE: TYPOGRAPHY
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.theme_config, project.typography
-Ornek cikti:
-### Font Ailesi
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.theme_config, project.typography
+Example output:
+### Font family
 
-| Token | Font | Weight | Kullanim |
+| Token | Font | Weight | Usage |
 |---|---|---|---|
-| `fonts.regular` | Inter-Regular | 400 | Normal metin |
-| `fonts.medium` | Inter-Medium | 500 | Vurgulu metin |
-| `fonts.semibold` | Inter-SemiBold | 600 | Basliklar |
-| `fonts.bold` | Inter-Bold | 700 | Ana basliklar |
+| `fonts.regular` | Inter-Regular | 400 | Normal text |
+| `fonts.medium` | Inter-Medium | 500 | Emphasized text |
+| `fonts.semibold` | Inter-SemiBold | 600 | Headings |
+| `fonts.bold` | Inter-Bold | 700 | Main headings |
 
-### Font Boyutlari
+### Font sizes
 
-| Token | Boyut | Satir Yuksekligi | Kullanim |
+| Token | Size | Line height | Usage |
 |---|---|---|---|
-| `fontSize.xs` | 10 | 14 | Etiket, badge |
-| `fontSize.sm` | 12 | 16 | Yardimci metin |
-| `fontSize.md` | 14 | 20 | Normal metin |
-| `fontSize.lg` | 16 | 22 | Vurgulu metin |
-| `fontSize.xl` | 20 | 28 | Alt baslik |
-| `fontSize.2xl` | 24 | 32 | Sayfa basligi |
-| `fontSize.3xl` | 30 | 38 | Ana baslik |
+| `fontSize.xs` | 10 | 14 | Label, badge |
+| `fontSize.sm` | 12 | 16 | Helper text |
+| `fontSize.md` | 14 | 20 | Normal text |
+| `fontSize.lg` | 16 | 22 | Emphasized text |
+| `fontSize.xl` | 20 | 28 | Subheading |
+| `fontSize.2xl` | 24 | 32 | Page title |
+| `fontSize.3xl` | 30 | 38 | Main heading |
 
-### Tipografi Kullanimi
+### Typography usage
 
 ```typescript
 const { fonts, fontSize } = useTheme();
 
-// DOGRU:
-<Typography variant="h1">Baslik</Typography>
-<Typography variant="body">Icerik metni</Typography>
+// CORRECT:
+<Typography variant="h1">Title</Typography>
+<Typography variant="body">Body text</Typography>
 
-// YANLIS (YASAK):
-<Text style={{ fontSize: 24, fontWeight: 'bold' }}>Baslik</Text>
+// WRONG (FORBIDDEN):
+<Text style={{ fontSize: 24, fontWeight: 'bold' }}>Title</Text>
 ```
 -->
 
 ---
 
-## Spacing ve Layout
+## Spacing and layout
 
-### Spacing Skalasi
+### Spacing scale
 
-| Token | Deger | Kullanim |
+| Token | Value | Usage |
 |---|---|---|
-| `spacing.xs` | 4 | Minimum bosluk, ikon + metin arasi |
-| `spacing.sm` | 8 | Kucuk bosluk, liste elemanları arasi |
-| `spacing.md` | 16 | Standard bosluk, section padding |
-| `spacing.lg` | 24 | Buyuk bosluk, section arasi |
-| `spacing.xl` | 32 | Ekstra bosluk, sayfa padding |
-| `spacing.2xl` | 48 | Maximum bosluk |
+| `spacing.xs` | 4 | Minimum gap, between icon and text |
+| `spacing.sm` | 8 | Small gap between list items |
+| `spacing.md` | 16 | Standard gap, section padding |
+| `spacing.lg` | 24 | Large gap, between sections |
+| `spacing.xl` | 32 | Extra gap, page padding |
+| `spacing.2xl` | 48 | Maximum gap |
 
-### Layout Kurallari
+### Layout rules
 
 ```typescript
 const { spacing } = useTheme();
 
-// DOGRU — Tema spacing kullan
+// CORRECT — Use theme spacing
 <View style={{ padding: spacing.md, gap: spacing.sm }}>
 
-// YANLIS (YASAK) — Hardcoded deger
+// WRONG (FORBIDDEN) — Hardcoded value
 <View style={{ padding: 16, gap: 8 }}>
 ```
 
-### Border Radius
+### Border radius
 
-| Token | Deger | Kullanim |
+| Token | Value | Usage |
 |---|---|---|
-| `borderRadius.sm` | 4 | Kucuk elemanlar (chip, badge) |
-| `borderRadius.md` | 8 | Kartlar, inputlar |
-| `borderRadius.lg` | 12 | Buyuk kartlar, modal |
+| `borderRadius.sm` | 4 | Small elements (chip, badge) |
+| `borderRadius.md` | 8 | Cards, inputs |
+| `borderRadius.lg` | 12 | Large cards, modal |
 | `borderRadius.xl` | 16 | Bottom sheet |
-| `borderRadius.full` | 9999 | Daire (avatar, FAB) |
+| `borderRadius.full` | 9999 | Circle (avatar, FAB) |
 
 ---
 
-## Yasaklar
+## Forbidden practices
 
 <!-- GENERATE: FORBIDDEN_PRACTICES
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.rules, project.conventions, project.forbidden_patterns
-Ornek cikti:
-### Kesinlikle YASAK Olan Uygulamalar
+Explanation: This section is populated by Bootstrap with manifest data.
+Required manifest fields: project.rules, project.conventions, project.forbidden_patterns
+Example output:
+### Strictly FORBIDDEN practices
 
-| # | Yasak | Neden | Dogru Alternatif |
+| # | Forbidden | Reason | Correct alternative |
 |---|---|---|---|
-| 1 | Hardcoded renk (`#FF0000`, `red`) | Dark mode'da bozulur, tutarsizlik | `colors.error` token kullan |
-| 2 | Hardcoded font boyutu (`fontSize: 16`) | Tipografi tutarsizligi | `fontSize.lg` token kullan |
-| 3 | Hardcoded spacing (`padding: 16`) | Layout tutarsizligi | `spacing.md` token kullan |
-| 4 | Ham `<Text>` component'i | Stil tutarsizligi | `<Typography>` kullan |
-| 5 | Ham `<TextInput>` component'i | Tema uyumsuzlugu | Themed `<TextInput>` kullan |
-| 6 | `<FlatList>` kullanimi | Performans sorunu | `<FlashList>` kullan |
-| 7 | Inline `style` nesnesi render icinde | Her render'da yeni referans | `StyleSheet.create` veya tema kullan |
-| 8 | `Platform.OS === 'ios' ?` icin style | Bakimi zor | `Platform.select()` kullan |
-| 9 | Pixel deger (`width: 375`) | Farkli ekran boyutlarinda bozulur | Responsive deger kullan |
-| 10 | `opacity: 0` ile gizleme | Eleman DOM'da kalir | Conditional render kullan |
+| 1 | Hardcoded color (`#FF0000`, `red`) | Breaks in dark mode, inconsistency | Use `colors.error` token |
+| 2 | Hardcoded font size (`fontSize: 16`) | Typography inconsistency | Use `fontSize.lg` token |
+| 3 | Hardcoded spacing (`padding: 16`) | Layout inconsistency | Use `spacing.md` token |
+| 4 | Raw `<Text>` component | Style inconsistency | Use `<Typography>` |
+| 5 | Raw `<TextInput>` component | Theme mismatch | Use themed `<TextInput>` |
+| 6 | Using `<FlatList>` | Performance issue | Use `<FlashList>` |
+| 7 | Inline `style` object inside render | New reference every render | Use `StyleSheet.create` or theme |
+| 8 | `Platform.OS === 'ios' ?` for style | Hard to maintain | Use `Platform.select()` |
+| 9 | Pixel value (`width: 375`) | Breaks on different screen sizes | Use responsive values |
+| 10 | Hiding with `opacity: 0` | Element stays in the tree | Use conditional render |
 -->
 
 ---
 
-## Zorunlu Kurallar
+## Mandatory rules
 
-1. **Renk → Token** — Hicbir yerde hardcoded renk degeri KULLANMA. Her zaman `colors.*` tokeni kullan.
-2. **Font → Tema** — Font ailesi, boyutu ve agirligini her zaman temadan al.
-3. **Spacing → Token** — Padding, margin, gap degerlerini her zaman `spacing.*` tokenlerinden al.
-4. **Component → Kütüphane** — Temel UI elemanlari icin her zaman proje component'lerini kullan.
-5. **Dark mode → Otomatik** — `useTheme()` hook'u dark mode desteğini otomatik saglar, manuel kontrol YAPMA.
-6. **StyleSheet.create** — Render disinda stil tanimla veya tema tokenlerini kullan.
-7. **Responsive** — Sabit piksel degerleri yerine esnek layout kullan (flex, percentage).
-8. **Platform.select** — Platform-spesifik stil icin ternary yerine `Platform.select()` kullan.
+1. **Color → Token** — Never use hardcoded color values. Always use a `colors.*` token.
+2. **Font → Theme** — Always take font family, size, and weight from the theme.
+3. **Spacing → Token** — Always take padding, margin, and gap from `spacing.*` tokens.
+4. **Component library** — Use the project components for basic UI.
+5. **Dark mode** — `useTheme()` handles it. Do not add a manual toggle.
+6. **StyleSheet.create** — Define styles outside render or use theme tokens.
+7. **Responsive** — Prefer flexible layout (flex, percentage) over fixed pixel values.
+8. **Platform.select** — Use `Platform.select()` for platform-specific styles instead of ternary.
+
+## Invariant rules
+
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
+- Do not write config into Codebase
+- Codebase is readable; config is not written there

@@ -1,68 +1,68 @@
-# Kod Konvansiyonlari
+# Coding Conventions
 
-Bu dosya projenin kod yazim kurallarini tanimlar. Tum agent'lar, komutlar ve code-review kontrolleri bu kurallara uyar.
+This file defines the project's coding rules. All agents, commands, and code-review checks follow these rules.
 
 ---
 
-## Isimlendirme Kurallari
+## Naming Rules
 
 <!-- GENERATE: NAMING_RULES
-Aciklama: Manifest conventions.naming alanina gore isimlendirme kurallarini uretir.
-Gerekli manifest alanlari: conventions.naming, conventions.file_naming, conventions.component_naming
-Ornek cikti:
+Description: Emits naming rules from the manifest conventions.naming field.
+Required manifest fields: conventions.naming, conventions.file_naming, conventions.component_naming
+Example output:
 
-### Degisken ve Fonksiyon Isimlendirme: camelCase
+### Variable and Function Naming: camelCase
 
-| Oge | Format | Ornek |
+| Item | Format | Example |
 |-----|--------|-------|
-| Degisken | camelCase | `userName`, `isActive`, `totalCount` |
-| Fonksiyon | camelCase | `getUserById`, `calculateTotal` |
-| Sabit | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT`, `API_BASE_URL` |
-| Sinif | PascalCase | `UserService`, `PaymentController` |
+| Variable | camelCase | `userName`, `isActive`, `totalCount` |
+| Function | camelCase | `getUserById`, `calculateTotal` |
+| Constant | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT`, `API_BASE_URL` |
+| Class | PascalCase | `UserService`, `PaymentController` |
 | Interface/Type | PascalCase | `UserProfile`, `ApiResponse` |
-| Enum | PascalCase (deger: UPPER_SNAKE) | `Status.ACTIVE`, `Role.ADMIN` |
+| Enum | PascalCase (value: UPPER_SNAKE) | `Status.ACTIVE`, `Role.ADMIN` |
 
-### Dosya Isimlendirme: kebab-case
+### File Naming: kebab-case
 
-| Dosya Tipi | Format | Ornek |
+| File Type | Format | Example |
 |-----------|--------|-------|
-| Modul/servis | kebab-case | `user-service.js`, `payment-handler.ts` |
+| Module/service | kebab-case | `user-service.js`, `payment-handler.ts` |
 | Component | PascalCase | `UserProfile.tsx`, `PaymentForm.vue` |
-| Test | kaynak-adi.test.ext | `user-service.test.js` |
-| Tip/interface | kebab-case | `api-types.ts` |
+| Test | source-name.test.ext | `user-service.test.js` |
+| Type/interface | kebab-case | `api-types.ts` |
 -->
 
-## Commit Kurallari
+## Commit Rules
 
 <!-- GENERATE: COMMIT_CONVENTION
-Aciklama: Commit mesaj formati ve dili.
-Gerekli manifest alanlari: conventions.commit_language, conventions.commit_format, workflows.commit_prefix_map
-Ornek cikti:
+Description: Commit message format and language.
+Required manifest fields: conventions.commit_language, conventions.commit_format, workflows.commit_prefix_map
+Example output:
 
 **Format:** Conventional Commits
-**Dil:** Turkce
+**Language:** English
 
-| Prefix | Anlami |
+| Prefix | Meaning |
 |--------|--------|
-| `feat:` | Yeni ozellik |
-| `fix:` | Hata duzeltme |
-| `refactor:` | Yeniden yapilandirma |
-| `docs:` | Dokumantasyon |
-| `test:` | Test ekleme/duzeltme |
-| `chore:` | Bakim |
-| `perf:` | Performans |
-| `style:` | Stil/format |
+| `feat:` | New feature |
+| `fix:` | Bug fix |
+| `refactor:` | Restructuring |
+| `docs:` | Documentation |
+| `test:` | Add/fix tests |
+| `chore:` | Maintenance |
+| `perf:` | Performance |
+| `style:` | Style/format |
 | `ci:` | CI/CD |
 -->
 
-## Proje-Spesifik Kurallar
+## Project-Specific Rules
 
 <!-- GENERATE: PROJECT_CONVENTIONS
-Aciklama: Phase 4 domain kurallari ve proje-spesifik konvansiyonlar.
-Gerekli manifest alanlari: rules.domain, conventions.docblock, project.rules
-Ornek cikti:
+Description: Phase 4 domain rules and project-specific conventions.
+Required manifest fields: rules.domain, conventions.docblock, project.rules
+Example output:
 
-- API response formati her zaman `{ status, data, message }` olsun
-- Kullanici verisi log'a yazilmaz
-- Her public fonksiyon JSDoc ile dokumante edilir
+- API response format is always `{ status, data, message }`
+- User data is not written to logs
+- Every public function is documented with JSDoc
 -->

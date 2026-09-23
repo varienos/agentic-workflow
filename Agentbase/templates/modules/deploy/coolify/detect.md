@@ -1,12 +1,12 @@
-# Coolify Modul Tespiti
+# Invariant Rules
 
 ## Checks
 
-- file_exists: docker-compose.prod.yml | docker-compose.yml
-- file_exists: Dockerfile
-- file_exists: entrypoint.sh
+- `file_exists: docker-compose.prod.yml | docker-compose.yml`
+- `file_exists: Dockerfile`
+- `file_exists: entrypoint.sh`
 
-> Not: Coolify tespiti Docker tespiti ile cakisabilir. Bootstrap roportajinda "Deploy platformunuz nedir?" sorusu ile netlestirilir. Coolify secilirse Docker modulu YERINE Coolify modulu aktive edilir (cunku Coolify zaten Docker kullanir).
+> Note: Coolify detection can overlap with Docker detection. Bootstrap clarifies this in the interview with "What is your deploy platform?". If Coolify is selected, the Coolify module is activated instead of the Docker module (because Coolify already uses Docker).
 
 ## Minimum Match
 
@@ -14,11 +14,38 @@
 
 ## Activates
 
-- commands/pre-deploy.skeleton.md (Coolify-spesifik kontroller)
-- commands/post-deploy.skeleton.md (Coolify API ile dogrulama)
-- agents/devops.skeleton.md (Coolify + Docker + Traefik uzmani)
+- `commands/pre-deploy.skeleton.md` (Coolify-specific checks)
+- `commands/post-deploy.skeleton.md` (validation via Coolify API)
+- `agents/devops.skeleton.md` (Coolify + Docker + Traefik specialist)
 
 ## Affects Core
 
-- workflow-lifecycle: Coolify deploy akisi, rollback proseduru
-- CLAUDE.md: Deploy kurallari
+- `workflow-lifecycle: Coolify deploy flow, rollback procedure`
+- `CLAUDE.md: Deploy rules`
+
+---
+
+# Working Boundary Rules
+
+## Checks
+
+- file_exists: docker-compose.prod.yml | docker-compose.yml
+- file_exists: Dockerfile
+- file_exists: entrypoint.sh
+
+> Note: Coolify detection can overlap with Docker detection. Bootstrap clarifies this in the interview with "What is your deploy platform?". If Coolify is selected, the Coolify module is activated instead of the Docker module (because Coolify already uses Docker).
+
+## Minimum Match
+
+2/3
+
+## Activates
+
+- `commands/pre-deploy.skeleton.md` (Coolify-specific checks)
+- `commands/post-deploy.skeleton.md` (validation via Coolify API)
+- `agents/devops.skeleton.md` (Coolify + Docker + Traefik specialist)
+
+## Affects Core
+
+- `workflow-lifecycle: Coolify deploy flow, rollback procedure`
+- `CLAUDE.md: Deploy rules`

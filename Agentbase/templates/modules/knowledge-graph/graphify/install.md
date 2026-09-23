@@ -1,64 +1,58 @@
-# Graphify Modülü — Kurulum Referansı
+# Graphify Module — Installation Reference
 
-Bu dosya **generate edilmez** — bootstrap'in "Graphify İlk Kurulum" adımı ve geliştiriciler için bir referanstır. Bootstrap orchestrator bu dokümandaki adımları otomatik çalıştırır.
+This file is **not generated** — it is a reference for developers and for bootstrap when the Graphify module is selected. The module is generated only when selected.
 
-graphify **zorunlu modüldür**: her bootstrap'ta aktiftir. CLI otomatik kurulur — birincil yol init CLI (`bin/init.js`), fallback bootstrap ADIM 1.1.6'dır.
+Graphify is **optional**. If the CLI is absent, bootstrap continues and does not install it.
 
 ---
 
-## 1. graphify CLI Varlık Kontrolü ve Otomatik Kurulum
+## 1. graphify CLI Presence Check
 
 ```bash
-which graphify || echo "graphify CLI kurulu degil"
+which graphify || echo "graphify CLI is not installed"
 ```
 
-### Otomatik kurulum
+### Optional install (manual — bootstrap does not install)
 
-graphify CLI bootstrap tarafından **otomatik kurulur** — kullanıcı yönlendirmesi yoktur. Kurulum komutu birincil olarak `uv` tool yöneticisi ile çalışır (`uv` zaten `basic-memory` için ADIM 1.1.5.a'da zorunlu, ek ön koşul yok; paket adı çift-y `graphifyy`, komut `graphify`):
+If you want Graphify locally, install the CLI yourself. Bootstrap does not run these commands and does not fail when the CLI is missing:
 
-| Yöntem | Komut | Not |
-|--------|-------|-----|
-| uv tool (birincil) | `uv tool install graphifyy` | Bootstrap'in kullandığı varsayılan yol; izole tool kurulumu, sistem Python'unu kirletmez |
-| pipx (alternatif) | `pipx install graphifyy` | Sandbox'lı; uv yoksa kullanılabilir |
-| pip (alternatif) | `pip install graphifyy` | Genel kurulum; izolasyon yok |
+| Method | Note |
+|--------|------|
+| A user-managed Python tool install of the `graphifyy` package | Isolated from the project |
+| The package is not installed by bootstrap | Missing CLI is not a failure |
 
-Kurulum akışı (idempotent):
+Presence check is always done with `which graphify` (there is no `--version` flag). Empty output means the CLI is missing. If missing, bootstrap continues and does not install it.
 
-- **init CLI (birincil):** `bin/init.js` `ensureGraphify()` adımı `which graphify` ile kontrol eder; yoksa `uv tool install graphifyy` çalıştırır, başarısızsa fail-loud durur.
-- **Bootstrap ADIM 1.1.6 (fallback):** init çalıştırılmadıysa veya CLI hâlâ yoksa, bootstrap `which graphify` kontrolü yapar; yoksa `uv tool install graphifyy` dener, başarısızsa **KOMPLE DURUR** (basic-memory deseni).
-
-Varlık kontrolü her zaman `which graphify` ile yapılır (`--version` bayrağı yoktur). Çıktı yoksa CLI eksiktir.
-
-> **Skill kurulumu opsiyonel — zorunlu değil.** `graphify install` / `graphify claude install` / `graphify hook install` komutları cwd'ye `CLAUDE.md` + `.claude/settings.json` PreToolUse hook yazar; bu **Kutsal Kural 2'yi ihlal eder** (Codebase'e config yazma yasağı) ve bootstrap tarafından **çalıştırılmaz**. Zorunlu kapsam yalnızca CLI + `graphify-out/` artif'ı + repo'nun Agentbase config'idir. `graphify update`/`query`/`path`/`explain` komutları skill olmadan çalışır.
+> **Skill install is optional — not required.** The `graphify install` / `graphify claude install` / `graphify hook install` commands write `CLAUDE.md` + `.claude/settings.json` PreToolUse hooks into cwd; that **violates the config boundary** (do not write config into Codebase) and is **not run by bootstrap**. Required scope when selected is only CLI (if present) + `graphify-out/` artifact + the repo's Agentbase config. `graphify update`/`query`/`path`/`explain` work without the skill.
 
 ---
 
 ## 2. `.gitignore` Patch
 
-`graphify-out/` dizini graph artifact'ı içerir (~3-4 MB/katman). Repo'ya commit edilmemelidir.
+The `graphify-out/` directory holds the graph artifact (~3-4 MB/layer). It must not be committed to the repo.
 
-Hedef projenin kök `.gitignore` dosyasına aşağıdaki satır eklenir (yoksa):
+When the module is selected, the following line is added to the target project's root `.gitignore` if missing:
 
 ```gitignore
-# Graphify knowledge graph artifact'i — her geliştirici kendi makinesinde uretir
+# Graphify knowledge graph artifact — each developer produces it on their own machine
 graphify-out/
 ```
 
-Bootstrap idempotent uygulamalı: satır zaten varsa tekrar eklemez.
+Bootstrap applies this idempotently: if the line already exists, it is not added again.
 
 ---
 
-## 3. İlk `graphify update`
+## 3. First `graphify update` (optional, best-effort)
 
-graphify zorunlu modül olduğu için bootstrap ilk `graphify update`'i **otomatik** çalıştırır (ADIM 6.5.3) — kullanıcıya sorulmaz. Bu adım **best-effort**'tur: başarısız ya da yavaşsa stderr'e görünür uyarı yazılır, bootstrap bloklanmaz (CLI kurulumunun aksine; CLI eksikliği fail-loud durdurur).
+When the module is selected and the CLI is present, an initial `graphify update` may be attempted as **best-effort**: on failure or slowness, a visible warning is written to stderr and bootstrap is not blocked. If the CLI is absent, bootstrap continues and does not install it.
 
-**Tek-katmanlı proje:**
+**Single-layer project:**
 
 ```bash
 cd <Codebase> && graphify update .
 ```
 
-**Monorepo (monorepo modülü de aktifse):**
+**Monorepo (when the monorepo module is also active):**
 
 ```bash
 cd <Codebase> && \
@@ -68,9 +62,9 @@ cd <Codebase> && \
   python3 ../Agentbase/scripts/graphify-merge-layers.py
 ```
 
-Subproject yolları manifest `project.subprojects` listesinden alınır. Python merge script'i `Agentbase/scripts/graphify-merge-layers.py` altına kopyalanmış olmalı ve Codebase root'undan `../Agentbase/scripts/graphify-merge-layers.py` olarak çağrılır.
+Subproject paths come from the manifest `project.subprojects` list. The Python merge script must be copied under `Agentbase/scripts/graphify-merge-layers.py` and is invoked from the Codebase root as `../Agentbase/scripts/graphify-merge-layers.py`.
 
-Doğrulama:
+Verification:
 
 ```bash
 jq '.nodes | length' graphify-out/graph.json
@@ -78,65 +72,65 @@ jq '.nodes | length' graphify-out/graph.json
 
 ---
 
-## 4. Opsiyonel: Pre-Push Hook Kurulumu
+## 4. Optional: Pre-Push Hook Setup
 
-Pre-push hook her `git push` öncesi graph'ı otomatik günceller. Kullanıcıya sorulur:
+The pre-push hook updates the graph automatically before every `git push`. Ask the user:
 
-> "Pre-push hook kurulsun mu? Her push öncesi graph otomatik güncellenir."
+> "Install the pre-push hook? The graph will update automatically before every push."
 
-Onay → hedef hook dosyası **idempotent** yazılır. `core.hooksPath` ayarı kontrol edilir:
+On approval → the target hook file is written **idempotently**. Check the `core.hooksPath` setting:
 
 ```bash
 HOOKS_DIR="$(git -C <Codebase> config --get core.hooksPath || echo .git/hooks)"
 TARGET="${HOOKS_DIR}/pre-push"
 ```
 
-Marker'li blok (yeni hook veya mevcut hook'a append edilebilir):
+Marked block (new hook or appendable to an existing hook):
 
 ```sh
 #!/bin/sh
-# Graphify auto-update — pre-push tetikleyici (modül: knowledge-graph/graphify)
+# Graphify auto-update — pre-push trigger (module: knowledge-graph/graphify)
 # Bypass: git push --no-verify
-# Sessiz fail YOK — hata mesajı stderr'e yazılır, push bloklanmaz.
+# No silent fail — error message is written to stderr; push is not blocked.
 
-# Tek-katmanlı proje için:
+# For single-layer projects:
 if ! graphify update . ; then
-  echo "WARN: graphify update . başarısız; manuel olarak 'graphify update .' çalıştırın (push devam ediyor)" >&2
+  echo "WARN: graphify update . failed; run 'graphify update .' manually (push continues)" >&2
 fi
 
-# Multi-layer monorepo için (yukarıdaki yerine):
+# For multi-layer monorepos (instead of the above):
 # if ! ( graphify update backend/ && graphify update frontend/ && python3 ../Agentbase/scripts/graphify-merge-layers.py ); then
-#   echo "WARN: graphify multi-layer update başarısız; manuel update gerekli (push devam ediyor)" >&2
+#   echo "WARN: graphify multi-layer update failed; manual update required (push continues)" >&2
 # fi
 
 exit 0
 ```
 
-**Önemli:**
-- `2>/dev/null` KULLANMAYIN — graphify hataları stderr'e görünür şekilde yazılır, push yine bloklanmaz (`exit 0`)
-- Bootstrap kurulumu idempotent: marker satırı (`# Graphify auto-update`) varsa yeniden ekleme atlanır
-- Mevcut pre-push hook varsa kullanıcıya `append | backup-and-replace | skip` seçimi sunulur
-- `core.hooksPath` desteklenir — custom hooks dizini varsa ona yazılır
-- Script `chmod +x` ile çalıştırılabilir yapılır
-- Hook `.git/hooks/` altındadır → klonlamada gelmez, her geliştirici kendi makinesinde manuel kurar
+**Important:**
+- Do NOT use `2>/dev/null` — graphify errors are written visibly to stderr; push is still not blocked (`exit 0`)
+- Bootstrap setup is idempotent: if the marker line (`# Graphify auto-update`) exists, re-add is skipped
+- If an existing pre-push hook exists, offer the user `append | backup-and-replace | skip`
+- `core.hooksPath` is supported — if a custom hooks directory exists, write there
+- Make the script executable with `chmod +x`
+- The hook lives under `.git/hooks/` → it does not come with clones; each developer installs it on their own machine
 
 ---
 
-## 5. CLAUDE.md Entegrasyonu
+## 5. CLAUDE.md Integration
 
-Bootstrap `templates/modules/knowledge-graph/graphify/rules/graphify-rules.skeleton.md` dosyasını generate ederek `Agentbase/.claude/rules/graphify-rules.md` üretir. Bu rule Agentbase runtime context'inde referanslanır; Codebase içine `CLAUDE.md` veya `.claude/` config dosyası yazılmaz.
+When selected, Bootstrap generates `templates/modules/knowledge-graph/graphify/rules/graphify-rules.skeleton.md` into `Agentbase/.claude/rules/graphify-rules.md`. This rule is referenced in the Agentbase runtime context; no `CLAUDE.md` or `.claude/` config file is written into Codebase.
 
 ```markdown
 @.claude/rules/graphify-rules.md
 ```
 
-Root context gerekiyorsa mevcut Agentbase root `CLAUDE.md` import zinciri kullanılır; hedef proje Codebase root'una ayrı context dosyası yazılmaz.
+If root context is needed, use the existing Agentbase root `CLAUDE.md` import chain; do not write a separate context file into the target project Codebase root.
 
 ---
 
-## 6. Settings.json Hook Kaydı
+## 6. Settings.json Hook Registration
 
-Bootstrap `Agentbase/.claude/settings.json` PreToolUse bloğuna şu kaydı ekler:
+When selected, Bootstrap adds this entry to the `Agentbase/.claude/settings.json` PreToolUse block:
 
 ```json
 {
@@ -151,20 +145,20 @@ Bootstrap `Agentbase/.claude/settings.json` PreToolUse bloğuna şu kaydı ekler
 }
 ```
 
-Eğer aynı `matcher` için kayıt zaten varsa `hooks` array'ine append edilir.
+If a record for the same `matcher` already exists, it is appended to the `hooks` array.
 
 ---
 
-## Sıra Özeti (Bootstrap "Graphify İlk Kurulum" Adımı)
+## Order Summary (when Graphify module is selected)
 
-1. graphify CLI varlık kontrolü (`which graphify`) → yok ise `uv tool install graphifyy` ile otomatik kur (ADIM 1.1.6 fallback; başarısızsa KOMPLE DUR)
-2. `graphify-out/` `.gitignore`'a ekle (idempotent)
-3. Hook dosyasını `Agentbase/.claude/hooks/graphify-first-guard-v2.js` altına kopyala
-4. `Agentbase/.claude/settings.json` PreToolUse kaydını ekle
-5. `/g` command'ını generate et (`Agentbase/.claude/commands/g.md`)
-6. `graphify-rules.md` üret ve CLAUDE.md'den referans ver
-7. Eğer monorepo aktifse `Agentbase/scripts/graphify-merge-layers.py` kopyala (kullanıcı LAYERS listesini uyarlayacak)
-8. İlk `graphify update`'i otomatik çalıştır (best-effort; başarısızsa uyar, devam)
-9. Opsiyonel pre-push hook kurulumu → onay → yaz (kullanıcının git workflow tercihi; otomatik akışı bloklamaz)
+1. Check for graphify CLI (`which graphify`) → if absent, continue; do not install
+2. Add `graphify-out/` to `.gitignore` (idempotent)
+3. Copy the hook file under `Agentbase/.claude/hooks/graphify-first-guard-v2.js`
+4. Add the `Agentbase/.claude/settings.json` PreToolUse entry
+5. Generate the `/g` command (`Agentbase/.claude/commands/g.md`)
+6. Produce `graphify-rules.md` and reference it from CLAUDE.md
+7. If monorepo is active, copy `Agentbase/scripts/graphify-merge-layers.py` (user will adapt the LAYERS list)
+8. Optionally attempt first `graphify update` (best-effort; warn and continue on failure; skip if CLI absent)
+9. Optional pre-push hook setup → ask → write (user git workflow preference; does not block the automatic flow)
 
-**Bootstrap İstisnası:** Adım 1 (CLI otomatik kurulumu) ve adım 8 (ilk `graphify update`) bootstrap'in normalde yapmadığı CLI tetiklemesidir; adım 9 git hook kurulumudur. graphify zorunlu modül olduğu için bu istisnalar her bootstrap'ta uygulanır.
+**Bootstrap note:** The module is generated only when selected. If the CLI is absent, bootstrap continues and does not install it.

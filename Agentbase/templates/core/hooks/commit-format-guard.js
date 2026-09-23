@@ -2,17 +2,17 @@
 /**
  * Commit Format Guard Hook
  *
- * PreToolUse(Bash) — git commit -m "..." komutu icin:
- *  1. Mesaji regex ile cikarir (-m "..." veya -m '...')
- *  2. Conventional Commits prefix'ini dogrular
- *  3. Eslesme yoksa block + aciklayici oneri ile reddeder
+ * PreToolUse(Bash) — for git commit -m "...":
+ *  1. Extracts the message with regex (-m "..." or -m '...')
+ *  2. Validates the Conventional Commits prefix
+ *  3. If no match, rejects with block + explanatory suggestion
  *
- * HEREDOC commit mesajlari (-m "$(cat <<EOF ... EOF)") format kontrolunden
- * atlanir — pratik sinirlama, kullanici HEREDOC icin sorumluluk sahibidir.
+ * HEREDOC commit messages (-m "$(cat <<EOF ... EOF)") skip format checks —
+ * practical limitation; the user is responsible for HEREDOC messages.
  *
- * git commit editor modu (tek basina, -m yok) atlanir.
+ * git commit editor mode (alone, no -m) is skipped.
  *
- * Kural kaynagi: .claude/rules/commit-style.md (opsiyonel)
+ * Rule source: .claude/rules/commit-style.md (optional)
  */
 
 const ALLOWED_PREFIXES = [
@@ -35,10 +35,10 @@ const CONVENTIONAL_REGEX = new RegExp(
 );
 
 function extractCommitMessage(command) {
-  // HEREDOC atla
+  // Skip HEREDOC
   if (/<<\s*['"]?EOF['"]?/i.test(command)) return null;
 
-  // git commit -m "..." veya -m '...'
+  // git commit -m "..." or -m '...'
   const doubleQuote = command.match(/git\s+commit\b[^"']*-m\s+"([^"]*)"/);
   if (doubleQuote) return doubleQuote[1];
 
@@ -64,7 +64,7 @@ function main() {
 
       const message = extractCommitMessage(command);
 
-      // Mesaj cikarilamadi (editor modu, HEREDOC, vb.) — atla
+      // Message could not be extracted (editor mode, HEREDOC, etc.) — skip
       if (!message) return process.exit(0);
 
       const firstLine = message.split('\n')[0].trim();
@@ -72,20 +72,20 @@ function main() {
       if (CONVENTIONAL_REGEX.test(firstLine)) return process.exit(0);
 
       const reason =
-        `Commit mesaji conventional format'a uymuyor.\n\n` +
-        `Mesaj: "${firstLine}"\n\n` +
-        `Beklenen: <prefix>(<scope>)?: <aciklama>\n` +
-        `Prefix listesi: ${ALLOWED_PREFIXES.join(', ')}\n\n` +
-        `Ornekler:\n` +
-        `  feat(hooks): turkce diakritik guard eklendi\n` +
-        `  fix(generate): skeleton parse hatasi duzeltildi\n` +
-        `  refactor(transform): modul yukleme mantigi sadelestirildi\n\n` +
-        `Mesaj Turkce, imperative mood olmali.`;
+        `Commit message does not match conventional format.\n\n` +
+        `Message: "${firstLine}"\n\n` +
+        `Expected: <prefix>(<scope>)?: <description>\n` +
+        `Prefix list: ${ALLOWED_PREFIXES.join(', ')}\n\n` +
+        `Examples:\n` +
+        `  feat(hooks): add english prose guard\n` +
+        `  fix(generate): fix skeleton parse error\n` +
+        `  refactor(transform): simplify module loading logic\n\n` +
+        `Message should be English, imperative mood.`;
 
       process.stdout.write(JSON.stringify({ decision: 'block', reason }));
       process.exit(0);
     } catch (err) {
-      process.stderr.write(`[commit-format-guard] Hata: ${err.message}\n`);
+      process.stderr.write(`[commit-format-guard] Error: ${err.message}\n`);
       process.exit(0);
     }
   });

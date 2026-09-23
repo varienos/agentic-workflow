@@ -1,25 +1,25 @@
-# Monitoring Kategori Tespiti
+# Monitoring Category Detection
 
-Bu kategori error tracking ve performance monitoring araclari icin kontrol mekanizmalari saglar.
+This category provides control mechanisms for error tracking and performance monitoring tools.
 
 ## Variants
 
-Bootstrap asagidaki varyantlari sirayla kontrol eder. Birden fazla eslesen aktive edilebilir:
+Bootstrap checks the following variants in order. Multiple matches may be activated:
 
-| Varyant | Tespit Dosyasi | Oncelik |
+| Variant | Detection File | Priority |
 |---------|---------------|---------|
 | Sentry | `monitoring/sentry/detect.md` | 1 |
 | Datadog | `monitoring/datadog/detect.md` | 2 |
 
 ## Provides
 
-- Monitoring SDK kurulum kontrolu
-- Error boundary/tracking kontrolleri
-- Environment-spesifik DSN/key kontrolu
-- Source map upload kontrolu (deploy sirasinda)
+- Monitoring SDK setup check
+- Error boundary/tracking checks
+- Environment-specific DSN/key check
+- Source map upload check (during deploy)
 
 ## Affects Core
 
-- code-review: Error tracking checklist eklenir
-- pre-deploy: Source map kontrolu eklenir
-- CLAUDE.md: Monitoring kurallari bolumu eklenir
+- code-review: Error tracking checklist is added
+- pre-deploy: Source map check is added
+- CLAUDE.md: Monitoring rules section is added

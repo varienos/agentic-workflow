@@ -1,4 +1,4 @@
-# TypeORM Modul Tespiti
+# TypeORM Module Detection
 
 ## Checks
 
@@ -17,7 +17,7 @@
 
 ## Affects Core
 
-- task-hunter: VERIFICATION_COMMANDS'a `npx typeorm migration:show` eklenir
-- workflow-lifecycle: Migration fail protokolu eklenir
-- CLAUDE.md: TypeORM kurallari bolumu eklenir
-- settings.json: 1 hook tanimi eklenir
+- task-hunter: `npx typeorm migration:show` is added to VERIFICATION_COMMANDS
+- workflow-lifecycle: Migration fail protocol is added
+- CLAUDE.md: TypeORM rules section is added
+- settings.json: 1 hook definition is added

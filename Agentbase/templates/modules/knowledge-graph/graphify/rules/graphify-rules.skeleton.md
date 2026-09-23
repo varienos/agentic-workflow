@@ -1,119 +1,69 @@
-# Graphify Kurallari
+# Graphify rules
 
-> Bu kurallar graphify entegrasyonu kullanan projeler için geçerlidir.
-> Tüm geliştiriciler ve agent'lar bu kurallara uymak ZORUNDADIR.
+> These rules apply only when the optional graphify module is selected.
+> Bootstrap does not install graphify and does not fail when the CLI is absent.
 
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
-Aciklama: Bu bolum Bootstrap tarafindan manifest verileriyle doldurulur.
-Gerekli manifest alanlari: project.name, project.description, project.structure
-Ornek cikti:
-## Proje Baglami
+Filled from the manifest.
+Required fields: project.name, project.description, project.structure
+Example output:
+## Project context
 
-- **Proje:** MyApp — Multi-layer e-ticaret platformu
-- **Yapi:** Monorepo (`backend.aps/`, `kurye.aps/`, `musteri.aps/`)
-- **Graphify CLI:** Skill paketi (`~/.claude/skills/graphify/`) veya `pipx install graphifyy`
-- **Graph konumu:** `graphify-out/graph.json` (kok)
-Kutsal Kurallar:
-- Config dosyalari SADECE Agentbase icinde yasar
-- Codebase icinde `.claude/` OLUSTURULMAZ
-- Git sadece Codebase de calisir
+- **Project:** MyApp
+- **Layout:** Monorepo
+- **Graphify CLI:** optional. If it is absent, continue without it.
+- **Graph location:** `graphify-out/graph.json`
+Invariant rules:
+- Config files live only inside Agentbase
+- A `.claude/` directory is not created inside Codebase
+- Git runs only in Codebase
 -->
 
 ---
 
-## 🚨 ZORUNLU: Graphify-First Workflow (TÜM AGENTLAR İÇİN)
+## Graphify-first workflow
 
-**Kural:** "X nerede / Y'yi ne kullanıyor / Z nasıl bağlı" formatındaki HER soruda **önce graphify**, sonra grep. Bu kural Claude, Codex, subagent'lar dahil tüm AI agent'ları kapsar.
+When the module is active, answer "where is X / what uses Y / how is Z connected" with graphify before grep.
 
-### MANDATORY (yapmazsan PreToolUse hook bloklar)
+| Question | Command |
+| --- | --- |
+| Code-relation discovery | `graphify query "<question>"` |
+| One node | `graphify explain "<Node>"` |
+| Path between two nodes | `graphify path "<A>" "<B>"` |
+| Overview | `cat graphify-out/GRAPH_REPORT.md` |
 
-| Soru tipi | Komut | Token tasarrufu* |
-|-----------|-------|------------------|
-| Kod ilişkisi keşfi | `graphify query "<soru>"` | ~150-540x (ort. 212x) |
-| Tek node analizi | `graphify explain "<NodeAdi>"` | ~150-500x |
-| İki node arası yol | `graphify path "<A>" "<B>"` | ~150-500x |
-| Genel yön bulma | `cat graphify-out/GRAPH_REPORT.md` | ~20x |
+**Shortcut:** `/g` (`.claude/commands/g.md`), generated only when this module is selected.
 
-*Ölçüm: `graphify benchmark graphify-out/graph.json` ile yapılır.
+The hook `.claude/hooks/graphify-first-guard-v2.js` may suggest a graphify query. It does not block the turn.
 
-**Hızlı erişim:** `/g` slash komutu (`.claude/commands/g.md`):
-- `/g query <soru>` — kod ilişkisi keşfi
-- `/g explain <Node>` — node + komşu özeti
-- `/g path <A> <B>` — iki node arası yol
-- `/g report` — god-node listesi
-- `/g health` — graph yaşı + node sayısı
+### Grep is allowed for
 
-**Akıllı yönlendirme (v2):** `.claude/hooks/graphify-first-guard-v2.js` — `Grep`/`Glob`/Bash içinde `grep`/`rg`/`ag`/`find`/`fd` çağrılarında graphify'da sonuç varsa `decision: "ask"` ile öneri verir (block etmez — kullanıcı seçer). Whitelist (sensitive, error, magic, snake, vendor, single file, git native, kısa pattern) korunur.
+- A literal constant, error string, or config key
+- Files graphify does not index: `tests/`, `vendor/`, `node_modules/`, `.env*`, `.log`, `.sql`
+- Confirming a line that graphify already named
+- `git grep` or `rg --fixed-strings`
 
-### Grep/Find Sadece Şu Durumlarda İzinli (Whitelist)
+### Subagents
 
-- **Literal sabit arama**: hata mesajı (`/Error|Exception|FATAL/i`), magic constant (ALL_CAPS), config key (`API_KEY`, `JWT_SECRET`)
-- **Graphify dışı dosyalar**: `tests/`, `vendor/`, `node_modules/`, `deploy/`, `.env*`, `.log`, `.sql`, `.csv`
-- **Satır doğrulama**: graphify'ın işaret ettiği dosyada belirli satırı bulma
-- **Acil bypass**: Bash içinde `git grep` veya `rg --fixed-strings` (hook bypass eder)
+Do not tell a subagent to call a tool that exists only in the parent session. If you mention graphify, also say the subagent should use its own shell.
 
-### Subagent Kuralı
-
-`Explore`, `general-purpose` ve tüm domain-specific subagent'lar aynı kurala tabidir.
-Spawn prompt'una "graphify-first" talimatı **zorunlu** eklenmelidir.
-
-### Pratik Örnekler
-
-```bash
-# ✅ DOĞRU
-graphify query "sipariş kabul akışı nasıl çalışıyor"
-graphify explain "OrderService"
-graphify path "PricingService" "OrderModel"
-
-# ❌ YANLIŞ (hook sorar)
-grep -r "OrderService" src/
-rg "PricingService" --type ts
-
-# ✅ İSTİSNA — whitelist (hook izin verir)
-grep -F "JWT_REFRESH_SECRET" .env*       # magic constant + .env file
-rg "FatalException" src/                 # error keyword
-git grep "OrderService"                   # git native tool
-```
-
-### Graph Stale Olduğunda — Manuel Güncelleme
-
-Pre-push git hook (`.git/hooks/pre-push`) opsiyonel olarak `git push` öncesi graph'ı otomatik günceller (bootstrap kurulum adımında etkinleştirilir).
-
-**Manuel update:**
+### Update
 
 ```bash
 <!-- GENERATE: GRAPHIFY_UPDATE_COMMAND
-Aciklama: Bootstrap tarafindan manifest verileriyle doldurulur. Monorepo modulu aktifse multi-layer komut zinciri (her subproject icin `graphify update <path>` + sonunda `python3 ../Agentbase/scripts/graphify-merge-layers.py`), aktif degilse tek `graphify update <codebasePath>` komutu uretir.
-Gerekli manifest alanlari: project.codebasePath, project.subprojects (monorepo varsa), modules.active
-Ornek cikti (monorepo aktif):
-graphify update backend.aps/app && \
-graphify update kurye.aps/src && \
-graphify update musteri.aps/src && \
+Filled from the manifest. Monorepo: one `graphify update <path>` per subproject, then `python3 ../Agentbase/scripts/graphify-merge-layers.py`. Otherwise one `graphify update <codebasePath>`.
+Required fields: project structure, project.subprojects, modules.active
+Example (monorepo):
+graphify update backend && \
+graphify update web && \
 python3 ../Agentbase/scripts/graphify-merge-layers.py
-Ornek cikti (tek-katman):
-graphify update ../Codebase
+Example (single layer):
+graphify update .
 -->
 ```
 
-**Doğrulama:**
+`graphify-out/` is gitignored. If the graph is missing and the CLI is installed, run the update command. If the CLI is missing, skip the graph. Do not install it from bootstrap.
 
-```bash
-graphify query "OrderService"
-jq '.nodes | length' graphify-out/graph.json
-```
-
-**Neden pre-push, post-commit değil?** Post-commit her commit'te tetiklenir → küçük commit'ler bile graph rebuild'i bekler. Pre-push tek tetikleyici → push az sayıda olduğundan iş akışı yavaşlamaz, graph remote'a gönderilmeden önce güncel olur.
-
-### Drift Düzeltmesi
-
-`graphify-out/` `.gitignore`'da → her klonlamada graph yok. İlk açılışta yukarıdaki manuel update komutu çalıştırılır.
-
-Pre-push hook `.git/hooks/` altında olduğu için klonlamada gelmez — her geliştirici kendi makinesinde manuel kurar (CLAUDE.md kuralları yeterli, agent bilinçli `graphify query` kullanmaya devam eder).
-
----
-
-## CLAUDE.md Entegrasyonu
-
-Bu skeleton dosyası bootstrap tarafından `.claude/rules/graphify-rules.md` altına generate edilir ve CLAUDE.md'den referans verilir. Yeni geliştirici onboarding'inde **ilk okunması gereken** kural dosyalarındandır.
+This file is generated to `.claude/rules/graphify-rules.md` only when the module is selected.

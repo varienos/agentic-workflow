@@ -147,7 +147,7 @@ describe('countFilesRecursive', () => {
 describe('formatPlan', () => {
   it('returns terse message for empty input', () => {
     const out = formatPlan([], '/cb', '/ab');
-    assert.match(out, /bulunamadı/);
+    assert.match(out, /No AI assets in Codebase need to be moved/);
   });
 
   it('lists items and total count', () => {
@@ -156,7 +156,7 @@ describe('formatPlan', () => {
       { label: 'CLAUDE.md', src: '/cb/CLAUDE.md', dst: '/ab/y', kind: 'file', fileCount: 1, category: 'instruction' },
     ];
     const out = formatPlan(items, '/cb', '/ab');
-    assert.match(out, /4 dosya kopyalanacak/);
+    assert.match(out, /4 files will be copied/);
     assert.match(out, /\.claude/);
     assert.match(out, /CLAUDE\.md/);
   });
@@ -262,7 +262,7 @@ describe('import-codebase-ai CLI', () => {
     const r = runScript(['--codebase', codebase, '--agentbase', agentbase, '--yes']);
     assert.equal(r.status, 0);
     assert.match(r.stdout, /IMPORT_CANCELLED/);
-    assert.match(r.stdout, /Hedef çakışması/);
+    assert.match(r.stdout, /Target conflict/);
 
     // Codebase hiç değişmemeli
     assert.ok(fs.existsSync(path.join(codebase, '.claude')));

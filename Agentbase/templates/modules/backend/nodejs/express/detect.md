@@ -1,4 +1,4 @@
-# Express Modul Tespit Kurallari
+# Express Module Detection Rules
 
 ## Checks
 
@@ -16,5 +16,5 @@
 
 ## Affects Core
 
-- task-hunter: `npm test` ve varsa `npm run lint` / `npm run typecheck` dogrulamalari beklenir
-- CLAUDE.md: Express middleware, route ve hata yonetimi kurallari eklenir
+- task-hunter: `npm test` and, if present, `npm run lint` / `npm run typecheck` verifications are expected
+- CLAUDE.md: Express middleware, route, and error handling rules are added

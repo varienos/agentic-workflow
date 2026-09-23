@@ -20,10 +20,10 @@ const fs = require('fs');
 const path = require('path');
 
 // ─── GENERATE BOLUMU BASLANGIC ───
-// Bootstrap bu bolumu manifest'teki subproject bilgilerine gore doldurur.
+// Bootstrap fills this section from subproject info in the manifest.
 // Manuel duzenleme yapmayin — degisiklikler Bootstrap tarafindan ezilir.
 
-// Subproject dizin pattern'leri — cross-layer tespiti icin
+// Subproject directory patterns — for cross-layer detection
 const SUBPROJECT_PATTERNS = [
   /* GENERATE: LAYER_TESTS
    * Bootstrap manifest.project.subprojects[] bilgisini kullanarak
@@ -42,13 +42,13 @@ const SUBPROJECT_PATTERNS = [
 
 // ─── GENERATE BOLUMU BITIS ───
 
-// === KONFIGÜRASYON ===
+// === CONFIGURATION ===
 
 const THRESHOLDS = {
-  FILE_COUNT: 5,             // 5+ farkli dosya → teammate onerisi
+  FILE_COUNT: 5,             // 5+ different files → teammate suggestion
   TOOL_CALLS: 50,            // 50+ tool call → uzun oturum
   SESSION_MINUTES: 30,       // 30+ dakika → uzun oturum
-  CROSS_LAYER_MIN: 2,        // 2+ katman → cross-layer uyarisi
+  CROSS_LAYER_MIN: 2,        // 2+ layers → cross-layer warning
 };
 
 // Cooldown: ayni tip oneri 10 dakikada bir kez
@@ -96,7 +96,7 @@ function saveTriggerState(state) {
   try {
     fs.writeFileSync(TRIGGER_STATE_FILE, JSON.stringify(state));
   } catch {
-    // Yazilamazsa sessizce devam et
+    // If it cannot be written, continue silently
   }
 }
 
@@ -117,7 +117,7 @@ function markNotified(triggerType, triggerState) {
   saveTriggerState(triggerState);
 }
 
-// === TRIGGER KONTROLLERI ===
+// === TRIGGER CHECKS ===
 
 /**
  * Trigger 1: Dosya sayisi esigi
@@ -129,7 +129,7 @@ function checkFileCount(session) {
   if (uniqueFiles.size >= THRESHOLDS.FILE_COUNT) {
     return {
       type: 'file_count',
-      message: `Bu oturumda ${uniqueFiles.size} farkli dosya duzenlendi. Karmasiklik artıyor — teammate spawn etmeyi dusunun. /task-conductor ile gorevleri paralel dagitabilirsiniz.`,
+      message: `${uniqueFiles.size} different files were edited in this session. Complexity is rising — consider spawning teammates. You can distribute tasks in parallel with /task-conductor.`,
     };
   }
   return null;
@@ -157,7 +157,7 @@ function checkCrossLayer(session) {
     const layers = Array.from(touchedLayers).join(', ');
     return {
       type: 'cross_layer',
-      message: `Birden fazla katmanda degisiklik yapildi: ${layers}. Cross-layer review onerisi — /task-review ile katmanlar arasi tutarliligi kontrol edin. regression-analyzer ile yan etki analizi yapin.`,
+      message: `Changes were made across multiple layers: ${layers}. Cross-layer review suggested — check cross-layer consistency with /task-review. Run side-effect analysis with regression-analyzer.`,
     };
   }
   return null;
@@ -178,7 +178,7 @@ function checkLongSession(session) {
   if (sessionMinutes >= THRESHOLDS.SESSION_MINUTES && totalCalls >= THRESHOLDS.TOOL_CALLS) {
     return {
       type: 'long_session',
-      message: `Oturum ${Math.round(sessionMinutes)} dakikadir suruyor (${totalCalls} tool call). Context kirlenmesi riski artiyor — ara review yapin veya /auto-review calistirin. Karmasik gorevlerde teammate spawn ederek context'i dagitmayi dusunun.`,
+      message: `Session has been running for ${Math.round(sessionMinutes)} minutes (${totalCalls} tool calls). Context pollution risk is rising — do an interim review or run /auto-review. On complex tasks, consider spawning teammates to distribute context.`,
     };
   }
   return null;

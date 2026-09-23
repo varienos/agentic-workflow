@@ -1,5 +1,5 @@
 # Stack
 
-<!-- Bu dosya Bootstrap tarafindan doldurulur. -->
-<!-- Icerik: Kullanilan teknolojiler, versiyonlar, paket yoneticisi, runtime -->
-<!-- Kaynak: project-manifest.yaml + package.json/composer.json analizi -->
+<!-- This file is filled by Bootstrap. -->
+<!-- Content: technologies in use, versions, package manager, runtime -->
+<!-- Source: project-manifest.yaml + package.json/composer.json analysis -->
