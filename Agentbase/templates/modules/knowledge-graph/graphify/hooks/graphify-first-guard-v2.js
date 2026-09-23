@@ -2,19 +2,19 @@
 /**
  * Graphify-First Guard Hook v2 (PreToolUse — Bash|Grep|Glob)
  *
- * v1'den fark: BLOCK yerine AKILLI YÖNLENDİRME.
- *  - Whitelist'teki çağrılar → exit 0 (allow direkt)
- *  - Whitelist dışı → graphify query ile sonuç var mı kontrol et
- *    - Sonuç var → decision: "ask" (kullanıcıya sor, block değil)
- *    - Sonuç yok → exit 0 (allow grep)
+ * Difference from v1: guidance instead of a hard block.
+ *  - Whitelisted calls exit 0 (allow immediately)
+ *  - Anything else checks whether graphify query has a result
+ *    - A result means decision: "ask" (ask the user, do not block)
+ *    - No result means exit 0 (allow grep)
  *
  * Performans: cache (5dk TTL) + budget 500 token + 2sn timeout
- * Güvenlik: execFileSync (shell injection önlemi)
+ * Safety: execFileSync (no shell injection)
  *
  * Kaynak: CLAUDE.md → "🚨 ZORUNLU: Graphify-First Workflow"
  *
  * Debug: HOOK_DEBUG=1 → stderr karar log'u
- * Bypass: ASK kararı → kullanıcı seçer (NO graphify, EVET grep)
+ * Bypass: an ASK decision lets the user choose (no = graphify, yes = grep)
  */
 
 const fs = require('fs');
@@ -47,7 +47,7 @@ const SENSITIVE_PATHS = /\/etc\/(passwd|shadow|sudoers|hosts)|\.ssh\/|\.aws\/cre
 const SENSITIVE_KEYWORDS = /\b(secret|token|password|passwd|api[_-]?key|access[_-]?key|private[_-]?key)\b/i;
 
 /**
- * Whitelist kontrolü — eşleşen kuralı string olarak döner.
+ * Whitelist check. Returns the matching rule as a string.
  */
 function whitelistRule(text) {
   if (!text) return '';
@@ -98,7 +98,7 @@ function whitelistRule(text) {
 }
 
 /**
- * Bash komutunda grep/find/rg/ag/fd çağrısı tespit et.
+ * Detect a grep/find/rg/ag/fd invocation in a Bash command.
  */
 function detectSearchInBash(command) {
   if (!command) return [];
@@ -126,7 +126,7 @@ function detectSearchInBash(command) {
 }
 
 /**
- * Bash komutunda path argümanı tek dosya hedefli mi?
+ * Does a Bash path argument target a single file?
  */
 function isSingleFileTarget(command) {
   if (!command) return false;
@@ -174,8 +174,8 @@ function writeCache(cache) {
 }
 
 /**
- * Graphify query — execFileSync ile güvenli çağrı (shell injection yok).
- * Pattern args array içinde geçirilir.
+ * Graphify query via execFileSync (no shell injection).
+ * The pattern is passed inside the args array.
  *
  * @param {string} pattern
  * @returns {{matches: number, summary: string}}
@@ -190,7 +190,7 @@ function tryGraphify(pattern) {
     return cached.r;
   }
 
-  // Graph yok ise erken çıkış
+  // Exit early when no graph exists
   if (!fs.existsSync('graphify-out/graph.json')) {
     debugLog('graph-missing', {});
     return { matches: 0, summary: '' };
@@ -247,7 +247,7 @@ if (toolName === 'Grep') {
   const detections = detectSearchInBash(toolInput.command || '');
   if (detections.length === 0) allow('no_search_command');
 
-  // İlk block-edilebilir detection'ı al (whitelist'e girmemiş)
+  // First detection that is not on the whitelist
   for (const det of detections) {
     const segmentSensitive =
       SENSITIVE_PATHS.test(det.segment) || SENSITIVE_KEYWORDS.test(det.segment);
@@ -265,13 +265,13 @@ if (toolName === 'Grep') {
     break;
   }
 
-  // Tüm detection'lar whitelist'te ise allow
+  // Allow when every detection is on the whitelist
   if (!pattern) allow('all_segments_whitelisted');
 } else {
   allow('non_target_tool');
 }
 
-// Whitelist erken çıkış (Grep/Glob için)
+// Early whitelist exit (Grep/Glob)
 const rule = whitelistRule(context);
 if (rule) allow(rule);
 
@@ -286,7 +286,7 @@ if (SENSITIVE_PATHS.test(context) || SENSITIVE_KEYWORDS.test(context)) {
   );
 }
 
-// Graphify ile sonuç var mı kontrol
+// Check whether graphify has a result
 const graphResult = tryGraphify(pattern);
 
 if (graphResult.matches === 0) {
@@ -294,11 +294,11 @@ if (graphResult.matches === 0) {
 }
 
 ask(
-  '🚨 Graphify-First v2 — kod ilişkisi araması tespit edildi:\n\n' +
-  `   Aranan: "${pattern}"\n\n` +
-  `   📊 Graphify'da ${graphResult.matches} sonuç found:\n` +
+  'Graphify-first v2 — a code-relationship search was detected:\n\n' +
+  `   Query: "${pattern}"\n\n` +
+  `   Graphify matches: ${graphResult.matches}\n` +
   graphResult.summary.split('\n').map(l => `   ${l}`).join('\n') +
-  '\n\n   Öneri: graphify query ile devam et (BFS traversal, daha verimli).\n' +
-  '   Komut: /g query "' + pattern + '"\n\n' +
-  '   Yine de grep ile devam etmek ister misin?',
+  '\n\n   Prefer graphify query (BFS traversal).\n' +
+  '   Command: /g query "' + pattern + '"\n\n' +
+  '   Continue with grep anyway?',
 );

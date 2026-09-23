@@ -247,19 +247,19 @@ const PATH_MAPS = {
 // .claude/rules/ ayri dosya olarak uretilmiyor — inline-context ile context dosyasina gomulur
 
 /**
- * Varsayılan PATH_MAPS ile manifest'ten gelen özel path eşlemelerini birleştirir.
- * Manifest tanımı aynı CLI için varsayılan eşlemeleri ezer.
+ * Merges the default PATH_MAPS with custom path maps from the manifest.
+ * A manifest entry overrides the default mapping for the same CLI.
  *
  * NOT: path_maps sadece metin-ici referanslari donusturur. Gercek cikti
  * dosya konumlari CLI_CAPABILITIES teki dir alanlari tarafindan belirlenir.
  * Output dizinini degistirmek icin external CLI config kullanin.
  *
- * @param {Object|undefined} manifestPathMaps - manifest.path_maps alanı
- * @returns {Object} Birleştirilmiş path map
+ * @param {Object|undefined} manifestPathMaps - manifest.path_maps field
+ * @returns {Object} Merged path map
  */
 function mergePathMaps(manifestPathMaps) {
   if (!manifestPathMaps || typeof manifestPathMaps !== 'object') {
-    // Shallow copy — aynı referansı döndürmemek için (mutasyon koruması)
+    // Shallow copy so the caller does not share the default object
     return Object.fromEntries(Object.entries(PATH_MAPS).map(([k, v]) => [k, { ...v }]));
   }
 
@@ -267,7 +267,7 @@ function mergePathMaps(manifestPathMaps) {
   for (const cli of Object.keys(PATH_MAPS)) {
     merged[cli] = { ...PATH_MAPS[cli], ...(manifestPathMaps[cli] || {}) };
   }
-  // Manifest'te PATH_MAPS'te olmayan yeni CLI tanımları da desteklenir
+  // Manifest entries for CLIs that are not in PATH_MAPS are kept
   for (const cli of Object.keys(manifestPathMaps)) {
     if (!merged[cli]) {
       merged[cli] = { ...manifestPathMaps[cli] };
@@ -296,7 +296,7 @@ function adaptPathReferences(content, targetCli, pathMaps = PATH_MAPS, skipPaths
   }
 
   // Skill-based CLI'lar: {skills_dir}/{name}.md → {skills_dir}/{name}/SKILL.md
-  // NOT: Zaten /SKILL.md formatinda olan yollar atlanir (double-transform koruması)
+  // Paths that already end in /SKILL.md are skipped (no double transform)
   const cap = capabilities[targetCli];
   if (cap?.skills?.dir) {
     const skillsDir = cap.skills.dir;
@@ -499,8 +499,8 @@ function parseClaudeOutput(claudeDir) {
 // ─────────────────────────────────────────────────────
 
 /**
- * Bir komut dosyasını hedef CLI formatına dönüştürür.
- * @returns {Object} { outputPath: content } çiftleri
+ * Converts one command file into the target CLI format.
+ * @returns {Object} { outputPath: content } pairs
  */
 function formatCommand(name, desc, adapted, cap) {
   if (cap.commands) {
@@ -523,18 +523,18 @@ function formatRule(name, desc, adapted, cap) {
 }
 
 /**
- * Bir agent dosyasını hedef CLI formatına dönüştürür.
- * @returns {Object} { outputPath: content } çiftleri (Kimi için birden fazla dosya üretebilir)
+ * Converts one agent file into the target CLI format.
+ * @returns {Object} { outputPath: content } pairs (Kimi may emit more than one file)
  */
 function formatAgent(name, desc, adapted, cap, targetCli) {
-  // CLI'ın agents dizini yoksa, skills dizinine fallback (örn. Codex)
+  // If the CLI has no agents directory, fall back to skills (Codex)
   if (!cap.agents && cap.skills) {
     return { [`${cap.skills.dir}/${name}/SKILL.md`]: toSkillMd(name, desc, adapted) };
   }
   if (!cap.agents) return {};
 
   if (cap.agents.format === 'yaml') {
-    // Kimi: ayrı YAML tanım + prompt dosyası
+    // Kimi: a separate YAML definition plus a prompt file
     return {
       [`${cap.agents.dir}/${name}.yaml`]: toKimiAgentYaml(name, `./${name}-prompt.md`),
       [`${cap.agents.dir}/${name}-prompt.md`]: adapted,
@@ -543,7 +543,7 @@ function formatAgent(name, desc, adapted, cap, targetCli) {
   if (cap.agents.format === 'md' && targetCli === 'opencode') {
     return { [`${cap.agents.dir}/${name}.md`]: toOpenCodeAgent(name, desc, adapted) };
   }
-  // Varsayılan: saf Markdown (örn. Gemini)
+  // Default: plain Markdown (Gemini)
   return { [`${cap.agents.dir}/${name}.md`]: adapted };
 }
 
@@ -599,7 +599,7 @@ function writeTarget(outputDir, targetCli, fileMap) {
   for (const [relPath, content] of Object.entries(fileMap)) {
     const fullPath = path.join(outputDir, relPath);
     try {
-      // Path traversal koruması (lexical + symlink resolution)
+      // Path traversal guard (lexical check plus symlink resolution)
       const resolvedFull = path.resolve(fullPath);
       const resolvedBase = path.resolve(outputDir);
       if (!resolvedFull.startsWith(resolvedBase + path.sep) && resolvedFull !== resolvedBase) {

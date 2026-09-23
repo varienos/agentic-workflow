@@ -1,36 +1,35 @@
 #!/usr/bin/env python3
 """
-Graphify katman birleştirici — multi-layer monorepo'da her subproject'in graph'larını tek dosyada birleştirir.
+Graphify layer merger. In a multi-layer monorepo, combine each subproject graph into one file.
 
-# CONDITIONAL: Bu script SADECE monorepo (multi-layer) projelerde kullanılır.
-# Tek-katmanlı projelerde gereksizdir; merge işlemine ihtiyaç yoktur, `graphify update <root>` yeterlidir.
+# CONDITIONAL: this script is only needed for a monorepo (multi-layer).
+# A single-layer project does not need a merge. `graphify update <root>` is enough.
 
-# UYARLAMA GEREKLİ: Aşağıdaki LAYERS listesini kendi monorepo yapına göre güncelle.
-# Format: (layer_adi, ROOT'a_relative_path)
+# Adapt the list: update LAYERS below for your monorepo.
+# Format: (layer_name, path relative to ROOT)
 
-Çıktı: graphify-out/graph.json (kök dizinde)
-Girdi: <layer>/graphify-out/graph.json (her layer için)
+Output: graphify-out/graph.json (repository root)
+Input: <layer>/graphify-out/graph.json (one per layer)
 
-Davranış:
-- Tüm katmanların node ve link'lerini birleştirir
-- Community ID'leri katman başına offset ile yeniden numaralandırır
-- Her node ID'sini `layer::oldId` formatında namespace'ler — katmanlar arası
-  ID çakışması önlenir (örn. iki layer'da 'OrderService' node'u → birbirinin
-  üzerine yazmaz)
-- Link source/target referansları (string ve {id: ...} dict varyantları) ve
-  hyperedges içindeki ID referansları yeni namespace'e dönüştürülür
-- Bilinmeyen referans (cross-layer veya layer'da yer almayan ID) raw bırakılır
-  (best-effort; sessiz kayıp yok, raw form korunur)
-- Her node'a `_layer` etiketi ekler
-- VARSAYILAN: bir katman eksik/bozuksa stderr hatası + exit 1 (silent fail yok)
-- OPT-IN: --allow-missing flag ile eski SKIP davranışı (eksik katmanlar atlanır, exit 0)
+Behavior:
+- Combines nodes and links from every layer
+- Renumbers community IDs with a per-layer offset
+- Namespaces each node ID as `layer::oldId` so layers do not collide
+  (two 'OrderService' nodes do not overwrite each other)
+- Rewrites link source/target references (string and {id: ...} dict forms)
+  and hyperedge ID references into the new namespace
+- Leaves an unknown reference raw (cross-layer, or an ID missing from the layer).
+  Best effort: nothing is dropped silently.
+- Adds a `_layer` label to each node
+- DEFAULT: a missing or broken layer prints an error to stderr and exits 1
+- OPT-IN: --allow-missing skips missing layers and exits 0
 
-Kullanım (Codebase root'undan):
-    python3 ../Agentbase/scripts/graphify-merge-layers.py                  # strict (eksik = hata)
-    python3 ../Agentbase/scripts/graphify-merge-layers.py --allow-missing  # SKIP + devam et
+Usage (from the Codebase root):
+    python3 ../Agentbase/scripts/graphify-merge-layers.py                  # strict (missing = error)
+    python3 ../Agentbase/scripts/graphify-merge-layers.py --allow-missing  # skip and continue
 
-Pre-push hook tarafından otomatik çağrılabilir (kurulum: bootstrap "Graphify İlk Kurulum" adımı).
-"""
+A pre-push hook may call this. Graphify is optional; bootstrap does not install it.
+
 
 import argparse
 import json
@@ -59,7 +58,7 @@ OUTPUT = ROOT / 'graphify-out/graph.json'
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description='Graphify multi-layer monorepo merge — manifest tanımlı katmanları birleştirir.',
+        description='Graphify multi-layer monorepo merge — combine the layers named in the manifest.',
     )
     parser.add_argument(
         '--allow-missing',
@@ -69,7 +68,7 @@ def main() -> int:
     args = parser.parse_args()
 
     if not LAYERS:
-        print('[merge] HATA: LAYERS listesi boş — scripti kendi monorepo yapına göre uyarla', file=sys.stderr)
+        print('[merge] ERROR: LAYERS is empty — adapt the script to your monorepo', file=sys.stderr)
         return 1
 
     merged = None
@@ -78,7 +77,7 @@ def main() -> int:
 
     for layer, path in LAYERS:
         if not path.exists():
-            msg = f'[merge] {layer}: katman bulunamadı (path: {path})'
+            msg = f'[merge] {layer}: layer not found (path: {path})'
             if args.allow_missing:
                 print(f'{msg} — SKIP (--allow-missing)')
                 continue
@@ -90,7 +89,7 @@ def main() -> int:
             with path.open() as f:
                 g = json.load(f)
         except (OSError, json.JSONDecodeError) as exc:
-            msg = f'[merge] {layer}: okuma hatası ({exc})'
+            msg = f'[merge] {layer}: read error ({exc})'
             if args.allow_missing:
                 print(f'{msg} — SKIP (--allow-missing)')
                 continue
@@ -165,14 +164,14 @@ def main() -> int:
         community_offset += local_max + 1
 
     if merged is None:
-        print('[merge] HATA: hiçbir katman bulunamadı, çıktı yazılmadı', file=sys.stderr)
+        print('[merge] ERROR: no layer was found, nothing was written', file=sys.stderr)
         return 1
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT.open('w') as f:
         json.dump(merged, f)
 
-    print(f'[merge] Çıktı: {OUTPUT}')
+    print(f'[merge] Output: {OUTPUT}')
     print(f'[merge] Toplam: {len(merged["nodes"])} nodes, {len(merged["links"])} links, {community_offset} communities')
     for layer, n, l in layer_stats:
         print(f'         - {layer}: {n} nodes, {l} links')
