@@ -735,7 +735,7 @@ All endpoints must be under the `/api/v1/` prefix.
 
 ### Theme Usage
 
-In React Native, hardcoded color YASAK should not be used. Instead, use `useTheme()`.
+In React Native, hardcoded colors are forbidden. Use `useTheme()`.
 
 ### DTO Validation
 

@@ -122,8 +122,8 @@ def main() -> int:
                 continue
             id_map[old_id] = f'{layer}::{old_id}'
 
-        # Endpoint donusumu: source/target string veya {id: ...} dict olabilir.
-        # Bilinmeyen referans (cross-layer veya layer-out) raw birakilir — silent kayip YOK.
+        # Endpoint remap: source/target may be a string or a {id: ...} dict.
+        # An unknown reference (cross-layer or outside the layer) is left raw — no silent loss.
         def remap(ref):
             if isinstance(ref, str):
                 return id_map.get(ref, ref)

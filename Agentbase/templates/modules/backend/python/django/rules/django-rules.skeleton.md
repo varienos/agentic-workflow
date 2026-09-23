@@ -278,7 +278,7 @@ The following rules must be followed to ensure a consistent and maintainable cod
 
 # Severity Labels
 
-* CRITICAL: Kritik
-* HIGH: Yuksek
-* MEDIUM: Orta
-* FORBIDDEN: Yasak
+* CRITICAL
+* HIGH
+* MEDIUM
+* FORBIDDEN

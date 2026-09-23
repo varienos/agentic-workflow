@@ -426,4 +426,4 @@ is reported as a task.
 
 ### 3.1b — Architecture decision / ADR check
 
-If the task text mentions `schema`, `migration`, `model`, `kolon`, `tablo`, `column`, `table`, or `database`, or the manifest ORM/database detection is related to this task, add the acceptance checks below. Rule: `.claude/rules/db-migration-discipline.md`.
+If the task text mentions `schema`, `migration`, `model`, `column`, `table`, or `database`, or the manifest ORM/database detection is related to this task, add the acceptance checks below. Rule: `.claude/rules/db-migration-discipline.md`.

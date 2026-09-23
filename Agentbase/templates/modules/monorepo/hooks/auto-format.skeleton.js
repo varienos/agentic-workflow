@@ -162,7 +162,7 @@ async function main() {
     // Does the file exist?
     if (!fs.existsSync(filePath)) return;
 
-    // 1. Akilli tirnak duzeltme
+    // 1. Smart-quote fix
     let content = fs.readFileSync(filePath, 'utf8');
     const fixedContent = fixSmartQuotes(content);
 
@@ -170,7 +170,7 @@ async function main() {
       fs.writeFileSync(filePath, fixedContent, 'utf8');
     }
 
-    // 2. Alt proje tespiti ve formatlama
+    // 2. Detect the subproject and format
     const subproject = detectSubproject(filePath);
     if (subproject) {
       runFormatter(filePath, subproject);

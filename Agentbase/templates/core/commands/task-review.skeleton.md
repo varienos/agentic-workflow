@@ -38,7 +38,7 @@ Extract the following information from the diff:
 - List of changed files
 - Added/deleted lines in each file
 - Type of changes (new file, modification, deletion)
-> **Rule:** If only diff is bossa or whitespace changes, say "No changes to be applied" and STOP.
+> **Rule:** If the diff is empty or only whitespace changes, say "No changes to be applied" and STOP.
 
 ---
 
@@ -244,7 +244,7 @@ fix: review indicator — <issue summary>
 4. **Fix existing issues first** — Create backlog tasks based on outstanding issues, avoiding diffs.
 5. **Maintain report format** — Enforce critical, warning, clean, and previously existing categories.
 6. **Separate commit for changes** — Make a new commit for review-only changes; do not amend the previous commit.
-7. **Control whitespace diff** — Inspect only bossa or whitespace diffs; otherwise, investigate further.
+7. **Control whitespace diff** — Inspect only empty or whitespace diffs; otherwise, investigate further.
 8. **Filter false positives** — Eliminate issues matching the current pattern and framework boilerplate.
 9. **Use Backlog CLI** — Record outstanding issues using `backlog task create`.
 10. **Security** — Report critical sensitive data (credentials, tokens) in diffs.

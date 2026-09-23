@@ -136,7 +136,7 @@ async def read_current_user(user: User = Depends(get_current_user)):
 
 
 >>>
-# Test'ste dependency override
+# Dependency override in a test
 from fastapi.testclient import TestClient
 
 def override_get_db():
@@ -288,11 +288,11 @@ tests/
 │   └── test_user_service.py
 
 >>>
-└── factories.py          # Test verisi factory'leri
+└── factories.py          # Test data factories
 ```
 
 
-### Test Ornegi
+### Test example
 
 
 ```python
@@ -316,7 +316,7 @@ async def test_create_user(client: AsyncClient):
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "Test User"
-    assert "password" not in data  # Sifre response'da olmamali
+    assert "password" not in data  # The password must not be in the response
 
 @pytest.mark.asyncio
 async def test_get_nonexistent_user(client: AsyncClient):

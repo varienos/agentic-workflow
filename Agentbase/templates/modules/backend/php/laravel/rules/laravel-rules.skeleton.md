@@ -216,7 +216,7 @@ class OrderController extends Controller {
 
 
 ```php
-// Feature test ornegi
+// Feature test example
 class PostTest extends TestCase {
     use RefreshDatabase;
 
@@ -226,7 +226,7 @@ class PostTest extends TestCase {
         $response = $this->actingAs($user)
             ->postJson('/api/v1/posts', [
                 'title' => 'Test Post',
-                'body' => 'Icerik',
+                'body' => 'Content',
             ]);
 
         $response->assertStatus(201)

@@ -266,7 +266,7 @@ fix: bug-review description — <fix_description>
 
 ### 6. **Minimal Refactoring**
 
-- Minimal refactoring is allowed, but excessive refactorings are discouraged (YASAK).
+- Minimal refactoring is allowed. Excessive refactoring is forbidden.
 
 ### 7. **Regression Testing Control**
 
@@ -278,7 +278,7 @@ fix: bug-review description — <fix_description>
 
 ### 9. **Diff Boss Inspection**
 
-- Diff inspection is required (BOSSA).
+- Diff inspection is required.
 
 ### 10. **Using Backlog CLI**
 
@@ -294,7 +294,7 @@ fix: bug-review description — <fix_description>
 
 <!-- GENERATE: SELF_REFRESH
 Description: Command final step - self-refresh check. Bootstrap this marker.
-Self-Refresh section changes the command's content. The command itself looks at the project's current state: small discrepancies Edit or big changes backlog task-i olarak rapor edilir.
+Self-Refresh section changes the command's content. The command itself looks at the project's current state: small discrepancies are edited, and large changes are reported as a backlog task.
 -->
 
 - [ ] **DB schema:** If a schema, model, column, or table changed, is there a migration file, did dry-run pass, and is the rollback/down script ready? Detail: `.claude/rules/db-migration-discipline.md`

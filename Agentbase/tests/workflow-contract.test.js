@@ -20,6 +20,9 @@ const DISCIPLINES = [
   'Do not tell a subagent to call a tool that exists only in the parent session.',
 ];
 
+const TEMPLATE_TEXT = new Set(['.md', '.json', '.js', '.py', '.yml', '.yaml']);
+const TURKISH_PROSE = /\b(Yapilandirmasi|Bolum|calistir|Gelistirme Komutlari|Yasakli Islemler|Calisma Dizinleri|Temel Dosyalar|Claude Code Yapilandirmasi|dosyasi|duzenlenemez|kullanin|yasak|veya|listele|tetikle|gecmisi|degiskenleri|donusumu|bilinmeyen|birakilir|olabilir|kayip|akilli|tirnak|duzeltme|uygulamalari|icerik|ornegi|kritik|yuksek|orta|cakisma|bossa|kolon|tablo|olarak|tespiti|formatlama|sifre|olmamali|verisi)\b/i;
+
 const CORE_LOOP = [
   'Task: read the backlog item, implement only that scope, and run the verification named in its acceptance checks.',
   'Review: review the diff for correctness, silent failures, and regressions before closing the task.',
@@ -90,14 +93,13 @@ describe('host-neutral workflow contract', () => {
     const settings = fs.readFileSync(path.join(first, '.claude/settings.json'), 'utf8');
     assert.equal(settings.includes('turkish-diacritic-guard'), false);
 
-    const turkishProse = /\b(Yapilandirmasi|Bolum|calistir|Gelistirme Komutlari|Yasakli Islemler|Calisma Dizinleri|Temel Dosyalar|Claude Code Yapilandirmasi|dosyasi|duzenlenemez|kullanin|yasak|veya)\b/;
     const offenders = [];
     const chunks = [];
     for (const rel of filesA) {
       if (!rel.endsWith('.md') && !rel.endsWith('.json')) continue;
       const text = fs.readFileSync(path.join(first, rel), 'utf8');
       chunks.push(text);
-      if (/[çğıöşüÇĞİÖŞÜ]/.test(text) || turkishProse.test(text)) offenders.push(rel);
+      if (/[çğıöşüÇĞİÖŞÜ]/.test(text) || TURKISH_PROSE.test(text)) offenders.push(rel);
     }
     assert.doesNotMatch(host, /Claude Code Yapilandirmasi/);
     assert.match(host, /Agent workflow/);
@@ -106,6 +108,19 @@ describe('host-neutral workflow contract', () => {
     assert.doesNotMatch(joined, /uv tool install graphifyy/);
     assert.doesNotMatch(joined, /Binance/);
     assert.doesNotMatch(joined, /deck rebuild/i);
+    assert.deepEqual(offenders, []);
+  });
+
+  it('keeps every shipped template in English, including modules this manifest does not generate', () => {
+    const templates = path.join(ROOT, 'templates');
+    const offenders = [];
+    for (const file of walk(templates)) {
+      if (!TEMPLATE_TEXT.has(path.extname(file))) continue;
+      const text = fs.readFileSync(file, 'utf8');
+      if (/[çğıöşüÇĞİÖŞÜ]/.test(text) || TURKISH_PROSE.test(text)) {
+        offenders.push(path.relative(templates, file));
+      }
+    }
     assert.deepEqual(offenders, []);
   });
 });

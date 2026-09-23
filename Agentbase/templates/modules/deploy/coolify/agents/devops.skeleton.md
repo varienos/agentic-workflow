@@ -103,19 +103,19 @@ Example output:
 
 ### Coolify API Examples
 ```bash
-# Uygulamalari listele
+# List applications
 curl -sf -H "Authorization: Bearer $COOLIFY_TOKEN" \
   "https://coolify.example.com/api/v1/applications" | jq '.[]|{uuid,name,status}'
 
-# Deploy tetikle
+# Trigger a deploy
 curl -sf -X POST -H "Authorization: Bearer $COOLIFY_TOKEN" \
   "https://coolify.example.com/api/v1/applications/{uuid}/restart"
 
-# Deployment gecmisi
+# Deployment history
 curl -sf -H "Authorization: Bearer $COOLIFY_TOKEN" \
   "https://coolify.example.com/api/v1/applications/{uuid}/deployments" | jq '.[0:5]'
 
-# Environment degiskenleri
+# Environment variables
 curl -sf -H "Authorization: Bearer $COOLIFY_TOKEN" \
   "https://coolify.example.com/api/v1/applications/{uuid}/envs" | jq '.[] | {key, is_preview}'
 ```

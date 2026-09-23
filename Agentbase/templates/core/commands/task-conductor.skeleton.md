@@ -161,8 +161,8 @@ C.affected_files = [order.service.ts, order.routes.ts]
 D.affected_files = [user.service.ts, user.routes.ts]
 
 Conflict graph:
-  A ←→ B  (auth.controller.ts — CAKISMA)
-  B ←→ D  (user.service.ts — CAKISMA)
+  A ←→ B  (auth.controller.ts — CONFLICT)
+  B ←→ D  (user.service.ts — CONFLICT)
   A ←→ C  (no conflict — possible parallel)
   C ←→ D  (no conflict — possible parallel)
 
