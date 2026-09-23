@@ -1,0 +1,56 @@
+{
+  "env": {
+    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "1"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r 'if (.tool_input.command // \"\" | test(\"git\\\\s+push\")) then {\"decision\":\"block\",\"reason\":\"git push is forbidden in this repo. Use: cd Agentbase && npm run release\"} else empty end'",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/commit-format-guard.js\"",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r 'if (.tool_input.file_path // \"\" | test(\"backlog/tasks/|backlog/completed/\")) then {\"decision\":\"block\",\"reason\":\"Backlog files must not be edited by hand. Use backlog task edit or backlog task complete.\"} else empty end'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/skeleton-syntax-guard.js\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/agentbase-test-reminder.js\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/extensions-registry-guard.js\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
