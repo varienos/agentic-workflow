@@ -135,8 +135,8 @@ If the main mode is above, apply these modifier controls in sequence:
 >>>
 | Control | Modifier | Does It |
 |---------|----------|----------|
-| Application files controller, middleware, auth, guard, permission, token icerir | **Adversarial Testing** | Applies to application files after `devils-advocate` agent is spawned — adversarial perspective on security and reliability review |
-| Application files component, screen, page, layout (UI) icerir | **TDD** | Once write visual/dynamic test, then apply code |
+| Application files contain a controller, middleware, auth, guard, permission, or token | **Adversarial Testing** | Applies to application files after `devils-advocate` agent is spawned — adversarial perspective on security and reliability review |
+| Application files contain a component, screen, page, or layout (UI) | **TDD** | Once write visual/dynamic test, then apply code |
 | `test_strategy == TDD` (below for configuration) | **Red-Green** | Test ONCE written (red), then write previous code (green) |
 | `security_level == high` (below for configuration) | **Dual-Pass** | Application review after second agent with clean context |
 
@@ -635,7 +635,7 @@ This step is always performed — whether it's a single task or multiple tasks, 
 >>>
 # Multiple Task Mode
 
-In the multiple task mode, only completed TUM tasks are displayed — task completion is not recommended.
+In multiple-task mode, every completed task is displayed. Do not recommend another task.
 
 ### 8.1 Completing Open Tasks
 

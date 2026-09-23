@@ -21,7 +21,7 @@ const DISCIPLINES = [
 ];
 
 const TEMPLATE_TEXT = new Set(['.md', '.json', '.js', '.py', '.yml', '.yaml']);
-const TURKISH_PROSE = /\b(Yapilandirmasi|Bolum|calistir|Gelistirme Komutlari|Yasakli Islemler|Calisma Dizinleri|Temel Dosyalar|Claude Code Yapilandirmasi|dosyasi|duzenlenemez|kullanin|yasak|veya|listele|tetikle|gecmisi|degiskenleri|donusumu|bilinmeyen|birakilir|olabilir|kayip|akilli|tirnak|duzeltme|uygulamalari|icerik|ornegi|kritik|yuksek|orta|cakisma|bossa|kolon|tablo|olarak|tespiti|formatlama|sifre|olmamali|verisi)\b/i;
+const TURKISH_PROSE = /\b(Yapilandirmasi|Bolum|calistir|Gelistirme Komutlari|Yasakli Islemler|Calisma Dizinleri|Temel Dosyalar|Claude Code Yapilandirmasi|dosyasi|duzenlenemez|kullanin|yasak|veya|listele|tetikle|gecmisi|degiskenleri|donusumu|bilinmeyen|birakilir|olabilir|kayip|akilli|tirnak|duzeltme|uygulamalari|icerik|ornegi|kritik|yuksek|orta|cakisma|bossa|kolon|tablo|olarak|tespiti|formatlama|sifre|olmamali|verisi|icerir|iceren|icermez|tum|tumu|hepsi|gosterir|yapilir|edilir|bulunur|kullanilir)\b/i;
 
 const CORE_LOOP = [
   'Task: read the backlog item, implement only that scope, and run the verification named in its acceptance checks.',
