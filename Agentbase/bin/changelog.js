@@ -132,7 +132,7 @@ function generateAllSections() {
   const tags = getAllTags();
   const sections = [];
 
-  // Son tag → HEAD arası (Yayınlanmamış)
+  // Latest tag through HEAD. The open section uses the historical or English heading.
   if (tags.length > 0) {
     const lastTag = tags[tags.length - 1];
     const unreleased = getCommits(lastTag, null);
@@ -141,7 +141,7 @@ function generateAllSections() {
     }
   }
 
-  // Tag aralıkları (yeniden eskiye)
+  // Tag ranges, newest first
   for (let i = tags.length - 1; i >= 0; i--) {
     const tag = tags[i];
     const from = i > 0 ? tags[i - 1] : null;
@@ -153,7 +153,7 @@ function generateAllSections() {
     }
   }
 
-  // Hiç tag yoksa tüm tarihçe Yayınlanmamış
+  // No tags: keep the whole history in the open section
   if (tags.length === 0) {
     const all = getCommits(null, null);
     if (all.length > 0) {
@@ -210,14 +210,14 @@ function main() {
   const releaseIdx = args.indexOf('--release');
   const releaseTag = releaseIdx !== -1 ? args[releaseIdx + 1] : null;
 
-  // --release modu: mevcut CHANGELOG'daki Yayınlanmamış → versiyon
+  // --release: replace the open section heading with a version
   if (releaseTag) {
     releaseVersion(releaseTag, { dryRun });
     return;
   }
 
   if (all) {
-    // Tag-aware tam tarihçe üretimi
+    // Tag-aware full history
     const sections = generateAllSections();
 
     if (sections.length === 0) {

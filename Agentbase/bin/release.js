@@ -4,15 +4,15 @@
 /**
  * Release Script — Agentic Workflow
  *
- * Bu repoda push yapmanin TEK yolu. Uncommitted degisiklikleri commitler,
- * version bump yapar, CHANGELOG gunceller, tag atar ve push eder.
+ * The only push path in this repo. It commits pending changes,
+ * bumps the version, updates CHANGELOG, tags, and pushes.
  *
- * Kullanim:
- *   node bin/release.js           # auto: commit'lerden tespit (feat→minor, fix→patch)
+ * Usage:
+ *   node bin/release.js           # auto: infer from commits (feat→minor, fix→patch)
  *   node bin/release.js patch     # v1.0.0 → v1.0.1
  *   node bin/release.js minor     # v1.0.0 → v1.1.0
  *   node bin/release.js major     # v1.0.0 → v2.0.0
- *   node bin/release.js --dry-run # Degisiklik yapmadan goster
+ *   node bin/release.js --dry-run # Show the plan without writing
  */
 
 const { execSync, spawnSync } = require('child_process');
@@ -103,14 +103,14 @@ function stageAndCommitAll() {
 
   if (files.length === 0) return false;
 
-  // Dosyalari stage'le (spawnSync: shell injection koruması)
+  // Stage files with spawnSync so the path is not passed through a shell
   for (const file of files) {
     const result = spawnSync('git', ['add', '--', file], { cwd: REPO_ROOT, encoding: 'utf8' });
-    if (result.status !== 0) console.warn(`  Atlandı: ${file} (silinmis veya erisilemez)`);
+    if (result.status !== 0) console.warn(`  Skipped: ${file} (missing or unreadable)`);
   }
 
-  run('git commit -m "chore: release oncesi bekleyen degisiklikler"');
-  console.log(`  Bekleyen degisiklikler commitlendi (${files.length} dosya)`);
+  run('git commit -m "chore: commit pending changes before release"');
+  console.log(`  Pending changes committed (${files.length} files)`);
   return true;
 }
 
@@ -124,13 +124,13 @@ function extractReleaseNotes(version) {
   const match = content.match(sectionRegex);
   if (!match) return `v${version} release`;
 
-  // Bölüm başlığını çıkar, sadece içeriği al
+  // Drop the section heading and keep the body
   return match[0].replace(/^## \[.*?\].*\n+/, '').trim();
 }
 
 /**
  * package.json, latest tag ve CHANGELOG ust bolumu arasindaki senkronizasyonu dogrular.
- * Drift varsa detayli hata mesaji doner, senkronse null doner.
+ * Returns a detailed drift message, or null when the versions match.
  */
 function validateVersionSync(pkgVersion, latestTag, changelogContent) {
   const drifts = [];
@@ -169,50 +169,50 @@ function main() {
   console.log('  Release Pipeline');
   console.log('\u2501'.repeat(55));
 
-  // 1. Mevcut versiyon
+  // 1. Current version
   const pkg = JSON.parse(fs.readFileSync(PKG_PATH, 'utf8'));
   const currentVersion = pkg.version;
   const latestTag = getLatestTag();
-  console.log(`  Mevcut versiyon: ${currentVersion}`);
-  console.log(`  Son tag: ${latestTag || 'yok'}`);
+  console.log(`  Current version: ${currentVersion}`);
+  console.log(`  Latest tag: ${latestTag || 'none'}`);
 
-  // 1.5. Versiyon senkronizasyon dogrulamasi
+  // 1.5. Version sync check
   const changelogPath = path.join(REPO_ROOT, 'CHANGELOG.md');
   const changelogContent = fs.existsSync(changelogPath) ? fs.readFileSync(changelogPath, 'utf8') : null;
   const drifts = validateVersionSync(currentVersion, latestTag, changelogContent);
   if (drifts) {
     console.error('');
-    console.error('  VERSIYON DRIFT TESPIT EDILDI:');
+    console.error('  VERSION DRIFT DETECTED:');
     for (const d of drifts) console.error(`    ! ${d}`);
     console.error('');
     if (dryRun) {
-      console.error('  [DRY RUN] Drift raporlandi, devam ediliyor.');
+      console.error('  [DRY RUN] Drift reported. Continuing.');
     } else {
-      console.error('  Duzeltme: package.json version, git tag ve CHANGELOG ust bolumunu senkronlayin.');
+      console.error('  Fix: sync package.json version, the git tag, and the top CHANGELOG section.');
       process.exit(1);
     }
   }
 
   // 2. Uncommitted degisiklikler
   if (hasUncommittedChanges()) {
-    console.log('  Bekleyen degisiklikler tespit edildi...');
+    console.log('  Pending changes detected...');
     if (!dryRun) {
       stageAndCommitAll();
     } else {
-      console.log('  [DRY RUN] Commitlenecek dosyalar var');
+      console.log('  [DRY RUN] Files would be committed');
     }
   }
 
-  // 3. Bump tipi tespit
+  // 3. Detect the bump type
   const commits = getCommitMessages(latestTag);
   const bump = bumpArg === 'auto' ? detectBump(commits) : bumpArg;
   const newVersion = bumpVersion(currentVersion, bump);
   console.log(`  Bump: ${bump} (${currentVersion} → ${newVersion})`);
-  console.log(`  Commit sayisi: ${commits.length}`);
+  console.log(`  Commits: ${commits.length}`);
 
   if (dryRun) {
     console.log('');
-    console.log('  [DRY RUN] Degisiklik yapilmadi.');
+    console.log('  [DRY RUN] Nothing was changed.');
     console.log('\u2501'.repeat(55));
     return;
   }
@@ -232,14 +232,14 @@ function main() {
   const relChangelog = path.relative(REPO_ROOT, path.join(REPO_ROOT, 'CHANGELOG.md'));
   run(`git add "${relPkg}" "${relChangelog}"`);
   run(`git commit -m "release: v${newVersion}"`);
-  console.log(`  Release commit olusturuldu`);
+  console.log(`  Release commit created`);
 
   // 7. Rebase (tag'dan ONCE — rebase hash degistirirse tag dogru commit'e isaret etsin)
   try {
     run('git pull --rebase origin main');
   } catch (err) {
-    console.error('  Rebase conflict tespit edildi. Release durduruldu.');
-    console.error('  Manuel cozum: git rebase --continue veya git rebase --abort');
+    console.error('  Rebase conflict detected. Release stopped.');
+    console.error('  Resolve it with git rebase --continue or git rebase --abort');
     process.exit(1);
   }
 
@@ -250,11 +250,11 @@ function main() {
   // 9. Push
   run('git push origin main');
   run(`git push origin v${newVersion}`);
-  console.log(`  Push basarili: main + v${newVersion}`);
+  console.log(`  Push succeeded: main + v${newVersion}`);
 
-  // 10. GitHub Release olustur (gh CLI varsa)
-  // NOT: --notes-file kullanilir — backtick iceren CHANGELOG satirlari
-  // --notes ile shell'de komut olarak yorumlanir
+  // 10. Create a GitHub Release when the gh CLI is available
+  // Use --notes-file. CHANGELOG lines that contain backticks
+  // would be executed by the shell if passed through --notes.
   const notesFile = path.join(REPO_ROOT, '.release-notes.tmp');
   try {
     const notes = extractReleaseNotes(newVersion);
@@ -262,7 +262,7 @@ function main() {
     run(`gh release create v${newVersion} --title "v${newVersion}" --notes-file "${notesFile}"`);
     console.log(`  GitHub Release: v${newVersion}`);
   } catch {
-    console.log('  GitHub Release olusturulamadi (gh CLI yok veya auth gerekli)');
+    console.log('  GitHub Release was not created (gh CLI missing or auth required)');
   } finally {
     try { fs.unlinkSync(notesFile); } catch {}
   }
@@ -273,7 +273,7 @@ function main() {
   console.log('\u2501'.repeat(55));
 }
 
-// Test icin export
+// Exports for tests
 if (require.main === module) {
   main();
 } else {

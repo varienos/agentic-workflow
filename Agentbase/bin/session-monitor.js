@@ -2,9 +2,9 @@
 /**
  * Session Monitor — Agentic Workflow
  *
- * Oturum JSON state dosyalarini terminal icinde backlog-aware bir TUI ile gosterir.
- * Varsayilan gorunum: Timeline
- * Ikinci gorunum: Agent Radar
+ * Shows session JSON state in a backlog-aware terminal UI.
+ * Default view: Timeline
+ * Second view: Agent Radar
  */
 
 const fs = require('fs');
@@ -236,11 +236,11 @@ function statusColor(status) {
 }
 
 function sessionStatus(session) {
-  if (!session.last_activity) return { label: 'bilinmiyor', color: C.gray, icon: '?' };
+  if (!session.last_activity) return { label: 'unknown', color: C.gray, icon: '?' };
   const diff = Date.now() - new Date(session.last_activity).getTime();
-  if (diff < ACTIVE_THRESHOLD) return { label: 'aktif', color: C.green, icon: '●' };
-  if (diff < IDLE_THRESHOLD) return { label: 'bosta', color: C.yellow, icon: '○' };
-  return { label: 'kapali', color: C.gray, icon: '─' };
+  if (diff < ACTIVE_THRESHOLD) return { label: 'active', color: C.green, icon: '●' };
+  if (diff < IDLE_THRESHOLD) return { label: 'idle', color: C.yellow, icon: '○' };
+  return { label: 'closed', color: C.gray, icon: '─' };
 }
 
 function phaseLabel(phase) {
@@ -248,15 +248,15 @@ function phaseLabel(phase) {
     case 'planning':
       return 'plan';
     case 'implementing':
-      return 'uygulama';
+      return 'implement';
     case 'testing':
       return 'test';
     case 'reviewing':
-      return 'inceleme';
+      return 'review';
     case 'waiting':
-      return 'bekleme';
+      return 'waiting';
     case 'done':
-      return 'tamam';
+      return 'done';
     default:
       return phase || 'bilinmiyor';
   }
@@ -307,9 +307,9 @@ function buildHeaderMetaContent(width, meta) {
   const thirdColumn = Math.max(12, innerWidth - firstColumn - secondColumn - visibleLength(gap) * 2);
 
   return [
-    metadataHint('Gorunen:', meta.visible, firstColumn),
+    metadataHint('Visible:', meta.visible, firstColumn),
     metadataHint('Backlog:', meta.backlog, secondColumn),
-    metadataHint('Oturum dizini:', meta.sessionsDir, thirdColumn),
+    metadataHint('Sessions:', meta.sessionsDir, thirdColumn),
   ].join(gap);
 }
 
@@ -345,7 +345,7 @@ function findBacklogDir(startDir = PROJECT_ROOT) {
   }
 
   const candidates = [
-    // Hedef projelerde backlog Agentbase icinde olusturulur (oncelikli)
+    // Generated projects keep backlog inside Agentbase (preferred)
     path.join(AGENTBASE_DIR, 'backlog'),
   ];
   let current = startDir;
@@ -383,7 +383,7 @@ function parseFrontmatter(content) {
 
   const data = {};
   let currentListKey = null;
-  let scalarKey = null; // folded/literal scalar icin aktif key
+  let scalarKey = null; // active key for a folded or literal scalar
   let scalarLines = []; // folded/literal scalar satirlari
   let scalarFolded = false; // true = folded (>), false = literal (|)
 
@@ -542,17 +542,17 @@ function deriveLastMeaningfulAction(session) {
 
   switch (tool) {
     case 'Read':
-      return `${target || 'dosya'} okundu`;
+      return `${target || 'file'} read`;
     case 'Edit':
-      return `${target || 'dosya'} duzenlendi`;
+      return `${target || 'file'} edited`;
     case 'Write':
-      return `${target || 'dosya'} yazildi`;
+      return `${target || 'file'} written`;
     case 'Bash':
-      return `Komut calisti: ${target || 'komut'}`;
+      return `Command ran: ${target || 'command'}`;
     case 'Agent':
-      return `Alt ajan baslatildi: ${target || 'ajan'}`;
+      return `Subagent started: ${target || 'agent'}`;
     default:
-      return 'Henuz anlamli bir islem kaydi yok';
+      return 'No meaningful activity recorded yet';
   }
 }
 
@@ -672,7 +672,7 @@ function loadSessions() {
     .sort((left, right) => {
       const leftStatus = sessionStatus(left);
       const rightStatus = sessionStatus(right);
-      const order = { aktif: 0, bosta: 1, kapali: 2, bilinmiyor: 3 };
+      const order = { active: 0, idle: 1, closed: 2, unknown: 3 };
       if (order[leftStatus.label] !== order[rightStatus.label]) {
         return order[leftStatus.label] - order[rightStatus.label];
       }
@@ -683,7 +683,7 @@ function loadSessions() {
 }
 
 function getFilteredSessions() {
-  const filtered = showClosed ? sessions : sessions.filter(session => sessionStatus(session).label !== 'kapali');
+  const filtered = showClosed ? sessions : sessions.filter(session => sessionStatus(session).label !== 'closed');
   if (filtered.length === 0) {
     selectedIndex = 0;
     selectedId = null;
@@ -719,15 +719,15 @@ function getSelectionWindow(items, perPage) {
 }
 
 function summarizeTask(session, max = 34) {
-  if (!session.current_focus?.task_id) return `${C.dim}Bagli gorev yok${C.reset}`;
+  if (!session.current_focus?.task_id) return `${C.dim}No linked task${C.reset}`;
   const title = session.current_focus.title ? ` ${session.current_focus.title}` : '';
   return `${C.cyan}${truncateAnsi(`${session.current_focus.task_id}${title}`, max, B.dot)}${C.reset}`;
 }
 
 function summarizeBacklog(session) {
-  if (!session.current_focus?.task_id) return `${C.dim}Backlog: bagli degil${C.reset}`;
+  if (!session.current_focus?.task_id) return `${C.dim}Backlog: not linked${C.reset}`;
   if (session.backlog_sync?.missing) {
-    return `${C.red}Backlog: ${session.current_focus.task_id} bulunamadi${C.reset}`;
+    return `${C.red}Backlog: ${session.current_focus.task_id} not found${C.reset}`;
   }
 
   const parts = [];
@@ -743,40 +743,40 @@ function summarizeBacklog(session) {
     parts.push(`dep ${session.backlog_sync.dependencies.length}`);
   }
 
-  const rendered = parts.length > 0 ? parts.join(' · ') : 'bagli';
+  const rendered = parts.length > 0 ? parts.join(' · ') : 'linked';
   return `${C.white}Backlog:${C.reset} ${rendered}`;
 }
 
 function summarizeWait(session) {
   if (!session.waiting_on || session.waiting_on === 'none') {
-    return `${C.dim}bekleme yok${C.reset}`;
+    return `${C.dim}not waiting${C.reset}`;
   }
-  return `${C.red}bekleme ${session.waiting_on}${C.reset}`;
+  return `${C.red}waiting ${session.waiting_on}${C.reset}`;
 }
 
 function summarizeErrors(session) {
   if ((session.errors?.count || 0) === 0) {
-    return `${C.dim}hata 0${C.reset}`;
+    return `${C.dim}errors 0${C.reset}`;
   }
-  return `${C.red}hata ${session.errors.count}${C.reset}`;
+  return `${C.red}errors ${session.errors.count}${C.reset}`;
 }
 
 function summarizeTeammates(session) {
   if (!session.teammates || session.teammates.length === 0) {
-    return `${C.dim}ajan 0${C.reset}`;
+    return `${C.dim}agents 0${C.reset}`;
   }
 
   const names = session.teammates
     .slice(-2)
     .map(teammate => truncatePlain(teammate.name, 10))
     .join(', ');
-  return `${C.yellow}ajan ${session.teammates.length}${C.reset} ${C.dim}${names}${C.reset}`;
+  return `${C.yellow}agents ${session.teammates.length}${C.reset} ${C.dim}${names}${C.reset}`;
 }
 
 function renderHeader(width, filtered) {
-  const activeCount = sessions.filter(session => sessionStatus(session).label === 'aktif').length;
-  const idleCount = sessions.filter(session => sessionStatus(session).label === 'bosta').length;
-  const closedCount = sessions.filter(session => sessionStatus(session).label === 'kapali').length;
+  const activeCount = sessions.filter(session => sessionStatus(session).label === 'active').length;
+  const idleCount = sessions.filter(session => sessionStatus(session).label === 'idle').length;
+  const closedCount = sessions.filter(session => sessionStatus(session).label === 'closed').length;
   const timelineTab = viewMode === 'timeline'
     ? `${C.bold}${C.white}[Timeline]${C.reset}`
     : `${C.dim}[Timeline]${C.reset}`;
@@ -786,14 +786,14 @@ function renderHeader(width, filtered) {
 
   const title = buildHeaderTitle();
   const tabs = `${timelineTab} ${radarTab}`;
-  const stats = `${C.green}${activeCount} aktif${C.reset} ${C.yellow}${idleCount} bosta${C.reset} ${C.gray}${closedCount} kapali${C.reset} ${C.dim}${nowTimeLabel()}${C.reset}`;
+  const stats = `${C.green}${activeCount} active${C.reset} ${C.yellow}${idleCount} idle${C.reset} ${C.gray}${closedCount} closed${C.reset} ${C.dim}${nowTimeLabel()}${C.reset}`;
 
   return [
     hLine(width),
     row(`${title}  ${tabs}  ${stats}`, width),
     row(buildHeaderMetaContent(width, {
       visible: filtered.length,
-      backlog: loadMeta?.backlogDir ? formatDisplayPath(loadMeta.backlogDir) : 'yok',
+      backlog: loadMeta?.backlogDir ? formatDisplayPath(loadMeta.backlogDir) : 'none',
       sessionsDir: formatDisplayPath(loadMeta?.sessionsDir || SESSIONS_DIR),
     }), width),
     hLine(width, B.ml, B.mr),
@@ -804,16 +804,16 @@ function renderEmptyState(width) {
   const lines = [emptyRow(width)];
 
   if (!loadMeta?.sessionsDirExists) {
-    lines.push(row(`${C.red}Tracker inactive:${C.reset} ${formatDisplayPath(loadMeta?.sessionsDir || SESSIONS_DIR)} bulunamadi.`, width));
-    lines.push(row(`${C.dim}Session-tracker hook henuz materyalize edilmemis veya aktif degil olabilir.${C.reset}`, width));
+    lines.push(row(`${C.red}Tracker inactive:${C.reset} ${formatDisplayPath(loadMeta?.sessionsDir || SESSIONS_DIR)} was not found.`, width));
+    lines.push(row(`${C.dim}The session-tracker hook may not be installed or may not be active.${C.reset}`, width));
   } else if ((loadMeta?.sessionFileCount || 0) === 0) {
-    lines.push(row(`${C.yellow}Henuz oturum dosyasi yok.${C.reset}`, width));
-    lines.push(row(`${C.dim}Hook aktif olabilir ama bu workspace'de henuz bir oturum kaydi yazilmamis.${C.reset}`, width));
+    lines.push(row(`${C.yellow}No session file yet.${C.reset}`, width));
+    lines.push(row(`${C.dim}The hook may be active, but this workspace has not written a session record yet.${C.reset}`, width));
   } else if (loadMeta?.parseErrors >= loadMeta?.sessionFileCount) {
-    lines.push(row(`${C.red}Tum session dosyalari okunamadi.${C.reset}`, width));
-    lines.push(row(`${C.dim}Bozuk JSON dosyalari oldugu icin dashboard veri uretemiyor.${C.reset}`, width));
+    lines.push(row(`${C.red}Every session file failed to parse.${C.reset}`, width));
+    lines.push(row(`${C.dim}Broken JSON files are stopping the dashboard from building data.${C.reset}`, width));
   } else {
-    lines.push(row(`${C.dim}Gosterilecek oturum bulunamadi.${C.reset}`, width));
+    lines.push(row(`${C.dim}No session to show.${C.reset}`, width));
   }
 
   lines.push(emptyRow(width));
@@ -841,7 +841,7 @@ function renderTimeline(filtered) {
       const phase = badge(phaseLabel(session.phase), statusColor(session.phase));
       const dur = `${C.dim}${duration(session.started_at)}${C.reset}`;
       const line1 = `${marker} ${status.color}${status.icon}${C.reset} ${C.bold}${pid}${C.reset}  ${summarizeTask(session)}  ${phase}  ${dur}`;
-      const line2 = `  ${C.dim}Son islem:${C.reset} ${truncateAnsi(session.last_meaningful_action || '—', width - 16, B.dot)}`;
+      const line2 = `  ${C.dim}Last action:${C.reset} ${truncateAnsi(session.last_meaningful_action || '—', width - 16, B.dot)}`;
       const line3 = `  ${summarizeBacklog(session)}  ${C.dim}|${C.reset}  ${summarizeWait(session)}  ${C.dim}|${C.reset}  ${summarizeErrors(session)}  ${C.dim}|${C.reset}  ${summarizeTeammates(session)}`;
 
       lines.push(row(line1, width));
@@ -852,16 +852,16 @@ function renderTimeline(filtered) {
   }
 
   lines.push(hLine(width, B.ml, B.mr));
-  lines.push(row(` ${C.dim}Secim:${C.reset} ${filtered.length === 0 ? '—' : `${selectedIndex + 1}/${filtered.length}`}  ${C.dim}Ayrisma hatasi:${C.reset} ${loadMeta?.parseErrors || 0}`, width));
+  lines.push(row(` ${C.dim}Selection:${C.reset} ${filtered.length === 0 ? '—' : `${selectedIndex + 1}/${filtered.length}`}  ${C.dim}Parse errors:${C.reset} ${loadMeta?.parseErrors || 0}`, width));
   lines.push(hLine(width, B.ml, B.mr));
   lines.push(row(` ${joinShortcutHints([
-    ['Tab', 'Sekme'],
-    ['j/k', 'Sec'],
-    ['↑/↓', 'Sec'],
-    ['Enter', 'Detay'],
-    ['c', `Kapali ${showClosed ? 'gizle' : 'goster'}`],
-    ['h', 'Yardim'],
-    ['q', 'Cikis'],
+    ['Tab', 'Tab'],
+    ['j/k', 'Select'],
+    ['↑/↓', 'Select'],
+    ['Enter', 'Detail'],
+    ['c', `Closed ${showClosed ? 'hide' : 'show'}`],
+    ['h', 'Help'],
+    ['q', 'Quit'],
   ])}`, width));
   lines.push(hLine(width, B.bl, B.br));
 
@@ -869,7 +869,7 @@ function renderTimeline(filtered) {
 }
 
 function collectEventStream(limit = 8) {
-  const source = showClosed ? sessions : sessions.filter(s => sessionStatus(s).label !== 'kapali');
+  const source = showClosed ? sessions : sessions.filter(s => sessionStatus(s).label !== 'closed');
   return source
     .flatMap(session =>
       (session.recent_events || []).map(event => ({
@@ -894,12 +894,12 @@ function renderRadar(filtered) {
     const headers = [
       { width: 3, text: '' },
       { width: 6, text: 'PID' },
-      { width: 18, text: 'Gorev' },
-      { width: 12, text: 'Faz' },
-      { width: 9, text: 'Durum' },
-      { width: 9, text: 'Bekleme' },
-      { width: 6, text: 'Hata' },
-      { width: Math.max(10, tableInnerWidth - 63), text: 'Son islem' },
+      { width: 18, text: 'Task' },
+      { width: 12, text: 'Phase' },
+      { width: 9, text: 'Status' },
+      { width: 9, text: 'Wait' },
+      { width: 6, text: 'Err' },
+      { width: Math.max(10, tableInnerWidth - 63), text: 'Last action' },
     ];
 
     const renderColumns = cells => cells.map((cell, index) => fitAnsi(cell, headers[index].width)).join(' ');
@@ -921,7 +921,7 @@ function renderRadar(filtered) {
         summarizeTask(session, headers[2].width),
         badge(phaseLabel(session.phase), statusColor(session.phase)),
         `${status.color}${status.label}${C.reset}`,
-        session.waiting_on === 'none' ? `${C.dim}yok${C.reset}` : `${C.red}${session.waiting_on}${C.reset}`,
+        session.waiting_on === 'none' ? `${C.dim}none${C.reset}` : `${C.red}${session.waiting_on}${C.reset}`,
         session.errors.count > 0 ? `${C.red}${session.errors.count}${C.reset}` : `${C.dim}0${C.reset}`,
         truncateAnsi(session.last_meaningful_action || '—', headers[7].width, B.dot),
       ];
@@ -930,12 +930,12 @@ function renderRadar(filtered) {
 
     lines.push(emptyRow(width));
     lines.push(hLine(width, B.ml, B.mr));
-    lines.push(row(` ${C.bold}Olay Akisi${C.reset}`, width));
+    lines.push(row(` ${C.bold}Event stream${C.reset}`, width));
     lines.push(hLine(width, B.ml, B.mr));
 
     const events = collectEventStream(4);
     if (events.length === 0) {
-      lines.push(row(` ${C.dim}Etkin event yok.${C.reset}`, width));
+      lines.push(row(` ${C.dim}No active events.${C.reset}`, width));
     } else {
       events.forEach(event => {
         const label = `${C.dim}${timeAgo(event.timestamp)}${C.reset}  ${C.cyan}${event.task_id}${C.reset}  #${event.session_id}  ${event.label}`;
@@ -946,12 +946,12 @@ function renderRadar(filtered) {
 
   lines.push(hLine(width, B.ml, B.mr));
   lines.push(row(` ${joinShortcutHints([
-    ['Tab', 'Sekme'],
-    ['j/k', 'Sec'],
-    ['Enter', 'Detay'],
-    ['c', `Kapali ${showClosed ? 'gizle' : 'goster'}`],
-    ['h', 'Yardim'],
-    ['q', 'Cikis'],
+    ['Tab', 'Tab'],
+    ['j/k', 'Select'],
+    ['Enter', 'Detail'],
+    ['c', `Closed ${showClosed ? 'hide' : 'show'}`],
+    ['h', 'Help'],
+    ['q', 'Quit'],
   ])}`, width));
   lines.push(hLine(width, B.bl, B.br));
 
@@ -972,16 +972,16 @@ function renderDetail(filtered) {
   const pid = (session.session_id || '?').split('-')[0];
   const lines = [
     hLine(width),
-    row(`${C.bold}${C.cyan}Oturum Detayi${C.reset}: ${C.bold}${pid}${C.reset}  ${status.color}${status.icon} ${status.label}${C.reset}`, width),
+    row(`${C.bold}${C.cyan}Session detail${C.reset}: ${C.bold}${pid}${C.reset}  ${status.color}${status.icon} ${status.label}${C.reset}`, width),
     hLine(width, B.ml, B.mr),
     emptyRow(width),
-    row(` ${C.dim}Gorev:${C.reset} ${session.current_focus?.task_id || '—'} ${session.current_focus?.title || ''}`, width),
-    row(` ${C.dim}Faz:${C.reset} ${phaseLabel(session.phase)}  ${C.dim}Bekleme:${C.reset} ${session.waiting_on === 'none' ? 'yok' : (session.waiting_on || 'yok')}  ${C.dim}Sure:${C.reset} ${duration(session.started_at)}`, width),
-    row(` ${C.dim}Son aksiyon:${C.reset} ${session.last_meaningful_action || '—'}`, width),
-    row(` ${C.dim}Backlog:${C.reset} ${session.backlog_sync?.status || '—'}  ${C.dim}Oncelik:${C.reset} ${session.backlog_sync?.priority || '—'}  ${C.dim}AC:${C.reset} ${session.backlog_sync?.acceptance?.completed || 0}/${session.backlog_sync?.acceptance?.total || 0}`, width),
+    row(` ${C.dim}Task:${C.reset} ${session.current_focus?.task_id || '—'} ${session.current_focus?.title || ''}`, width),
+    row(` ${C.dim}Phase:${C.reset} ${phaseLabel(session.phase)}  ${C.dim}Wait:${C.reset} ${session.waiting_on === 'none' ? 'none' : (session.waiting_on || 'none')}  ${C.dim}Duration:${C.reset} ${duration(session.started_at)}`, width),
+    row(` ${C.dim}Last action:${C.reset} ${session.last_meaningful_action || '—'}`, width),
+    row(` ${C.dim}Backlog:${C.reset} ${session.backlog_sync?.status || '—'}  ${C.dim}Priority:${C.reset} ${session.backlog_sync?.priority || '—'}  ${C.dim}AC:${C.reset} ${session.backlog_sync?.acceptance?.completed || 0}/${session.backlog_sync?.acceptance?.total || 0}`, width),
     emptyRow(width),
     hLine(width, B.ml, B.mr),
-    row(` ${C.bold}Arac Kullanimi${C.reset} (${session.tools.total_calls} toplam)`, width),
+    row(` ${C.bold}Tool use${C.reset} (${session.tools.total_calls} total)`, width),
     hLine(width, B.ml, B.mr),
   ];
 
@@ -993,14 +993,14 @@ function renderDetail(filtered) {
 
   lines.push(emptyRow(width));
   lines.push(hLine(width, B.ml, B.mr));
-  lines.push(row(` ${C.bold}Dosyalar${C.reset}  O:${session.files.read_count}  Y:${session.files.written_count}`, width));
+  lines.push(row(` ${C.bold}Files${C.reset}  R:${session.files.read_count}  W:${session.files.written_count}`, width));
   lines.push(hLine(width, B.ml, B.mr));
-  lines.push(row(` ${C.blue}Okunan:${C.reset} ${(session.files.read || []).slice(-6).join(', ') || '—'}`, width));
-  lines.push(row(` ${C.magenta}Yazilan:${C.reset} ${(session.files.written || []).slice(-6).join(', ') || '—'}`, width));
+  lines.push(row(` ${C.blue}Read:${C.reset} ${(session.files.read || []).slice(-6).join(', ') || '—'}`, width));
+  lines.push(row(` ${C.magenta}Written:${C.reset} ${(session.files.written || []).slice(-6).join(', ') || '—'}`, width));
 
   lines.push(emptyRow(width));
   lines.push(hLine(width, B.ml, B.mr));
-  lines.push(row(` ${C.bold}Son Olaylar${C.reset}`, width));
+  lines.push(row(` ${C.bold}Recent events${C.reset}`, width));
   lines.push(hLine(width, B.ml, B.mr));
   (session.recent_events || []).slice(-6).reverse().forEach(event => {
     lines.push(row(` ${C.dim}${timeAgo(event.timestamp)}${C.reset}  ${event.label}`, width));
@@ -1009,7 +1009,7 @@ function renderDetail(filtered) {
   if (session.errors.count > 0) {
     lines.push(emptyRow(width));
     lines.push(hLine(width, B.ml, B.mr));
-    lines.push(row(` ${C.bold}${C.red}Hatalar${C.reset} (${session.errors.count})`, width));
+    lines.push(row(` ${C.bold}${C.red}Errors${C.reset} (${session.errors.count})`, width));
     lines.push(hLine(width, B.ml, B.mr));
     session.errors.history.slice(-3).reverse().forEach(error => {
       lines.push(row(` ${C.red}${error.tool}${C.reset} ${truncateAnsi(error.snippet || '', width - 16, B.dot)}`, width));
@@ -1019,10 +1019,10 @@ function renderDetail(filtered) {
   lines.push(emptyRow(width));
   lines.push(hLine(width, B.ml, B.mr));
   lines.push(row(` ${joinShortcutHints([
-    ['Esc', 'Geri'],
-    ['Tab', 'Sekme'],
-    ['j/k', 'Sec'],
-    ['q', 'Cikis'],
+    ['Esc', 'Back'],
+    ['Tab', 'Tab'],
+    ['j/k', 'Select'],
+    ['q', 'Quit'],
   ])}`, width));
   lines.push(hLine(width, B.bl, B.br));
 
@@ -1033,23 +1033,23 @@ function renderHelp() {
   const width = getWidth();
   return [
     hLine(width),
-    row(`${C.bold}${C.cyan}Klavye Kisayollari${C.reset}`, width),
+    row(`${C.bold}${C.cyan}Keyboard shortcuts${C.reset}`, width),
     hLine(width, B.ml, B.mr),
     emptyRow(width),
-    row(` ${shortcutHint('Tab', 'Timeline ve Agent Radar arasinda gec')}`, width),
-    row(` ${shortcutHint('j / k', 'Secili oturumu asagi veya yukari kaydir')}`, width),
-    row(` ${shortcutHint('↑ / ↓', 'Secimi ok tuslariyla degistir')}`, width),
-    row(` ${shortcutHint('Enter', 'Secili oturumun detayini ac')}`, width),
-    row(` ${shortcutHint('Esc', 'Detay veya yardim ekranindan geri don')}`, width),
-    row(` ${shortcutHint('c', 'Kapali oturumlari goster veya gizle')}`, width),
-    row(` ${shortcutHint('r', 'Ekrani yenile')}`, width),
-    row(` ${shortcutHint('h', 'Yardim ekranini ac veya kapa')}`, width),
-    row(` ${shortcutHint('q', 'Cik')}`, width),
+    row(` ${shortcutHint('Tab', 'Switch between Timeline and Agent Radar')}`, width),
+    row(` ${shortcutHint('j / k', 'Move the selected session down or up')}`, width),
+    row(` ${shortcutHint('↑ / ↓', 'Change the selection with the arrow keys')}`, width),
+    row(` ${shortcutHint('Enter', 'Open the selected session')}`, width),
+    row(` ${shortcutHint('Esc', 'Leave the detail or help screen')}`, width),
+    row(` ${shortcutHint('c', 'Show or hide closed sessions')}`, width),
+    row(` ${shortcutHint('r', 'Refresh the screen')}`, width),
+    row(` ${shortcutHint('h', 'Open or close this help screen')}`, width),
+    row(` ${shortcutHint('q', 'Quit')}`, width),
     emptyRow(width),
     hLine(width, B.ml, B.mr),
-    row(` ${C.dim}Durum simgeleri:${C.reset} ${C.green}● aktif${C.reset}  ${C.yellow}○ bosta${C.reset}  ${C.gray}─ kapali${C.reset}`, width),
-    row(` ${C.dim}Sekmeler:${C.reset} Timeline = kim ne yapiyor, Agent Radar = yogun telemetri ve olay akisi`, width),
-    row(` ${C.dim}Backlog kaynagi:${C.reset} ${loadMeta?.backlogDir ? formatDisplayPath(loadMeta.backlogDir) : 'yerel backlog bulunamadi'}`, width),
+    row(` ${C.dim}Status marks:${C.reset} ${C.green}● active${C.reset}  ${C.yellow}○ idle${C.reset}  ${C.gray}─ closed${C.reset}`, width),
+    row(` ${C.dim}Tabs:${C.reset} Timeline shows who is doing what. Agent Radar shows dense telemetry and the event stream.`, width),
+    row(` ${C.dim}Backlog source:${C.reset} ${loadMeta?.backlogDir ? formatDisplayPath(loadMeta.backlogDir) : 'local backlog was not found'}`, width),
     hLine(width, B.bl, B.br),
   ];
 }
@@ -1225,15 +1225,15 @@ function main() {
 
 // Test seam: runtime fonksiyonlari dogrudan cagrilabilir
 module.exports = {
-  // Mevcut export'lar (module-loader ile kullanilan)
+  // Exports used by the module loader
   parseBacklogTaskFile, loadBacklogIndex, enrichSession, fitAnsi, stripAnsi,
   sanitizeForDisplay, formatDisplayPath, findBacklogDir, shortcutHint,
   buildHeaderMetaContent, buildHeaderTitle, getFilteredSessions, selectDelta,
   priorityColor, summarizeBacklog, summarizeTask, summarizeWait, summarizeErrors,
   loadSessions, derivePhase, timeAgo, inferLegacyTaskId,
-  // Runtime seam — TUI test'leri icin
+  // Runtime seam for TUI tests
   handleKey, setupWatcher, setupInput, cleanup, render, main,
-  // State getter/setter — test'lerde state kontrolu icin
+  // State getter and setter used by tests
   getState() {
     return { viewMode, detailView, showHelp, showClosed, selectedIndex, selectedId, cleanedUp };
   },

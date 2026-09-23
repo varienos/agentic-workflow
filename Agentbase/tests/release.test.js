@@ -213,9 +213,9 @@ describe('release.js CLI entegrasyon', () => {
 
   it('--dry-run versiyon ve bump bilgisi gosteriyor', () => {
     const result = runRelease(['--dry-run']);
-    assert.match(result.stdout, /Mevcut versiyon:/);
+    assert.match(result.stdout, /Current version:/);
     assert.match(result.stdout, /Bump:/);
-    assert.match(result.stdout, /Commit sayisi:/);
+    assert.match(result.stdout, /Commits:/);
   });
 
   it('--dry-run patch/minor/major bump override calisiyor', () => {

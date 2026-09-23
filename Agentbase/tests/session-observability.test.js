@@ -545,7 +545,7 @@ dependencies: []
     }));
 
     assert.equal(content.indexOf('Backlog'), 18);
-    assert.equal(content.indexOf('Oturum dizini'), 44);
+    assert.equal(content.indexOf('Sessions'), 44);
   });
 
   it('keeps the header title free of the selected tab name', () => {
@@ -1055,7 +1055,7 @@ describe('session-monitor summarize fonksiyonlari', () => {
 
   it('summarizeTask task_id yoksa fallback mesaji', () => {
     const result = summarizeTask({});
-    assert.ok(stripAnsi(result).includes('gorev yok'), 'fallback mesaji olmali');
+    assert.ok(stripAnsi(result).includes('No linked task'), 'fallback message required');
   });
 
   it('summarizeTask task_id ve title varsa birlesik ozet', () => {
@@ -1067,24 +1067,24 @@ describe('session-monitor summarize fonksiyonlari', () => {
 
   it('summarizeWait waiting_on=none → dim metin', () => {
     const result = summarizeWait({ waiting_on: 'none' });
-    assert.ok(stripAnsi(result).includes('bekleme yok'));
+    assert.ok(stripAnsi(result).includes('not waiting'));
   });
 
   it('summarizeWait waiting_on=test → kirmizi uyari', () => {
     const result = summarizeWait({ waiting_on: 'test' });
     assert.ok(result.includes('\x1b['), 'ANSI renk kodu olmali');
-    assert.ok(stripAnsi(result).includes('bekleme test'));
+    assert.ok(stripAnsi(result).includes('waiting test'));
   });
 
   it('summarizeErrors count=0 → dim metin', () => {
     const result = summarizeErrors({ errors: { count: 0 } });
-    assert.ok(stripAnsi(result).includes('hata 0'));
+    assert.ok(stripAnsi(result).includes('errors 0'));
   });
 
   it('summarizeErrors count>0 → kirmizi hata sayisi', () => {
     const result = summarizeErrors({ errors: { count: 3 } });
     assert.ok(result.includes('\x1b['), 'ANSI renk kodu olmali');
-    assert.ok(stripAnsi(result).includes('hata 3'));
+    assert.ok(stripAnsi(result).includes('errors 3'));
   });
 });
 
