@@ -1,5 +1,5 @@
 {
-  "__doc__": "Bu skeleton dosyayi Bootstrap okur ve GENERATE bloklarini manifest verisine gore doldurur. __doc__ ve __GENERATE__ anahtarlari cikti dosyasina yazilmaz.",
+  "__doc__": "Bootstrap reads this skeleton and fills GENERATE blocks from the manifest. __doc__ and __GENERATE__ keys are not written to the output file.",
 
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
@@ -11,7 +11,7 @@
         "matcher": "Edit|Write",
         "hooks": [
           {
-            "__doc__": "Lock dosyasi korumasi — her zaman aktif",
+            "__doc__": "Lock file protection — always active",
             "type": "command",
             "command": "jq -r 'if (.tool_input.file_path // \"\" | test(\"package-lock\\\\.json$|yarn\\\\.lock$|pnpm-lock\\\\.yaml$|bun\\\\.lock$|composer\\\\.lock$|Cargo\\\\.lock$|poetry\\\\.lock$\")) then {\"decision\":\"block\",\"reason\":\"Lock dosyasi elle duzenlenemez\"} else empty end'",
             "timeout": 5
@@ -114,7 +114,7 @@
     ],
     "PostToolUse": [
       {
-        "__doc__": "Session tracker — HER tool cagrisinda oturum durumunu kaydeder. Tum matcher'lardan once calisir.",
+        "__doc__": "Session tracker — records session state on every tool call. Runs before the other matchers.",
         "matcher": ".*",
         "hooks": [
           {
@@ -123,7 +123,7 @@
             "timeout": 100
           },
           {
-            "__doc__": "Drift detector — her 50 tool call'da config hash kontrol eder, degismisse guncelleme onerisi sunar",
+            "__doc__": "Drift detector — every 50 tool calls, checks the config hash and suggests an update when it changed",
             "type": "command",
             "command": "node .claude/hooks/drift-detector.js",
             "timeout": 50
@@ -134,7 +134,7 @@
         "matcher": "Edit|Write",
         "hooks": [
           {
-            "__doc__": "Kod kalite kontrolu — her zaman aktif",
+            "__doc__": "Code quality check — always active",
             "type": "command",
             "command": "node .claude/hooks/code-review-check.js"
           },
@@ -144,7 +144,7 @@
             "command": "node .claude/hooks/test-enforcer.js"
           },
           {
-            "__doc__": "Auto test runner — edit birikimini takip eder, debounce ile test sinyali (erken geri bildirim, final verification yerine GECMEZ)",
+            "__doc__": "Auto test runner — tracks the edit backlog and signals tests with debounce (early feedback; it does not replace final verification)",
             "type": "command",
             "command": "node .claude/hooks/auto-test-runner.js",
             "timeout": 100
@@ -156,7 +156,7 @@
             "timeout": 100
           },
           {
-            "__doc__": "Documentation drift check — kod degisikligi sonrasi README/CHANGELOG/OpenAPI staleness uyarisi (blocking yok)",
+            "__doc__": "Documentation drift check — after a code change, warns when README/CHANGELOG/OpenAPI is stale (non-blocking)",
             "type": "command",
             "command": "node .claude/hooks/doc-drift-check.js",
             "timeout": 50
@@ -164,17 +164,17 @@
         ],
         "__GENERATE__POSTTOOLUSE_EDITWRITE_HOOKS__": {
           "monorepo_active": {
-            "__doc__": "Monorepo aktifse: otomatik format hook'u ekle",
+            "__doc__": "When monorepo is active: add the automatic format hook",
             "type": "command",
             "command": "node .claude/hooks/auto-format.js"
           },
           "prisma_active": {
-            "__doc__": "Prisma aktifse: migration kontrol hook'u ekle",
+            "__doc__": "When Prisma is active: add the migration check hook",
             "type": "command",
             "command": "node .claude/hooks/prisma-migration-check.js"
           },
           "eloquent_active": {
-            "__doc__": "Eloquent aktifse: migration degisiklik kontrolu",
+            "__doc__": "When Eloquent is active: check migration changes",
             "type": "command",
             "command": "node .claude/hooks/eloquent-migration-check.js"
           }
@@ -182,10 +182,10 @@
       },
       {
         "__GENERATE__POSTTOOLUSE_BASH_HOOKS__": {
-          "__doc__": "Bash tool sonrasi PostToolUse hook'lari. Aktif modullere gore eklenir.",
+          "__doc__": "PostToolUse hooks after the Bash tool. Added from the active modules.",
           "matcher": "Bash",
           "prisma_active": {
-            "__doc__": "Prisma aktifse: yikici migration kontrolu",
+            "__doc__": "When Prisma is active: destructive migration check",
             "type": "command",
             "command": "node .claude/hooks/destructive-migration-check.js"
           }
@@ -195,7 +195,7 @@
   },
 
   "__GENERATE__ENABLED_PLUGINS__": {
-    "__doc__": "Aktif modullere gore plugin'ler eklenir. Bu blok cikti JSON'inin root seviyesine merge edilir.",
+    "__doc__": "Plugins are added from the active modules. This block is merged into the root of the output JSON.",
     "expo_active": {
       "react-native-expo-complete@react-native-expo-skills": true
     }

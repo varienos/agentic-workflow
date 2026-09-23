@@ -279,7 +279,7 @@ If related tasks exist:
 refactor: <cleanup_description> (#<task_id>)
 ```
 
-**Language:** Turkish
+**Language:** English
 **Example:** `refactor: Unused exports and files were cleaned up (#42)`
 -->
 

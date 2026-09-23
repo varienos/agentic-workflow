@@ -71,7 +71,7 @@ describe('session-tracker observability', () => {
     assert.equal(state.waiting_on, 'none');
     assert.match(state.last_meaningful_action, /TASK-24/);
     assert.ok(Array.isArray(state.recent_events));
-    assert.match(state.recent_events.at(-1).label, /basladi/i);
+    assert.match(state.recent_events.at(-1).label, /started/i);
   });
 
   it('turns failed test commands into waiting state with a test blocker', t => {

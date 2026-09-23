@@ -42,15 +42,15 @@ cd ../Codebase && git status
 ```
 
 
-Kontrol et:
-- [ ] Commit edilmemis degisiklik var mi?
-- [ ] Hangi branch'tesin? (main/master disinda UYAR)
-- [ ] Remote ile senkron mu?
+Check:
+- [ ] Are there uncommitted changes?
+- [ ] Which branch are you on? (warn when it is not main/master)
+- [ ] Is the branch in sync with the remote?
 
-Eger commit edilmemis degisiklik varsa:
+If there are uncommitted changes:
 
 ```
-⚠️ Commit edilmemis degisiklikler var. Once commit atilmali.
+Uncommitted changes exist. Commit them before continuing.
 ```
 ### Step 2 — TypeScript / Build Control
 
@@ -141,10 +141,10 @@ cd ../Codebase && npm run build
 ```
 
 
-### vercel.json Kontrolu
+### vercel.json check
 
 ```bash
-cd ../Codebase && cat vercel.json 2>/dev/null || echo "vercel.json yok (varsayilan ayarlar kullanilacak)"
+cd ../Codebase && cat vercel.json 2>/dev/null || echo "vercel.json is missing (default settings will be used)"
 ```
 ### Invariant Rules
 - [ ] Is the `regions` property defined in `vercel.json` file? (important for performance)
@@ -161,30 +161,30 @@ Run build command. Fail if unsuccessful. Mark as FAIL.
 
 Report the results of all steps in the following format:
 ```
-## 📋 Pre-Deploy Raporu (Vercel)
+## Pre-Deploy Report (Vercel)
 
-### Genel Durum: [PASS ✅ / FAIL ❌ / WARN ⚠️]
+### Overall status: [PASS / FAIL / WARN]
 
-### Degisiklik Ozeti
-- Son commit: <hash> — <mesaj>
-- Branch: <branch_adi>
+### Change summary
+- Latest commit: <hash> — <message>
+- Branch: <branch_name>
 
-### Kontrol Sonuclari
+### Check results
 
-| Adim | Durum | Detay |
+| Step | Status | Detail |
 |---|---|---|
-| Git durumu | ✅/❌ | ... |
-| TypeScript/Build | ✅/❌ | ... |
-| Testler | ✅/❌ | X/Y gecti |
-| Env senkronizasyonu | ✅/❌/⚠️ | ... |
-| Edge function | ✅/⏭️ | ... |
-| Build testi | ✅/❌/⏭️ | ... |
+| Git status | pass/fail | ... |
+| TypeScript/Build | pass/fail | ... |
+| Tests | pass/fail | X/Y passed |
+| Env sync | pass/fail/warn | ... |
+| Edge function | pass/skipped | ... |
+| Build test | pass/fail/skipped | ... |
 
-### Basarisiz Kontroller
-[varsa detayli liste]
+### Failed checks
+[detailed list when any check failed]
 
-### Oneriler
-[varsa aksiyonlar]
+### Recommendations
+[actions when any are needed]
 ```
 ---
 
@@ -198,7 +198,7 @@ Report the results of all steps in the following format:
 | Build FAIL | ❌ FAIL | Deploy not possible, build error needs to be resolved |
 | Env missing/uncompatible | ⚠️ WARN | Vercel env variables need to be controlled |
 | Edge function adaptation | ⚠️ WARN | Edge compatibility issue needs to be investigated |
-| Uncommitted changes | ❌ FAIL | Once commit is made |
+| Uncommitted changes | FAIL | Commit the changes first |
 
 ---
 

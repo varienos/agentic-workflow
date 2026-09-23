@@ -41,7 +41,7 @@ Invariant rules:
 
 Wait for the Coolify build + deployment process to complete:
 ```bash
-echo "Coolify build + deploy bekleniyor (90 saniye)..." && sleep 90
+echo "Waiting for the Coolify build and deploy (90 seconds)..." && sleep 90
 ```
 > **NOT:** The build duration changes based on the project. Typical times:
 >

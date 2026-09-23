@@ -1,22 +1,22 @@
 'use strict';
 
 /**
- * assemble.js — detection + roportaj cevaplari → manifest objesi
+ * assemble.js — detection + interview answers → manifest object
  *
- * Saf fonksiyon: yan etki yok, deterministik. init.js bunu cagirir, sonucu
- * manifest.schema.js ile dogrular ve YAML olarak yazar.
+ * Pure function: no side effects, deterministic. init.js calls it, checks the
+ * result with manifest.schema.js, and writes YAML.
  *
- * Girdi:
- *   detection : detect() ciktisi
- *   answers   : { <question.key>: <deger> }  (interview.js ciktisi)
+ * Input:
+ *   detection : detect() result
+ *   answers   : { <question.key>: <value> }  (interview.js result)
  *   opts      : { projectName, targets, generatedAt, templateVersion }
  *
- * Cikti: manifest objesi (bootstrap.md ADIM 4 semasiyla hizali)
+ * Output: manifest object (aligned with bootstrap.md STEP 4)
  */
 
 const { QUESTIONS } = require('../../templates/interview/questions');
 
-/** Nokta-yola gore nested deger yaz (a.b.c). */
+/** Writes a nested value by dot path (a.b.c). */
 function setPath(obj, dotPath, value) {
   const keys = dotPath.split('.');
   let cur = obj;
@@ -27,7 +27,7 @@ function setPath(obj, dotPath, value) {
   cur[keys[keys.length - 1]] = value;
 }
 
-/** detected.<field>.value kisayolu. */
+/** Shortcut for detected.<field>.value. */
 function dv(detection, field) {
   const d = detection.detected && detection.detected[field];
   return d ? d.value : null;
@@ -46,7 +46,7 @@ function projectLanguage(detection) {
   return map[detection.runtime] || 'unknown';
 }
 
-/** detected degerlerinden modules.active turet (generate.js modul secimi icin). */
+/** Derives modules.active from detected values (for generate.js module selection). */
 function deriveModules(detection) {
   // graphify is optional. It is not activated and not installed unless a
   // manifest author adds knowledge-graph/graphify explicitly.
@@ -71,9 +71,9 @@ function assemble(detection, answers, opts = {}) {
   manifest.generated_at = opts.generatedAt || null;
   manifest.generation_mode = 'fresh';
 
-  // init dikis sinyali — bootstrap.md ADIM 1.3 bunu gorunce SLIM PATH'e gecer:
-  // detect + interview + manifest + generate.js zaten yapildi; geriye yalnizca
-  // CLAUDE_FILL narrative kalir.
+  // init stitch signal — bootstrap.md STEP 1.3 switches to the SLIM PATH when it sees this:
+  // detect + interview + manifest + generate.js already ran; only the
+  // CLAUDE_FILL narrative remains.
   manifest.init = {
     produced_by: 'init-cli',
     generated_at: opts.generatedAt || null,

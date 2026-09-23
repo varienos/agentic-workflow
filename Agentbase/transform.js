@@ -62,55 +62,55 @@ function validateCliCapabilities(name, cap) {
   const errors = [];
 
   if (!cap || typeof cap !== 'object') {
-    return [`${name}: capabilities objesi gerekli`];
+    return [`${name}: a capabilities object is required`];
   }
 
-  // invoke zorunlu
+  // invoke is required
   if (!cap.invoke || typeof cap.invoke.prefix !== 'string' || typeof cap.invoke.separator !== 'string') {
-    errors.push(`${name}: invoke.prefix (string) ve invoke.separator (string) zorunlu`);
+    errors.push(`${name}: invoke.prefix (string) and invoke.separator (string) are required`);
   }
 
-  // commands veya skills en az birisi olmali
+  // at least one of commands or skills is required
   if (!cap.commands && !cap.skills) {
-    errors.push(`${name}: commands veya skills tanimlarindan en az biri gerekli`);
+    errors.push(`${name}: at least one of commands or skills is required`);
   }
 
-  // commands varsa format ve dir olmali
+  // when commands is set, format and dir are required
   if (cap.commands && (!cap.commands.format || !cap.commands.dir)) {
-    errors.push(`${name}: commands.format ve commands.dir zorunlu`);
+    errors.push(`${name}: commands.format and commands.dir are required`);
   }
 
-  // skills varsa format ve dir olmali
+  // when skills is set, format and dir are required
   if (cap.skills && (!cap.skills.format || !cap.skills.dir)) {
-    errors.push(`${name}: skills.format ve skills.dir zorunlu`);
+    errors.push(`${name}: skills.format and skills.dir are required`);
   }
 
-  // agents varsa format ve dir olmali
+  // when agents is set, format and dir are required
   if (cap.agents && (!cap.agents.format || !cap.agents.dir)) {
-    errors.push(`${name}: agents.format ve agents.dir zorunlu`);
+    errors.push(`${name}: agents.format and agents.dir are required`);
   }
 
-  // workspace-rules stratejisi ayrik rule dosyasi uretir, dir bilgisi zorunludur
+  // the workspace-rules strategy emits separate rule files, so dir is required
   if (cap.rules?.strategy === 'workspace-rules' && !cap.rules.dir) {
-    errors.push(`${name}: workspace-rules icin rules.dir zorunlu`);
+    errors.push(`${name}: workspace-rules requires rules.dir`);
   }
 
   if (!cap.context) {
-    errors.push(`${name}: context tanimi zorunlu`);
+    errors.push(`${name}: a context definition is required`);
   } else if (cap.context.strategy) {
     if (cap.context.strategy !== 'agent-yaml-prompt') {
       errors.push(`${name}: context.strategy desteklenmiyor: ${cap.context.strategy}`);
     } else if (!cap.agents || !cap.agents.dir || !cap.agents.format) {
-      errors.push(`${name}: agent-yaml-prompt context stratejisi agents.format ve agents.dir gerektirir`);
+      errors.push(`${name}: agent-yaml-prompt context strategy requires agents.format and agents.dir`);
     }
   } else if (typeof cap.context.file === 'string' && cap.context.file.length > 0) {
     if (typeof cap.context.location !== 'string' || cap.context.location.length === 0) {
-      errors.push(`${name}: context.location (string) zorunlu`);
+      errors.push(`${name}: context.location (string) is required`);
     }
   } else if ('file' in cap.context) {
-    errors.push(`${name}: context.file (string) zorunlu`);
+    errors.push(`${name}: context.file (string) is required`);
   } else {
-    errors.push(`${name}: context.file veya context.strategy zorunlu`);
+    errors.push(`${name}: context.file or context.strategy is required`);
   }
 
   // Path-safe: dir/file/location degerleri '..' icermemeli ve absolute olmamali
@@ -121,7 +121,7 @@ function validateCliCapabilities(name, cap) {
   ].filter(Boolean);
   for (const p of pathFields) {
     if (typeof p === 'string' && (p.includes('..') || path.isAbsolute(p))) {
-      errors.push(`${name}: path degeri '${p}' guvenli degil (.. veya absolute path yasak)`);
+      errors.push(`${name}: path value '${p}' is not safe (.. or an absolute path is forbidden)`);
     }
   }
 
@@ -142,8 +142,8 @@ function loadExternalCapabilities(configPath) {
     const raw = fs.readFileSync(configPath, 'utf8');
     external = ext === '.json' ? JSON.parse(raw) : yaml.load(raw);
   } catch (err) {
-    const location = err.mark ? ` (satir ${err.mark.line + 1})` : '';
-    throw new Error(`CLI config parse hatasi${location}: ${err.message}`);
+    const location = err.mark ? ` (line ${err.mark.line + 1})` : '';
+    throw new Error(`CLI config parse error${location}: ${err.message}`);
   }
 
   if (!external || typeof external !== 'object') return merged;
@@ -159,7 +159,7 @@ function loadExternalCapabilities(configPath) {
   }
 
   if (allErrors.length > 0) {
-    throw new Error(`CLI config validasyon hatalari:\n  ${allErrors.join('\n  ')}`);
+    throw new Error(`CLI config validation errors:\n  ${allErrors.join('\n  ')}`);
   }
 
   return merged;
@@ -194,26 +194,26 @@ function adaptInvokeSyntax(content, targetCli, capabilities = CLI_CAPABILITIES) 
   if (!cap) return content;
 
   const prefix = cap.invoke.prefix;
-  if (prefix === '/') return content; // Gemini — degismez
+  if (prefix === '/') return content; // slash invoke — leave it
 
-  // Backtick icindeki /komut-adi pattern'ini yakala
+  // Match a /command-name pattern inside backticks
   return content.replace(/`\/([\w-]+)([^`]*)`/g, (match, cmd, rest) => {
     return `\`${prefix}${cmd}${rest}\``;
   });
 }
 
 // ─────────────────────────────────────────────────────
-// PATH REFERENCES DONUSUMU
+// PATH REFERENCE REWRITE
 // ─────────────────────────────────────────────────────
 
-// PATH_MAPS: metin-ici .claude/ referanslarini hedef CLI dizinlerine donusturur.
-// CLI_CAPABILITIES ile tutarli tutulmali — her iki map ayni CLI setini icermeli.
+// PATH_MAPS: rewrites in-text .claude/ references to the target host directories.
+// Keep this aligned with CLI_CAPABILITIES — both maps must cover the same host set.
 //
-// Kapsam DISI yollar (donusturme YAPILMAZ, aynen kalir):
-//   - Docbase/agentic/  → CLI-agnostik manifest konumu, tum CLI lar ayni yolu kullanir
-//   - ../Codebase       → Fiziksel dizin referansi, CLI ye bagli degil
-//   - backlog/          → Agentbase icinde, CLI ye bagli degil
-// Bu yollar proje yapisini ifade eder, CLI aracini degil — donusturme gereksizdir.
+// Paths OUT OF SCOPE (not rewritten, left as-is):
+//   - Docbase/agentic/  → host-agnostic manifest location, every host uses the same path
+//   - ../Codebase       → physical directory reference, not tied to a host
+//   - backlog/          → lives inside Agentbase, not tied to a host
+// These paths describe the project layout, not the host tool — rewriting them is unnecessary.
 const PATH_MAPS = {
   gemini: {
     '.claude/commands/': '.gemini/commands/',
@@ -243,16 +243,16 @@ const PATH_MAPS = {
   },
 };
 
-// Manifest transform.skip_paths ile override edilebilir
-// .claude/rules/ ayri dosya olarak uretilmiyor — inline-context ile context dosyasina gomulur
+// Can be overridden with manifest transform.skip_paths
+// .claude/rules/ is not emitted as separate files — inline-context embeds it in the context file
 
 /**
  * Merges the default PATH_MAPS with custom path maps from the manifest.
  * A manifest entry overrides the default mapping for the same CLI.
  *
- * NOT: path_maps sadece metin-ici referanslari donusturur. Gercek cikti
- * dosya konumlari CLI_CAPABILITIES teki dir alanlari tarafindan belirlenir.
- * Output dizinini degistirmek icin external CLI config kullanin.
+ * NOTE: path_maps rewrites in-text references only. Real output
+ * file locations are determined by the dir fields in CLI_CAPABILITIES.
+ * Use an external CLI config to change the output directory.
  *
  * @param {Object|undefined} manifestPathMaps - manifest.path_maps field
  * @returns {Object} Merged path map
@@ -304,7 +304,7 @@ function adaptPathReferences(content, targetCli, pathMaps = PATH_MAPS, skipPaths
       new RegExp(`${escapeRegex(skillsDir)}/([\\w-]+)\\.md(?!/SKILL\\.md)`, 'g'),
       (match, name) => name === 'SKILL' ? match : `${skillsDir}/${name}/SKILL.md`
     );
-    // Custom path_maps ile donusturulmus dizinler icin de normalize et
+    // Also normalize directories rewritten by custom path_maps
     const customMaps = pathMaps[targetCli];
     if (customMaps) {
       for (let to of Object.values(customMaps)) {
@@ -321,8 +321,8 @@ function adaptPathReferences(content, targetCli, pathMaps = PATH_MAPS, skipPaths
     }
   }
 
-  // Rule referanslari: .claude/rules/ ayri dosya olarak uretilmiyor —
-  // icerik context dosyasina inline edilir. Path referansini context yoluna cevir.
+  // Rule references: .claude/rules/ is not emitted as a separate file —
+  // the content is inlined into the context file. Rewrite the path reference to the context path.
   if (cap?.rules?.strategy === 'workspace-rules' && cap.rules.dir) {
     result = result.replace(
       /\.claude\/rules\/([\w-]+)\.md/g,
@@ -337,8 +337,8 @@ function adaptPathReferences(content, targetCli, pathMaps = PATH_MAPS, skipPaths
       `${contextRef} (rules inline)`
     );
   } else {
-    // agent-yaml-prompt (Kimi): rule referanslarini temizle
-    result = result.replace(/\.claude\/rules\/[\w-]+\.md/g, 'context dosyasi (rules inline)');
+    // agent-yaml-prompt (Kimi): strip rule references
+    result = result.replace(/\.claude\/rules\/[\w-]+\.md/g, 'context file (rules inline)');
   }
 
   return result;
@@ -349,12 +349,12 @@ function escapeRegex(str) {
 }
 
 // ─────────────────────────────────────────────────────
-// CLAUDE-ONLY BOLUM TEMIZLEME
+// HOST-SPECIFIC SECTION STRIPPING
 // ─────────────────────────────────────────────────────
 
 const CLAUDE_ONLY_PATTERNS = [
-  // Bolum basligi + icerik: satir satir tara, baska bolum baslayana kadar sil
-  /### Otomatik Test Sinyalleri \(Hook Tabanli\)(?:\n(?!## |---).*)*/g,
+  // Section heading plus body: delete until the next section starts.
+  /### Automatic test signals \(hook-based\)(?:\n(?!## |---).*)*/g,
   /^.*settings\.json.*$/gm,
   /^\*\*Source of truth:\*\*.*\.claude\/hooks\/.*$/gm,
 ];
@@ -447,7 +447,7 @@ function toOpenCodeAgent(name, description, content) {
 }
 
 // ─────────────────────────────────────────────────────
-// FRONTMATTER TEMIZLEME
+// FRONTMATTER STRIPPING
 // ─────────────────────────────────────────────────────
 
 function stripFrontmatter(content) {
@@ -457,7 +457,7 @@ function stripFrontmatter(content) {
 }
 
 // ─────────────────────────────────────────────────────
-// .CLAUDE/ DIZIN PARSER
+// .CLAUDE/ DIRECTORY PARSER
 // ─────────────────────────────────────────────────────
 
 function parseClaudeOutput(claudeDir) {
@@ -603,19 +603,19 @@ function writeTarget(outputDir, targetCli, fileMap) {
       const resolvedFull = path.resolve(fullPath);
       const resolvedBase = path.resolve(outputDir);
       if (!resolvedFull.startsWith(resolvedBase + path.sep) && resolvedFull !== resolvedBase) {
-        throw new Error(`Path traversal: ${relPath} dizin disinda`);
+        throw new Error(`Path traversal: ${relPath} is outside the output directory`);
       }
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-      // Symlink resolution: dizin olusturulduktan sonra gercek yolu kontrol et
+      // Symlink resolution: after the directory is created, check the real path
       try {
         const realDir = fs.realpathSync(path.dirname(fullPath));
         const realBase = fs.realpathSync(outputDir);
         if (!realDir.startsWith(realBase + path.sep) && realDir !== realBase) {
-          throw new Error(`Symlink traversal: ${relPath} gercek yol dizin disinda`);
+          throw new Error(`Symlink traversal: ${relPath} resolves outside the output directory`);
         }
       } catch (symlinkErr) {
         if (symlinkErr.message.includes('Symlink traversal')) throw symlinkErr;
-        // realpathSync ENOENT olabilir — lexical kontrol yeterli
+        // realpathSync may return ENOENT — the lexical check is enough
       }
       fs.writeFileSync(fullPath, content, 'utf8');
     } catch (err) {
@@ -623,7 +623,7 @@ function writeTarget(outputDir, targetCli, fileMap) {
     }
   }
   if (errors.length > 0) {
-    console.error(`[${targetCli}] ${errors.length} dosya yazilamadi:`);
+    console.error(`[${targetCli}] ${errors.length} files could not be written:`);
     errors.forEach(e => console.error(`  ! ${e}`));
   }
   return errors;
@@ -642,10 +642,10 @@ function resolveTargets(manifest, targetsFlag, capabilities = CLI_CAPABILITIES) 
   if (targetsFlag) {
     requested = targetsFlag.split(',').map(t => t.trim()).filter(Boolean);
     if (manifestTargets.length > 0) {
-      // Manifest'te targets varsa → filtrele
+      // When the manifest lists targets → filter
       targets = manifestTargets.filter(t => new Set(requested).has(t));
     } else {
-      // Manifest'te targets yoksa → flag dogrudan hedef listesi olur
+      // When the manifest has no targets → the flag is the target list
       targets = requested;
     }
   } else {
@@ -656,13 +656,13 @@ function resolveTargets(manifest, targetsFlag, capabilities = CLI_CAPABILITIES) 
   if (requested && manifestTargets.length > 0) {
     for (const target of requested) {
       if (validSet.has(target) && !manifestTargets.includes(target)) {
-        invalid.push({ name: target, reason: 'manifest.targets icinde yok' });
+        invalid.push({ name: target, reason: 'not in manifest.targets' });
       }
     }
   }
   const validTargets = targets.filter(t => {
     if (!validSet.has(t)) {
-      invalid.push({ name: t, reason: `bilinmeyen CLI — gecerli degerler: ${[...validSet].join(', ')}` });
+      invalid.push({ name: t, reason: `unknown CLI — valid values: ${[...validSet].join(', ')}` });
       return false;
     }
     return true;
@@ -718,7 +718,7 @@ function main() {
   try {
     manifest = yaml.load(fs.readFileSync(resolvedPath, 'utf8'));
   } catch (err) {
-    const location = err.mark ? ` (satir ${err.mark.line + 1})` : '';
+    const location = err.mark ? ` (line ${err.mark.line + 1})` : '';
     console.error(`Error: Manifest YAML parse error${location}: ${err.message}`);
     process.exit(1);
   }
@@ -728,7 +728,7 @@ function main() {
     process.exit(1);
   }
 
-  // External CLI capability config yukle (varsa) — lokal scope
+  // Load an external CLI capability config when present — local scope
   let localCapabilities = { ...CLI_CAPABILITIES };
   if (manifest?.transform?.cli_config) {
     const configPath = path.resolve(path.dirname(resolvedPath), manifest.transform.cli_config);
@@ -777,7 +777,7 @@ function main() {
       report.totalFiles += fileCount;
 
       if (flags.verbose) {
-        console.log(`\n  ${target}: ${fileCount} dosya`);
+        console.log(`\n  ${target}: ${fileCount} files`);
         for (const key of Object.keys(fileMap)) {
           console.log(`    ${key}`);
         }
@@ -792,15 +792,15 @@ function main() {
   console.log('  Transform report');
   console.log('\u2501'.repeat(55));
   for (const t of report.targets) {
-    console.log(`  ${t.name}: ${t.files} dosya`);
+    console.log(`  ${t.name}: ${t.files} files`);
   }
   console.log(`  Total: ${report.totalFiles} files`);
   if (report.errors.length > 0) {
-    console.log(`  Hata: ${report.errors.length}`);
+    console.log(`  Errors: ${report.errors.length}`);
     report.errors.forEach(e => console.log(`    ${e}`));
   }
   if (flags.dryRun) {
-    console.log('  Mod: DRY RUN (dosya yazilmadi)');
+    console.log('  Mode: DRY RUN (no files written)');
   }
   console.log('\u2501'.repeat(55));
 

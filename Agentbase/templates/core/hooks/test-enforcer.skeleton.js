@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Test Enforcer Hook
- * Bootstrap tarafindan uretilmistir.
+ * Produced by bootstrap.
  * PostToolUse (Edit|Write) — test-enforcement instruction for a source file.
  *
  * Hook behavior:
@@ -77,20 +77,20 @@ const TEST_FILE_PATTERNS = [
   /_test\.rs$/,
 ];
 
-// === STATE YONETIMI ===
+// === STATE ===
 
 function loadState() {
   try {
     if (fs.existsSync(STATE_FILE)) {
       const data = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-      // 1 saatten eski state'i temizle
+      // Drop state older than 1 hour
       if (data.timestamp && (Date.now() - data.timestamp) > 60 * 60 * 1000) {
         return { timestamp: Date.now(), files: {} };
       }
       return data;
     }
   } catch {
-    // Okunamazsa sifir state
+    // Unreadable → empty state
   }
   return { timestamp: Date.now(), files: {} };
 }
@@ -107,14 +107,14 @@ function saveState(state) {
 // === HELPER FUNCTIONS ===
 
 /**
- * Dosya bir test dosyasi mi?
+ * Is this file a test file?
  */
 function isTestFile(filePath) {
   return TEST_FILE_PATTERNS.some(p => p.test(filePath));
 }
 
 /**
- * Dosya uzantisi kod dosyasi mi?
+ * Is this file extension a code file?
  */
 function isCodeFile(filePath) {
   if (!filePath || typeof filePath !== 'string') return false;
@@ -124,7 +124,7 @@ function isCodeFile(filePath) {
 }
 
 /**
- * Dosya yolunu katman pattern'lerine karsi esle
+ * Match a file path against layer patterns
  */
 function detectLayer(filePath) {
   for (const entry of LAYER_TESTS) {
@@ -159,7 +159,7 @@ function isOnDebounce(filePath, state) {
   return (Date.now() - lastTime) < DEBOUNCE_MS;
 }
 
-// === ANA HOOK ===
+// === MAIN HOOK ===
 
 async function main() {
   let inputData = '';
@@ -183,7 +183,7 @@ async function main() {
 
     const filePath = input?.tool_input?.file_path || input?.tool_input?.path;
 
-    // file_path yoksa — gecir
+    // No file_path — pass through
     if (!filePath || typeof filePath !== 'string') {
       process.stdout.write(inputData);
       process.exit(0);
@@ -201,20 +201,20 @@ async function main() {
       process.exit(0);
     }
 
-    // Debounce kontrolu
+    // Debounce check
     const state = loadState();
     if (isOnDebounce(filePath, state)) {
       process.stdout.write(inputData);
       process.exit(0);
     }
 
-    // Katman tespiti
+    // Layer detection
     const layer = detectLayer(filePath);
 
-    // Test dosyasi eslestirme
+    // Test file matching
     const testInfo = resolveTestPath(filePath);
     if (!testInfo) {
-      // Eslestirme bulunamadi — sadece katman bazli genel hatirlatma
+      // No mapping — layer-level reminder only
       if (layer) {
         state.files[filePath] = Date.now();
         saveState(state);
@@ -230,7 +230,7 @@ async function main() {
       process.exit(0);
     }
 
-    // Test dosyasi var mi kontrol et
+    // Check whether the test file exists
     const testExists = fs.existsSync(testInfo.testPath);
 
     state.files[filePath] = Date.now();

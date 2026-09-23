@@ -224,7 +224,7 @@ If "Fix Required" indicators are present:
 ```markdown
 fix: review indicator — <issue summary>
 ```
-**Language:** Turkish
+**Language:** English
 **Example:** `fix: review indicator — incomplete null check fixed`
 
 > **RULE:** Review fix commit should be separate. Do not modify original commit (amend).

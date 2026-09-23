@@ -105,21 +105,21 @@ Example output:
 
 ### Container Management
 ```bash
-# Tum container durumlari
+# All container statuses
 ssh deploy@server "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
 
-# Belirli container loglari
+# Logs for one container
 ssh deploy@server "docker logs --tail 100 -f myapp-api"
 
-# Container yeniden baslatma
+# Restart a container
 ssh deploy@server "docker restart myapp-api"
 
-# Container icine giris
+# Open a shell in a container
 ssh deploy@server "docker exec -it myapp-api sh"
 ```
 
 
-### Veritabani Islemleri
+### Database Operations
 
 ```bash
 # DB backup
@@ -128,32 +128,32 @@ ssh deploy@server "docker exec myapp-postgres pg_dump -U postgres mydb > /tmp/ba
 # DB restore
 ssh deploy@server "docker exec -i myapp-postgres psql -U postgres mydb < /tmp/backup.sql"
 
-# DB boyutu
+# DB size
 ssh deploy@server "docker exec myapp-postgres psql -U postgres -c \"SELECT pg_size_pretty(pg_database_size('mydb'))\""
 ```
 
 
-### Log Analizi
+### Log Analysis
 
 ```bash
-# Hata loglari (son 1 saat)
+# Error logs (last 1 hour)
 ssh deploy@server "docker logs --since 1h myapp-api 2>&1 | grep -i error"
 
-# Istek sayisi
+# Request count
 ssh deploy@server "docker logs --since 1h myapp-api 2>&1 | grep -c 'HTTP'"
 ```
 
 
-### Disk Yonetimi
+### Disk Management
 
 ```bash
-# Docker disk kullanimi
+# Docker disk usage
 ssh deploy@server "docker system df"
 
-# Kullanilmayan image'lari temizle
+# Remove unused images
 ssh deploy@server "docker image prune -f"
 
-# Kullanilmayan volume'lari temizle (DIKKAT)
+# Remove unused volumes (caution)
 ssh deploy@server "docker volume prune -f"
 ```
 
@@ -161,56 +161,56 @@ ssh deploy@server "docker volume prune -f"
 
 ---
 
-## Sorun Giderme Frameworku
+## Troubleshooting Framework
 
-### Container Baslamiyor
-
-
-```
-1. Loglarini kontrol et: docker logs <container>
-2. Dockerfile'i incele: Build asamasinda hata var mi?
-3. Environment degiskenlerini kontrol et: docker inspect <container> | jq '.[0].Config.Env'
-4. Port catismasi var mi: netstat -tlnp | grep <port>
-5. Volume mount hatasi var mi: docker inspect <container> | jq '.[0].Mounts'
-```
-
-
-### Yuksek Memory/CPU
+### Container does not start
 
 
 ```
-1. Kaynak kullanimi: docker stats
-2. En cok kaynak kullanan process: docker exec <container> top
-3. Memory leak kontrolu: Zaman icinde artan memory
-4. Restart politikasi: docker inspect <container> | jq '.[0].HostConfig.RestartPolicy'
+1. Check its logs: docker logs <container>
+2. Inspect the Dockerfile: is there an error in the build stage?
+3. Check environment variables: docker inspect <container> | jq '.[0].Config.Env'
+4. Is there a port conflict: netstat -tlnp | grep <port>
+5. Is there a volume mount error: docker inspect <container> | jq '.[0].Mounts'
 ```
 
 
-### Network Sorunlari
+### High memory or CPU
 
 
 ```
-1. Container arasi iletisim: docker exec <container_a> ping <container_b>
-2. DNS cozumleme: docker exec <container> nslookup <service_name>
-3. Port dinleme: docker exec <container> netstat -tlnp
+1. Resource usage: docker stats
+2. Process using the most resources: docker exec <container> top
+3. Memory leak check: memory that grows over time
+4. Restart policy: docker inspect <container> | jq '.[0].HostConfig.RestartPolicy'
+```
+
+
+### Network problems
+
+
+```
+1. Communication between containers: docker exec <container_a> ping <container_b>
+2. DNS resolution: docker exec <container> nslookup <service_name>
+3. Listening ports: docker exec <container> netstat -tlnp
 4. Network inspect: docker network inspect <network_name>
 ```
 
 
-### SSL/TLS Sorunlari
+### SSL/TLS problems
 
 
 ```
-1. Sertifika kontrolu: echo | openssl s_client -connect domain:443 2>/dev/null | openssl x509 -noout -dates
-2. Sertifika yenileme: certbot renew --dry-run
-3. Reverse proxy konfigurasyonu: nginx -t
+1. Certificate check: echo | openssl s_client -connect domain:443 2>/dev/null | openssl x509 -noout -dates
+2. Certificate renewal: certbot renew --dry-run
+3. Reverse proxy configuration: nginx -t
 ```
 ---
 
 ## Invariant Rules
 
 1. **Verify before performing destructive operations** — `rm -rf`, `DROP DATABASE`, `docker volume prune` etc. commands should be executed only after user approval.
-2. **Protect credentials** — Display sensitive information such as API keys, tokens in a secure manner (ASLA).
+2. **Protect credentials** — Do not display secrets such as API keys or tokens.
 3. **Be cautious in Production** — Perform testing and feedback in the production environment.
 4. **Backup before changes** — Take a backup before performing operations that may cause data changes.
 5. **Document everything** — Document each step to allow for repeatability.

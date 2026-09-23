@@ -1,7 +1,7 @@
-# Task Conductor — Plan-First Faz Orkestratoru
+# Task Conductor — plan-first phase orchestrator
 
-> Backlog'daki birden fazla gorevi once faz planina donusturur; yalnizca acik `run` modunda uygular.
-> Kullanim: `/task-conductor plan top 5`, `/task-conductor run top 5 --max-parallel 2`, `/task-conductor resume`, `/task-conductor status`, `/task-conductor abort`
+> Turns several backlog tasks into a phase plan first, and applies them only in an explicit `run` mode.
+> Usage: `/task-conductor plan top 5`, `/task-conductor run top 5 --max-parallel 2`, `/task-conductor resume`, `/task-conductor status`, `/task-conductor abort`
 
 ---
 
@@ -22,11 +22,11 @@
 |---|---|---|
 | **Plan Top X** | `plan top 5` | Creates a plan for the top 5 highest-scoring tasks, stops execution |
 | **Plan All** | `plan all` | Plans and runs all tasks, with confirmation flag |
-| **Plan Manuel ID** | `plan 3,5,8` | Creates a plan for specific tasks by ID |
+| **Plan Manual ID** | `plan 3,5,8` | Creates a plan for specific tasks by ID |
 | **Plan Keyword** | `plan keyword auth` | Plans tasks using a keyword-based authentication method |
 | **Run Top X** | `run top 5 --max-parallel 2` | Runs the top 5 highest-scoring tasks with up to 2 parallel executions |
 | **Run All** | `run all --confirm-all` | Runs all tasks without confirmation flag, high-risk operation |
-| **Run Manuel ID** | `run 3,5,8` | Runs specific tasks by ID according to the plan |
+| **Run Manual ID** | `run 3,5,8` | Runs specific tasks by ID according to the plan |
 | **Run Keyword** | `run keyword auth` | Runs tasks using a keyword-based authentication method according to the plan |
 | **Resume** | `resume` | Continues from the last saved state in `/conductor-state.json` |
 | **Status** | `status` | Reads the current status and lock files, does not modify anything |
@@ -481,7 +481,7 @@ When all phases are completed:
 | #30 | Test error: ... | Manual investigation required |
 
 ### Suggestions
-- [varsa next steps]
+- [next steps, if any]
 
 ---
 

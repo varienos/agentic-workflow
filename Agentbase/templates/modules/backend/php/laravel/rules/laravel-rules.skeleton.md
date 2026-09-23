@@ -154,11 +154,11 @@ protected $guarded = ['id', 'created_at', 'updated_at'];
 {{-- correct — automatic XSS protection --}}
 <p>{{ $user->name }}</p>
 
-{{-- ❌ TEHLIKELI — XSS acigi --}}
+{{-- dangerous — XSS hole --}}
 <p>{!! $user->bio !!}</p>
 
-{{-- ✅ KABUL EDILEBILIR — bilinen guvenli kaynak, yorum ile --}}
-{{-- Sanitize edilmis HTML: Purifier middleware'den gecmis --}}
+{{-- acceptable — known safe source, with a comment --}}
+{{-- Sanitized HTML: passed through the Purifier middleware --}}
 <div>{!! $article->sanitized_body !!}</div>
 ```
 

@@ -24,8 +24,8 @@ const CONFIG_FILES = [
 ];
 
 /**
- * Root config dosyalarinin birlesik SHA256 hash i.
- * Dosya yoksa atlanir; hicbir dosya yoksa null doner.
+ * Combined SHA256 hash of root config files.
+ * A missing file is skipped; returns null when no file exists.
  */
 function computeCodebaseHash(codebasePath) {
   if (!codebasePath || !fs.existsSync(codebasePath)) return null;
@@ -38,18 +38,18 @@ function computeCodebaseHash(codebasePath) {
       const hash = crypto.createHash('sha256').update(content).digest('hex');
       hashes.push(`${file}:${hash}`);
     } catch {
-      // Dosya yok — atla
+      // File missing — skip
     }
   }
 
   if (hashes.length === 0) return null;
 
-  // Birlesik hash: tum dosya hash lerinin SHA256 i
+  // Combined hash: SHA256 of every file hash
   return crypto.createHash('sha256').update(hashes.join('\n')).digest('hex').slice(0, 12);
 }
 
 /**
- * Yeni manifest icin meta bolumu uretir.
+ * Builds the meta section for a new manifest.
  */
 function generateMeta(codebasePath, bootstrapVersion) {
   const now = new Date().toISOString();

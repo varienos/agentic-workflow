@@ -36,7 +36,7 @@ Invariant rules:
 
 Wait for the deployment to complete:
 ```bash
-echo "Deploy sonrasi bekleniyor (30 saniye)..." && sleep 30
+echo "Waiting after deploy (30 seconds)..." && sleep 30
 ```
 # Invariant Rules
 
@@ -69,11 +69,6 @@ Example output:
 | Web | `https://www.example.com` | HTTP 200 | 10s |
 | WebSocket | `wss://api.example.com/ws` | Connection established | 5s |
 
-Note: Severity labels have been translated as follows:
-- KRITIK -> CRITICAL
-- YUKSEK -> HIGH
-- ORTA -> MEDIUM
-- YASAK -> FORBIDDEN
 ```bash
 curl -sf --max-time 10 https://api.example.com/health | jq .
 curl -sf --max-time 10 -o /dev/null -w "%{http_code}" https://www.example.com
@@ -108,26 +103,26 @@ Verify that database migrations were successful:
 
 ---
 ```bash
-cd ../Codebase && npx prisma migrate status 2>/dev/null || echo "Prisma kontrol edilemiyor"
+cd ../Codebase && npx prisma migrate status 2>/dev/null || echo "Prisma status could not be checked"
 ```
 
 
-Kontrol et:
-- [ ] Tum migration'lar uygulanmis mi?
-- [ ] Bekleyen migration var mi?
+Check:
+- [ ] Were all migrations applied?
+- [ ] Is any migration still pending?
 
 ---
 
-## Step 5 — Versiyon Dogrulama
+## Step 5 — Version Check
 
-Deploy edilen versiyonun beklenen versiyon oldugunu dogrula:
+Confirm the deployed version is the expected version:
 
 
 ```bash
-# Lokal versiyon
+# Local version
 cd ../Codebase && git rev-parse --short HEAD
 
-# Production versiyon (health endpoint'ten)
+# Production version (from the health endpoint)
 # curl -sf https://api.example.com/health | jq '.version'
 ```
 Invariant rules:
@@ -164,16 +159,16 @@ Example output:
   # Deploy platform example with environment configurations
   # Pass if local commit hash matches production hash
 ```bash
-# Container durumu
+# Container status
 ssh deploy@server "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep myapp"
 
-# Container loglari (son 20 satir)
+# Container logs (last 20 lines)
 ssh deploy@server "docker logs --tail 20 myapp-api"
 
-# Disk kullanimi
+# Disk usage
 ssh deploy@server "df -h | head -5"
 
-# Memory kullanimi
+# Memory usage
 ssh deploy@server "free -h"
 ```
 ### Controllable Items
@@ -201,77 +196,76 @@ Save the deployment result to the following file:
 -- YAML/JSON --
 ```
 
-Note: I translated "Kutsal Kurallar" to "Invariant rules", "Calisma Siniri" to "Working boundary", and used professional technical English. I also preserved markdown structure, headings, lists, tables, code fences, inline code, shell commands, YAML/JSON keys, function names, regexes exactly, HTML comments, and path strings.
 ```bash
-echo "$(date '+%Y-%m-%d %H:%M:%S') | $(cd ../Codebase && git rev-parse --short HEAD) | [DURUM] | [OZET]" >> ../Codebase/deploy.log
+echo "$(date '+%Y-%m-%d %H:%M:%S') | $(cd ../Codebase && git rev-parse --short HEAD) | [STATUS] | [SUMMARY]" >> ../Codebase/deploy.log
 ```
 
 
-**Log formati:**
+**Log format:**
 
 ```
-TARIH | COMMIT | DURUM | OZET
-2024-01-15 14:30:00 | a1b2c3d | DEPLOY_OK | 3 ozellik, 0 hata
-2024-01-14 10:00:00 | d4e5f6g | DEPLOY_WARN | health check 2. denemede gecti
+DATE | COMMIT | STATUS | SUMMARY
+2024-01-15 14:30:00 | a1b2c3d | DEPLOY_OK | 3 features, 0 errors
+2024-01-14 10:00:00 | d4e5f6g | DEPLOY_WARN | health check passed on the 2nd attempt
 ```
 
 
-**Log dosyasi:** `../Codebase/deploy.log`
+**Log file:** `../Codebase/deploy.log`
 -->
 
 ---
 
-## Step 8 — Sonuc Raporu
+## Step 8 — Result Report
 
 
 ```
-## 🚀 Post-Deploy Raporu
+## Post-Deploy Report
 
-### Genel Durum: [DEPLOY_OK ✅ / DEPLOY_WARN ⚠️ / DEPLOY_FAIL ❌]
+### Overall status: [DEPLOY_OK / DEPLOY_WARN / DEPLOY_FAIL]
 
-### Deploy Bilgileri
+### Deploy details
 - **Commit:** <hash>
-- **Tarih:** <tarih>
+- **Date:** <date>
 - **Platform:** <platform>
 
-### Kontrol Sonuclari
+### Check results
 
-| Adim | Durum | Detay |
+| Step | Status | Detail |
 |---|---|---|
-| Health check | ✅/❌ | ... |
-| Smoke test | ✅/❌ | X/Y gecti |
-| Migration | ✅/❌/⏭️ | ... |
-| Versiyon | ✅/❌ | ... |
-| Platform | ✅/❌ | ... |
+| Health check | pass/fail | ... |
+| Smoke test | pass/fail | X/Y passed |
+| Migration | pass/fail/skipped | ... |
+| Version | pass/fail | ... |
+| Platform | pass/fail | ... |
 
-### Basarisiz Kontroller
-[varsa detayli liste]
+### Failed checks
+[detailed list when any check failed]
 
-### Rollback Gerekli mi?
-[EVET: rollback talimatlari / HAYIR]
+### Is rollback required?
+[YES: rollback instructions / NO]
 ```
 
 
 ---
 
-## Karar Matrisi
+## Decision Matrix
 
-| Durum | Karar | Aksiyon |
+| Condition | Decision | Action |
 |---|---|---|
-| Tum kontroller PASS | ✅ DEPLOY_OK | Deploy basarili |
-| Health check FAIL | ❌ DEPLOY_FAIL | Rollback gerekli |
-| Smoke test kismi FAIL | ⚠️ DEPLOY_WARN | Etkilenen ozellikler arastirilmali |
-| Migration FAIL | ❌ DEPLOY_FAIL | Rollback gerekli |
-| Versiyon uyumsuz | ⚠️ DEPLOY_WARN | Deploy islemi kontrol edilmeli |
-| Platform sorunlu | ⚠️ DEPLOY_WARN | Altyapi kontrolu gerekli |
+| All checks PASS | DEPLOY_OK | Deploy succeeded |
+| Health check FAIL | DEPLOY_FAIL | Rollback required |
+| Smoke test partial FAIL | DEPLOY_WARN | Investigate the affected features |
+| Migration FAIL | DEPLOY_FAIL | Rollback required |
+| Version mismatch | DEPLOY_WARN | Check the deploy operation |
+| Platform problem | DEPLOY_WARN | Check the platform |
 
 ---
 
-## Rollback Rehberi
+## Rollback Guide
 
-Eger DEPLOY_FAIL durumu olusursa:
+If the status is DEPLOY_FAIL:
 
-1. **Onceki versiyon belirle:**
+1. **Identify the previous version:**
    
 ```bash
    cd ../Codebase && git log --oneline -5
@@ -307,7 +301,7 @@ Eger DEPLOY_FAIL durumu olusursa:
 
 1. **Ask questions** — All controls run silently, only reporting results.
 2. **Make changes** — This command only checks, does not modify anything.
-3. **Rollback** — Rollback as needed: TALIMAT will be provided; apply on your own initiative.
+3. **Rollback** — When rollback is required, follow the instructions. Do not invent a rollback.
 4. **Complete all steps** — Proceed to next step even if one fails.
 5. **Deploy log is mandatory** — Step 7 log must be generated everywhere.
 6. **Result report is mandatory** — Step 8 report must be generated everywhere.

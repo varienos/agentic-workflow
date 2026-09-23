@@ -227,7 +227,7 @@ Example output:
 fix: bug-review description — <fix_description>
 ```
 
-**Language:** Turkish
+**Language:** English
 **Example:** `fix: bug-review description — missing null check fixed`
 -->
 
@@ -297,4 +297,4 @@ Description: Command final step - self-refresh check. Bootstrap this marker.
 Self-Refresh section changes the command's content. The command itself looks at the project's current state: small discrepancies Edit or big changes backlog task-i olarak rapor edilir.
 -->
 
-- [ ] **DB schema:** Schema/model/kolon/tablo degisikligi varsa migration dosyasi var mi, dry-run gecti mi, rollback/down script hazir mi? Detay: `.claude/rules/db-migration-discipline.md`
+- [ ] **DB schema:** If a schema, model, column, or table changed, is there a migration file, did dry-run pass, and is the rollback/down script ready? Detail: `.claude/rules/db-migration-discipline.md`

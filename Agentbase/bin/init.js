@@ -2,25 +2,25 @@
 'use strict';
 
 /**
- * init.js — Terminal-tabanli proje yapilandirma (deterministik dikis)
+ * init.js — terminal project setup (deterministic stitch)
  *
- * Bootstrap'in deterministik yukunu (detect + roportaj + manifest + generate)
- * Opus'tan alip terminale tasir. Geriye yalnizca CLAUDE_FILL narrative Opus'a kalir.
+ * Moves bootstrap's deterministic work (detect + interview + manifest + generate)
+ * out of the model and into the terminal. Only the CLAUDE_FILL narrative stays for the host.
  *
- * Kullanim:
- *   node bin/init.js                          # interaktif (gercek terminal)
- *   node bin/init.js --yes                    # soru yok, detected + default
+ * Usage:
+ *   node bin/init.js                          # interactive (a real terminal)
+ *   node bin/init.js --yes                    # no questions, detected + defaults
  *   node bin/init.js --answers init-answers.yaml   # replay (CI)
- *   node bin/init.js --dry-run                # tespit raporu, yazma yok
+ *   node bin/init.js --dry-run                # detection report, no writes
  *   node bin/init.js --codebase ../Codebase --targets claude,codex
  *
- * Stdout markerlari (bootstrap.md okur):
- *   MANIFEST_WRITTEN  — gecerli manifest yazildi
- *   INIT_DONE         — deterministik uretim tamamlandi
- *   INIT_ERROR        — hata (fail-loud; sessiz fallback yok)
+ * Stdout markers (bootstrap.md reads these):
+ *   MANIFEST_WRITTEN  — a valid manifest was written
+ *   INIT_DONE         — deterministic generation finished
+ *   INIT_ERROR        — error (fail loud; no silent fallback)
  *
- * TTY kisiti: interaktif mod yalnizca gercek terminalde calisir. Agent/CI
- * oturumlari --yes veya --answers kullanmalidir (bkz. import-codebase-ai.js).
+ * TTY limit: interactive mode runs only on a real terminal. Agent/CI
+ * sessions must use --yes or --answers (see import-codebase-ai.js).
  */
 
 const fs = require('fs');
@@ -155,7 +155,7 @@ async function main() {
   const detection = detect(codebase);
   printDetectionSummary(detection);
 
-  // --- cevap toplama (mod secimi) ---
+  // --- collect answers (mode selection) ---
   let answers;
   if (args.answers) {
     let overrides;
@@ -173,7 +173,7 @@ async function main() {
     return fail('No TTY. Interactive mode needs a real terminal; use --yes or --answers for agents and CI.');
   }
 
-  // --- manifest montaji + dogrulama ---
+  // --- manifest assembly + validation ---
   const projectName = path.basename(path.dirname(codebase)) || path.basename(codebase);
   const manifest = assemble(detection, answers, {
     projectName,
@@ -215,7 +215,7 @@ async function main() {
   process.stdout.write(`\n✅ Manifest written: ${manifestPath}\n`);
   process.stdout.write('MANIFEST_WRITTEN\n');
 
-  // --- deterministik uretim ---
+  // --- deterministic generation ---
   runGenerate(agentbase, manifestPath);
   runTransform(agentbase, manifestPath, targets);
 
@@ -228,8 +228,8 @@ async function main() {
   process.stdout.write('INIT_DONE\n');
 }
 
-// Yalnizca dogrudan calistirilinca main() yurur — require ile import edildiginde
-// (test) yan etki olmaz. ensureGraphify birim testlerde enjekte edilen spawn ile cagrilir.
+// main() runs only when this file is executed directly — not when it is required.
+// Requiring it has no side effect. Unit tests call ensureGraphify with an injected spawn.
 if (require.main === module) {
   main().catch((e) => fail(e && e.stack ? e.stack : String(e)));
 }

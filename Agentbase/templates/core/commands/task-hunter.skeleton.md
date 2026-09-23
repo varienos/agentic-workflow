@@ -121,7 +121,7 @@ Apply the following controls in sequence. First, select the module if it exists:
 
 | # | Control | Module | Action |
 |---|---------|-----|------|
-| 1 | AC description contains "bug", "hata", "fix", "duzelt", "cokme", or "crash" | **AECA** | Hypothesis → test → fix → verify (max 3 attempts) |
+| 1 | AC description contains "bug", "fix", or "crash" | **AECA** | Hypothesis → test → fix → verify (max 3 attempts) |
 | 2 | Estimated number of affected files is between 1-2 | **RPI** | Research → Plan → Implement (fast agent, fast) |
 | 3 | Estimated number of affected files is between 3-9 | **Orchestrator** | Teammate spawn, parallel work |
 | 4 | Estimated number of affected files is 10+ | **Context Cycling** | Every 5 files, commit + summary, context cleanup |
@@ -546,7 +546,7 @@ Example output:
 | `chore` | Maintenance, configuration |
 | `style` | Code formatting |
 
-### Language: Turkish
+### Language: English
 **Example:** `feat: user registration endpoint added (#12)`
 -->
 
@@ -745,7 +745,7 @@ Every API endpoint must use a DTO (Data Transfer Object) with class-validator fo
 
 API errors must be in the format `{ error: string, code: string, details?: any }`.
 
-16. **DB schema disiplini** — DB schema/model/migration degisikligi yaptiysan `.claude/rules/db-migration-discipline.md` checklist'ini uygula: migration dosyasi, dry-run/preview, rollback/down ve destructive flag taramasi.
+16. **DB schema discipline** — if you changed a DB schema, model, or migration, follow `.claude/rules/db-migration-discipline.md`: migration file, dry-run/preview, rollback/down script, and a destructive-flag scan.
 
 Invariant rules:
 

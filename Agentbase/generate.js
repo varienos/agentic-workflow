@@ -2,15 +2,15 @@
 'use strict';
 
 /**
- * generate.js — Deterministik Skeleton Isleme Scripti
+ * generate.js — deterministic skeleton processor
  *
- * Manifest.yaml okur, skeleton dosyalarini tarar, GENERATE bloklarini
- * deterministik olarak doldurur. Karmasik bloklari Claude'a birakir.
+ * Reads the manifest YAML, scans skeleton files, and fills GENERATE blocks
+ * deterministically. Complex blocks are left for the active host.
  *
- * Kullanim:
- *   node generate.js <manifest-yolu> [--output-dir <cikti-dizini>] [--modules <modul-listesi>] [--dry-run] [--verbose]
+ * Usage:
+ *   node generate.js <manifest-path> [--output-dir <output-dir>] [--modules <module-list>] [--dry-run] [--verbose]
  *
- * Ornekler:
+ * Examples:
  *   node Agentbase/generate.js Docbase/agentic/project-manifest.yaml
  *   node Agentbase/generate.js Docbase/agentic/project-manifest.yaml --dry-run
  *   node Agentbase/generate.js Docbase/agentic/project-manifest.yaml --modules "mobile/expo,deploy/docker"
@@ -22,13 +22,13 @@ const path = require('path');
 const yaml = require('js-yaml');
 
 // ─────────────────────────────────────────────────────
-// YAPILANDIRMA
+// CONFIGURATION
 // ─────────────────────────────────────────────────────
 
 const AGENTBASE_DIR = path.resolve(__dirname);
 const TEMPLATES_DIR = path.join(AGENTBASE_DIR, 'templates');
 
-// Hedef yol haritasi (skeleton konumu → cikti konumu, Agentbase-relative)
+// Output path map (skeleton location → output location, Agentbase-relative)
 const TARGET_MAP = {
   'core/commands': '.claude/commands',
   'core/agents': '.claude/agents',
@@ -56,17 +56,17 @@ function createJsGenerateRe() {
 }
 
 // Python: hash-comment delimitli blok. "# GENERATE: NAME\n...\n# END GENERATE"
-// Python parser HTML/C tarzi yorumlari kabul etmedigi icin py-spesifik bir form gerekli.
+// The Python parser does not accept HTML/C comments, so this block uses a Python-specific form.
 function createPyGenerateRe() {
   return /# GENERATE: (\w+)\n[\s\S]*?# END GENERATE/g;
 }
 
 
 /**
- * Bir icerikten tum GENERATE blok isimlerini cikarir.
- * @param {string} content - Dosya icerigi
- * @param {'md'|'js'} fileType - Dosya tipi
- * @returns {string[]} Blok isimleri
+ * Extracts every GENERATE block name from a body of content.
+ * @param {string} content - File contents
+ * @param {'md'|'js'} fileType - File type
+ * @returns {string[]} Block names
  */
 function extractBlockNames(content, fileType) {
   let re;
@@ -82,10 +82,10 @@ function extractBlockNames(content, fileType) {
 }
 
 /**
- * Icerikteki GENERATE bloklarini verilen generator sonuclariyla degistirir.
- * @param {string} content - Dosya icerigi
- * @param {'md'|'js'} fileType - Dosya tipi
- * @param {Object} manifest - Manifest verisi
+ * Replaces GENERATE blocks in the content with the given generator results.
+ * @param {string} content - File contents
+ * @param {'md'|'js'} fileType - File type
+ * @param {Object} manifest - Manifest data
  * @returns {{ content: string, filled: string[], marked: string[] }}
  */
 function fillBlocks(content, fileType, manifest) {
@@ -102,7 +102,7 @@ function fillBlocks(content, fileType, manifest) {
       filled.push(blockName);
       return generator(manifest, fileType);
     }
-    // Karmasik blok — Claude icin isaretle
+    // Complex block — mark it for the active host
     marked.push(blockName);
     if (fileType === 'js') {
       return `/* CLAUDE_FILL: ${blockName} — filled by the active host during bootstrap */`;
@@ -121,10 +121,10 @@ function fillBlocks(content, fileType, manifest) {
 // ─────────────────────────────────────────────────────
 
 /**
- * JSON objesindeki __GENERATE__*__ anahtarlarini isler.
- * Aktif modullere gore kosullu merge yapar.
- * @param {Object} obj - JSON objesi
- * @param {Object} manifest - Manifest verisi
+ * Processes __GENERATE__*__ keys in a JSON object.
+ * Merges entries conditionally from the active modules.
+ * @param {Object} obj - JSON object
+ * @param {Object} manifest - Manifest data
  * @returns {{ obj: Object, filled: string[], marked: string[] }}
  */
 function processJsonGenerateKeys(obj, manifest) {
@@ -136,7 +136,7 @@ function processJsonGenerateKeys(obj, manifest) {
     if (Array.isArray(node)) {
       return node.map(item => walk(item))
         .filter(item => {
-          // Bos objeleri temizle (aktif modulu olmayan GENERATE bloklarinin kalintisi)
+          // Drop empty objects (leftovers from GENERATE blocks with no active module)
           if (item !== null && typeof item === 'object' && !Array.isArray(item) && Object.keys(item).length === 0) {
             return false;
           }
@@ -181,7 +181,7 @@ function processJsonGenerateKeys(obj, manifest) {
         result[key] = walk(value);
       }
 
-      // _pendingHooks'u hooks array'ine merge et (yoksa olustur)
+      // Merge _pendingHooks into the hooks array (create it when missing)
       if (result._pendingHooks) {
         if (!Array.isArray(result.hooks)) result.hooks = [];
         result.hooks.push(...result._pendingHooks);
@@ -198,8 +198,8 @@ function processJsonGenerateKeys(obj, manifest) {
 }
 
 /**
- * Kosullu GENERATE bloklarini isler.
- * Her alt-anahtar bir kosul: "prisma_active" → prisma modulu aktifse dahil et.
+ * Processes conditional GENERATE blocks.
+ * Each child key is a condition: "prisma_active" means include it when the prisma module is active.
  *
  * Uc entry tipi dondurur:
  * - { _hookEntry: {...} }       — tekil hook (hooks array'ine eklenir)
@@ -208,19 +208,19 @@ function processJsonGenerateKeys(obj, manifest) {
  */
 function processConditionalBlock(block, activeModules, manifest) {
   const entries = [];
-  const wrapperFields = {}; // matcher gibi skaler wrapper alanlar
+  const wrapperFields = {}; // scalar wrapper fields such as matcher
 
   for (const [condKey, value] of Object.entries(block)) {
     if (condKey === '__doc__') continue;
 
-    // Kosul kontrol: "modul_active" formatinda (slash ve tire destekli: nodejs/express_active, django-orm_active)
+    // Condition check: "module_active" form (slash and hyphen allowed: nodejs/express_active, django-orm_active)
     const modulMatch = condKey.match(/^([\w/\-]+)_active$/);
     if (modulMatch) {
       const modulName = modulMatch[1];
       if (!activeModules.has(modulName)) continue;
     }
 
-    // "forbidden_commands" ozel durum
+    // "forbidden_commands" special case
     if (condKey === 'forbidden_commands' && value.template) {
       const forbiddenRules = getForbiddenRules(manifest);
       for (const rule of forbiddenRules) {
@@ -238,7 +238,7 @@ function processConditionalBlock(block, activeModules, manifest) {
       continue;
     }
 
-    // Wrapper alan: skaler deger, kosul degil (matcher: "Bash" gibi)
+    // Wrapper field: a scalar value, not a condition (for example matcher: "Bash")
     if (!modulMatch && (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')) {
       wrapperFields[condKey] = value;
       continue;
@@ -252,10 +252,10 @@ function processConditionalBlock(block, activeModules, manifest) {
       }
       if (Object.keys(cleanEntry).length > 0) {
         if ('type' in cleanEntry) {
-          // Hook entry (type alani var → hook)
+          // Hook entry (has a type field → hook)
           entries.push({ _hookEntry: cleanEntry });
         } else {
-          // Root-level merge (type yok → her key-value ciftini ayri merge et)
+          // Root-level merge (no type → merge each key-value pair on its own)
           for (const [mk, mv] of Object.entries(cleanEntry)) {
             entries.push({ _mergeKey: mk, _mergeValue: mv });
           }
@@ -264,7 +264,7 @@ function processConditionalBlock(block, activeModules, manifest) {
     }
   }
 
-  // Wrapper field + hook entry varsa → hook group olustur (matcher + hooks)
+  // When a wrapper field and a hook entry are both present → create a hook group (matcher + hooks)
   if (Object.keys(wrapperFields).length > 0) {
     const hookEntries = entries.filter(e => e._hookEntry).map(e => e._hookEntry);
     const otherEntries = entries.filter(e => !e._hookEntry);
@@ -280,18 +280,18 @@ function processConditionalBlock(block, activeModules, manifest) {
 }
 
 // ─────────────────────────────────────────────────────
-// YARDIMCI FONKSIYONLAR
+// HELPERS
 // ─────────────────────────────────────────────────────
 
 /**
- * Shell single-quote ve jq double-quote icin escape eder.
- * Kullanim: forbidden_commands template'indeki pattern/reason degerleri.
- * Not: pattern degerleri jq test() icinde regex olarak yorumlanir —
- * regex meta-karakterleri (.*[]() vb.) literal olarak escape edilmez.
+ * Escapes text for a shell single quote and a jq double quote.
+ * Used for pattern/reason values in the forbidden_commands template.
+ * Note: pattern values are interpreted as regex inside jq test() —
+ * regex metacharacters (.*[]() and similar) are not escaped as literals.
  */
 /**
- * Bash script icerisine guvenli interpolasyon icin shell escape.
- * Path ve deger interpolasyonlari icin — komutlar icin degil.
+ * Shell-escapes a value for safe interpolation inside a bash script.
+ * For path and value interpolation, not for whole commands.
  */
 function escapeForShell(str) {
   if (!str || typeof str !== 'string') return str || '';
@@ -299,13 +299,13 @@ function escapeForShell(str) {
 }
 
 /**
- * Manifest'ten gelen komut stringini validate eder.
- * Tehlikeli shell zincirleme operatorleri tespit edilirse uyari ekler.
- * Komutlari escape etmek calismay bozar — bunun yerine validate + uyari.
+ * Validates a command string from the manifest.
+ * Adds a warning when a dangerous shell-chaining operator is detected.
+ * Escaping the command would break execution — validate and warn instead.
  */
 function sanitizeShellCommand(cmd) {
   if (!cmd || typeof cmd !== 'string') return cmd || '';
-  // $() ve backtick iceren komut substitution kontrolu
+  // Reject command substitution that uses $() or backticks
   if (/\$\(|`/.test(cmd)) {
     return `echo "WARNING: unsafe command rejected: ${escapeForShell(cmd)}" >&2 && exit 1`;
   }
@@ -318,14 +318,14 @@ function escapeForJqShell(str) {
     .replace(/"/g, '\\"')      // jq: " → \"
     .replace(/\n/g, '\\n')     // jq: newline → \n
     .replace(/\t/g, '\\t')     // jq: tab → \t
-    .replace(/\$/g, '\\$')     // shell: $ → \$ (degisken interpolasyonunu engelle)
+    .replace(/\$/g, '\\$')     // shell: $ → \$ (block variable interpolation)
     .replace(/'/g, "'\\''");   // shell: ' → '\''
 }
 
 /**
- * Forbidden pattern'in jq test() icin guvenli olup olmadigini kontrol eder.
+ * Checks whether a forbidden pattern is safe for jq test().
  * Nested quantifiers such as (a+)+, (a*)+, (a{2,})+ are a ReDoS risk.
- * @returns {boolean} true = guvenli
+ * @returns {boolean} true = safe
  */
 function isJqRegexSafe(pattern) {
   if (!pattern || typeof pattern !== 'string') return false;
@@ -392,10 +392,10 @@ function getForbiddenRules(manifest) {
 }
 
 /**
- * Stack'e gore dosya uzantilarini dondurur.
+ * Returns file extensions for the stack.
  */
 function getFileExtensions(manifest) {
-  // Manifest'te tanimli ise onu kullan
+  // Use the manifest list when it is defined
   if (manifest?.stack?.file_extensions) {
     return manifest.stack.file_extensions;
   }
@@ -418,7 +418,7 @@ function getFileExtensions(manifest) {
     'swift': ['.swift'],
   };
 
-  // Config uzantilari (her zaman)
+  // Config extensions (always)
   const configExts = ['.json', '.yaml', '.yml', '.env'];
 
   const allStacks = [primary.toLowerCase(), ...detected.map(s => s.toLowerCase())];
@@ -430,7 +430,7 @@ function getFileExtensions(manifest) {
     }
   }
 
-  // En az bir sey bulduysa config'leri ekle
+  // Add config extensions once at least one code extension was found
   if (exts.size > 0) {
     configExts.forEach(e => exts.add(e));
   }
@@ -439,7 +439,7 @@ function getFileExtensions(manifest) {
 }
 
 /**
- * Stack'e gore KOD dosya uzantilarini dondurur (config haric).
+ * Returns CODE file extensions for the stack (config excluded).
  */
 function getCodeExtensions(manifest) {
   const allExts = getFileExtensions(manifest);
@@ -519,10 +519,10 @@ function getCodebasePath(manifest) {
 }
 
 /**
- * Subproject path'ini normalize eder.
- * sp.path zaten ../veya / ile basliyorsa oldugu gibi kullanir.
- * Relative path (apps/api gibi) ise codebasePath ile birlestirir.
- * sp.path yoksa codebasePath/sp.name dondurur.
+ * Normalizes a subproject path.
+ * Keeps sp.path as-is when it already starts with ../ or /.
+ * Joins a relative path (such as apps/api) onto codebasePath.
+ * When sp.path is missing, returns codebasePath/sp.name.
  */
 function getSubprojectPath(manifest, sp) {
   if (sp.path) {
@@ -534,8 +534,8 @@ function getSubprojectPath(manifest, sp) {
 }
 
 /**
- * Manifest'te TypeScript aktif mi kontrol eder.
- * stack.typescript boolean VEYA stack.detected dizisinde "TypeScript" varsa true.
+ * Checks whether TypeScript is active in the manifest.
+ * True when stack.typescript is boolean true OR stack.detected contains "TypeScript".
  */
 function hasTypeScript(manifest) {
   const stack = manifest?.stack || {};
@@ -545,13 +545,13 @@ function hasTypeScript(manifest) {
 }
 
 /**
- * ORM tipine gore migration komutlarini uretir.
+ * Builds migration commands for the ORM type.
  */
 function getMigrationCommands(manifest, ormType) {
   const codebasePath = getCodebasePath(manifest);
   const subprojects = manifest?.project?.subprojects || [];
 
-  // ORM'yi kullanan subproject'i bul
+  // Find the subproject that uses this ORM
   let ormPath = codebasePath;
   for (const sp of subprojects) {
     const spModules = sp.modules || {};
@@ -673,15 +673,15 @@ function getRollbackCommand(manifest) {
 }
 
 // ─────────────────────────────────────────────────────
-// BASIT BLOK GENERATOR'LARI
+// SIMPLE BLOCK GENERATORS
 // ─────────────────────────────────────────────────────
 
 /**
- * Basit (deterministik) GENERATE bloklari icin generator haritasi.
- * Her generator: (manifest, fileType) => string
+ * Generator map for simple (deterministic) GENERATE blocks.
+ * Each generator: (manifest, fileType) => string
  *
  * fileType: 'md' | 'js'
- * md → Markdown content dondurur
+ * md → returns Markdown content
  * js → JavaScript code dondurur (array icine yerlestirilir)
  */
 const SIMPLE_GENERATORS = {
@@ -792,14 +792,14 @@ const SIMPLE_GENERATORS = {
     return `## Health Check\n\n\`<PROJECT_URL>/health\``;
   },
 
-  // --- CONTEXT / ROOT-DOK BLOKLARI (Faz 2: marker azaltma) ---
-  // Bu bloklar onceden CLAUDE_FILL idi; manifest'ten sadik sekilde uretilebildikleri
-  // icin deterministik generator'a tasindi. Gercek model yargisi gerektiren bloklar
-  // (ARCHITECTURE, DATA_FLOW, DIRECTORY_MAP, REVIEW_CHECKLIST, CRITICAL_RULES vb.)
-  // bilincli olarak CLAUDE_FILL kaldi.
+  // --- CONTEXT / ROOT-DOC BLOCKS (phase 2: fewer markers) ---
+  // These blocks used to be CLAUDE_FILL. They can be produced faithfully from the manifest,
+  // so they moved to a deterministic generator. Blocks that need real model judgment
+  // (ARCHITECTURE, DATA_FLOW, DIRECTORY_MAP, REVIEW_CHECKLIST, CRITICAL_RULES, and similar)
+  // stay CLAUDE_FILL on purpose.
 
-  // En sik blok (47x): proje baglami. Basliksiz uretir — skeleton'daki mevcut
-  // basligin (# Proje / # Tech Stack / ## Alt Proje Yapisi) altina oturur.
+  // Most common block: project context. Emitted without a heading — it sits under the
+  // heading already in the skeleton.
   CODEBASE_CONTEXT(manifest) {
     const p = manifest?.project || {};
     const stack = manifest?.stack || {};
@@ -902,7 +902,7 @@ const SIMPLE_GENERATORS = {
       const sc = p.scripts || {};
       const cmds = [
         [sc.dev || `${pm} run dev`, 'Dev server'],
-        [sc.test || `${pm} test`, 'Testler'],
+        [sc.test || `${pm} test`, 'Tests'],
         [sc.build || `${pm} run build`, 'Build'],
       ];
       lines.push(`### from \`${dir}\``, '```bash',
@@ -1185,7 +1185,7 @@ const SIMPLE_GENERATORS = {
     return SIMPLE_GENERATORS.COMPILE_COMMANDS(manifest);
   },
 
-  // --- UZANTI LISTELERI (JS format icin ozel) ---
+  // --- EXTENSION LISTS (JS format is special) ---
 
   FILE_EXTENSIONS(manifest, fileType) {
     const exts = getFileExtensions(manifest);
@@ -1361,12 +1361,12 @@ const SIMPLE_GENERATORS = {
 
     const rows = [];
 
-    // Health check endpoint — her zaman dahil
+    // Health check endpoint — always included
     const healthUrl = healthCheck || `${url}/health`;
     rows.push(`| \`GET ${healthUrl}\` | 200 OK | — |`);
 
     if (apiEndpoints.length > 0) {
-      // Dinamik endpoint listesi (manifest.api_endpoints den)
+      // Dynamic endpoint list (from manifest.api_endpoints)
       for (const ep of apiEndpoints) {
         const method = (ep.method || 'GET').toUpperCase();
         const epPath = ep.path || '/';
@@ -1375,7 +1375,7 @@ const SIMPLE_GENERATORS = {
         rows.push(`| \`${method} ${url}${epPath}\` | ${expectedStatus} | ${auth} |`);
       }
     } else {
-      // Fallback: sabit status endpoint (api_endpoints yoksa)
+      // Fallback: fixed status endpoint (when api_endpoints is absent)
       const statusUrl = `${url}${apiPrefix}/status`;
       rows.push(`| \`GET ${statusUrl}\` | 200 OK | — |`);
     }
@@ -1504,7 +1504,7 @@ const SIMPLE_GENERATORS = {
     return lines.join('\n');
   },
 
-  // --- TEST DOSYASI ESLESTIRME ---
+  // --- TEST FILE MAPPING ---
 
   TEST_FILE_MAPPING(manifest, fileType) {
     if (fileType !== 'js') return '';
@@ -1600,7 +1600,7 @@ const SIMPLE_GENERATORS = {
     ].join('\n');
   },
 
-  // --- TASK ROUTING YAPILANDIRMASI ---
+  // --- TASK ROUTING CONFIG ---
 
   TASK_ROUTING_CONFIG(manifest) {
     const testStrategy = manifest?.workflows?.test_strategy || 'none';
@@ -1617,7 +1617,7 @@ const SIMPLE_GENERATORS = {
     ].join('\n');
   },
 
-  // --- GIT HOOK BLOKLARI (bash script ciktisi) ---
+  // --- GIT HOOK BLOCKS (bash script output) ---
 
   GIT_PRECOMMIT_COMPILE(manifest) {
     const stack = manifest?.stack || {};
@@ -1994,10 +1994,10 @@ const SIMPLE_GENERATORS = {
     return lines.join('\n');
   },
 
-  // --- SELF-REFRESH BLOKU ---
-  // Tum komut skeleton-larinin sonuna enjekte edilen sabit bolum.
-  // Komut calistiktan sonra kendi metnini proje gercegine karsi kontrol eder.
-  // Manifest bagimsizdir: her komutta ayni metin uretilir.
+  // --- SELF-REFRESH BLOCK ---
+  // Fixed section injected at the end of every command skeleton.
+  // After the command runs, it checks its own text against what the project actually is.
+  // Independent of the manifest: every command gets the same text.
 
   SELF_REFRESH(_manifest) {
     return [
@@ -2027,15 +2027,15 @@ const SIMPLE_GENERATORS = {
   },
 
   GRAPHIFY_UPDATE_COMMAND(manifest) {
-    // graphify modulu icin RAW (calistirilabilir) update komut zinciri.
-    // Kullanim: rules ve install.md icinde dogrudan kopya-yapistir komut olarak.
-    // Path argumanlari shell-safe double-quote ile sarilir.
+    // RAW (runnable) update command chain for the optional graphify module.
+    // Used as a copy-paste command inside rules and install.md.
+    // Path arguments are wrapped in shell-safe double quotes.
     const updates = collectGraphifyUpdateSteps(manifest, { quote: true });
     return updates.join(' && \\\n');
   },
 
   GRAPHIFY_UPDATE_COMMAND_ECHO(manifest) {
-    // /g health icinde graph yoksa kullaniciya gosterilen Bash satirlari.
+    // Bash lines shown to the user when /g health has no graph.
     // Komut CALISTIRILMAZ — echo ile yazdirilir.
     // Path argumanlari tirnaksiz (echo'nun dis double-quote'unun icinde nested
     // tirnak Bash syntax'ini kirardi; path'ler zaten toCodebaseRelative ile
@@ -2050,9 +2050,9 @@ const SIMPLE_GENERATORS = {
   },
 
   GRAPHIFY_LAYERS_PY(manifest) {
-    // graphify-merge-layers.py icindeki LAYERS tuple listesini doldurur.
-    // Sadece monorepo aktif + subprojects varsa anlamlidir; aksi halde yorum dondurur.
-    // Path normalize: subproject yolu Codebase-root-relative (traversal/absolute reddedilir).
+    // Fills the LAYERS tuple list inside graphify-merge-layers.py.
+    // Meaningful only when monorepo is active and subprojects exist; otherwise returns a comment.
+    // Path normalize: subproject path is Codebase-root-relative (traversal and absolute paths are rejected).
     const activeModules = getActiveModules(manifest);
     const monorepoActive = activeModules.has('monorepo');
     const subprojects = Array.isArray(manifest?.project?.subprojects) ? manifest.project.subprojects : [];
@@ -2089,16 +2089,16 @@ const SIMPLE_GENERATORS = {
   },
 };
 
-// graphify update adimlarini manifest'ten cikarir (raw + echo generator'larinin ortak yardimcisi).
+// Pulls graphify update steps out of the manifest (shared helper for the raw and echo generators).
 //
-// PATH SEMANTIGI: Uretilen komutlar HEDEF PROJENIN (Codebase) KOK DIZININDEN calistirilir
-// (kullanici `cd <Codebase>` sonrasi). getSubprojectPath manifest'ten Agentbase-relative
-// '../Codebase/<sub>' dondurur; biz '../Codebase/' onekini kirpip Codebase-root-relative
-// path'i kullaniriz. Tek-katmanda hedef Codebase kokunun kendisi → 'graphify update .'.
+// PATH SEMANTICS: generated commands run from the TARGET PROJECT (Codebase) ROOT
+// (after the user runs `cd <Codebase>`). getSubprojectPath returns an Agentbase-relative
+// '../Codebase/<sub>'; this helper strips the '../Codebase/' prefix and uses the
+// Codebase-root-relative path. A single-layer project targets the Codebase root → 'graphify update .'.
 //
-// GUVENLIK: Path argumanlari double-quote ile sarilir (boslukli/ozel karakterli yollar icin).
-// Path traversal (segment basinda '..') veya absolute path (segment basinda '/') reddedilir —
-// generator bu durumda yolu pas etmek yerine ham hata mesaji ureti.
+// SAFETY: path arguments are wrapped in double quotes (paths with spaces or special characters).
+// Path traversal (a segment starting with '..') or an absolute path (a segment starting with '/') is rejected —
+// the generator emits a plain error instead of passing that path through.
 function collectGraphifyUpdateSteps(manifest, opts = {}) {
   const quote = opts.quote === true;
   const activeModules = getActiveModules(manifest);
@@ -2107,11 +2107,11 @@ function collectGraphifyUpdateSteps(manifest, opts = {}) {
 
   const toCodebaseRelative = (spPath) => {
     if (typeof spPath !== 'string' || !spPath) return null;
-    // getSubprojectPath '../Codebase/<sub>' veya '../<custom>/<sub>' dondurebilir.
-    // '../<ust>/' onekini kirp; geriye Codebase-root-relative segment kalir.
+    // getSubprojectPath may return '../Codebase/<sub>' or '../<custom>/<sub>'.
+    // Strip the '../<parent>/' prefix; what remains is the Codebase-root-relative segment.
     const stripped = spPath.replace(/^\.\.\/[^/]+\/?/, '');
     if (!stripped || stripped === spPath) return null;
-    // Guvenlik: traversal/absolute path reddedilir.
+    // Safety: traversal and absolute paths are rejected.
     if (stripped.startsWith('/') || stripped.startsWith('../') || stripped.includes('/../')) return null;
     return stripped;
   };
@@ -2129,16 +2129,16 @@ function collectGraphifyUpdateSteps(manifest, opts = {}) {
       ];
     }
   }
-  // Tek-katman: hedef Codebase kokunun kendisi (komut Codebase icinde calisir → '.').
+  // Single-layer: the target is the Codebase root itself (the command runs inside Codebase → '.').
   return ['graphify update .'];
 }
 
 // ─────────────────────────────────────────────────────
-// DOSYA ISLEMCILERI
+// FILE PROCESSORS
 // ─────────────────────────────────────────────────────
 
 /**
- * Skeleton dosyasi tipini belirler.
+ * Detects the skeleton file type.
  * @param {string} filePath
  * @returns {'md'|'js'|'json'}
  */
@@ -2150,16 +2150,16 @@ function detectFileType(filePath) {
 }
 
 /**
- * Skeleton dosya adini cikti dosya adina donusturur (.skeleton uzantisini kaldirir).
+ * Converts a skeleton file name to an output file name (drops the .skeleton extension).
  */
 function toOutputName(filename) {
   return filename.replace('.skeleton', '');
 }
 
 /**
- * Bir skeleton dosyasini isle ve sonucunu dondur.
- * @param {string} filePath - Skeleton dosya yolu
- * @param {Object} manifest - Manifest verisi
+ * Processes one skeleton file and returns the result.
+ * @param {string} filePath - Skeleton file path
+ * @param {Object} manifest - Manifest data
  * @returns {{ outputContent: string, filled: string[], marked: string[] }}
  */
 function processSkeletonFile(filePath, manifest) {
@@ -2183,12 +2183,12 @@ function processSkeletonFile(filePath, manifest) {
 
   const result = fillBlocks(content, fileType, manifest);
 
-  // Hook dosyalarinda CODEBASE_ROOT cozumlemesi:
+  // CODEBASE_ROOT resolution inside hook files:
   //   const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '<fallback>');
-  // Skeleton'larda <fallback> '../Codebase' default'u olur; bootstrap zamani
-  // manifest.project.structure'tan turetilen yolu (Agentbase-relative) buraya yaziyoruz.
-  // Runtime'da hook helper'i (shared-hook-utils.resolveCodebaseRoot) once
-  // process.env.AGENTIC_CODEBASE_DIR'i, yoksa bu fallback'i kullanir.
+  // Skeletons default <fallback> to '../Codebase'. At bootstrap time we write the
+  // Agentbase-relative path derived from manifest.project.structure.
+  // At runtime the hook helper (shared-hook-utils.resolveCodebaseRoot) uses
+  // process.env.AGENTIC_CODEBASE_DIR first, then this fallback.
   const codebasePath = getCodebasePath(manifest);
   const outputContent = result.content.replace(
     /const CODEBASE_ROOT = resolveCodebaseRoot\(__dirname,\s*'[^']*'\);/g,
@@ -2225,16 +2225,16 @@ function resolveOutputPath(skeletonPath, outputDir) {
 
   // modules/* mapping
   if (parts[0] === 'modules') {
-    // modules/{kategori}/{...}/{varyant}/{tip}/dosya
+    // modules/{category}/{...}/{variant}/{type}/file
     const tip = parts[parts.length - 2]; // commands, agents, hooks, rules, scripts
     const leafVariant = parts[parts.length - 3]; // docker, prisma, express, monorepo, graphify
-    // 'scripts/' tipi `.claude/` altina degil, hedef projenin kok 'scripts/' dizinine yazilir.
-    // Bu graphify gibi runtime tooling script'leri icin gerekli (Python merge, vb.).
+    // A 'scripts/' type is written to the target project's root 'scripts/' directory, not under `.claude/`.
+    // Required for runtime tooling scripts such as the optional graphify Python merge.
     const targetDir = tip === 'scripts' ? 'scripts' : `.claude/${tip}`;
 
-    // Collision onleme: dosya adi zaten modul adini icermiyorsa prefix ekle
-    // docker/commands/pre-deploy → docker-pre-deploy (collision onlendi)
-    // prisma/rules/prisma-rules → prisma-rules (prefix zaten var, dokunma)
+    // Collision guard: prefix the file name when it does not already contain the module name
+    // docker/commands/pre-deploy → docker-pre-deploy (collision avoided)
+    // prisma/rules/prisma-rules → prisma-rules (prefix already present, leave it)
     const prefixedFilename = filename.toLowerCase().startsWith(leafVariant.toLowerCase())
       ? filename
       : `${leafVariant}-${filename}`;
@@ -2246,10 +2246,10 @@ function resolveOutputPath(skeletonPath, outputDir) {
 }
 
 /**
- * Templates dizinindeki tum template dosyalarini tarar.
- * Skeleton dosyalari (.skeleton) ve sabit dosyalari (hooks/, rules/, commands/, agents/
- * icindeki .js ve .md dosyalari) dahil eder.
- * Sadece aktif modullerin dosyalarini dahil eder.
+ * Scans every template file under the templates directory.
+ * Includes skeleton files (.skeleton) and fixed files (.js and .md inside
+ * hooks/, rules/, commands/, agents/).
+ * Includes only files that belong to active modules.
  */
 function scanSkeletonFiles(manifest) {
   const files = [];
@@ -2258,12 +2258,12 @@ function scanSkeletonFiles(manifest) {
   const SKIP_DIRS = new Set(['interview', 'reference']);
 
   function isTemplateFile(entry, fullPath) {
-    // root-gitignore.skeleton generate.js tarafindan ISLENMEZ — Bootstrap orkestratoru
-    // (ADIM 6.6) bunu dogrudan proje kokune (../.gitignore) yazar. generate.js ciktiyi
-    // outputDir (Agentbase) icinde tuttugu icin bu skeleton'u tarama disinda birakiriz.
+    // root-gitignore.skeleton is NOT processed by generate.js — the bootstrap orchestrator
+    // (STEP 6.6) writes it directly to the project root (../.gitignore). generate.js keeps
+    // its output inside outputDir, so this skeleton stays outside the scan.
     if (entry.name === 'root-gitignore.skeleton') return false;
     if (entry.name.includes('.skeleton.') || entry.name.endsWith('.skeleton')) return true;
-    // Sabit dosya: .js veya .md, content dizini (hooks/, rules/, commands/, agents/) icinde
+    // Fixed file: .js or .md inside a content directory (hooks/, rules/, commands/, agents/)
     if (entry.name.endsWith('.js') || entry.name.endsWith('.md')) {
       const parentDir = path.basename(path.dirname(fullPath));
       if (CONTENT_DIRS.has(parentDir) && entry.name !== 'detect.md') return true;
@@ -2272,14 +2272,14 @@ function scanSkeletonFiles(manifest) {
   }
 
   function isModuleActive(relPath) {
-    if (!relPath.startsWith('modules/')) return true; // core dosyalari her zaman dahil
+    if (!relPath.startsWith('modules/')) return true; // core files are always included
     const parts = relPath.split(path.sep);
     if (parts.length < 3) return true;
 
     const moduleSegments = [];
     for (let i = 2; i < parts.length; i++) {
       if (CONTENT_DIRS.has(parts[i]) || parts[i].includes('.skeleton.') || parts[i].endsWith('.skeleton')) break;
-      // Sabit dosya adini da dur noktasi olarak kontrol et
+      // Treat a fixed file name as a stop point too
       if (parts[i].endsWith('.js') || parts[i].endsWith('.md')) break;
       moduleSegments.push(parts[i]);
     }
@@ -2319,9 +2319,9 @@ function scanSkeletonFiles(manifest) {
 }
 
 /**
- * Skeleton dosya listesini belirtilen modullerle filtreler.
- * core/ dosyalari her zaman dahil edilir.
- * modules/ dosyalari sadece onlyModules listesindeki modullerle eslesirse dahil edilir.
+ * Filters the skeleton file list to the named modules.
+ * core/ files are always included.
+ * modules/ files are included only when they match the onlyModules list.
  */
 function filterByModules(skeletonFiles, onlyModules) {
   const moduleSet = new Set(onlyModules);
@@ -2329,10 +2329,10 @@ function filterByModules(skeletonFiles, onlyModules) {
 
   return skeletonFiles.filter(filePath => {
     const relPath = path.relative(TEMPLATES_DIR, filePath);
-    if (!relPath.startsWith('modules' + path.sep)) return true; // core → her zaman dahil
+    if (!relPath.startsWith('modules' + path.sep)) return true; // core → always included
 
     const parts = relPath.split(path.sep);
-    // modules/<category>/<variant>/... seklinde modul yolunu cikar
+    // Extract the module path as modules/<category>/<variant>/...
     const moduleSegments = [];
     for (let i = 1; i < parts.length; i++) {
       if (CONTENT_DIRS.has(parts[i])) break;
@@ -2360,20 +2360,20 @@ function filterByModules(skeletonFiles, onlyModules) {
 const VALUE_FLAGS = new Set(['--output-dir', '--modules']);
 
 /**
- * Proje-kokunun ../.gitignore'ini normalize eder (iki-repo teslimat modeli, ADIM 6.6).
- * REPLACE/normalize — append-only DEGIL: eski/stale managed blogu (START..END sentinel
- * arasi) VE blok disinda kalmis anchorsuz/eski managed pattern satirlarini
- * (Codebase, Codebase/, Codebase-wt-* vb.) temizler, sonra taze root-anchored skeleton
- * blogunu sonuna ekler. Boylece stale upgrade yolunda eski anchorsuz satirlarin
- * nested yollari (Agentbase/.../Codebase/...) ignore etmeye devam etmesi onlenir.
- * Idempotent: gecerli bir dosyada tekrar calistirildiginda tek temiz blok birakir.
- * Kullanici satirlari (managed olmayan) korunur. Saf fonksiyon — dosya YAZMAZ;
- * Bootstrap ciktiyi ../.gitignore'a kendisi yazar (generate.js path-traversal guard'i disinda).
+ * Normalizes the project-root ../.gitignore (two-repo delivery model, STEP 6.6).
+ * REPLACE/normalize — not append-only: removes the old/stale managed block (between the
+ * START..END sentinels) AND unanchored/old managed pattern lines left outside the block
+ * (Codebase, Codebase/, Codebase-wt-*, and similar), then appends a fresh root-anchored
+ * skeleton block. That stops a stale upgrade from keeping nested paths
+ * (Agentbase/.../Codebase/...) ignored via old unanchored lines.
+ * Idempotent: running it again on a valid file leaves a single clean block.
+ * User lines (not managed) are kept. Pure function — does NOT write a file;
+ * bootstrap writes the result to ../.gitignore itself (outside the generate.js path-traversal guard).
  */
 function repairRootGitignore(existing, skeleton) {
   const STALE_MANAGED = new Set([
-    'Codebase', 'Codebase/', 'Codebase-wt-*/', '*-wt-*/',  // legacy anchorsuz/wildcard managed satirlar
-    '/Codebase', '/Codebase/', '/Codebase-wt-*/',          // anchored (blok disinda kalmis kalinti)
+    'Codebase', 'Codebase/', 'Codebase-wt-*/', '*-wt-*/',  // legacy unanchored/wildcard managed lines
+    '/Codebase', '/Codebase/', '/Codebase-wt-*/',          // anchored (leftover outside the block)
   ]);
   const hasEndSentinel = existing.includes('END-AGENTIC-WORKFLOW-ROOT-GITIGNORE');
   const kept = [];
@@ -2391,10 +2391,10 @@ function repairRootGitignore(existing, skeleton) {
         continue;
       }
     } else if (trimmed.includes('AGENTIC-WORKFLOW-ROOT-GITIGNORE')) {
-      // Legacy format (END sentinel yok): sentinel yorum satirini at, devamini birakma.
+      // Legacy format (no END sentinel): drop the sentinel comment line and do not keep what follows.
       continue;
     }
-    if (STALE_MANAGED.has(trimmed)) continue; // blok disinda kalmis stale pattern satiri
+    if (STALE_MANAGED.has(trimmed)) continue; // stale pattern line left outside the block
     kept.push(line);
   }
   const base = kept.join('\n').replace(/\n{3,}/g, '\n\n').trim();
@@ -2433,7 +2433,7 @@ function main() {
     flags.outputDir = path.resolve(args[outputIdx + 1]);
   }
 
-  // --modules parametresi: sadece belirtilen modullerin dosyalarini isle
+  // --modules parameter: process only the named modules' files
   const modulesIdx = args.indexOf('--modules');
   if (modulesIdx !== -1 && args[modulesIdx + 1]) {
     flags.onlyModules = args[modulesIdx + 1].split(',').map(m => m.trim()).filter(Boolean);
@@ -2452,15 +2452,15 @@ function main() {
     process.exit(1);
   }
 
-  // Manifest oku
+  // Read the manifest
   const manifestContent = fs.readFileSync(resolvedManifestPath, 'utf8');
   let manifest;
   try {
     manifest = yaml.load(manifestContent);
   } catch (yamlErr) {
     const mark = yamlErr.mark;
-    const location = mark ? ` (satir ${mark.line + 1}, kolon ${mark.column + 1})` : '';
-    console.error(`Hata: Manifest YAML parse hatasi${location}: ${yamlErr.reason || yamlErr.message}`);
+    const location = mark ? ` (line ${mark.line + 1}, column ${mark.column + 1})` : '';
+    console.error(`Error: Manifest YAML parse error${location}: ${yamlErr.reason || yamlErr.message}`);
     process.exit(1);
   }
 
@@ -2474,7 +2474,7 @@ function main() {
   // Skeleton dosyalarini tara
   let skeletonFiles = scanSkeletonFiles(manifest);
 
-  // --modules filtresi: sadece belirtilen modullerin ve core dosyalarinin islenmesi
+  // --modules filter: process only the named modules and the core files
   if (flags.onlyModules && flags.onlyModules.length > 0) {
     skeletonFiles = filterByModules(skeletonFiles, flags.onlyModules);
   }
@@ -2498,7 +2498,7 @@ function main() {
     outputFiles: [],
   };
 
-  // Her skeleton dosyasini isle
+  // Process each skeleton file
   for (const skeletonPath of skeletonFiles) {
     const relPath = path.relative(TEMPLATES_DIR, skeletonPath);
 
@@ -2506,7 +2506,7 @@ function main() {
       let { outputContent, filled, marked } = processSkeletonFile(skeletonPath, manifest);
       const outputPath = resolveOutputPath(skeletonPath, outputDir);
 
-      // Prefix tutarliligi: dosya adina prefix eklendiyse icerideki komut referanslarini guncelle
+      // Prefix consistency: when the file name was prefixed, update command references inside it
       const originalFilename = toOutputName(path.basename(skeletonPath));
       const outputFilename = path.basename(outputPath);
       if (originalFilename !== outputFilename) {
@@ -2545,7 +2545,7 @@ function main() {
     }
   }
 
-  // Rapor ciktisi
+  // Report output
   console.log('');
   console.log('━'.repeat(55));
   console.log('  Skeleton processing report');
@@ -2578,7 +2578,7 @@ function main() {
 }
 
 // ─────────────────────────────────────────────────────
-// EXPORT (test icin)
+// EXPORT (for tests)
 // ─────────────────────────────────────────────────────
 
 module.exports = {

@@ -8,12 +8,12 @@
  *    - A result means decision: "ask" (ask the user, do not block)
  *    - No result means exit 0 (allow grep)
  *
- * Performans: cache (5dk TTL) + budget 500 token + 2sn timeout
+ * Performance: cache (5 min TTL) + 500 token budget + 2s timeout
  * Safety: execFileSync (no shell injection)
  *
- * Kaynak: CLAUDE.md → "🚨 ZORUNLU: Graphify-First Workflow"
+ * Source: optional graphify-first workflow. Graphify is not required.
  *
- * Debug: HOOK_DEBUG=1 → stderr karar log'u
+ * Debug: HOOK_DEBUG=1 → decision log on stderr
  * Bypass: an ASK decision lets the user choose (no = graphify, yes = grep)
  */
 
@@ -134,11 +134,11 @@ function isSingleFileTarget(command) {
 }
 
 /**
- * Cache okuma — bozuk cache veya izin problemi durumunda recovery uygular:
- *   - ENOENT (ilk calistirma): sessizce bos cache dondurur
- *   - Diger hatalar (parse, EACCES, vb.): stderr'e tek line uyari yazar
- *     ve bozuk cache dosyasini siler (sonraki writeCache fresh yazsin)
- * Hook akisini bloklamaz — her durumda {} dondurur.
+ * Cache read — recovers from a corrupt cache or a permission problem:
+ *   - ENOENT (first run): returns an empty cache quietly
+ *   - Other errors (parse, EACCES, and similar): writes one warning line to stderr
+ *     and deletes the corrupt cache file (the next writeCache starts fresh)
+ * Does not block the hook flow — always returns {}.
  */
 function readCache() {
   try {
@@ -157,9 +157,9 @@ function readCache() {
 }
 
 /**
- * Cache yazma — hata durumunda DEBUG bagimsiz tek line stderr uyarisi.
- * Hook akisini bloklamaz; cache hit'i basarisiz olur, sonraki query yine
- * graphify CLI'yi cagirir (yavas ama dogru).
+ * Cache write — on error, one stderr warning line that does not depend on DEBUG.
+ * Does not block the hook flow; a cache hit fails and the next query
+ * calls the graphify CLI again (slower, still correct).
  */
 function writeCache(cache) {
   try {
@@ -280,7 +280,7 @@ if (SENSITIVE_PATHS.test(context) || SENSITIVE_KEYWORDS.test(context)) {
   // Sensitive durumda graphify denemeden direkt ask
   ask(
     '🚨 Graphify-First v2:\n' +
-    '   Sensitive context tespit edildi (path veya keyword).\n' +
+    '   Sensitive context detected (path or keyword).\n' +
     `   Pattern: "${pattern}"\n` +
     '   Devam etmek istiyor musun?',
   );

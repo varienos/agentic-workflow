@@ -28,13 +28,12 @@ This agent is spawned from Agentbase and works on ../Codebase/.
 
  
 
-Let me know if you need anything else!
 ```
-1. Vercel Dashboard    → Build loglari, deployment durumu, fonksiyon loglari
-2. Framework Build     → Next.js/React build ciktisi, TypeScript hatalari
-3. Ortam Degiskenleri  → Eksik veya yanlis yapilandirilmis env degiskenleri
+1. Vercel Dashboard    → Build logs, deployment status, function logs
+2. Framework Build     → Next.js/React build output, TypeScript errors
+3. Environment variables → Missing or misconfigured env variables
 4. Vercel Config       → vercel.json, redirects, rewrites, headers
-5. DNS / Domain        → Custom domain yapilandirmasi, SSL durumu
+5. DNS / Domain        → Custom domain configuration, SSL status
 ```
 ### Invariant Rules
 
@@ -104,22 +103,22 @@ npm run build
 
 ---
 
-## Sorun Giderme Frameworku
+## Troubleshooting Framework
 
-### Vercel Build Basarisiz
+### Vercel build failed
 
 
 ```
-1. Vercel Dashboard → Deployments → son deployment'in build loglarini incele
-2. Lokal olarak ayni build'i test et:
+1. Vercel Dashboard → Deployments → inspect the latest deployment build logs
+2. Test the same build locally:
    npm run build
-3. TypeScript / ESLint hatalari icin:
+3. For TypeScript / ESLint errors:
    npx tsc --noEmit
    npx eslint . --max-warnings=0
-4. Eksik ortam degiskeni kontrolu:
-   - Build sirasinda kullanilan tum env degiskenlerinin Vercel'de tanimli oldugunu kontrol et
-   - NEXT_PUBLIC_ prefix'i gerektiren degiskenler client-side icin zorunlu
-5. Paket uyumlulugu:
+4. Missing environment variable check:
+   - Confirm every env variable used at build time is defined in Vercel
+   - Variables that need the NEXT_PUBLIC_ prefix are required for client-side code
+5. Package compatibility:
    rm -rf node_modules && npm ci
 ```
 
@@ -128,11 +127,11 @@ npm run build
 
 
 ```
-1. Vercel Dashboard → Deployments → Functions loglarini kontrol et
-2. Preview URL ile production URL'i karsilastir
-3. Ortam degiskenlerinin dogru ortama atandigini dogrula
-4. Edge Config veya KV veritabani kullaniliyorsa izinleri kontrol et
-5. DNS propagasyonu: yeni domain eklenirse 24-48 saat bekle
+1. Vercel Dashboard → Deployments → check the Functions logs
+2. Compare the preview URL with the production URL
+3. Confirm environment variables are assigned to the correct environment
+4. If Edge Config or KV is in use, check its permissions
+5. DNS propagation: after adding a new domain, wait 24-48 hours
    dig +short www.example.com
 ```
 
@@ -141,10 +140,10 @@ npm run build
 
 
 ```
-1. Preview ortam degiskenlerini kontrol et — production ile ayni mi olmali?
-2. Database baglantisi preview ortaminda dogru branch/schema'ya mi bakiyor?
-3. API endpoint'leri preview URL'ini taniyor mu? (CORS, whitelist)
-4. Feature flag varsa preview icin dogru flag degerleri set edilmis mi?
+1. Check preview environment variables — should they match production?
+2. Does the database connection in preview point at the correct branch/schema?
+3. Do API endpoints recognize the preview URL? (CORS, allowlist)
+4. If a feature flag exists, are the preview flag values set?
 ```
 
 
@@ -152,16 +151,16 @@ npm run build
 
 
 ```
-1. DNS kayitlarini kontrol et:
+1. Check the DNS records:
    dig +short www.example.com
    dig +short example.com
 
-2. Vercel Dashboard → Settings → Domains → domain durumunu kontrol et
+2. Vercel Dashboard → Settings → Domains → check the domain status
 
-3. SSL sertifika durumu:
+3. SSL certificate status:
    echo | openssl s_client -connect www.example.com:443 2>/dev/null | openssl x509 -noout -dates
 
-4. www vs apex redirect yapilandirmasi dogru mu?
+4. Is the www vs apex redirect configured correctly?
 ```
 ---
 

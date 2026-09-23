@@ -1,37 +1,37 @@
 #!/usr/bin/env node
 /**
  * Auto Test Runner Hook
- * Bootstrap tarafindan uretilmistir.
- * PostToolUse (Edit|Write) — degisen katman icin test calistirma sinyali.
+ * Produced by bootstrap.
+ * PostToolUse (Edit|Write) — test-run signal for the layer that changed.
  *
- * Hook davranisi:
- * - Edit veya Write tool'u calistirildiginda tetiklenir
- * - Degisen dosyanin katmanini tespit eder (LAYER_TESTS)
- * - Debounce mantigi: ayni katman icin son 3 dakika icinde sinyal verilmisse ATLA
- * - Edit sayaci: ayni katmanda 3+ edit sonrasi sinyal guclendirilir
- * - Non-blocking: systemMessage ile sinyal verir, process BASLATMAZ
- * - stdin'den gelen veriyi her zaman stdout'a yazar
+ * Hook behavior:
+ * - Triggers when an Edit or Write tool runs
+ * - Detects the layer of the changed file (LAYER_TESTS)
+ * - Debounce: skip when the same layer was signaled in the last 3 minutes
+ * - Edit counter: after 3+ edits in the same layer the signal is stronger
+ * - Non-blocking: signals with systemMessage and does not start a process
+ * - Always writes stdin data to stdout
  *
- * Sorumluluk ayrimi:
- * - test-enforcer.js: dosya bazli test eslestirme, eksik test dosyasi icin systemMessage talimati
- * - auto-test-runner.js: edit birikimini takip eder, debounce ile akilli sinyal uretir
- * - Final verification (Step 5): task tamamlamadan once ZORUNLU test calistirma
+ * Responsibility split:
+ * - test-enforcer.js: per-file test matching, systemMessage when the test file is missing
+ * - auto-test-runner.js: tracks the edit backlog and emits a debounced signal
+ * - Final verification (Step 5): tests are required before the task is closed
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// ─── GENERATE BOLUMU BASLANGIC ───
+// ─── GENERATE SECTION START ───
 // Bootstrap fills this section from subproject and test info in the manifest.
-// Manuel duzenleme yapmayin — degisiklikler Bootstrap tarafindan ezilir.
+// Do not edit by hand — bootstrap overwrites these changes.
 
 // Layer-test mapping — one entry per subproject
 const LAYER_TESTS = [
   /* GENERATE: LAYER_TESTS
-   * Bootstrap manifest.project.subprojects[] ve manifest.stack.test_commands bilgilerini
-   * kullanarak her katman icin bir test eslesmesi uretir.
+   * Bootstrap uses manifest.project.subprojects[] and manifest.stack.test_commands
+   * to produce one test match per layer.
    *
-   * Ornek:
+   * Example:
    * { pattern: /api\/src\//, layer: 'API', command: 'cd ../Codebase/api && npm test', extra: null },
    * { pattern: /mobile\/src\//, layer: 'Mobile', command: 'cd ../Codebase/mobile && npm test', extra: null },
    */
@@ -41,44 +41,44 @@ const LAYER_TESTS = [
 // Code file extensions to check
 const CODE_EXTENSIONS = [
   /* GENERATE: CODE_EXTENSIONS
-   * Bootstrap tespit edilen stack'e gore kod dosya uzantilarini doldurur.
-   * Ornek: '.ts', '.tsx', '.js', '.jsx', '.py', '.php'
+   * Bootstrap fills code file extensions from the detected stack.
+   * Example: '.ts', '.tsx', '.js', '.jsx', '.py', '.php'
    */
   /* END GENERATE */
 ];
 
-// ─── GENERATE BOLUMU BITIS ───
+// ─── GENERATE SECTION END ───
 
 // === CONFIGURATION ===
 
 const DEBOUNCE_MS = 3 * 60 * 1000;       // 3 minutes — do not signal the same layer again
-const EDIT_THRESHOLD = 3;                 // 3+ edit sonrasi sinyal guclendir
+const EDIT_THRESHOLD = 3;                 // strengthen the signal after 3+ edits
 const STATE_FILE = path.join(__dirname, '.auto-test-state.json');
 
-// === STATE YONETIMI ===
+// === STATE ===
 
 /**
- * State'i diskten yukle
- * State formati: { layers: { [layerName]: { editCount, lastSignal, lastEdit } } }
+ * Load state from disk
+ * State shape: { layers: { [layerName]: { editCount, lastSignal, lastEdit } } }
  */
 function loadState() {
   try {
     if (fs.existsSync(STATE_FILE)) {
       const data = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-      // 1 saatten eski state'i temizle
+      // Drop state older than 1 hour
       if (data.timestamp && (Date.now() - data.timestamp) > 60 * 60 * 1000) {
         return { timestamp: Date.now(), layers: {} };
       }
       return data;
     }
   } catch {
-    // Okunamazsa sifir state
+    // Unreadable → empty state
   }
   return { timestamp: Date.now(), layers: {} };
 }
 
 /**
- * State'i diske kaydet
+ * Save state to disk
  */
 function saveState(state) {
   try {
@@ -90,7 +90,7 @@ function saveState(state) {
 }
 
 /**
- * Dosya yolunu LAYER_TESTS pattern'lerine karsi esle
+ * Match a file path against LAYER_TESTS patterns
  */
 function detectLayer(filePath) {
   if (!filePath || typeof filePath !== 'string') return null;
@@ -103,16 +103,16 @@ function detectLayer(filePath) {
 }
 
 /**
- * Dosya uzantisi kod dosyasi mi kontrol et
+ * Check whether the file extension is a code file
  */
 function isCodeFile(filePath) {
   if (!filePath || typeof filePath !== 'string') return false;
-  if (CODE_EXTENSIONS.length === 0) return true; // Config yoksa hepsini kabul et
+  if (CODE_EXTENSIONS.length === 0) return true; // No config → accept every file
   const ext = path.extname(filePath).toLowerCase();
   return CODE_EXTENSIONS.includes(ext);
 }
 
-// === ANA HOOK ===
+// === MAIN HOOK ===
 
 async function main() {
   let inputData = '';
@@ -122,7 +122,7 @@ async function main() {
   });
 
   process.stdin.on('end', () => {
-    // Edge case: bos stdin
+    // Edge case: empty stdin
     if (!inputData || inputData.trim() === '') {
       process.exit(0);
     }
@@ -138,7 +138,7 @@ async function main() {
 
     const filePath = input?.tool_input?.file_path || input?.tool_input?.path;
 
-    // file_path yoksa veya bos — gecir
+    // No file_path, or it is empty — pass through
     if (!filePath || typeof filePath !== 'string') {
       process.stdout.write(inputData);
       process.exit(0);
@@ -150,7 +150,7 @@ async function main() {
       process.exit(0);
     }
 
-    // Katman tespiti
+    // Layer detection
     const layer = detectLayer(filePath);
     if (!layer) {
       // Layer does not match — skip silently (not a crash)
@@ -176,26 +176,26 @@ async function main() {
       process.exit(0);
     }
 
-    // Sinyal uret
+    // Build the signal
     let message;
     if (layerState.editCount >= EDIT_THRESHOLD) {
-      // Guclu sinyal: cok sayida edit birikti
+      // Strong signal: many edits accumulated
       message = `${layerState.editCount} edits were made in the ${layer.layer} layer. Running tests is recommended:\n  ${layer.command}`;
       if (layer.extra) {
-        message += `\n  Not: ${layer.extra}`;
+        message += `\n  Note: ${layer.extra}`;
       }
     } else {
-      // Normal sinyal: ilk edit'ler
+      // Normal signal: the first edits
       message = `A change was made in the ${layer.layer} layer. Run the tests at a suitable point:\n  ${layer.command}`;
     }
 
     // Update state and save
     layerState.lastSignal = Date.now();
-    // Edit sayacini sifirla (sinyal verildi)
+    // Reset the edit counter (signal was sent)
     layerState.editCount = 0;
     saveState(state);
 
-    // systemMessage ile sinyal ver — BLOKLAMAZ
+    // Signal with systemMessage — does not block
     const output = JSON.stringify({
       systemMessage: message,
     });

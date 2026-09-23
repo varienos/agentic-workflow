@@ -1,58 +1,58 @@
 #!/usr/bin/env node
 /**
  * Code Review Hook
- * Bootstrap tarafindan uretilmistir.
- * PostToolUse (Edit|Write) — guvenlik ve kalite pattern taramasi.
+ * Produced by bootstrap.
+ * PostToolUse (Edit|Write) — scans for security and quality patterns.
  *
- * Hook davranisi:
- * - Edit veya Write tool'u calistirildiginda tetiklenir
- * - Dosya icerigi SECURITY_PATTERNS'e karsi taranir
- * - CRITICAL/HIGH issue varsa stderr'e uyari yazar
- * - Dosya uzantisi FILE_EXTENSIONS'da degilse atlar
- * - stdin'den gelen veriyi her zaman stdout'a yazar (non-blocking)
+ * Hook behavior:
+ * - Triggers when an Edit or Write tool runs
+ * - Scans file contents against SECURITY_PATTERNS
+ * - Writes a warning to stderr when a CRITICAL/HIGH issue is present
+ * - Skips when the file extension is not in FILE_EXTENSIONS
+ * - Always writes stdin data to stdout (non-blocking)
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// ─── GENERATE BOLUMU BASLANGIC ───
+// ─── GENERATE SECTION START ───
 // Bootstrap fills this section from stack info in the manifest.
-// Manuel duzenleme yapmayin — degisiklikler Bootstrap tarafindan ezilir.
+// Do not edit by hand — bootstrap overwrites these changes.
 
-// Guvenlik pattern'leri — stack'e gore genisletilir
+// Security patterns — extended for the stack
 const SECURITY_PATTERNS = [
-  // --- Core patterns (her projede bulunur) ---
-  { pattern: /(['"`])sk-[a-zA-Z0-9]+\1/, severity: 'CRITICAL', message: 'Hardcoded API key tespit edildi!' },
-  { pattern: /(['"`])password\1\s*[:=]\s*['"`][^'"]+['"`]/, severity: 'HIGH', message: 'Hardcoded password tespit edildi!' },
-  { pattern: /(['"`])(AKIA|ASIA)[A-Z0-9]{16}\1/, severity: 'CRITICAL', message: 'AWS access key tespit edildi!' },
-  { pattern: /-----BEGIN (RSA |EC )?PRIVATE KEY-----/, severity: 'CRITICAL', message: 'Private key tespit edildi!' },
-  { pattern: /console\.log\(/, severity: 'LOW', message: 'console.log tespit edildi' },
-  { pattern: /TODO|FIXME|HACK/, severity: 'LOW', message: 'TODO/FIXME yorumu var' },
+  // --- Core patterns (present in every project) ---
+  { pattern: /(['"`])sk-[a-zA-Z0-9]+\1/, severity: 'CRITICAL', message: 'Hardcoded API key detected' },
+  { pattern: /(['"`])password\1\s*[:=]\s*['"`][^'"]+['"`]/, severity: 'HIGH', message: 'Hardcoded password detected' },
+  { pattern: /(['"`])(AKIA|ASIA)[A-Z0-9]{16}\1/, severity: 'CRITICAL', message: 'AWS access key detected' },
+  { pattern: /-----BEGIN (RSA |EC )?PRIVATE KEY-----/, severity: 'CRITICAL', message: 'Private key detected' },
+  { pattern: /console\.log\(/, severity: 'LOW', message: 'console.log detected' },
+  { pattern: /TODO|FIXME|HACK/, severity: 'LOW', message: 'TODO/FIXME comment found' },
 
   /* GENERATE: SECURITY_PATTERNS
-   * Bootstrap asagidaki kategorilerden tespit edilen stack'e uygun olanlari ekler:
+   * Bootstrap adds the entries that match the detected stack from the categories below:
    *
    * Node.js/Express:
-   *   { pattern: /eval\s*\(/, severity: 'CRITICAL', message: 'eval() kullanimi tespit edildi!' },
-   *   { pattern: /res\.send\(.*req\.(body|query|params)/, severity: 'HIGH', message: 'Dogrudan kullanici girdisi response\'a yansitiliyor (XSS riski)' },
+   *   { pattern: /eval\s*\(/, severity: 'CRITICAL', message: 'eval() usage detected' },
+   *   { pattern: /res\.send\(.*req\.(body|query|params)/, severity: 'HIGH', message: 'Request input is reflected in the response (XSS risk)' },
    *
    * Prisma/SQL:
-   *   { pattern: /\$queryRaw\s*`[^`]*\$\{/, severity: 'CRITICAL', message: 'Raw query\'de interpolasyon — SQL injection riski!' },
-   *   { pattern: /\$executeRaw\s*`[^`]*\$\{/, severity: 'CRITICAL', message: 'Raw execute\'da interpolasyon — SQL injection riski!' },
+   *   { pattern: /\$queryRaw\s*`[^`]*\$\{/, severity: 'CRITICAL', message: 'Interpolation in a raw query — SQL injection risk' },
+   *   { pattern: /\$executeRaw\s*`[^`]*\$\{/, severity: 'CRITICAL', message: 'Interpolation in a raw execute — SQL injection risk' },
    *
    * PHP:
-   *   { pattern: /\$_(GET|POST|REQUEST)\[/, severity: 'HIGH', message: 'Raw superglobal kullanimi — sanitize edilmeli' },
-   *   { pattern: /mysql_query\s*\(/, severity: 'CRITICAL', message: 'Deprecated mysql_query — PDO veya prepared statement kullanin' },
+   *   { pattern: /\$_(GET|POST|REQUEST)\[/, severity: 'HIGH', message: 'Raw superglobal usage — sanitize before use' },
+   *   { pattern: /mysql_query\s*\(/, severity: 'CRITICAL', message: 'Deprecated mysql_query — use PDO or a prepared statement' },
    *
    * React/React Native:
-   *   { pattern: /dangerouslySetInnerHTML/, severity: 'HIGH', message: 'dangerouslySetInnerHTML kullanimi — XSS riski' },
+   *   { pattern: /dangerouslySetInnerHTML/, severity: 'HIGH', message: 'dangerouslySetInnerHTML usage — XSS risk' },
    *
    * Django/Python:
-   *   { pattern: /\.raw\s*\([^)]*%/, severity: 'CRITICAL', message: 'Raw SQL\'de string formatting — SQL injection riski!' },
-   *   { pattern: /mark_safe\s*\(/, severity: 'HIGH', message: 'mark_safe kullanimi — XSS riski' },
+   *   { pattern: /\.raw\s*\([^)]*%/, severity: 'CRITICAL', message: 'String formatting in raw SQL — SQL injection risk' },
+   *   { pattern: /mark_safe\s*\(/, severity: 'HIGH', message: 'mark_safe usage — XSS risk' },
    *
    * General:
-   *   { pattern: /process\.env\.\w+/, severity: 'LOW', message: 'Dogrudan process.env erisimi — config modulu kullanilmali mi?' },
+   *   { pattern: /process\.env\.\w+/, severity: 'LOW', message: 'Direct process.env access — should this go through a config module?' },
    */
   /* END GENERATE */
 ];
@@ -60,14 +60,14 @@ const SECURITY_PATTERNS = [
 // Naming-convention check patterns
 const NAMING_PATTERNS = [
   /* GENERATE: NAMING_PATTERNS
-   * Bootstrap manifest.conventions.naming alanina gore isimlendirme kontrolu ekler.
+   * Bootstrap adds a naming check from manifest.conventions.naming.
    *
-   * camelCase projesi:
-   *   { pattern: /(?:const|let|var)\s+[a-z]+_[a-z]+/, severity: 'LOW', message: 'snake_case degisken — camelCase bekleniyor' },
-   *   { pattern: /function\s+[a-z]+_[a-z]+/, severity: 'LOW', message: 'snake_case fonksiyon — camelCase bekleniyor' },
+   * camelCase project:
+   *   { pattern: /(?:const|let|var)\s+[a-z]+_[a-z]+/, severity: 'LOW', message: 'snake_case variable — camelCase is expected' },
+   *   { pattern: /function\s+[a-z]+_[a-z]+/, severity: 'LOW', message: 'snake_case function — camelCase is expected' },
    *
-   * snake_case projesi:
-   *   { pattern: /(?:def|class)\s+[a-z]+[A-Z]/, severity: 'LOW', message: 'camelCase tespit edildi — snake_case bekleniyor' },
+   * snake_case project:
+   *   { pattern: /(?:def|class)\s+[a-z]+[A-Z]/, severity: 'LOW', message: 'camelCase detected — snake_case is expected' },
    */
   /* END GENERATE */
 ];
@@ -75,7 +75,7 @@ const NAMING_PATTERNS = [
 // File extensions to check
 const FILE_EXTENSIONS = [
   /* GENERATE: FILE_EXTENSIONS
-   * Bootstrap tespit edilen stack'e gore dosya uzantilarini doldurur.
+   * Bootstrap fills file extensions from the detected stack.
    *
    * Node.js/TypeScript: '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'
    * Python:             '.py'
@@ -86,15 +86,15 @@ const FILE_EXTENSIONS = [
    * Java:               '.java', '.kt'
    * Config:             '.json', '.yaml', '.yml', '.toml', '.env'
    *
-   * Ornek (Node.js + PHP projesi):
+   * Example (Node.js + PHP project):
    * '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.php', '.json', '.yaml', '.yml', '.env'
    */
   /* END GENERATE */
 ];
 
-// ─── GENERATE BOLUMU BITIS ───
+// ─── GENERATE SECTION END ───
 
-// === FIXED LOGIC (degismez) ===
+// === FIXED LOGIC (do not change) ===
 
 function isIgnoredCommentLine(trimmedLine) {
   return (
@@ -132,9 +132,9 @@ function collectIssues(content, patterns = SECURITY_PATTERNS) {
 }
 
 /**
- * Ana hook fonksiyonu.
- * stdin'den tool input JSON'u okur, dosyayi tarar, uyari varsa stderr'e yazar,
- * her durumda orijinal input'u stdout'a yazar.
+ * Main hook function.
+ * Reads tool-input JSON from stdin, scans the file, writes a warning to stderr when needed,
+ * and always writes the original input to stdout.
  */
 async function main() {
   let inputData = '';
@@ -148,7 +148,7 @@ async function main() {
       const input = JSON.parse(inputData);
       const filePath = input.tool_input?.file_path || input.tool_input?.path;
 
-      // file_path yoksa (baska bir tool input'u) — gecir
+      // No file_path (some other tool input) — pass through
       if (!filePath) {
         console.log(inputData);
         process.exit(0);
@@ -175,7 +175,7 @@ async function main() {
       const content = fs.readFileSync(filePath, 'utf8');
       const issues = collectIssues(content);
 
-      // Onemli issue'lari stderr'e yaz
+      // Write important issues to stderr
       const criticalIssues = issues.filter(i => i.severity === 'CRITICAL');
       const highIssues = issues.filter(i => i.severity === 'HIGH');
       const importantIssues = [...criticalIssues, ...highIssues];
@@ -189,7 +189,7 @@ async function main() {
 
         importantIssues.slice(0, 5).forEach(issue => {
           const icon = issue.severity === 'CRITICAL' ? '[!!!]' : '[!!]';
-          console.error(`  ${icon} [${issue.severity}] Satir ${issue.line}: ${issue.message}`);
+          console.error(`  ${icon} [${issue.severity}] Line ${issue.line}: ${issue.message}`);
           console.error(`      [REDACTED]`);
         });
 
@@ -201,13 +201,13 @@ async function main() {
         console.error('');
       }
 
-      // LOW severity issue'lari sadece ozet olarak goster
+      // Show LOW severity issues as a summary only
       const lowIssues = issues.filter(i => i.severity === 'LOW');
       if (lowIssues.length > 0 && importantIssues.length === 0) {
-        console.error(`[Code Review] ${filePath}: ${lowIssues.length} dusuk oncelikli not`);
+        console.error(`[Code Review] ${filePath}: ${lowIssues.length} low-priority note`);
       }
 
-      // Her zaman orijinal input'u stdout'a yaz
+      // Always write the original input to stdout
       console.log(inputData);
     } catch {
       // Parse error or unexpected error — skip silently

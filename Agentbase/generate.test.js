@@ -1971,9 +1971,9 @@ describe('Bozuk YAML hata mesaji', () => {
       } catch (execErr) {
         stderr = execErr.stderr || '';
       }
-      assert.ok(stderr.includes('Manifest YAML parse hatasi'), 'kullanici dostu hata mesaji olmali');
-      assert.ok(stderr.includes('satir'), 'satir bilgisi olmali');
-      assert.ok(stderr.includes('kolon'), 'kolon bilgisi olmali');
+      assert.ok(stderr.includes('Manifest YAML parse error'), 'user-facing error message');
+      assert.ok(stderr.includes('line'), 'line information');
+      assert.ok(stderr.includes('column'), 'column information');
       assert.ok(!stderr.includes('at yaml.load'), 'stack trace olmamali');
       assert.ok(!stderr.includes('at Object.'), 'stack trace olmamali');
     } finally {

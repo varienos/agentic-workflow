@@ -182,7 +182,7 @@ ADR can be a new file or reference an existing one. For small refactor, typo, te
 ```
 ## Acceptance Criteria
 - [ ] Architecture decision impact was evaluated; did ADR need to be added?
-- [ ] If necessary, `backlog/decisions/YYYYMMDD-kebab-case-karar-basligi.md` ADR file was written or referenced the existing one
+- [ ] If necessary, `backlog/decisions/YYYYMMDD-kebab-case-decision-title.md` ADR file was written or referenced the existing one
 - [ ] If necessary, ADR minimum requirements were completed: context, decision, alternatives, consequences, rollback/revisit trigger, related tasks
 ```
 
@@ -426,4 +426,4 @@ is reported as a task.
 
 ### 3.1b — Architecture decision / ADR check
 
-Task metninde `schema`, `migration`, `model`, `kolon`, `tablo`, `column`, `table`, `database` kelimeleri geciyorsa veya manifest'te ORM/database tespiti bu taskla iliskiliyse asagidaki AC'leri otomatik ekle. Detay kural: `.claude/rules/db-migration-discipline.md`.
+If the task text mentions `schema`, `migration`, `model`, `kolon`, `tablo`, `column`, `table`, or `database`, or the manifest ORM/database detection is related to this task, add the acceptance checks below. Rule: `.claude/rules/db-migration-discipline.md`.

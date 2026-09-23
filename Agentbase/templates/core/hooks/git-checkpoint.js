@@ -6,19 +6,19 @@
  * PreToolUse (Bash) hook
  *
  * Shadow Git Checkpointing — before a `git commit` command runs, records current HEAD
- * gizli bir ref olarak kaydeder: refs/checkpoints/agent/<id>-<ts>
+ * as a hidden ref: refs/checkpoints/agent/<id>-<ts>
  *
- * Refs yaklasimi tercih edildi cunku:
- *  - `git branch` / `git tag` listesinde gorunmez (shadow ozellik)
- *  - Hafif: sadece tek SHA pointer
- *  - `git gc` temizleyebilir (yapilandirilabilir)
+ * Refs are used because:
+ *  - they do not appear in `git branch` / `git tag` (shadow behavior)
+ *  - light: a single SHA pointer
+ *  - `git gc` can prune them (configurable)
  *  - `/rollback` lists via `git for-each-ref refs/checkpoints/agent/`
  *
  * Hook NEVER blocks — does not return `decision`. `git commit` always runs.
  * Errors are swallowed silently — per hook protocol.
  *
- * Guvenlik: Tum git cagrilari `execFileSync('git', [...])` ile yapilir;
- * shell expansion DISABLED; no command-injection risk.
+ * Safety: every git call uses `execFileSync('git', [...])`;
+ * shell expansion is DISABLED; no command-injection risk.
  */
 
 const path = require('path');
@@ -86,7 +86,7 @@ async function main() {
 
   const cwd = findGitCwd(command);
   if (!cwd) {
-    logSilently('git repo tespit edilemedi, checkpoint atlandi');
+    logSilently('git repo was not detected; checkpoint skipped');
     return;
   }
 

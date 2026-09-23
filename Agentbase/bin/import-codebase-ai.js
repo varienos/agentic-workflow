@@ -68,8 +68,8 @@ function usage() {
  * One item in the copy plan.
  * @typedef {Object} PlanItem
  * @property {string} kind       — "dir" | "file"
- * @property {string} src        — mutlak kaynak yolu
- * @property {string} dst        — mutlak hedef yolu
+ * @property {string} src        — absolute source path
+ * @property {string} dst        — absolute destination path
  * @property {string} label      — report label (for example ".claude/")
  * @property {string} category   — "claude" | "memory" | "backlog" | "mcp" | "instruction"
  * @property {number} fileCount  — file count (recursive for a directory)
@@ -258,7 +258,7 @@ function checkDestinationConflicts(items) {
       if (it.kind === 'file') {
         conflicts.push(it);
       } else if (it.category === 'memory' || it.category === 'backlog') {
-        // memory ve backlog icin alt klasor ici dosya cakismasini kontrol et
+        // For memory and backlog, check file conflicts inside the subdirectory
         const files = fs.readdirSync(it.dst, { withFileTypes: true }).filter(e => e.isFile());
         if (files.length > 0) conflicts.push(it);
       } else {
@@ -440,7 +440,7 @@ async function main() {
   process.exit(0);
 }
 
-// --- Exports (test icin) ---
+// --- Exports (for tests) ---
 
 module.exports = {
   parseArgs,
@@ -455,7 +455,7 @@ module.exports = {
 // Run main() when executed directly
 if (require.main === module) {
   main().catch(err => {
-    process.stderr.write(`[import-codebase-ai] Beklenmeyen hata: ${err.stack || err.message}\n`);
+    process.stderr.write(`[import-codebase-ai] Unexpected error: ${err.stack || err.message}\n`);
     process.stdout.write('IMPORT_ERROR\n');
     process.exit(2);
   });

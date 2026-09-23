@@ -118,7 +118,7 @@ async function main() {
       let message = `\u26a0\ufe0f **DESTRUCTIVE MIGRATION DETECTED**\n\n`;
       message += `**File:** \`${path.basename(filePath)}\`\n`;
       message += `**Highest Severity:** ${severityEmoji(maxSeverity)} ${maxSeverity}\n\n`;
-      message += `### Tespit Edilen Degisiklikler\n\n`;
+      message += `### Detected changes\n\n`;
       message += `| Severity | Operation | Count | Examples |\n`;
       message += `|---|---|---|---|\n`;
 
@@ -129,19 +129,19 @@ async function main() {
         message += `| ${severityEmoji(finding.severity)} ${finding.severity} | ${finding.label} | ${finding.count} | ${examples} |\n`;
       }
 
-      message += `\n### Onerilen Aksiyonlar\n\n`;
+      message += `\n### Recommended actions\n\n`;
 
       if (maxSeverity === 'CRITICAL') {
-        message += `1. **DURMA** \u2014 Bu migration veri kaybina yol acabilir.\n`;
+        message += `1. **STOP** — this migration can lose data.\n`;
         message += `2. Verify that a backup of data in affected tables has been taken.\n`;
-        message += `3. Kasitli ise kullanicidan get approval.\n`;
+        message += `3. If this is intentional, get approval from the user.\n`;
       } else if (maxSeverity === 'HIGH') {
         message += `1. Check whether deleted columns/constraints are still referenced elsewhere.\n`;
-        message += `2. Uygulama kodunun bu elemanlara referans vermediginden emin ol.\n`;
+        message += `2. Confirm application code no longer references these elements.\n`;
         message += `3. Take a data backup before applying this migration in production.\n`;
       } else {
-        message += `1. Degisikliklerin mevcut veriyle uyumlu oldugunu kontrol et.\n`;
-        message += `2. Index/constraint degisiklikleri performansi etkileyebilir.\n`;
+        message += `1. Check that the changes are compatible with existing data.\n`;
+        message += `2. Index or constraint changes can affect performance.\n`;
       }
 
       messages.push(message);
@@ -149,8 +149,8 @@ async function main() {
 
     // Post-migration reminder in all cases
     messages.push(
-      `\ud83d\udca1 **Hatirlatma:** After the migration file is edited \`php artisan migrate\` do not forget to run.\n` +
-      `Migration durumunu kontrol etmek icin: \`php artisan migrate:status\``
+      `Reminder: after editing the migration file, run \`php artisan migrate\`.\n` +
+      `Check migration status with: \`php artisan migrate:status\``
     );
 
     if (messages.length > 0) {

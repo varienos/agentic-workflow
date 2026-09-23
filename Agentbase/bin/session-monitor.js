@@ -65,9 +65,9 @@ function stripAnsi(str) {
 }
 
 /**
- * Terminal ciktisini ANSI injection'a karsi korur.
- * Sadece renk/bold/reset kodlarina (SGR: \x1b[...m) izin verir.
- * Cursor reposition, ekran silme, OSC sekanslarini temizler.
+ * Protects terminal output against ANSI injection.
+ * Allows only color, bold, and reset codes (SGR: \x1b[...m).
+ * Strips cursor reposition, screen erase, and OSC sequences.
  */
 function isAllowedSgr(params) {
   if (!params) return false;
@@ -484,11 +484,11 @@ function loadBacklogIndex(backlogDir = findBacklogDir()) {
       if (!file.endsWith('.md')) continue;
       const filePath = path.join(fullDir, file);
       try {
-        if (!fs.lstatSync(filePath).isFile()) continue; // dizin ve symlink atla
+        if (!fs.lstatSync(filePath).isFile()) continue; // skip directories and symlinks
         const task = parseBacklogTaskFile(filePath);
         if (task.id) index[task.id] = task;
       } catch {
-        // bozuk/okunamayan dosyayi atla — digerleriyle devam et
+        // skip a corrupt or unreadable file — continue with the rest
       }
     }
   }

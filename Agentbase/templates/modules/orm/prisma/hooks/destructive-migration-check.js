@@ -138,7 +138,7 @@ async function main() {
 
     const command = parsed?.tool_input?.command || '';
 
-    // Sadece prisma migrate dev komutu sonrasinda calis
+    // Run only after a prisma migrate dev command
     if (!/prisma\s+migrate\s+dev/i.test(command)) {
       return;
     }
@@ -161,7 +161,7 @@ async function main() {
     let message = `⚠️ **DESTRUCTIVE MIGRATION DETECTED**\n\n`;
     message += `**Migration:** \`${latest.name}\`\n`;
     message += `**Highest Severity:** ${severityEmoji(maxSeverity)} ${maxSeverity}\n\n`;
-    message += `### Tespit Edilen Degisiklikler\n\n`;
+    message += `### Detected changes\n\n`;
     message += `| Severity | Operation | Count | Examples |\n`;
     message += `|---|---|---|---|\n`;
 
@@ -172,20 +172,20 @@ async function main() {
       message += `| ${severityEmoji(finding.severity)} ${finding.severity} | ${finding.label} | ${finding.count} | ${examples} |\n`;
     }
 
-    message += `\n### Onerilen Aksiyonlar\n\n`;
+    message += `\n### Recommended actions\n\n`;
 
     if (maxSeverity === 'CRITICAL') {
-      message += `1. **DURMA** — Bu migration veri kaybina yol acabilir.\n`;
+      message += `1. **STOP** — this migration can lose data.\n`;
       message += `2. Verify that a backup of data in affected tables has been taken.\n`;
-      message += `3. Eger kasitli degilse migration'i geri al: \`npx prisma migrate reset\` (DIKKAT: tum veritabanini sifirlar)\n`;
-      message += `4. Kasitli ise kullanicidan get approval.\n`;
+      message += `3. If this is not intentional, roll the migration back. \`npx prisma migrate reset\` wipes the whole database.\n`;
+      message += `4. If this is intentional, get approval from the user.\n`;
     } else if (maxSeverity === 'HIGH') {
-      message += `1. Silinen kolon(lar)daki verilerin baska bir yerde korunup korunmadigini kontrol et.\n`;
-      message += `2. Uygulama kodunun bu kolon(lar)a referans vermediginden emin ol.\n`;
+      message += `1. Check that data from the removed columns is preserved somewhere else.\n`;
+      message += `2. Confirm application code no longer references these columns.\n`;
       message += `3. Take a data backup before applying this migration in production.\n`;
     } else {
-      message += `1. Degisikliklerin mevcut veriyle uyumlu oldugunu kontrol et.\n`;
-      message += `2. Kolon tip degisiklikleri veri truncation'ina yol acabilir — mevcut veriyi dogrula.\n`;
+      message += `1. Check that the changes are compatible with existing data.\n`;
+      message += `2. Column type changes can truncate data — verify the existing rows.\n`;
     }
 
     const result = {

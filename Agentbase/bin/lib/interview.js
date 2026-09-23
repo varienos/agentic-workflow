@@ -1,23 +1,23 @@
 'use strict';
 
 /**
- * interview.js — Roportaj akisi (interaktif + non-interaktif)
+ * interview.js — interview flow (interactive + non-interactive)
  *
- * Saf mantik (resolveDefault, collectDefaults) readline I/O'dan ayridir —
- * boylece --yes / --answers yollari I/O olmadan test edilebilir.
+ * Pure logic (resolveDefault, collectDefaults) is separate from readline I/O —
+ * so the --yes / --answers paths can be tested without I/O.
  *
  *   collectDefaults(qs, detection, overrides)  → answers   (--yes / --answers)
- *   runInteractive(qs, detection, io)          → answers   (gercek terminal)
+ *   runInteractive(qs, detection, io)          → answers   (a real terminal)
  */
 
 const readline = require('node:readline/promises');
 
-/** detection icinden nokta-yola gore deger oku ('detected.orm.value', 'projectType'). */
+/** Reads a value from detection by dot path ('detected.orm.value', 'projectType'). */
 function getPath(obj, dotPath) {
   return dotPath.split('.').reduce((cur, k) => (cur == null ? undefined : cur[k]), obj);
 }
 
-/** Bir sorunun cozulmus varsayilani: once detectKey, sonra statik default. */
+/** Resolved default for one question: detectKey first, then the static default. */
 function resolveDefault(question, detection) {
   if (question.detectKey) {
     const detVal = getPath(detection, question.detectKey);
@@ -27,8 +27,8 @@ function resolveDefault(question, detection) {
 }
 
 /**
- * Non-interaktif cevap toplama. overrides[key] varsa onu, yoksa varsayilani kullanir.
- * --yes (overrides = {}) ve --answers (overrides = dosya) bunu kullanir.
+ * Collects answers without a prompt. Uses overrides[key] when present, otherwise the default.
+ * --yes (overrides = {}) and --answers (overrides = file) both use this.
  */
 function collectDefaults(questions, detection, overrides = {}) {
   const answers = {};
@@ -38,12 +38,12 @@ function collectDefaults(questions, detection, overrides = {}) {
   return answers;
 }
 
-/** Bir cevabi normalize/dogrula (select → izinli value, confirm → boolean). */
+/** Normalizes and checks one answer (select → allowed value, confirm → boolean). */
 function normalizeAnswer(question, raw) {
   if (question.type === 'confirm') {
     if (typeof raw === 'boolean') return raw;
     const s = String(raw).trim().toLowerCase();
-    return ['y', 'yes', 'e', 'evet', '1', 'true'].includes(s);
+    return ['y', 'yes', '1', 'true'].includes(s);
   }
   if (question.type === 'select') {
     const values = question.options.map((o) => o.value);
@@ -57,7 +57,7 @@ function normalizeAnswer(question, raw) {
   return String(raw).trim();
 }
 
-/** Interaktif tek soru. */
+/** Asks one interactive question. */
 async function askOne(rl, question, detection) {
   const def = resolveDefault(question, detection);
   if (question.type === 'select') {
@@ -85,7 +85,7 @@ async function askOne(rl, question, detection) {
 }
 
 /**
- * Tum sorulari interaktif sorar. io = { input, output } (varsayilan stdin/stdout).
+ * Asks every question interactively. io = { input, output } (default stdin/stdout).
  */
 async function runInteractive(questions, detection, io = {}) {
   const rl = readline.createInterface({

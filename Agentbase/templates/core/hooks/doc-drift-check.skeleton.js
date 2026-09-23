@@ -5,7 +5,7 @@
  * PostToolUse (Edit|Write) hook
  *
  * When a code file changes, checks the mtime of target documents.
- * Dokuman koddan eskiyse blocking olmayan systemMessage uretir.
+ * When a document is older than the code, emits a non-blocking systemMessage.
  */
 
 'use strict';
@@ -20,11 +20,11 @@ const COOLDOWN_MS = Number(process.env.DOC_DRIFT_COOLDOWN_MS) || DEFAULT_COOLDOW
 
 const CODEBASE_ROOT = resolveCodebaseRoot(__dirname, '../Codebase');
 
-// ─── GENERATE BOLUMU BASLANGIC ───
+// ─── GENERATE SECTION START ───
 
 const DOC_TARGET_PATHS = [
 /* GENERATE: DOC_TARGET_PATHS
-Description: project.structure.documents[] veya project.documents[]; yoksa README.md + CHANGELOG.md. OpenAPI aktifse project.api_docs.spec_paths[] eklenir.
+Description: project.structure.documents[] or project.documents[]; otherwise README.md + CHANGELOG.md. When OpenAPI is active, project.api_docs.spec_paths[] is added.
 Required manifest fields: project.structure.documents, project.documents, project.api_docs.spec_paths, modules.active.api_docs
 Example output: */
 /* END GENERATE */
@@ -32,7 +32,7 @@ Example output: */
 
 const CODE_PATH_PATTERNS = [
 /* GENERATE: CODE_PATH_PATTERNS
-Description: project.subprojects[].path alanlarindan Codebase-relative regex prefixleri uretir; yoksa yaygin kaynak dizinleri fallback olur.
+Description: builds Codebase-relative regex prefixes from project.subprojects[].path; otherwise falls back to common source directories.
 Required manifest fields: project.subprojects
 Example output: */
 /* END GENERATE */
@@ -40,13 +40,13 @@ Example output: */
 
 const CODE_EXTENSIONS = [
 /* GENERATE: CODE_EXTENSIONS
-Description: Stack'e gore kod uzantilari; config ve dokuman uzantilari haric.
+Description: code extensions for the stack; config and document extensions are excluded.
 Required manifest fields: stack.primary, stack.detected, stack.file_extensions
 Example output: */
 /* END GENERATE */
 ];
 
-// ─── GENERATE BOLUMU BITIS ───
+// ─── GENERATE SECTION END ───
 
 function readState() {
   try {

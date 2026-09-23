@@ -7,7 +7,7 @@ This directory holds ADR records for decisions that affect project architecture.
 Open a new ADR file in this format:
 
 ```text
-YYYYMMDD-kebab-case-karar-basligi.md
+YYYYMMDD-kebab-case-decision-title.md
 ```
 
 Example:

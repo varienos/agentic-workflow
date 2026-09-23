@@ -164,8 +164,7 @@ Example output:
 
 ### Coolify Operations
 ```bash
-# Coolify durumu
-bash
+# Coolify status
 # All application container statuses
 ssh deploy@server "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -v coolify"
 

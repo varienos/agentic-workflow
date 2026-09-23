@@ -614,7 +614,7 @@ describe('bootstrap docs consistency', () => {
 
 describe('ADR docs consistency', () => {
   it('keeps architecture decision triggers connected to workflow surfaces', () => {
-    assert.match(adrReadme, /YYYYMMDD-kebab-case-karar-basligi\.md/);
+    assert.match(adrReadme, /YYYYMMDD-kebab-case-decision-title\.md/);
     assert.match(adrReadme, /Minimum fields/);
     assert.match(adrReadme, /Layer boundary, module ownership, or public API contract/);
     assert.match(adrReadme, /Rollback \/ Revisit Trigger/);

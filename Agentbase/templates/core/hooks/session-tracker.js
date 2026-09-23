@@ -70,15 +70,15 @@ function createInitialState() {
     current_focus: createEmptyFocus(),
     phase: 'planning',
     waiting_on: 'none',
-    last_meaningful_action: 'Oturum basladi',
+    last_meaningful_action: 'Session started',
     recent_events: [],
     backlog_sync: {
       task_id: null,
       status: null,
       priority: null,
       dependencies: [],
-      // NOT: missing alani tracker tarafindan YAZILMAZ — monitor enrichSession() icinde
-      // backlogIndex ile karsilastirarak runtime hesaplar (stateless lazy-evaluate).
+      // NOTE: the tracker does NOT write the missing field — the monitor computes it at runtime
+      // inside enrichSession() by comparing with backlogIndex (stateless lazy evaluation).
       acceptance: {
         completed: 0,
         total: 0,
@@ -137,7 +137,7 @@ function normalizeState(state) {
   };
   normalized.phase = normalized.phase || 'planning';
   normalized.waiting_on = normalized.waiting_on || 'none';
-  normalized.last_meaningful_action = normalized.last_meaningful_action || 'Oturum devam ediyor';
+  normalized.last_meaningful_action = normalized.last_meaningful_action || 'Session in progress';
   normalized.recent_events = Array.isArray(normalized.recent_events) ? normalized.recent_events : [];
   normalized.backlog_sync = normalized.backlog_sync || {};
   normalized.backlog_sync.task_id = normalized.backlog_sync.task_id || normalized.current_focus.task_id || null;
@@ -161,7 +161,7 @@ function loadState() {
       return normalizeState(JSON.parse(fs.readFileSync(SESSION_FILE, 'utf8')));
     }
   } catch {
-    // Bozuk state dosyasi durumunda sifirdan basla.
+    // Corrupt state file — start from an empty state.
   }
   return createInitialState();
 }
@@ -278,28 +278,28 @@ function updateFocus(state, updates) {
 function hasToolError(result) {
   if (!result) return false;
   const exitCode = result?.exit_code;
-  // exit_code varsa sadece onu kullan — Bash tool'u icin kesin gosterge
+  // When exit_code is present, use only that — it is the definite signal for the Bash tool
   if (exitCode !== undefined) return exitCode !== 0;
 
-  // exit_code yoksa (Read/Edit/Write) — sadece sonuc stringinin BASINDA hata pattern'i ara
-  // Dosya icerigi "error" kelimesi icerdiginde yanlis pozitif uretmemek icin
+  // When exit_code is absent (Read/Edit/Write) — look for an error pattern only at the START of the result
+  // Avoid a false positive when file contents contain the word "error"
   const resultStr = typeof result === 'string' ? result : JSON.stringify(result);
   return /^(Error|SyntaxError|TypeError|ReferenceError|ENOENT|EACCES):/.test(resultStr);
 }
 
-// Test komutu tespiti — shared-patterns.js ayni dizinde (.claude/hooks/)
+// Test-command detection — shared-patterns.js lives in the same directory (.claude/hooks/)
 const { isTestCommand } = require(require('path').join(__dirname, 'shared-patterns.js'));
 
 /**
- * Bilinen secret pattern'lerini metinden maskeler.
- * Hata snippet'leri session dosyasina yazilmadan once bu fonksiyondan gecmeli.
+ * Masks known secret patterns in text.
+ * Error snippets must pass through this function before they are written to the session file.
  */
 function sanitizeSnippet(text) {
   if (!text) return text;
   return text
-    // OpenAI / Anthropic / genel sk- API anahtarlari
+    // OpenAI / Anthropic / generic sk- API keys
     .replace(/\bsk-[a-zA-Z0-9_-]{8,}/g, '[REDACTED]')
-    // AWS access key ID'leri
+    // AWS access key IDs
     .replace(/\b(AKIA|ASIA|AROA|AIDA|ANPA|ANVA|APKA)[A-Z0-9]{16}\b/g, '[REDACTED]')
     // JWT token'lari (3 base64 segment)
     .replace(/eyJ[a-zA-Z0-9+/_-]+={0,2}\.eyJ[a-zA-Z0-9+/_-]+={0,2}\.[a-zA-Z0-9+/_-]+={0,2}/g, '[REDACTED]')
@@ -347,7 +347,7 @@ function analyzeBashCommand(command, state, input, hadError) {
     state.phase = 'planning';
     state.waiting_on = 'none';
     state.last_meaningful_action = `Backlog task started: ${taskId}`;
-    pushEvent(state, 'backlog', `${taskId} basladi`, { task_id: taskId });
+    pushEvent(state, 'backlog', `${taskId} started`, { task_id: taskId });
     return;
   }
 
@@ -361,7 +361,7 @@ function analyzeBashCommand(command, state, input, hadError) {
     state.phase = 'done';
     state.waiting_on = 'none';
     state.last_meaningful_action = `Backlog task completed: ${taskId}`;
-    pushEvent(state, 'backlog', `${taskId} tamamlandi`, { task_id: taskId });
+    pushEvent(state, 'backlog', `${taskId} completed`, { task_id: taskId });
     return;
   }
 
@@ -377,7 +377,7 @@ function analyzeBashCommand(command, state, input, hadError) {
   if (/git\s+commit\b/i.test(command)) {
     state.git_activity.commits++;
     state.last_meaningful_action = 'Git commit created';
-    pushEvent(state, 'git', 'Git commit olustu');
+    pushEvent(state, 'git', 'Git commit created');
     return;
   }
 
@@ -395,8 +395,8 @@ function analyzeBashCommand(command, state, input, hadError) {
       pushEvent(state, 'git', 'Push failed');
     } else {
       state.git_activity.push_failures = { count: 0, last_reason: '', last_at: null };
-      state.last_meaningful_action = 'Git push basarili';
-      pushEvent(state, 'git', 'Push basarili');
+      state.last_meaningful_action = 'Git push succeeded';
+      pushEvent(state, 'git', 'Push succeeded');
     }
     return;
   }
@@ -405,7 +405,7 @@ function analyzeBashCommand(command, state, input, hadError) {
   if (branchMatch) {
     addUnique(state.git_activity.branches_created, branchMatch[1]);
     state.last_meaningful_action = `Branch created: ${branchMatch[1]}`;
-    pushEvent(state, 'git', `Branch olustu: ${branchMatch[1]}`);
+    pushEvent(state, 'git', `Branch created: ${branchMatch[1]}`);
     return;
   }
 
@@ -448,8 +448,8 @@ function detectTeammate(input, state) {
     if (hasResult) {
       existing.status = 'completed';
       existing.completed_at = nowIso();
-      state.last_meaningful_action = `Alt ajan tamamlandi: ${name}`;
-      pushEvent(state, 'teammate', `Alt ajan tamamlandi: ${name}`, { teammate: name });
+      state.last_meaningful_action = `Subagent finished: ${name}`;
+      pushEvent(state, 'teammate', `Subagent finished: ${name}`, { teammate: name });
     }
     return;
   }
@@ -461,7 +461,7 @@ function detectTeammate(input, state) {
     status: hasResult ? 'completed' : 'spawned',
     completed_at: hasResult ? nowIso() : undefined,
   });
-  // Ust sinir — eski kayitlari dusur
+  // Cap — drop the oldest records
   if (state.teammates.length > MAX_TEAMMATES) {
     state.teammates = state.teammates.slice(-MAX_TEAMMATES);
   }
@@ -469,12 +469,12 @@ function detectTeammate(input, state) {
   state.phase = 'reviewing';
   state.waiting_on = 'none';
   state.last_meaningful_action = hasResult
-    ? `Alt ajan tamamlandi: ${name}`
-    : `Alt ajan baslatildi: ${name}`;
+    ? `Subagent finished: ${name}`
+    : `Subagent started: ${name}`;
   pushEvent(
     state,
     'teammate',
-    hasResult ? `Alt ajan tamamlandi: ${name}` : `Alt ajan baslatildi: ${name}`,
+    hasResult ? `Subagent finished: ${name}` : `Subagent started: ${name}`,
     { teammate: name }
   );
 }

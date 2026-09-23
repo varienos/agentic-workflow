@@ -127,11 +127,11 @@ describe('adaptPathReferences', () => {
 
 describe('stripClaudeOnlySections', () => {
   it('hooks bolumunu cikarir', () => {
-    const input = '## Bolum 1\n\nIcerik\n\n### Otomatik Test Sinyalleri (Hook Tabanli)\n\nHook detaylari...\n\n**Kurallar:**\n- Hook kurali\n\n## Bolum 2\n\nDiger icerik';
+    const input = '## Section 1\n\nContent\n\n### Automatic test signals (hook-based)\n\nHook details...\n\n**Rules:**\n- Hook rule\n\n## Section 2\n\nOther content';
     const result = stripClaudeOnlySections(input);
-    assert.ok(!result.includes('Hook Tabanli'));
-    assert.ok(result.includes('Bolum 1'));
-    assert.ok(result.includes('Bolum 2'));
+    assert.ok(!result.includes('hook-based'));
+    assert.ok(result.includes('Section 1'));
+    assert.ok(result.includes('Section 2'));
   });
 
   it('settings.json referanslarini cikarir', () => {
@@ -459,7 +459,7 @@ describe('resolveTargets', () => {
     const { targets, invalid } = resolveTargets(manifest, 'gemini,kimi');
     assert.deepEqual(targets, ['gemini']);
     assert.deepEqual(invalid, [
-      { name: 'kimi', reason: 'manifest.targets icinde yok' },
+      { name: 'kimi', reason: 'not in manifest.targets' },
     ]);
   });
 
@@ -474,7 +474,7 @@ describe('resolveTargets', () => {
     assert.deepEqual(targets, []);
     assert.equal(invalid.length, 1);
     assert.equal(invalid[0].name, 'unknown-cli');
-    assert.match(invalid[0].reason, /bilinmeyen/i);
+    assert.match(invalid[0].reason, /unknown/i);
   });
 
   it('manifest targets yoksa --targets dogrudan hedef listesi olur', () => {
@@ -651,7 +651,7 @@ describe('validateCliCapabilities', () => {
       invoke: { prefix: '/', separator: ' ' },
       context: { file: 'BAD.md', location: 'root' },
     });
-    assert.ok(errors.some(e => e.includes('commands veya skills')));
+    assert.ok(errors.some(e => e.includes('commands or skills')));
   });
 
   it('commands.dir eksikse hata', () => {
@@ -660,7 +660,7 @@ describe('validateCliCapabilities', () => {
       invoke: { prefix: '/', separator: ' ' },
       context: { file: 'BAD.md', location: 'root' },
     });
-    assert.ok(errors.some(e => e.includes('commands.format ve commands.dir')));
+    assert.ok(errors.some(e => e.includes('commands.format and commands.dir')));
   });
 
   it('context eksikse hata', () => {
@@ -782,7 +782,7 @@ describe('loadExternalCapabilities', () => {
     const config = { 'bad-cli': { invoke: 'wrong' } };
     fs.writeFileSync(tmpFile, yaml.dump(config));
     try {
-      assert.throws(() => loadExternalCapabilities(tmpFile), /validasyon hatalari/);
+      assert.throws(() => loadExternalCapabilities(tmpFile), /validation errors/);
     } finally {
       fs.unlinkSync(tmpFile);
     }
@@ -1023,7 +1023,7 @@ describe('validateCliCapabilities — path-safe kontrol', () => {
       invoke: { prefix: '/', separator: ' ' },
       context: { file: 'test.md', location: 'root' },
     });
-    assert.ok(errors.some(e => e.includes('guvenli degil')), '.. iceren dir reddedilmeli');
+    assert.ok(errors.some(e => e.includes('is not safe')), '.. iceren dir reddedilmeli');
   });
 
   it('absolute path reddedilir', () => {
@@ -1032,7 +1032,7 @@ describe('validateCliCapabilities — path-safe kontrol', () => {
       invoke: { prefix: '/', separator: ' ' },
       context: { file: 'test.md', location: 'root' },
     });
-    assert.ok(errors.some(e => e.includes('guvenli degil')), 'absolute dir reddedilmeli');
+    assert.ok(errors.some(e => e.includes('is not safe')), 'absolute dir reddedilmeli');
   });
 
   it('guvenli relative path kabul edilir', () => {
@@ -1041,7 +1041,7 @@ describe('validateCliCapabilities — path-safe kontrol', () => {
       invoke: { prefix: '/', separator: ' ' },
       context: { file: 'GEMINI.md', location: 'root' },
     });
-    const pathErrors = errors.filter(e => e.includes('guvenli degil'));
+    const pathErrors = errors.filter(e => e.includes('is not safe'));
     assert.equal(pathErrors.length, 0, 'guvenli path hata vermemeli');
   });
 });

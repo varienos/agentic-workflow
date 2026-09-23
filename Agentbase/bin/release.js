@@ -74,7 +74,7 @@ function detectBump(commits) {
   if (hasBreaking) return 'major';
   if (hasFeat) return 'minor';
   if (hasFix) return 'patch';
-  return 'patch'; // varsayilan
+  return 'patch'; // default
 }
 
 function bumpVersion(current, type) {
@@ -129,14 +129,14 @@ function extractReleaseNotes(version) {
 }
 
 /**
- * package.json, latest tag ve CHANGELOG ust bolumu arasindaki senkronizasyonu dogrular.
+ * Checks that package.json, the latest tag, and the top CHANGELOG section agree.
  * Returns a detailed drift message, or null when the versions match.
  */
 function validateVersionSync(pkgVersion, latestTag, changelogContent) {
   const drifts = [];
   const tagVersion = latestTag ? latestTag.replace(/^v/, '') : null;
 
-  // package.json ve latest tag eslesmeli
+  // package.json and the latest tag must match
   if (tagVersion && tagVersion !== pkgVersion) {
     drifts.push(`package.json (${pkgVersion}) != latest tag (${latestTag})`);
   }
@@ -193,7 +193,7 @@ function main() {
     }
   }
 
-  // 2. Uncommitted degisiklikler
+  // 2. Uncommitted changes
   if (hasUncommittedChanges()) {
     console.log('  Pending changes detected...');
     if (!dryRun) {
@@ -243,7 +243,7 @@ function main() {
     process.exit(1);
   }
 
-  // 8. Annotated tag (rebase sonrasi — dogru commit hash)
+  // 8. Annotated tag (after rebase — the correct commit hash)
   run(`git tag -a v${newVersion} -m "v${newVersion}"`);
   console.log(`  Tag: v${newVersion}`);
 

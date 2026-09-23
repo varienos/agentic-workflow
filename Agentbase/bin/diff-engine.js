@@ -55,7 +55,7 @@ function diffModules(oldModules, newModules) {
 }
 
 /**
- * Subproject degisikliklerini tespit eder.
+ * Detects subproject changes.
  * @param {Array} oldSubs — manifest.subprojects
  * @param {Array} newSubs — yeni taranan subprojects
  */
@@ -117,22 +117,22 @@ function diffDependencies(oldDeps, newDeps) {
 }
 
 /**
- * Tam drift raporu uretir.
- * @param {Object} oldManifest — Mevcut manifest
- * @param {Object} newAnalysis — Yeni codebase analizi (ayni yapiyi takip eder)
- * @returns {Object} Drift raporu
+ * Builds the full drift report.
+ * @param {Object} oldManifest — Current manifest
+ * @param {Object} newAnalysis — New codebase analysis (same shape)
+ * @returns {Object} Drift report
  */
 function computeDrift(oldManifest, newAnalysis) {
-  // Modul diff
+  // Module diff
   const oldModules = new Set();
   const newModules = new Set();
 
   const oldActive = oldManifest?.modules?.active || {};
   const newActive = newAnalysis?.modules?.active || {};
 
-  // Active modulleri topla
+  // Collect active modules
   for (const [, values] of Object.entries(oldActive)) {
-    if (values === true) continue; // standalone gibi
+    if (values === true) continue; // standalone-style flag
     if (Array.isArray(values)) values.forEach(v => oldModules.add(v));
     else if (typeof values === 'string') oldModules.add(values);
   }
@@ -142,7 +142,7 @@ function computeDrift(oldManifest, newAnalysis) {
     else if (typeof values === 'string') newModules.add(values);
   }
 
-  // Standalone moduller
+  // Standalone modules
   (oldManifest?.modules?.standalone || []).forEach(m => oldModules.add(m));
   (newAnalysis?.modules?.standalone || []).forEach(m => newModules.add(m));
 
@@ -160,7 +160,7 @@ function computeDrift(oldManifest, newAnalysis) {
     newAnalysis?.dependencies,
   );
 
-  // Ozet
+  // Summary
   const hasChanges = moduleDiff.added.length > 0 || moduleDiff.removed.length > 0 ||
     subprojectDiff.added.length > 0 || subprojectDiff.removed.length > 0 || subprojectDiff.changed.length > 0 ||
     depDiff.length > 0;

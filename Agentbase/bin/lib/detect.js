@@ -1,13 +1,13 @@
 'use strict';
 
 /**
- * detect.js — Codebase otomatik tespiti (deterministik)
+ * detect.js — automatic Codebase detection (deterministic)
  *
- * bootstrap.md ADIM 2'deki prose tespit mantiginin Node'a cikarilmis hali.
- * Bir codebase yolunu tarar, manifest.detected.* + stack alanlarini uretir.
- * Saf-ish fonksiyon: yalnizca okur (fs.readFileSync), yan etki yok.
+ * The Node form of the detection prose in bootstrap.md STEP 2.
+ * Scans a codebase path and produces manifest.detected.* plus stack fields.
+ * Mostly pure: it only reads (fs.readFileSync) and has no side effects.
  *
- * Donus (DetectionResult):
+ * Returns (DetectionResult):
  *   {
  *     runtime, runtimeVersion, packageManager, typescript,
  *     fileExtensions: string[],
@@ -17,13 +17,13 @@
  *     detected: { <field>: { value, confidence, source } }
  *   }
  *
- * detected alanlari TASK-207 semasi: { value, confidence: high|medium|low, source }.
+ * detected fields follow the TASK-207 shape: { value, confidence: high|medium|low, source }.
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// --- runtime → dosya uzantilari ---
+// --- runtime → file extensions ---
 const EXT_BY_RUNTIME = {
   node: ['.js', '.jsx', '.json', '.css', '.md'],
   python: ['.py', '.toml', '.cfg', '.md'],
@@ -59,7 +59,7 @@ function allDeps(pkg) {
   return { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
 }
 
-/** Ilk eslesen anahtari dondur; yoksa null. */
+/** Returns the first matching key, or null. */
 function firstMatch(deps, candidates) {
   for (const c of candidates) {
     if (deps[c] != null) return c;
@@ -210,7 +210,7 @@ function detectNodeEcosystem(root, pkg, detected) {
 }
 
 /**
- * Ana tespit fonksiyonu.
+ * Main detection function.
  * @param {string} codebasePath - Taranacak codebase kok dizini.
  * @returns {object} DetectionResult
  */
@@ -230,7 +230,7 @@ function detect(codebasePath) {
     typescript = eco.typescript;
     database = eco.database;
   } else {
-    // Node disi: detected alanlarini bos/dusuk guvenle birak (greenfield benzeri).
+    // Non-Node: leave detected fields empty at low confidence (greenfield-like).
     for (const f of ['test_framework', 'formatter', 'linter', 'orm', 'auth_method', 'design_system']) {
       detected[f] = det(null, 'low', `${runtime || 'unknown'} runtime — outside automatic detection`);
     }

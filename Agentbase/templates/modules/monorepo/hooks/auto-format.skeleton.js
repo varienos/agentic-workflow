@@ -5,8 +5,8 @@
  * PostToolUse (Edit|Write) hook
  *
  * Applies automatic formatting after a file is edited.
- * - Akilli tirnak duzeltme (curly → straight quotes)
- * - Alt projeye gore formatter tespit
+ * - Smart-quote fix (curly → straight quotes)
+ * - Detect the formatter for the subproject
  * - Run formatter (prettier, biome, etc.)
  *
  * GENERATE sections are filled by Bootstrap.

@@ -29,7 +29,7 @@ Usage (from the Codebase root):
     python3 ../Agentbase/scripts/graphify-merge-layers.py --allow-missing  # skip and continue
 
 A pre-push hook may call this. Graphify is optional; bootstrap does not install it.
-
+"""
 
 import argparse
 import json
@@ -38,18 +38,18 @@ from pathlib import Path
 
 ROOT = Path.cwd().resolve()
 
-# Bootstrap manifest verileriyle doldurulur (monorepo subproject yollari).
-# Tek-katman projelerde liste bos kalir ve script'in main()'i erken hata firlatir.
+# Filled from bootstrap manifest data (monorepo subproject paths).
+# On a single-layer project the list stays empty and main() fails early.
 LAYERS = [
 # GENERATE: GRAPHIFY_LAYERS_PY
-# Aciklama: Bootstrap manifest.project.subprojects icinden tuple linelari uretir.
-# Gerekli manifest alanlari: project.subprojects, modules.active (monorepo bayragi)
-# Ornek cikti (monorepo aktif, dev.aps gibi):
+# Description: Bootstrap emits tuple lines from manifest.project.subprojects.
+# Required manifest fields: project.subprojects, modules.active (monorepo flag)
+# Example output (monorepo active):
 #     ("backend", ROOT / "backend.aps.test/app/graphify-out/graph.json"),
 #     ("kurye",   ROOT / "kurye.aps/src/graphify-out/graph.json"),
 #     ("musteri", ROOT / "musteri.aps/src/graphify-out/graph.json"),
-# Ornek cikti (tek-katman):
-#     # NOT: Bu script SADECE monorepo (multi-layer) icin gereklidir.
+# Example output (single-layer):
+#     # NOTE: This script is only needed for a monorepo (multi-layer).
 # END GENERATE
 ]
 
@@ -63,7 +63,7 @@ def main() -> int:
     parser.add_argument(
         '--allow-missing',
         action='store_true',
-        help='Eksik/bozuk katmanlari SKIP edip devam et (varsayilan: stderr hata + exit 1)',
+        help='Skip missing or corrupt layers and continue (default: stderr error + exit 1)',
     )
     args = parser.parse_args()
 
@@ -82,7 +82,7 @@ def main() -> int:
                 print(f'{msg} — SKIP (--allow-missing)')
                 continue
             print(f'{msg}', file=sys.stderr)
-            print('[merge] HATA: eksik katman saptandi; --allow-missing flag\'i ile bilincli bypass yapabilirsin', file=sys.stderr)
+            print('[merge] ERROR: a missing layer was found; pass --allow-missing to skip it on purpose', file=sys.stderr)
             return 1
 
         try:
@@ -94,7 +94,7 @@ def main() -> int:
                 print(f'{msg} — SKIP (--allow-missing)')
                 continue
             print(f'{msg}', file=sys.stderr)
-            print('[merge] HATA: bozuk katman saptandi; --allow-missing flag\'i ile bilincli bypass yapabilirsin', file=sys.stderr)
+            print('[merge] ERROR: a corrupt layer was found; pass --allow-missing to skip it on purpose', file=sys.stderr)
             return 1
 
         nodes = g.get('nodes', [])
@@ -113,8 +113,8 @@ def main() -> int:
 
         local_max = max((n.get('community', 0) or 0 for n in nodes), default=0)
 
-        # Namespace: bu katmanin node id'leri icin (eski_id -> yeni_id) mapping.
-        # ID katmanlar arasi cakismayi onlemek icin 'layer::oldId' formatinda yeniden yazilir.
+        # Namespace: map this layer's node ids (old_id -> new_id).
+        # Ids are rewritten as 'layer::oldId' so layers do not collide.
         id_map = {}
         for n in nodes:
             old_id = n.get('id')

@@ -121,15 +121,15 @@ async function main() {
         const validation = runPrismaValidate(prismaDir);
         if (!validation.valid) {
           messages.push(
-            '❌ PRISMA VALIDATE HATASI:\n' +
+            '❌ PRISMA VALIDATE ERROR:\n' +
             'There is an error in the schema file. It must be fixed before continuing.\n\n' +
-            '```\n' + (validation.error || 'Bilinmeyen hata') + '\n```'
+            '```\n' + (validation.error || 'Unknown error') + '\n```'
           );
         } else {
-          messages.push('✅ Prisma schema validasyonu basarili.');
+          messages.push('✅ Prisma schema validation succeeded.');
         }
 
-        // 2. Migration durumu
+        // 2. Migration status
         const migration = checkMigrationStatus(prismaDir);
         if (migration.synced === false) {
           messages.push(
@@ -139,7 +139,7 @@ async function main() {
             '```\nnpx prisma migrate dev --name <change_description>\n```'
           );
         } else if (migration.synced === true) {
-          messages.push('✅ Migration durumu senkron.');
+          messages.push('✅ Migration status is in sync.');
         }
         // if synced === null there is no DB connection; skip silently
       }

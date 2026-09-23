@@ -235,7 +235,7 @@ If related task exists:
 fix: <bug description> (#<task_id>)
 ```
 
-**Language:** Turkish
+**Language:** English
 **Example:** `fix: Adding product to cart error fixed (#34)`
 -->
 If the related task exists:

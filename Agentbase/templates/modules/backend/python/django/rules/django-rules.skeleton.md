@@ -53,7 +53,7 @@ Example output:
 # FORBIDDEN — hardcode secret
 SECRET_KEY = 'django-insecure-xyz123456789'
 
-# HIGH — ortam degiskeninden oku
+# HIGH — read it from an environment variable
 import environ
 env = environ.Env()
 SECRET_KEY = env('SECRET_KEY')
