@@ -87,6 +87,8 @@ describe('host-neutral workflow contract', () => {
     assert.match(host, /Other hosts do not run those hooks automatically/);
     assert.equal(filesA.some((rel) => rel.endsWith('turkish-diacritic-guard.js')), false);
     assert.equal(filesA.some((rel) => rel.endsWith('turkish-writing.md')), false);
+    const settings = fs.readFileSync(path.join(first, '.claude/settings.json'), 'utf8');
+    assert.equal(settings.includes('turkish-diacritic-guard'), false);
 
     const offenders = [];
     const chunks = [];
