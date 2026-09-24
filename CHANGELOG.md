@@ -1,72 +1,98 @@
-# Değişiklik Günlüğü
+# Changelog
 
-Tüm önemli değişiklikler bu dosyada belgelenir.
-Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını takip eder.
+Notable changes are documented in this file.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Yayınlanmamış]
+## [Unreleased]
 
-> Bağımlılık notu: `basic-memory` MCP zorunlu shared agent memory layer olarak korunur (vault: `Docbase/memory/`).
-> Bağımlılık notu: `graphify` zorunlu knowledge-graph CLI olarak korunur (bootstrap `uv tool install graphifyy` ile otomatik kurar; artifact `graphify-out/`).
+> Dependency note: `basic-memory` MCP stays the required shared agent memory layer (vault: `Docbase/memory/`).
+
+## [2.6.0] - 2026-09-24
+
+### Added
+
+- review a plan before any code is written (`b51cc0d`)
+- make the workflow host-neutral and English (`cc5b6ce`)
+- **session-monitor:** current_focus alanlarini sanitizeForDisplay ile temizle + resize handler + ANSI strip regex (non-greedy) duzeltmesi (`669995c`)
+
+### Fixed
+
+- drop the unused codex MCP server (`70c1932`)
+- write the live test reminder hook in English (`46de3a0`)
+- catch leftover Turkish verbs in template commands (`de1d861`)
+- require every shipped template to be English (`9cba09a`)
+- write generated hook reasons in English (`747efa1`)
+- make the shared workflow body English and host-neutral (`f662014`)
+- translate the remaining workflow prose to English (`0a973fd`)
+- drop the Turkish diacritic hook from generated settings (`6256769`)
+- translate the session monitor and release text (`1107d41`)
+- **changelog:** Yayinlanmamis marker'ini restore et (v2.5.0 release sonrasi dustu) (`54dbc55`)
+
+### Documentation
+
+- translate remaining graphify and transform text (`7c0ceb9`)
+- **readme:** zorunlu bagimliliklar callout'una graphify ekle (uc bagimlilik) (`ea79b60`)
+- CHANGELOG otomatik güncellendi [skip ci] (`7d5da5c`)
 
 ## [2.5.0] - 2026-06-08
 
-### Eklenen
+### Added
 
 - **bootstrap:** graphify'i zorunlu modul + otomatik CLI kurulumuna cevir (`64c3332`)
 - **generate:** Faz 2 marker azaltma — 9 CLAUDE_FILL blogunu deterministik generator'a tasi (`04f7535`)
 - **init:** terminal-tabanlı init CLI ile bootstrap deterministik dikişi (`903603c`)
 
-### Düzeltilen
+### Fixed
 
 - **generate:** quote commands generator paths (`1a87c6c`)
 - **init:** preserve workspace and architecture note inputs (`b92c32c`)
 
-### Sürüm
+### Release
 
 - v2.5.0 (`29b864a`)
 
 ## [2.4.1] - 2026-06-02
 
-### Bakım
+### Maintenance
 
 - stabilize model compatibility guidance (`a5829cb`)
 
-### Sürüm
+### Release
 
 - v2.4.1 (`462bf0b`)
 
 ## [2.4.0] - 2026-06-01
 
-### Eklenen
+### Added
 
 - **transform:** add antigravity target (`139812a`)
 
-### Düzeltilen
+### Fixed
 
 - **changelog:** restore unreleased marker (`5bbff11`)
 
-### Dokümantasyon
+### Documentation
 
 - task-conductor workflow sozlesmesini sikilastir (`626aa8b`)
 - CHANGELOG otomatik güncellendi [skip ci] (`583862f`)
 
-### Bakım
+### Maintenance
 
 - **gitignore:** gemini ve agent dizinleri ignore listesine eklendi (`20d4fd9`)
 
-### Sürüm
+### Release
 
 - v2.4.0 (`c6b738b`)
 
 ## [2.3.0] - 2026-06-01
 
-### Eklenen
+### Added
 
 - **#237:** hedef projede iki-repo teslimat modeli (Sik 1) (`19d3ea2`)
 - **bootstrap:** ORCHESTRATION.md + LESSONS.md statik root dokümanları @ import zincirine bağla (`0faa00d`)
 - **#236:** basic-memory MCP zorunlu — shared agent memory layer (`548ebd8`)
 
-### Düzeltilen
+### Fixed
 
 - **release:** changelog.js --release Unreleased bolumunu koru (Keep a Changelog) (`e0658f3`)
 - **#237:** review — en eski generic *-wt-*/ stale satiri da temizlensin (`122db46`)
@@ -82,76 +108,76 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - **bootstrap:** @ import → @<dosya> Claude Code resmi import syntax'ına geçiş (`475267e`)
 - **#236:** codex review bulgulari duzeltildi (`b8e6267`)
 
-### Dokümantasyon
+### Documentation
 
 - **#238:** hedef proje iki-repo teslimat modeli README'ye eklendi (TR+EN) (`84e2de4`)
 - CHANGELOG otomatik güncellendi [skip ci] (`bf88134`)
 
-### Bakım
+### Maintenance
 
 - release changelog marker uyumlulugu (`9c27c0b`)
 
-### Sürüm
+### Release
 
 - v2.3.0 (`82d1d1f`)
 
 ## [2.2.0] - 2026-05-22
 
-### Eklenen
+### Added
 
 - **graphify:** merge script node id namespace + link endpoint dönüşümü (`cbdc130`)
 - **graphify-hook:** cache hata logging + deterministic recovery (`b1bf7bb`)
 - **bootstrap:** graphify modülünü bootstrap akışına ve README'ye entegre (`124e13c`)
 - **modules:** knowledge-graph/graphify modülü dev.aps deseniyle entegre (`4b09464`)
 
-### Düzeltilen
+### Fixed
 
 - **graphify:** merge script eksik katmanda non-zero exit + --allow-missing flag (`0fc732e`)
 - **#225:** codex review bulgulari — detect tipleri, hook idempotency, silent fail (`8da3ff9`)
 - **#224:** codex review bulgulari — graphify path semantigi ve shell-quote (`1ef05a4`)
 
-### Dokümantasyon
+### Documentation
 
 - CHANGELOG otomatik güncellendi [skip ci] (`d130a04`)
 
-### Sürüm
+### Release
 
 - v2.2.0 — onboarding root migrasyonu, silent-failure-hunter, graphify path semantiği (`85b2e74`)
 
 ## [2.1.0] - 2026-05-12
 
-### Eklenen
+### Added
 
 - **TASK-223:** worktree-aware hedef Codebase yolunu tek sözleşmeye bağla (`2b70fa3`)
 - dokumantasyon drift hooku ekle (`1ca9722`)
 - db migration discipline rule ekle (`fe9cd8a`)
 - **#220:** shadow git checkpointing hook + /rollback komutu (`4a6b768`)
 
-### Düzeltilen
+### Fixed
 
 - **#220:** codex review bulgulari duzeltildi (`75dd177`)
 
-### Dokümantasyon
+### Documentation
 
 - adr karar sozlesmesini workflowa bagla (`53a8c22`)
 - db migration discipline referanslarini yay (`37ac99e`)
 - CHANGELOG otomatik güncellendi [skip ci] (`a598d9a`)
 
-### Test
+### Tests
 
 - stabil core hook redos testi (`edfcefb`)
 
-### Bakım
+### Maintenance
 
 - extensions registry'yi netleştir ve registry/placeholder kurallarını yay (`118ffd2`)
 
-### Sürüm
+### Release
 
 - v2.1.0 (`2951fc1`)
 
 ## [2.0.0] - 2026-05-01
 
-### Eklenen
+### Added
 
 - **codex:** clarify bootstrap verify flow (`9c1283f`)
 - **bootstrap:** ADIM 1.4 interview phase doğrulamasi + fallback kaldirildi (TASK-214) (`00ef85d`)
@@ -162,7 +188,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - **bootstrap:** ADIM 2.7 Bolum 4 Duzeltme Akisi (multiSelect) + GREENFIELD netligi (TASK-211) (`c236241`)
 - **bootstrap:** ADIM 2.7 toplu tespit ozeti + manifest.detected.* semasi (TASK-207) (`df920a6`)
 
-### Düzeltilen
+### Fixed
 
 - **#214:** codex review bulgulari duzeltildi (`10c5be1`)
 - **#210:** codex review bulgusu duzeltildi (`2379aec`)
@@ -173,55 +199,55 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - **#211:** codex review bulgulari duzeltildi (`2752653`)
 - **#207:** codex review bulgulari duzeltildi (`dd90512`)
 
-### Yeniden Düzenlenen
+### Changed
 
 - **bootstrap:** ADIM 3 inline default'lari sil — kompakt iskelet (TASK-210) (`8c1571e`)
 
-### Dokümantasyon
+### Documentation
 
 - **release:** T6 zinciri CHANGELOG + README gecis rehberi + version bump (TASK-215) (`cf95d14`)
 - CHANGELOG otomatik güncellendi [skip ci] (`5d9dcca`)
 
-### Bakım
+### Maintenance
 
 - release oncesi bekleyen degisiklikler (`86e0231`)
 
-### Sürüm
+### Release
 
 - v2.0.0 (`63c5e41`)
 
 ## [1.11.1] - 2026-04-21
 
-### Düzeltilen
+### Fixed
 
 - **bootstrap:** TTY olmayan ortamda AI import akisi duzeltildi (`a99e4ed`)
 
-### Dokümantasyon
+### Documentation
 
 - CHANGELOG otomatik güncellendi [skip ci] (`576c9f7`)
 
-### Sürüm
+### Release
 
 - v1.11.1 (`b78921b`)
 
 ## [1.11.0] - 2026-04-21
 
-### Eklenen
+### Added
 
 - **bootstrap:** codebase AI varlik import ozelligi eklendi (`e10801c`)
 - **hooks:** turkce diakritik ve commit format guard eklendi (`67af85f`)
 
-### Dokümantasyon
+### Documentation
 
 - CHANGELOG otomatik güncellendi [skip ci] (`11ca2fb`)
 
-### Sürüm
+### Release
 
 - v1.11.0 (`39a09ec`)
 
 ## [1.10.0] - 2026-04-15
 
-### Eklenen
+### Added
 
 - **extensions:** Graphify knowledge graph skill eklendi (`4a32e9b`)
 - **changelog:** release type destegi eklendi (`e0e7da0`)
@@ -230,62 +256,62 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - **task-plan:** SELF_REFRESH marker eklendi (pilot) (`d28463e`)
 - **generate:** SELF_REFRESH GENERATE blogu eklendi (`4ff6d40`)
 
-### Düzeltilen
+### Fixed
 
 - **self-refresh:** review follow-up — hipotetik ekleme YASAK kisiti (`58fa60a`)
 
-### Test
+### Tests
 
 - **generate:** SELF_REFRESH E2E smoke testi eklendi (`508a886`)
 
-### Bakım
+### Maintenance
 
 - .worktrees/ gitignore'a eklendi (`679ce98`)
 
-### Sürüm
+### Release
 
 - v1.10.0 (`f6cd910`)
 
 ## [1.9.1] - 2026-04-05
 
-### Düzeltilen
+### Fixed
 
 - docs/ dizinini gitignore'a ekle, repodan kaldir (`111b508`)
 
-### Sürüm
+### Release
 
 - v1.9.1 (`c4754ae`)
 
 ## [1.9.0] - 2026-04-05
 
-### Eklenen
+### Added
 
 - naming conventions sistemi, CONVENTIONS.skeleton, ultrathink plan doc (`17e047b`)
 - task-plan ultrathink mode — derin dusunme fazi, thinking gate, Opus zorunlu (`0a08fd8`)
 
-### Sürüm
+### Release
 
 - v1.9.0 (`e1dfcb9`)
 
 ## [1.8.0] - 2026-03-25
 
-### Eklenen
+### Added
 
 - deep audit oturumu — changelog shell injection fix, hook integrity, push fail sayaci, README tutarlilik (`94b16a7`)
 
-### Sürüm
+### Release
 
 - v1.8.0 (`12f6f2e`)
 
 ## [1.7.0] - 2026-03-25
 
-### Eklenen
+### Added
 
 - release.js versiyon drift dogrulamasi + CLI entegrasyon testleri (`ea93e42`)
 - session-monitor runtime test seam — handleKey, cleanup, state API (TASK-195) (`83aa45b`)
 - CI security scanning — gitleaks, npm audit, dependabot (TASK-192) (`e6295e0`)
 
-### Düzeltilen
+### Fixed
 
 - **deep-audit:** transform-cli test fixture manifest.targets tutarliligi (`70cf85a`)
 - **deep-audit:** transform.js guvenlik ve kalite duzeltmeleri + 11 yeni test (`220fc50`)
@@ -293,126 +319,126 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - security.yml review bulgulari — PR paths filtresi, GITLEAKS_LICENSE notu, audit permissions (`313d603`)
 - tutarlilik testinde null capability false negative duzeltildi (`fe76686`)
 
-### Yeniden Düzenlenen
+### Changed
 
 - transform.js global mutable state kaldirildi + symlink traversal + double-transform fix (TASK-200/201/202) (`859a66a`)
 
-### Test
+### Tests
 
 - shared-hook-utils test suite — createGuardHook, runGuard, preCheck, match (TASK-197) (`94e64a0`)
 - changelog.js test kapsamini genislet — getCommits, getAllTags, Unicode regex (`41746f1`)
 - transform.js CLI entegrasyon testleri — 11 senaryo (`7341803`)
 - PATH_MAPS ↔ CLI_CAPABILITIES tutarlilik testi ve frozen snapshot (`1c69742`)
 
-### Sürüm
+### Release
 
 - v1.7.0 (`8eaed28`)
 
 ## [1.6.2] - 2026-03-24
 
-### Düzeltilen
+### Fixed
 
 - test CI npm ci → npm install (package-lock.json yok) (`ab8e4a5`)
 
-### Sürüm
+### Release
 
 - v1.6.2 (`0730f37`)
 
 ## [1.6.1] - 2026-03-24
 
-### Düzeltilen
+### Fixed
 
 - test workflow her push'ta calissin ve manuel tetikleme destekle (`31a2d50`)
 
-### Sürüm
+### Release
 
 - v1.6.1 (`021b4b0`)
 
 ## [1.6.0] - 2026-03-24
 
-### Eklenen
+### Added
 
 - test CI workflow ve badge ekle (`0f0117b`)
 
-### Sürüm
+### Release
 
 - v1.6.0 (`f8cf20c`)
 
 ## [1.5.0] - 2026-03-24
 
-### Eklenen
+### Added
 
 - README badge'leri ve Docs → Docbase rename (`5feebf1`)
 
-### Dokümantasyon
+### Documentation
 
 - CHANGELOG otomatik güncellendi [skip ci] (`d53dcea`)
 
-### Sürüm
+### Release
 
 - v1.5.0 (`145eaed`)
 
 ## [1.4.2] - 2026-03-24
 
-### Eklenen
+### Added
 
 - bootstrap hedef projelerde backlog'u Agentbase icinde olustursun (`0d2216a`)
 
-### Dokümantasyon
+### Documentation
 
 - CHANGELOG otomatik güncellendi [skip ci] (`503da39`)
 
-### Bakım
+### Maintenance
 
 - release oncesi bekleyen degisiklikler (`e6f1aaf`)
 
-### Sürüm
+### Release
 
 - v1.4.2 (`d63bf3d`)
 
 ## [1.4.1] - 2026-03-24
 
-### Düzeltilen
+### Fixed
 
 - extensions-registry.md ornek satir Turkce karakter normalize (`02f504f`)
 - changelog.yml detached HEAD hatasi — ref: main + explicit push target (`3dc3e45`)
 
-### Sürüm
+### Release
 
 - v1.4.1 (`ade582e`)
 
 ## [1.4.0] - 2026-03-24
 
-### Dokümantasyon
+### Documentation
 
 - **deep-audit:** README eksik workflow-update komutu ve agent tablosu eklendi (`6217f28`)
 
-### Bakım
+### Maintenance
 
 - release oncesi bekleyen degisiklikler (`a7eee08`)
 
-### Sürüm
+### Release
 
 - v1.4.0 (`2424c95`)
 
 ## [1.3.1] - 2026-03-24
 
-### Düzeltilen
+### Fixed
 
 - add JSON parse error handling, fix array filter null check, improve --modules exit code (`9cb1547`)
 - resolve failing tests - git init branch name and missing reference files (`21e3c91`)
 
-### Sürüm
+### Release
 
 - v1.3.1 (`75595cc`)
 
-### Diğer
+### Other
 
 - Initial plan (`6353c7d`)
 
 ## [1.3.0] - 2026-03-24
 
-### Eklenen
+### Added
 
 - generate.js --modules parametresi — incremental modul uretimi (`353fa64`)
 - task-hunter stack uyumluluk kontrolu — aktif olmayan modul uyarisi (`8a742af`)
@@ -420,7 +446,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - workflow-update altyapisi — manifest meta, diff motoru, slash komutu (TASK-176/177/178) (`86f3e64`)
 - GitHub Action ile otomatik release — main push'ta otonom calısır (`f3b23e6`)
 
-### Düzeltilen
+### Fixed
 
 - workflow-update skeleton kutsal kural metinleri eklendi (`1b01787`)
 - bootstrap hedef dizin netligi, interview downstream enforce, test suite (TASK-187/188/189) (`62b51ea`)
@@ -428,21 +454,21 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - session-monitor guvenlik ve DRY iyilestirmeleri (TASK-182/183/184) (`61358c7`)
 - **deep-audit:** session-monitor test kapsamasi ve MAX_TEAMMATES sabit tasi (`b848d75`)
 
-### Test
+### Tests
 
 - markdown dosyalarinda kirik link dogrulama testi eklendi (`ffb5aae`)
 
-### Sürüm
+### Release
 
 - v1.3.0 (`5b18341`)
 
 ## [1.2.0] - 2026-03-24
 
-### Eklenen
+### Added
 
 - generate.js guvenlik iyilestirmeleri ve test kapsamasi (TASK-170/171/172/173) (`4bfa158`)
 
-### Düzeltilen
+### Fixed
 
 - **security:** sanitizeSnippet key=value maskesinde key adini koru (`7c75f12`)
 - **security:** sanitizeSnippet key=value maskesinde captured grup kullan (`4cc4d2e`)
@@ -457,23 +483,23 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - **deep-audit:** .release-notes.tmp gitignore'a eklendi (`55a943c`)
 - release notes --notes-file backtick injection — ikinci duzeltme (`8b30820`)
 
-### Yeniden Düzenlenen
+### Changed
 
 - readStdin ve guard hook factory — 12 dosyadan duplicate kaldirildi (TASK-163) (`2668b54`)
 - release.js changelog.js ortak fonksiyonlari DRY (TASK-162) (`a52856d`)
 
-### Dokümantasyon
+### Documentation
 
 - guvenlik hook ve session-tracker aciklamalari README'ye eklendi (TASK-168/169) (`622ce88`)
 - CONTRIBUTING.md test tablosunu 7'den 13 dosyaya guncelle (`a604f72`)
 
-### Bakım
+### Maintenance
 
 - release oncesi bekleyen degisiklikler (`b89446f`)
 - release oncesi bekleyen degisiklikler (`c135cc6`)
 - release oncesi bekleyen degisiklikler (`198df1e`)
 
-### Sürüm
+### Release
 
 - v1.2.0 (`f8b654f`)
 - v1.1.3 (`0029c1a`)
@@ -481,78 +507,78 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 ## [1.1.1] - 2026-03-24
 
-### Düzeltilen
+### Fixed
 
 - release notes --notes-file ile backtick shell injection onlendi (`8651009`)
 
-### Dokümantasyon
+### Documentation
 
 - CHANGELOG otomatik güncellendi [skip ci] (`f7b8fe1`)
 - CHANGELOG otomatik güncellendi [skip ci] (`bd03eec`)
 
-### Sürüm
+### Release
 
 - v1.1.1 (`a7fd7e7`)
 - v1.1.0 (`1ae3125`)
 
 ## [1.1.0] - 2026-03-24
 
-### Eklenen
+### Added
 
 - template repo pre-push hook — test zorlama (`36389c4`)
 - release.js test suite + README release/changelog dokumantasyonu (`c46e8db`)
 
-### Düzeltilen
+### Fixed
 
 - changelog.yml gereksiz npm install kaldirildi + generateAllSections testleri (TASK-161) (`2b05dfc`)
 - **deep-audit:** changelog pipe ayiricisi, CI force push, release rebase conflict (`5c6352b`)
 
-### Dokümantasyon
+### Documentation
 
 - CHANGELOG otomatik güncellendi [skip ci] (`4323074`)
 
-### Sürüm
+### Release
 
 - v1.1.0 (`e4bcbd0`)
 
 ## [1.0.2] - 2026-03-23
 
-### Eklenen
+### Added
 
 - release.js GitHub Release olusturma destegi (`6d8833b`)
 
-### Dokümantasyon
+### Documentation
 
 - CHANGELOG otomatik güncellendi [skip ci] (`6040309`)
 
-### Sürüm
+### Release
 
 - v1.0.2 (`2736875`)
 - v1.0.2 (`034b3a8`)
 
 ## [1.0.1] - 2026-03-23
 
-### Düzeltilen
+### Fixed
 
 - **session:** addToFileList kok dizin yolu (/) bos string eklemiyor (`10de9d1`)
 - **deep-audit:** session modulu — ensureDir atomik, saveState 0o600, backlog_sync.path, lazy regex, shortenPath tutarliligi, skeleton icon duzeltmesi + 12 yeni test (`6bdd075`)
 - bootstrap ve generator enforcement driftini kapat (`290f418`)
 
-### Yeniden Düzenlenen
+### Changed
 
 - isTestCommand shared-patterns.js, backlog_sync.missing strateji, MAX_TEAMMATES siniri (`c8c1011`)
 
-### Dokümantasyon
+### Documentation
 
 - CHANGELOG otomatik güncellendi [skip ci] (`b32f7cd`)
 
-### Sürüm
+### Release
 
 - v1.0.1 (`e1801ff`)
 
 ## [1.0.0] - 2026-03-23
 
-### Eklenen
+### Added
 
 - changelog.js tag-aware versiyonlama destegi (TASK-154) (`8fcef30`)
 - bootstrap ADIM 2.6 API endpoint kesfetme (Express, NestJS, Laravel, CI4, FastAPI) (`d3f445a`)
@@ -580,7 +606,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - Agentic Workflow Template sistemi - ilk surum (`823a06b`)
 - redesign session monitor visibility (`a6ef7b7`)
 
-### Düzeltilen
+### Fixed
 
 - review bulgulari — API_SMOKE_NODE_TESTS skeleton a eklendi, post-deploy ornek ciktilari guncellendi, ep.response parseInt (`7047128`)
 - api-smoke komutuna kutsal kural ekle (`fa7207d`)
@@ -643,13 +669,13 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - scanSkeletonFiles 3+ seviyeli modul yollarini dogru secsin (backend/nodejs/express) (`9b674c1`)
 - yanlis eklenmis bos Edit dosyasi silindi (`95f3707`)
 
-### Yeniden Düzenlenen
+### Changed
 
 - transform.js SKIP_PATHS manifest.transform.skip_paths ile override edilebilir (`e1e69f0`)
 - **transform:** format helper'ları, gelişmiş hata raporlama ve özel path map desteği (`62d0c46`)
 - proje-spesifik CC komutlarini root .claude/ a tasi, gitignore ayrimini netlistir (`5c62659`)
 
-### Dokümantasyon
+### Documentation
 
 - CHANGELOG v1.0.0 release (TASK-155) (`2dfbbcf`)
 - CHANGELOG otomatik güncellendi [skip ci] (`c364e18`)
@@ -708,7 +734,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - add README banner asset (`13289a0`)
 - README'yi proje yapisiyla uyumlu hale getir (`ec78b5c`)
 
-### Test
+### Tests
 
 - path traversal korumasi testleri (generate.js + transform.js writeTarget) (`7d79751`)
 - session-monitor regresyon testlerini güçlendir, sabit yolları kaldır (`2d2ca31`)
@@ -721,7 +747,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 - session-tracker eksik test kapsamasi — backlog done/create, git commit/branch, basarili test, write event (`4cadbb0`)
 - eksik entegrasyon testleri eklendi — monorepo, PREPUSH, hasTypeScript edge case (TASK-62) (`42637c9`)
 
-### Bakım
+### Maintenance
 
 - .codex/ gitignore eklendi (`01aa405`)
 - .github/copilot-instructions.md gitignore eklendi (`f16af9c`)
@@ -733,7 +759,7 @@ Format [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) standardını ta
 
 - CHANGELOG otomatik güncelleme GitHub Action eklendi (`3216a57`)
 
-### Diğer
+### Other
 
 - docs+test: test dokumantasyonu, extensions-registry notu, 4 session-monitor edge case testi (`bac9b5c`)
 - fix+test: _pendingHooks hooks[] yoksa otomatik olustur, CLI entegrasyon testleri (`a04aa6d`)
