@@ -18,12 +18,11 @@ Required manifest fields: environments
 
 ## Dependencies
 
-This workflow runs the following external MCP servers at runtime. All agents (Claude Code, Codex CLI, Gemini CLI, Kimi CLI, OpenCode) connect to the same MCPs → shared memory and shared context.
+This workflow runs basic-memory as its external MCP server. Agents on Claude Code, Codex CLI, Gemini CLI, Kimi CLI, and OpenCode connect to that server for shared memory. backlog.md stays a CLI.
 
 | Dependency | License | Scope | Note |
 | --- | --- | --- | --- |
 | `basic-memory` | AGPL-3.0 | MCP subprocess (`uvx basic-memory mcp`) | Runs as a separate process; does not affect this project's license. Vault: `Docbase/memory/` |
-| `codex` | MIT | MCP subprocess (`codex mcp-server`) | OpenAI Codex CLI MCP server mode |
 | `backlog.md` | MIT | CLI | Task lifecycle |
 
 ### Vault Privacy (opt-in)

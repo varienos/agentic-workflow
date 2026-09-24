@@ -409,7 +409,7 @@ Check whether `../Docbase/agentic/project-manifest.yaml` exists.
      - `.claude/rules/`
      - generate.js outputs: `.claude/settings.json`, `.claude/CLAUDE.md`, `.claude-ignore`, `git-hooks/`
      - Bootstrap-direct files (Claude writes directly; generate.js does not produce them): `PROJECT.md`, `STACK.md`, `DEVELOPER.md`, `ARCHITECTURE.md`, `WORKFLOWS.md`
-     - NOTE: Root `CLAUDE.md` is NOT produced by generate.js — `.claude/CLAUDE.md` is. `.mcp.json` is produced as required from `templates/core/mcp.skeleton.json` (codex + basic-memory MCP entries).
+     - NOTE: Root `CLAUDE.md` is NOT produced by generate.js — `.claude/CLAUDE.md` is. `.mcp.json` is produced as required from `templates/core/mcp.skeleton.json` (the basic-memory MCP entry).
      - **OUT OF MANAGEMENT (static root documents):** `ORCHESTRATION.md`, `LESSONS.md`, `BACKLOG.md` are **NOT** Bootstrap-managed. They ship static with the repo; the user edits them (especially `LESSONS.md` fills with lessons over time). In no mode (`overwrite`/`merge`/`incremental`) are these files checksum-compared, copied under `_rescued/`, or overwritten. Only their presence is verified by STEP 8 GATE B/G.
   5. For each managed file, compare the checksum in the manifest with the current file:
      - match → Bootstrap-managed and clean
@@ -1562,7 +1562,7 @@ Lead (you)
   │           .claude-ignore
   │    NOTE: Fill GENERATE blocks in CLAUDE.md.skeleton from the manifest.
   │         The Backlog CLI guide stays FIXED; project info goes into GENERATE blocks.
-  │         .mcp.json is REQUIRED to be produced from `templates/core/mcp.skeleton.json` — it contains codex + basic-memory MCP entries.
+  │         .mcp.json is REQUIRED to be produced from `templates/core/mcp.skeleton.json` — it contains the basic-memory MCP entry.
   │         basic-memory vault init procedure (idempotent + fail-loud):
   │           1) VAULT_DIR="$(cd .. && pwd -P)/Docbase/memory"  # canonical, space-safe
   │           2) PROJ_NAME=manifest.project.name (else directory name). Reserved chars are sanitized.
@@ -2840,7 +2840,7 @@ fi
 test -f ./.mcp.json && echo "✅ I1: .mcp.json present" || echo "❌ I1: .mcp.json MISSING"
 if [ -f ./.mcp.json ]; then
   grep -q '"basic-memory"' ./.mcp.json && echo "✅ I2: .mcp.json basic-memory entry present" || echo "❌ I2: .mcp.json basic-memory entry MISSING"
-  grep -q '"codex"' ./.mcp.json && echo "✅ I3: .mcp.json codex entry present" || echo "❌ I3: .mcp.json codex entry MISSING"
+  grep -q '"mcp-server"' ./.mcp.json && echo "❌ I3: .mcp.json still registers codex mcp-server" || echo "✅ I3: no codex mcp-server entry"
 fi
 test -d ../Docbase/memory && echo "✅ I4: Docbase/memory vault directory present" || echo "❌ I4: Docbase/memory vault directory MISSING"
 # basic-memory install persistence (is the package verified in STEP 1.1.5 still installed?)

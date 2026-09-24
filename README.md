@@ -7,8 +7,8 @@
 > [!IMPORTANT]
 > This system requires two dependencies:
 > - **[Backlog.md](https://github.com/MrLesk/Backlog.md)** — the entire task lifecycle (creation, prioritization, implementation, review, closure) is managed through the Backlog.md CLI.
-> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer. Every host (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connects to the same `Docbase/memory/` vault via MCP. Never store secrets, tokens, `.env` values, or PII in persistent memory; redact before writing memory. Requires `uv`
-  (Python package manager) and Python 3.12+.
+> - **[basic-memory](https://github.com/basicmachines-co/basic-memory)** — shared agent memory layer, and the only MCP server this template registers. Every host (Claude, Codex, Gemini, Antigravity, Kimi, OpenCode) connects to the same `Docbase/memory/` vault via MCP.
+>   Never store secrets, tokens, `.env` values, or PII in persistent memory; redact before writing memory. Requires `uv` (Python package manager) and Python 3.12+.
 >
 > **[graphify](https://pypi.org/project/graphifyy/)** is optional. Bootstrap does not install it and does not fail when it is absent. Select the knowledge-graph module only if you want it.
 >

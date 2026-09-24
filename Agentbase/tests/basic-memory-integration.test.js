@@ -28,9 +28,9 @@ describe('basic-memory MCP integration (TASK-236)', () => {
       );
     });
 
-    it('includes codex MCP entry', () => {
-      assert.ok(skeleton.mcpServers.codex, 'codex MCP entry bulunmali');
-      assert.equal(skeleton.mcpServers.codex.command, 'codex', 'codex command yanlis');
+    it('does not register a codex MCP server', () => {
+      assert.equal(skeleton.mcpServers.codex, undefined);
+      assert.equal(skeletonRaw.includes('mcp-server'), false);
     });
 
     it('includes basic-memory MCP entry with uvx command', () => {
@@ -291,10 +291,8 @@ describe('basic-memory MCP integration (TASK-236)', () => {
         gateIBlock.includes('"basic-memory"'),
         'GATE I .mcp.json icinde basic-memory entry kontrolu icermeli'
       );
-      assert.ok(
-        gateIBlock.includes('"codex"'),
-        'GATE I .mcp.json icinde codex entry kontrolu icermeli'
-      );
+      assert.equal(gateIBlock.includes('✅ I3: .mcp.json codex entry present'), false);
+      assert.ok(gateIBlock.includes('no codex mcp-server entry'));
     });
 
     it('GATE I vault dizini ve basic-memory kurulumu kontrol eder', () => {
