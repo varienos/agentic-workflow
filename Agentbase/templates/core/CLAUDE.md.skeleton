@@ -180,6 +180,7 @@ Example output:
 | `/task-conductor` | Orchestrate several tasks in plan-first phases |
 | `/task-review` | Review recent changes with 3 agents |
 | `/task-plan <request>` | Analyze a request and create a backlog task |
+| `/task-plan-review <id>` | Review an unimplemented plan before code is written |
 | `/bug-hunter <description>` | Find a bug, fix it, and commit |
 | `/bug-review` | Review a bug fix from 3 perspectives |
 | `/deep-audit <module>` | Audit a domain module across layers |

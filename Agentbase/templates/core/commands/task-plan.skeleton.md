@@ -11,6 +11,18 @@
 - If the first solution that comes to mind is likely incomplete, think of at least three alternative solutions.
 - This command should be executed with the OPUS model. Using Sonnet for task-plan execution IS PROHIBITED.
 
+## HARD GATE — Post-create `/task-plan-review`
+
+This command creates the task. It does not finish the plan.
+
+| Not enough | Required |
+|---|---|
+| Self-review, then the user report | Step 6 runs `/task-plan-review` on every new task |
+| "Self-review is enough" | Notes contain `[TASK_PLAN_REVIEW]` and an overall result |
+| User report before Step 6 | Read and follow the `task-plan-review` command body first |
+
+Self-review does not score the planner. The scorecard is written only by `/task-plan-review`, and only in the user report. If Step 6 was skipped, do not tell the user the plan is ready.
+
 ---
 
 <!-- GENERATE: CODEBASE_CONTEXT
@@ -358,7 +370,23 @@ backlog task create "feat: Order listesi frontend sayfasi (#ana_gorev)" --priori
 
 ---
 
-## Step 6 — User Report
+## Step 6 — Required post-create task plan review
+
+After every `backlog task create` in this run, and before the user report:
+
+1. Read the `task-plan-review` command for the active host and run it on each new task id
+2. Do not score the plan in this command. The review command writes the scorecard
+3. Append the pass marker:
+
+```bash
+backlog task edit <id> --append-notes "[TASK_PLAN_REVIEW] required post-create pass finished — Overall: <approve|revise|reject>"
+```
+
+The user report is not allowed until every new task has finished this pass.
+
+---
+
+## Step 7 — User Report
 
 > **DECISION POINT:** Is the assumption still valid from Step 0? Check the outcome of the previous step before proceeding to this step. If new information changes the assumptions, go back to Step 0.
 
@@ -379,6 +407,10 @@ backlog task create "feat: Order listesi frontend sayfasi (#ana_gorev)" --priori
 
 ### Estimated File Count
 <Number>
+
+### Task plan review (Step 6)
+- **Done:** yes — Overall: <approve|revise|reject>
+- The planner scorecard is only in this report. It is not written into the task
 
 ### Created Tasks
 | # | ID | Title | Priority | Dependence |
@@ -417,6 +449,7 @@ backlog task create "feat: Order listesi frontend sayfasi (#ana_gorev)" --priori
 8. **Use Backlog CLI** — Create tasks only using `backlog task create`.
 9. **Model/Teammate recommendation** — Specify an appropriate model and teammate for each task.
 10. **Codebase path** — All file analysis should be performed within the `../Codebase/` directory.
+11. **Post-create `/task-plan-review`** — Self-review does not score the planner. Step 6 runs the review before the user report. Skipping Step 6 is forbidden.
 <!-- GENERATE: SELF_REFRESH
 Description: Last step - self-refresh check. Common to Bootstrap
 Self-Refresh section changes the command. The command looks through the project's content:

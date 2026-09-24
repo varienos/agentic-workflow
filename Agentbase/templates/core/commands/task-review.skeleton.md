@@ -3,6 +3,7 @@
 > Inspect the last commit or specified diff with at least 3 parallel agents. Add an optional 4th agent (devils-advocate) for security/auth/odeme/API/migration changes.
 
 > Usage: `/task-review`, `/task-review <commit_hash>`, `/task-review HEAD~3..HEAD`
+> **Divider:** This reviews delivered code. For an unimplemented plan, use `/task-plan-review`.
 
 ---
 

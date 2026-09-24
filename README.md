@@ -230,6 +230,18 @@ Deeply analyzes a request to create a backlog task. Scans the codebase, identifi
 /task-plan "Implement API rate limiting"
 ```
 
+### /task-plan-review
+
+Reviews a backlog plan before any code is written. Three agents check paths, acceptance checks, and scope. An optional fourth agent challenges security, schema, API, or deploy plans. The planner does not score the plan. The scorecard is only in the review report. Delivered code still goes to `/task-review`.
+
+```
+/task-plan-review 42
+/task-plan-review task-42 task-43
+/task-plan-review --status "To Do"
+```
+
+`/task-plan` does not finish until this review has run on every new task.
+
 ### /task-master
 
 Prioritizes all open tasks using 4-dimensional scoring. Calculates Impact, Risk, Dependency, and Complexity (inverse) scores for each task. Produces a phase-based work plan: Phase 1 critical tasks, Phase 2 important tasks, Phase 3 planned tasks, MANUAL phase for tasks requiring human intervention (excluded from scoring, listed separately

@@ -21,6 +21,7 @@ Bootstrap → Planner → Hunter → Review (opt.) → Quality → Push
 | **Bootstrap** | Opus-class | `/bootstrap` | Interview, workspace creation, backlog init, extension selection | Once at project start |
 | **Master** | Opus-class | `/task-master` | Scores the backlog and produces a priority order | Optional |
 | **Planner** | **Opus-class (high reasoning)** | `/task-plan` | Creates task, deep analysis, model suggestion, scope split, review decision | Every task |
+| **Plan review** | A different pass from the planner | `/task-plan-review` | Checks the unimplemented plan before any code is written. The planner does not score the plan | Every task, immediately after `/task-plan` |
 | **Hunter** | Sonnet-class | `/task-hunter` | Applies the task — writes code, writes tests, verifies, commits | Every task |
 | **Review** | Sonnet-class (clean) | `/task-review` | 3+1 agents: code-reviewer + silent-failure-hunter + regression-analyzer + conditional devils-advocate | Optional — planner decides |
 | **Quality** | Sonnet-class (clean) | — | Standards compliance: CONVENTIONS.md, naming, docblock, lint | Auto after Review; can also run alone |
