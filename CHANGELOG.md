@@ -3,10 +3,6 @@
 Notable changes are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
-
-> Dependency note: `basic-memory` MCP stays the required shared agent memory layer (vault: `Docbase/memory/`).
-
 ## [2.6.0] - 2026-09-24
 
 ### Added
@@ -33,6 +29,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - translate remaining graphify and transform text (`7c0ceb9`)
 - **readme:** zorunlu bagimliliklar callout'una graphify ekle (uc bagimlilik) (`ea79b60`)
 - CHANGELOG otomatik güncellendi [skip ci] (`7d5da5c`)
+
+### Release
+
+- v2.6.0 (`bb19d8c`)
 
 ## [2.5.0] - 2026-06-08
 
